@@ -1,0 +1,534 @@
+#!/usr/bin/env python3
+"""
+A2A Comms CLI — Agent-to-Agent Contract Communication
+
+Usage:
+  a2a contracts [--status STATUS] [--role ROLE]
+  a2a contract <id>
+  a2a propose <title> --to <agents...> [--description DESC] [--max-turns N] [--expires-hours H] [--schema JSON]
+  a2a accept <contract_id>
+  a2a reject <contract_id>
+  a2a cancel <contract_id>
+  a2a close <contract_id> [--reason REASON]
+  a2a messages <contract_id> [--page N] [--per-page N]
+  a2a message <contract_id> <message_id>
+  a2a send <contract_id> --content JSON [--type TYPE]
+  a2a agents
+  a2a agent <id_or_name>
+  a2a status
+  a2a pending
+  a2a health
+"""
+
+import argparse
+import hashlib
+import hmac
+import json
+import os
+import sys
+import time
+import urllib.request
+import urllib.error
+import urllib.parse
+import uuid
+
+# Configuration
+BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech")
+API_KEY = os.environ.get("A2A_API_KEY", "")
+SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
+
+
+def sign_request(method: str, path: str, body: str = "") -> dict:
+    """Generate HMAC-SHA256 signed headers with nonce replay protection."""
+    timestamp = str(int(time.time()))
+    nonce = str(uuid.uuid4())
+    message = f"{method}\n{path}\n{timestamp}\n{nonce}\n{body}"
+    signature = hmac.new(
+        SIGNING_SECRET.encode(),
+        message.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    return {
+        "X-API-Key": API_KEY,
+        "X-Timestamp": timestamp,
+        "X-Nonce": nonce,
+        "X-Signature": signature,
+        "Content-Type": "application/json",
+    }
+
+
+def api_request(method: str, path: str, body: dict | None = None) -> dict:
+    """Make an authenticated API request."""
+    if not API_KEY or not SIGNING_SECRET:
+        print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
+        sys.exit(1)
+
+    body_str = json.dumps(body, sort_keys=True, separators=(",", ":")) if body else ""
+    url = f"{BASE_URL}{path}"
+    # HMAC signs only the pathname (no query string) — must match server-side
+    sign_path = path.split("?")[0]
+    headers = sign_request(method, sign_path, body_str)
+
+    req = urllib.request.Request(
+        url,
+        data=body_str.encode() if body_str else None,
+        headers=headers,
+        method=method,
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            err = json.loads(e.read().decode())
+            print(f"Error {e.code}: {err.get('error', 'Unknown error')}", file=sys.stderr)
+            if err.get("details"):
+                print(f"  Details: {err['details']}", file=sys.stderr)
+        except Exception:
+            print(f"Error {e.code}: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"Connection error: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+
+
+def format_contract(c: dict, verbose: bool = False) -> str:
+    """Format a contract for display."""
+    status_icons = {
+        "proposed": "📋",
+        "active": "🟢",
+        "closed": "⬛",
+        "rejected": "❌",
+        "expired": "⏰",
+        "cancelled": "🚫",
+    }
+    icon = status_icons.get(c["status"], "❓")
+    parts = c.get("participants", [])
+    agents = ", ".join(p["agent"]["display_name"] for p in parts)
+    turns = f"{c['current_turns']}/{c['max_turns']}"
+
+    line = f"{icon} [{c['status'].upper()}] {c['title']}"
+    line += f"\n   ID: {c['id']}"
+    line += f"\n   Participants: {agents} | Turns: {turns}"
+
+    if verbose:
+        if c.get("description"):
+            line += f"\n   Description: {c['description']}"
+        if c.get("expires_at"):
+            line += f"\n   Expires: {c['expires_at']}"
+        if c.get("close_reason"):
+            line += f"\n   Close reason: {c['close_reason']}"
+        line += f"\n   Created: {c['created_at']}"
+
+        # Show participant statuses
+        for p in parts:
+            pstatus = "✅" if p["status"] == "accepted" else ("❌" if p["status"] == "rejected" else "⏳")
+            line += f"\n   {pstatus} {p['agent']['display_name']} ({p['role']}) — {p['status']}"
+
+    return line
+
+
+def format_message(m: dict) -> str:
+    """Format a message for display."""
+    sender = m.get("sender", {}).get("display_name", m.get("sender_id", "?"))
+    turn = m.get("turn_number", "?")
+    remaining = m.get("turns_remaining", "?")
+    content_str = json.dumps(m["content"], indent=2)
+    return (
+        f"--- Turn {turn} (remaining: {remaining}) ---\n"
+        f"From: {sender} | Type: {m['message_type']} | {m['created_at']}\n"
+        f"{content_str}"
+    )
+
+
+# ── Commands ──────────────────────────────────────────────
+
+def cmd_health(_args):
+    """Check API health (no auth required)."""
+    url = f"{BASE_URL}/api/v1/health"
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read().decode())
+    print(json.dumps(data, indent=2))
+
+
+def cmd_status(_args):
+    """Check system status (no auth required)."""
+    url = f"{BASE_URL}/api/v1/status"
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read().decode())
+    ks = data.get("kill_switch", {})
+    frozen = "🔴 FROZEN" if ks.get("active") else "🟢 OPERATIONAL"
+    print(f"System: {frozen}")
+    if ks.get("active"):
+        print(f"  Activated by: {ks.get('activated_by', '?')}")
+        print(f"  Activated at: {ks.get('activated_at', '?')}")
+
+
+def cmd_agents(_args):
+    """List all registered agents."""
+    data = api_request("GET", "/api/v1/agents")
+    agents = data if isinstance(data, list) else data.get("data", data.get("agents", []))
+    for a in agents:
+        line = f"  {a['display_name']} ({a['name']}) — owner: {a['owner']}"
+        caps = a.get("capabilities", [])
+        if caps:
+            line += f" | capabilities: {', '.join(caps)}"
+        print(line)
+
+
+def cmd_agent(args):
+    """Get agent details."""
+    data = api_request("GET", f"/api/v1/agents/{args.id}")
+    print(f"Agent: {data.get('display_name', '?')} ({data.get('name', '?')})")
+    print(f"  ID:          {data.get('id', '?')}")
+    print(f"  Owner:       {data.get('owner', '?')}")
+    if data.get("description"):
+        print(f"  Description: {data['description']}")
+    caps = data.get("capabilities", [])
+    print(f"  Capabilities: {', '.join(caps) if caps else '(none)'}")
+    protocols = data.get("protocols", [])
+    print(f"  Protocols:    {', '.join(protocols) if protocols else '(none)'}")
+    print(f"  Max concurrent contracts: {data.get('max_concurrent_contracts', '?')}")
+    print(f"  Created:     {data.get('created_at', '?')}")
+    print(f"  Updated:     {data.get('updated_at', '?')}")
+
+
+def cmd_contracts(args):
+    """List contracts."""
+    params = []
+    if args.status:
+        params.append(f"status={args.status}")
+    if args.role:
+        params.append(f"role={args.role}")
+    if args.page:
+        params.append(f"page={args.page}")
+    query = f"?{'&'.join(params)}" if params else ""
+    data = api_request("GET", f"/api/v1/contracts{query}")
+    contracts = data.get("data", [])
+    total = data.get("total", len(contracts))
+    print(f"Contracts ({total} total):\n")
+    for c in contracts:
+        print(format_contract(c))
+        print()
+
+
+def cmd_contract(args):
+    """Get contract details."""
+    data = api_request("GET", f"/api/v1/contracts/{args.id}")
+    print(format_contract(data, verbose=True))
+
+
+def cmd_propose(args):
+    """Propose a new contract."""
+    body = {
+        "title": args.title,
+        "invitees": args.to,
+    }
+    if args.description:
+        body["description"] = args.description
+    if args.max_turns:
+        body["max_turns"] = args.max_turns
+    if args.expires_hours:
+        body["expires_in_hours"] = args.expires_hours
+    if args.schema:
+        schema_str = args.schema
+        # If it looks like a file path, read it
+        if os.path.isfile(schema_str):
+            with open(schema_str, "r") as f:
+                schema_str = f.read()
+        try:
+            body["message_schema"] = json.loads(schema_str)
+        except json.JSONDecodeError:
+            print("Error: --schema must be valid JSON or a path to a JSON file", file=sys.stderr)
+            sys.exit(1)
+
+    data = api_request("POST", "/api/v1/contracts", body)
+    print(f"✅ Contract proposed!")
+    print(format_contract(data, verbose=True))
+
+
+def cmd_accept(args):
+    """Accept a contract invitation."""
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/accept")
+    print(f"✅ Contract accepted!")
+    print(format_contract(data, verbose=True))
+
+
+def cmd_reject(args):
+    """Reject a contract invitation."""
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/reject")
+    print(f"❌ Contract rejected.")
+    print(format_contract(data, verbose=True))
+
+
+def cmd_cancel(args):
+    """Cancel a proposed contract."""
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/cancel")
+    print(f"🚫 Contract cancelled.")
+    print(format_contract(data, verbose=True))
+
+
+def cmd_close(args):
+    """Close an active contract."""
+    body = {}
+    if args.reason:
+        body["reason"] = args.reason
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/close", body or None)
+    print(f"⬛ Contract closed.")
+    print(format_contract(data, verbose=True))
+
+
+def cmd_messages(args):
+    """Get message history for a contract."""
+    params = []
+    if args.page:
+        params.append(f"page={args.page}")
+    if args.per_page:
+        params.append(f"per_page={args.per_page}")
+    query = f"?{'&'.join(params)}" if params else ""
+    data = api_request("GET", f"/api/v1/contracts/{args.id}/messages{query}")
+    messages = data.get("data", [])
+    total = data.get("total", len(messages))
+    print(f"Messages ({total} total):\n")
+    for m in messages:
+        print(format_message(m))
+        print()
+
+
+def cmd_message(args):
+    """Get a specific message."""
+    data = api_request("GET", f"/api/v1/contracts/{args.contract_id}/messages/{args.message_id}")
+    print(format_message(data))
+
+
+def cmd_send(args):
+    """Send a message to an active contract."""
+    try:
+        content = json.loads(args.content)
+    except json.JSONDecodeError:
+        # If not valid JSON, wrap as text
+        content = {"text": args.content}
+
+    body = {
+        "content": content,
+    }
+    if args.type:
+        body["message_type"] = args.type
+
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", body)
+    print(f"✅ Message sent (turn {data.get('turn_number', '?')}, {data.get('turns_remaining', '?')} remaining)")
+
+
+def cmd_rotate_keys(_args):
+    """Rotate service keys for the current agent."""
+    agent_id = _resolve_own_agent_id()
+    print(f"Rotating keys for agent {agent_id}...")
+    result = api_request("POST", f"/api/v1/agents/{agent_id}/keys/rotate")
+
+    print("✅ Key rotation successful!")
+    print(f"  New key_id:          {result.get('key_id', '?')}")
+    print(f"  New signing_secret:  {result.get('signing_secret', '?')}")
+    print(f"  Old key expires at:  {result.get('old_key_expires_at', '?')}")
+    print(f"\n⚠️  Update your A2A_API_KEY and A2A_SIGNING_SECRET environment variables!")
+    print(f"  The old key remains valid until: {result.get('old_key_expires_at', '?')}")
+
+
+def _resolve_own_agent_id():
+    """Resolve the current agent's UUID from the API key prefix."""
+    data = api_request("GET", "/api/v1/agents")
+    agents = data if isinstance(data, list) else data.get("data", data.get("agents", []))
+    if not agents:
+        print("Error: No agents found", file=sys.stderr)
+        sys.exit(1)
+    key_prefix = API_KEY.split("-")[0] if API_KEY else ""
+    for a in agents:
+        if a["name"] == key_prefix or API_KEY.startswith(a["name"]):
+            return a["id"]
+    if len(agents) == 1:
+        return agents[0]["id"]
+    print("Error: Could not determine agent ID from API key.", file=sys.stderr)
+    sys.exit(1)
+
+
+def cmd_webhook(args):
+    """Manage webhook push notifications."""
+    agent_id = _resolve_own_agent_id()
+    action = args.webhook_action
+
+    if action == "get":
+        data = api_request("GET", f"/api/v1/agents/{agent_id}/webhook")
+        webhooks = data.get("data", [])
+        if not webhooks:
+            print("No webhooks configured.")
+            return
+        print(f"Webhooks ({len(webhooks)}):\n")
+        for w in webhooks:
+            status = "🟢 active" if w.get("is_active") else "🔴 inactive"
+            failures = w.get("failure_count", 0)
+            events = ", ".join(w.get("events", []))
+            last = w.get("last_delivery_at", "never")
+            print(f"  {status}  {w['url']}")
+            print(f"    Events: {events}")
+            print(f"    Failures: {failures} | Last delivery: {last}")
+            print()
+
+    elif action == "set":
+        if not args.url:
+            print("Error: --url is required", file=sys.stderr)
+            sys.exit(1)
+        if not args.secret:
+            print("Error: --secret is required", file=sys.stderr)
+            sys.exit(1)
+        body = {"url": args.url, "secret": args.secret}
+        if args.events:
+            body["events"] = args.events
+        result = api_request("POST", f"/api/v1/agents/{agent_id}/webhook", body)
+        print(f"✅ Webhook registered!")
+        print(f"  URL:    {result.get('url', '?')}")
+        print(f"  Events: {', '.join(result.get('events', []))}")
+        print(f"  Active: {result.get('is_active', '?')}")
+
+    elif action == "remove":
+        if not args.url:
+            print("Error: --url is required", file=sys.stderr)
+            sys.exit(1)
+        api_request("DELETE", f"/api/v1/agents/{agent_id}/webhook?url={args.url}")
+        print(f"✅ Webhook removed: {args.url}")
+
+    else:
+        print(f"Unknown webhook action: {action}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_pending(_args):
+    """List pending contract invitations."""
+    data = api_request("GET", "/api/v1/contracts?status=proposed&role=invitee")
+    contracts = data.get("data", [])
+    if not contracts:
+        print("No pending invitations.")
+        return
+    print(f"Pending invitations ({len(contracts)}):\n")
+    for c in contracts:
+        print(format_contract(c, verbose=True))
+        print()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="A2A Comms CLI — Agent-to-Agent Contract Communication",
+        prog="a2a",
+    )
+    sub = parser.add_subparsers(dest="command", help="Command")
+
+    # health
+    sub.add_parser("health", help="Check API health")
+
+    # status
+    sub.add_parser("status", help="Check system status")
+
+    # agents
+    sub.add_parser("agents", help="List agents")
+
+    # agent
+    p = sub.add_parser("agent", help="Get agent details")
+    p.add_argument("id", help="Agent ID or name")
+
+    # contracts
+    p = sub.add_parser("contracts", help="List contracts")
+    p.add_argument("--status", help="Filter by status")
+    p.add_argument("--role", help="Filter by role (proposer|invitee)")
+    p.add_argument("--page", type=int, help="Page number")
+
+    # contract
+    p = sub.add_parser("contract", help="Get contract details")
+    p.add_argument("id", help="Contract ID")
+
+    # propose
+    p = sub.add_parser("propose", help="Propose a new contract")
+    p.add_argument("title", help="Contract title")
+    p.add_argument("--to", nargs="+", required=True, help="Agent names to invite")
+    p.add_argument("--description", help="Contract description")
+    p.add_argument("--max-turns", type=int, help="Max turns (default: 50)")
+    p.add_argument("--expires-hours", type=int, help="Expiry in hours (default: 168)")
+    p.add_argument("--schema", help="Message schema (inline JSON or path to JSON file)")
+
+    # accept
+    p = sub.add_parser("accept", help="Accept a contract invitation")
+    p.add_argument("id", help="Contract ID")
+
+    # reject
+    p = sub.add_parser("reject", help="Reject a contract invitation")
+    p.add_argument("id", help="Contract ID")
+
+    # cancel
+    p = sub.add_parser("cancel", help="Cancel a proposed contract")
+    p.add_argument("id", help="Contract ID")
+
+    # close
+    p = sub.add_parser("close", help="Close an active contract")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--reason", help="Close reason")
+
+    # messages
+    p = sub.add_parser("messages", help="Get message history")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--page", type=int, help="Page number")
+    p.add_argument("--per-page", type=int, help="Messages per page")
+
+    # message
+    p = sub.add_parser("message", help="Get a specific message")
+    p.add_argument("contract_id", help="Contract ID")
+    p.add_argument("message_id", help="Message ID")
+
+    # send
+    p = sub.add_parser("send", help="Send a message")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--content", required=True, help="Message content (JSON string or plain text)")
+    p.add_argument("--type", choices=["message", "request", "response", "update", "status"], help="Message type")
+
+    # pending
+    sub.add_parser("pending", help="List pending invitations")
+
+    # webhook
+    p = sub.add_parser("webhook", help="Manage webhook push notifications")
+    p.add_argument("webhook_action", choices=["get", "set", "remove"], help="get/set/remove")
+    p.add_argument("--url", help="Webhook URL")
+    p.add_argument("--secret", help="Webhook signing secret (for set)")
+    p.add_argument("--events", nargs="+", help="Event types: invitation message contract_state")
+
+    # rotate-keys
+    sub.add_parser("rotate-keys", help="Rotate service keys for current agent")
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    commands = {
+        "health": cmd_health,
+        "status": cmd_status,
+        "agents": cmd_agents,
+        "agent": cmd_agent,
+        "contracts": cmd_contracts,
+        "contract": cmd_contract,
+        "propose": cmd_propose,
+        "accept": cmd_accept,
+        "reject": cmd_reject,
+        "cancel": cmd_cancel,
+        "close": cmd_close,
+        "messages": cmd_messages,
+        "message": cmd_message,
+        "send": cmd_send,
+        "pending": cmd_pending,
+        "webhook": cmd_webhook,
+        "rotate-keys": cmd_rotate_keys,
+    }
+
+    commands[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,15 @@
+http:
+  routers:
+    a2a-comms:
+      rule: "Host(`your-domain.example.com`)"
+      entryPoints:
+        - websecure
+      service: a2a-comms
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    a2a-comms:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:3700"

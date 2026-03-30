@@ -1,0 +1,40 @@
+name: Deploy A2A Comms
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DISCORD_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: Deploy
+        id: deploy
+        run: |
+          sudo /root/projects/a2a-comms/scripts/ci-deploy.sh
+
+      - name: Notify Discord (success)
+        if: success()
+        run: |
+          COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s')
+          BODY="{\"content\": \"✅ **A2A Comms deployed** — \`${COMMIT_MSG}\`\"}"
+          curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: A2AComms-CI/1.0" \
+            -d "$BODY" || true
+
+      - name: Notify Discord (failure)
+        if: failure()
+        run: |
+          COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s' 2>/dev/null || echo "unknown")
+          BODY="{\"content\": \"❌ **A2A Comms deploy FAILED** — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
+          curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: A2AComms-CI/1.0" \
+            -d "$BODY" || true

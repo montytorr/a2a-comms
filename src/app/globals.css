@@ -1,0 +1,406 @@
+@import "tailwindcss";
+
+:root {
+  --background: #06060b;
+  --foreground: #e5e7eb;
+  --surface: #0a0a10;
+  --surface-elevated: #0e0e15;
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(255, 255, 255, 0.1);
+  --accent-cyan: #06b6d4;
+  --accent-blue: #2563eb;
+  --glow-cyan: rgba(6, 182, 212, 0.15);
+  --glow-blue: rgba(37, 99, 235, 0.15);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════════
+   ANIMATED MESH GRADIENT BACKGROUND
+   Aurora borealis effect — subtle, alive
+   ══════════════════════════════════════════════ */
+
+.mesh-gradient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mesh-gradient-bg::before {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: 
+    radial-gradient(ellipse 600px 600px at 20% 20%, rgba(6, 182, 212, 0.07), transparent 70%),
+    radial-gradient(ellipse 500px 500px at 80% 20%, rgba(37, 99, 235, 0.05), transparent 70%),
+    radial-gradient(ellipse 400px 400px at 40% 80%, rgba(16, 185, 129, 0.04), transparent 70%),
+    radial-gradient(ellipse 600px 600px at 70% 60%, rgba(139, 92, 246, 0.03), transparent 70%);
+  animation: meshFloat 25s ease-in-out infinite;
+}
+
+.mesh-gradient-bg::after {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: 
+    radial-gradient(ellipse 500px 500px at 60% 30%, rgba(6, 182, 212, 0.05), transparent 70%),
+    radial-gradient(ellipse 400px 400px at 30% 70%, rgba(37, 99, 235, 0.04), transparent 70%),
+    radial-gradient(ellipse 500px 500px at 80% 80%, rgba(16, 185, 129, 0.03), transparent 70%);
+  animation: meshFloat 30s ease-in-out infinite reverse;
+}
+
+@keyframes meshFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(2%, 3%) rotate(1deg); }
+  50% { transform: translate(-1%, 5%) rotate(-0.5deg); }
+  75% { transform: translate(3%, -2%) rotate(0.5deg); }
+}
+
+/* ══════════════════════════════════════════════
+   SCROLLBAR — Invisible until hovered
+   ══════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ══════════════════════════════════════════════
+   SELECTION
+   ══════════════════════════════════════════════ */
+
+::selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: #fff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ══════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════ */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-ring-red {
+  0% { transform: scale(1); opacity: 0.4; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+  50% { transform: scale(1.4); opacity: 0; box-shadow: 0 0 40px 20px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 60px 20px rgba(16, 185, 129, 0.15); }
+  50% { transform: scale(1.03); box-shadow: 0 0 80px 30px rgba(16, 185, 129, 0.25); }
+}
+
+@keyframes orb-danger {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 60px 20px rgba(239, 68, 68, 0.2); }
+  50% { transform: scale(1.05); box-shadow: 0 0 100px 40px rgba(239, 68, 68, 0.35); }
+}
+
+@keyframes data-shimmer {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes timeline-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-data-shimmer {
+  animation: data-shimmer 2s ease-in-out infinite;
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
+}
+
+/* ══════════════════════════════════════════════
+   GLASS CARD — floating panel effect
+   ══════════════════════════════════════════════ */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card-hover {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 2px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.glass-card-hover:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 4px 30px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(6, 182, 212, 0.03);
+  transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════
+   GRADIENT BORDER — neon wire effect
+   ══════════════════════════════════════════════ */
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(37, 99, 235, 0.15), rgba(6, 182, 212, 0.05));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════
+   GLOW EFFECTS
+   ══════════════════════════════════════════════ */
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), 0 0 60px rgba(6, 182, 212, 0.05);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1), 0 0 60px rgba(16, 185, 129, 0.05);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.1), 0 0 60px rgba(239, 68, 68, 0.05);
+}
+
+.glow-violet {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.1), 0 0 60px rgba(139, 92, 246, 0.05);
+}
+
+/* ══════════════════════════════════════════════
+   TEXT GLOW
+   ══════════════════════════════════════════════ */
+
+.text-glow-cyan {
+  text-shadow: 0 0 20px rgba(6, 182, 212, 0.5), 0 0 40px rgba(6, 182, 212, 0.2);
+}
+
+.text-glow-red {
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.2);
+}
+
+.text-glow-emerald {
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.2);
+}
+
+/* ══════════════════════════════════════════════
+   STAGGER ANIMATION DELAYS
+   ══════════════════════════════════════════════ */
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* ══════════════════════════════════════════════
+   TRANSITION DEFAULTS
+   ══════════════════════════════════════════════ */
+
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+a, button, [role="button"], [onclick], select, label[for], input[type="checkbox"], input[type="radio"], input[type="submit"], summary {
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════
+   SELECT — Dark theme styled dropdowns
+   ══════════════════════════════════════════════ */
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 32px !important;
+}
+
+select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
+select option {
+  background: #0a0a14;
+  color: #d1d5db;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
+}
+
+select option:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+a, button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ══════════════════════════════════════════════
+   ORBS — For Kill Switch
+   ══════════════════════════════════════════════ */
+
+.orb-safe {
+  animation: orb-breathe 4s ease-in-out infinite;
+}
+
+.orb-danger {
+  animation: orb-danger 2s ease-in-out infinite;
+}
+
+.ring-pulse-red {
+  animation: pulse-ring-red 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ══════════════════════════════════════════════
+   NOISE TEXTURE OVERLAY
+   ══════════════════════════════════════════════ */
+
+.noise-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.015;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  z-index: 1;
+}
