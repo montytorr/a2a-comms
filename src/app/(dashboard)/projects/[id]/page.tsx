@@ -46,8 +46,8 @@ export default async function ProjectDetailPage({
     }
   }
 
-  // Fetch members, sprints, tasks in parallel
-  const [membersRes, sprintsRes, tasksRes] = await Promise.all([
+  // Fetch members, sprints, ALL tasks (for completion %), and filtered tasks in parallel
+  const [membersRes, sprintsRes, allTasksRes, tasksRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
@@ -58,6 +58,10 @@ export default async function ProjectDetailPage({
       .select('*')
       .eq('project_id', id)
       .order('position', { ascending: true }),
+    supabase
+      .from('tasks')
+      .select('id, sprint_id, status')
+      .eq('project_id', id),
     (() => {
       let q = supabase
         .from('tasks')
@@ -76,7 +80,19 @@ export default async function ProjectDetailPage({
 
   const members = membersRes.data || [];
   const sprints = sprintsRes.data || [];
+  const allTasks = allTasksRes.data || [];
   const tasks = (tasksRes.data || []) as any[];
+
+  // Compute completion stats per sprint
+  const sprintStats: Record<string, { total: number; done: number }> = {};
+  for (const t of allTasks) {
+    const key = t.sprint_id || 'backlog';
+    if (!sprintStats[key]) sprintStats[key] = { total: 0, done: 0 };
+    sprintStats[key].total++;
+    if (t.status === 'done') sprintStats[key].done++;
+  }
+  // "all" = sum of everything
+  sprintStats['all'] = { total: allTasks.length, done: allTasks.filter(t => t.status === 'done').length };
 
   // Get active sprint
   const activeSprint = sprints.find(s => s.status === 'active') || null;
@@ -92,6 +108,7 @@ export default async function ProjectDetailPage({
         sprints={sprints}
         currentSprintId={currentSprintId}
         projectId={id}
+        sprintStats={sprintStats}
       />
 
       {/* Kanban Board */}

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
+import MarkdownPreview from '@/components/markdown-preview';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -179,9 +180,7 @@ export default async function TaskDetailPage({
           {task.description && (
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">Description</p>
-              <div className="text-[13px] text-gray-400 leading-relaxed whitespace-pre-wrap">
-                {task.description}
-              </div>
+              <MarkdownPreview content={task.description} />
             </div>
           )}
 

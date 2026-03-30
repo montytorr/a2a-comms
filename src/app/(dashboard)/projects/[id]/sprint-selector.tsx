@@ -20,9 +20,10 @@ interface SprintSelectorProps {
   }>;
   currentSprintId: string;
   projectId: string;
+  sprintStats?: Record<string, { total: number; done: number }>;
 }
 
-export default function SprintSelector({ sprints, currentSprintId, projectId }: SprintSelectorProps) {
+export default function SprintSelector({ sprints, currentSprintId, projectId, sprintStats }: SprintSelectorProps) {
   const router = useRouter();
 
   const tabs = [
@@ -39,7 +40,8 @@ export default function SprintSelector({ sprints, currentSprintId, projectId }: 
         {tabs.map((tab) => {
           const isActive = currentSprintId === tab.id;
           const sprintStatus = 'status' in tab ? tab.status : null;
-          const sc = sprintStatus ? sprintStatusConfig[sprintStatus as SprintStatus] : null;
+          const stats = sprintStats?.[tab.id];
+          const pct = stats && stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : null;
 
           return (
             <button
@@ -54,22 +56,57 @@ export default function SprintSelector({ sprints, currentSprintId, projectId }: 
                   : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
               }`}
             >
-              {sc && (
+              {sprintStatus && (
                 <span className={`w-1.5 h-1.5 rounded-full ${sprintStatus === 'active' ? 'bg-cyan-400' : sprintStatus === 'completed' ? 'bg-emerald-400' : 'bg-gray-500'}`} />
               )}
               {tab.label}
+              {pct !== null && stats && stats.total > 0 && (
+                <span className={`ml-1 text-[9px] font-mono tabular-nums ${
+                  pct === 100 ? 'text-emerald-400' : isActive ? 'text-cyan-400/70' : 'text-gray-600'
+                }`}>
+                  {pct}%
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Active sprint info */}
-      {activeSprint && activeSprint.goal && (
+      {/* Active sprint info with progress bar */}
+      {activeSprint && (
         <div className="rounded-xl glass-card px-4 py-3 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">Sprint Goal</p>
-              <p className="text-[12px] text-gray-400 leading-relaxed">{activeSprint.goal}</p>
+              {activeSprint.goal && (
+                <>
+                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">Sprint Goal</p>
+                  <p className="text-[12px] text-gray-400 leading-relaxed mb-2">{activeSprint.goal}</p>
+                </>
+              )}
+              {/* Progress bar */}
+              {(() => {
+                const stats = sprintStats?.[activeSprint.id];
+                if (!stats || stats.total === 0) return null;
+                const pct = Math.round((stats.done / stats.total) * 100);
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Progress</p>
+                      <p className="text-[10px] font-mono tabular-nums text-gray-500">
+                        {stats.done}/{stats.total} tasks · <span className={pct === 100 ? 'text-emerald-400' : 'text-cyan-400'}>{pct}%</span>
+                      </p>
+                    </div>
+                    <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          pct === 100 ? 'bg-emerald-400' : 'bg-gradient-to-r from-cyan-500 to-cyan-400'
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             {(activeSprint.start_date || activeSprint.end_date) && (
               <div className="text-right shrink-0">

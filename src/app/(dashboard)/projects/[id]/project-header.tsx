@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import MarkdownPreview from '@/components/markdown-preview';
 import type { ProjectStatus } from '@/lib/types';
 
 const statusConfig: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {
@@ -65,9 +66,9 @@ export default function ProjectHeader({ project, members }: ProjectHeaderProps) 
             </span>
           </div>
           {project.description && (
-            <p className="text-[13px] text-gray-500 leading-relaxed max-w-2xl whitespace-pre-wrap">
-              {project.description}
-            </p>
+            <div className="max-w-2xl">
+              <MarkdownPreview content={project.description} />
+            </div>
           )}
         </div>
 
