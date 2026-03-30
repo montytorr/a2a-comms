@@ -12,165 +12,175 @@ interface SidebarProps {
 interface NavItem {
   href: string;
   label: string;
-  shortcut: string;
   icon: React.ReactNode;
   adminOnly?: boolean;
 }
 
-const navItems: NavItem[] = [
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
-    href: '/',
-    label: 'Dashboard',
-    shortcut: '1',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
+    label: 'Overview',
+    items: [
+      {
+        href: '/',
+        label: 'Dashboard',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+        ),
+      },
+      {
+        href: '/feed',
+        label: 'Live Feed',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        ),
+      },
+      {
+        href: '/analytics',
+        label: 'Analytics',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    href: '/contracts',
-    label: 'Contracts',
-    shortcut: '2',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-      </svg>
-    ),
+    label: 'Communication',
+    items: [
+      {
+        href: '/contracts',
+        label: 'Contracts',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        ),
+      },
+      {
+        href: '/messages',
+        label: 'Messages',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        ),
+      },
+      {
+        href: '/agents',
+        label: 'Agents',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    href: '/messages',
-    label: 'Messages',
-    shortcut: '3',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
+    label: 'Infrastructure',
+    items: [
+      {
+        href: '/webhooks',
+        label: 'Webhooks',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        ),
+      },
+      {
+        href: '/kill-switch',
+        label: 'Kill Switch',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          </svg>
+        ),
+      },
+      {
+        href: '/audit',
+        label: 'Audit Log',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    href: '/agents',
-    label: 'Agents',
-    shortcut: '4',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-      </svg>
-    ),
-  },
-  {
-    href: '/feed',
-    label: 'Feed',
-    shortcut: '5',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-      </svg>
-    ),
-  },
-  {
-    href: '/analytics',
-    label: 'Analytics',
-    shortcut: '6',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10" />
-        <line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6" y1="20" x2="6" y2="14" />
-      </svg>
-    ),
-  },
-  {
-    href: '/webhooks',
-    label: 'Webhooks',
-    shortcut: '7',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
-    ),
-  },
-  {
-    href: '/kill-switch',
-    label: 'Kill Switch',
-    shortcut: '8',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-      </svg>
-    ),
-  },
-  {
-    href: '/security',
-    label: 'Security',
-    shortcut: '9',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/api-docs',
-    label: 'API Docs',
-    shortcut: 'D',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        <path d="M8 7h8M8 11h6" />
-      </svg>
-    ),
-  },
-  {
-    href: '/onboarding/human',
-    label: 'Human Guide',
-    shortcut: 'H',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    href: '/onboarding/agent',
-    label: 'Agent Guide',
-    shortcut: 'A',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="4" y="4" width="16" height="16" rx="2" />
-        <rect x="9" y="9" width="6" height="6" />
-        <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
-      </svg>
-    ),
-  },
-  {
-    href: '/audit',
-    label: 'Audit Log',
-    shortcut: '0',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 20h9" />
-        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-      </svg>
-    ),
+    label: 'Documentation',
+    items: [
+      {
+        href: '/api-docs',
+        label: 'API Reference',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <path d="M8 7h8M8 11h6" />
+          </svg>
+        ),
+      },
+      {
+        href: '/security',
+        label: 'Security',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        ),
+      },
+      {
+        href: '/onboarding/human',
+        label: 'Human Guide',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        ),
+      },
+      {
+        href: '/onboarding/agent',
+        label: 'Agent Guide',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <rect x="9" y="9" width="6" height="6" />
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
+          </svg>
+        ),
+      },
+    ],
   },
 ];
 
-const usersNavItem: NavItem = {
+const adminItem: NavItem = {
   href: '/users',
   label: 'Users',
-  shortcut: 'U',
   adminOnly: true,
   icon: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -191,7 +201,49 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
     window.location.href = '/login';
   }
 
-  const allItems = isSuperAdmin ? [...navItems, usersNavItem] : navItems;
+  function renderItem(item: NavItem) {
+    const isActive = item.href === '/'
+      ? pathname === '/'
+      : pathname.startsWith(item.href);
+    const isAdmin = item.adminOnly;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`group flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
+          isActive
+            ? isAdmin
+              ? 'text-amber-400 bg-amber-500/[0.08]'
+              : 'text-cyan-400 bg-cyan-500/[0.08]'
+            : isAdmin
+              ? 'text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/[0.04]'
+              : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+        }`}
+      >
+        {isActive && (
+          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-full ${
+            isAdmin
+              ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]'
+              : 'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]'
+          }`} />
+        )}
+        <span className={`transition-colors duration-200 ${
+          isActive
+            ? isAdmin ? 'text-amber-400' : 'text-cyan-400'
+            : isAdmin ? 'text-amber-600 group-hover:text-amber-400' : 'text-gray-600 group-hover:text-gray-400'
+        }`}>
+          {item.icon}
+        </span>
+        <span className="flex-1">{item.label}</span>
+        {isAdmin && (
+          <span className="text-[8px] font-bold text-amber-500/50 bg-amber-500/[0.06] px-1 py-0.5 rounded uppercase tracking-wider">
+            Admin
+          </span>
+        )}
+      </Link>
+    );
+  }
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[240px] bg-[#08080d]/90 backdrop-blur-2xl border-r border-white/[0.04] flex flex-col z-50">
@@ -200,8 +252,6 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
         <div className="flex items-center gap-3">
           <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 animate-breathe">
             <span className="text-[10px] font-bold text-white tracking-tight">A2A</span>
-            {/* Subtle glow ring */}
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 opacity-0 blur-md group-hover:opacity-30 transition-opacity" />
           </div>
           <div>
             <h1 className="text-[14px] font-semibold text-white tracking-tight">A2A Comms</h1>
@@ -211,66 +261,33 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] px-3 mb-2">Navigation</p>
-        {allItems.map((item, idx) => {
-          const isActive = item.href === '/'
-            ? pathname === '/'
-            : pathname.startsWith(item.href);
-          const isAdmin = 'adminOnly' in item && item.adminOnly;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
-                isActive
-                  ? isAdmin
-                    ? 'text-amber-400 bg-amber-500/[0.08]'
-                    : 'text-cyan-400 bg-cyan-500/[0.08]'
-                  : isAdmin
-                    ? 'text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/[0.04]'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-              }`}
-              style={{ animationDelay: `${idx * 0.05}s` }}
-            >
-              {/* Active indicator — left glow bar */}
-              {isActive && (
-                <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-full ${
-                  isAdmin
-                    ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]'
-                    : 'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]'
-                }`} />
-              )}
-              <span className={`transition-colors duration-200 ${
-                isActive
-                  ? isAdmin ? 'text-amber-400' : 'text-cyan-400'
-                  : isAdmin ? 'text-amber-600 group-hover:text-amber-400' : 'text-gray-600 group-hover:text-gray-400'
-              }`}>
-                {item.icon}
-              </span>
-              <span className="flex-1">{item.label}</span>
-              {isAdmin && (
-                <span className="text-[8px] font-bold text-amber-500/50 bg-amber-500/[0.06] px-1 py-0.5 rounded uppercase tracking-wider">
-                  Admin
-                </span>
-              )}
-              {!isAdmin && (
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded transition-all duration-200 ${
-                  isActive
-                    ? 'text-cyan-500/50 bg-cyan-500/[0.06]'
-                    : 'text-gray-700 bg-white/[0.02] group-hover:text-gray-500 group-hover:bg-white/[0.04]'
-                }`}>
-                  ⌘{item.shortcut}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-3 overflow-y-auto">
+        {navGroups.map((group, groupIdx) => (
+          <div key={group.label} className={groupIdx > 0 ? 'mt-5' : ''}>
+            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] px-3 mb-1.5">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(renderItem)}
+            </div>
+          </div>
+        ))}
+
+        {/* Admin section */}
+        {isSuperAdmin && (
+          <div className="mt-5">
+            <p className="text-[9px] font-semibold text-amber-500/50 uppercase tracking-[0.2em] px-3 mb-1.5">
+              Admin
+            </p>
+            <div className="space-y-0.5">
+              {renderItem(adminItem)}
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Footer — User + System Status */}
+      {/* Footer */}
       <div className="px-5 py-4 border-t border-white/[0.04] space-y-3">
-        {/* User info */}
         {displayName && (
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-[9px] font-bold text-gray-300 shrink-0">
@@ -284,7 +301,7 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
             </div>
           </div>
         )}
-        {/* Logout */}
+
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[12px] font-medium text-gray-600 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-200 group"
@@ -297,7 +314,6 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
           Sign Out
         </button>
 
-        {/* System status */}
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
