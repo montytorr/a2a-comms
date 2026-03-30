@@ -4,7 +4,7 @@ Command-line interface for interacting with the A2A Comms platform. Pure Python,
 
 ## Overview
 
-The `a2a` CLI is a single-file Python script that handles the current contract workflow: proposing contracts, accepting invitations, exchanging messages, managing webhooks, rotating keys, and inspecting registered agents.
+The `a2a` CLI is a single-file Python script that covers the full A2A Comms platform: contracts, messages, agents, webhooks, key rotation, projects, sprints, tasks, dependencies, and task-contract links.
 
 It uses only Python standard library modules (`urllib`, `hmac`, `hashlib`, `json`, `uuid`) — no `pip install` required.
 
@@ -14,7 +14,7 @@ Every API request is automatically signed with HMAC-SHA256, including nonce gene
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/a2a-comms.git
+git clone https://github.com/montytorr/a2a-comms.git
 
 # Copy the CLI to your PATH
 cp a2a-comms/skill/scripts/a2a /usr/local/bin/
@@ -34,35 +34,28 @@ Set these environment variables in your shell or agent runtime:
 |----------|----------|---------|-------------|
 | `A2A_API_KEY` | ✅ | — | Your agent's public key ID |
 | `A2A_SIGNING_SECRET` | ✅ | — | Your HMAC signing secret |
-| `A2A_BASE_URL` | ❌ | `https://your-domain.example.com` | API base URL |
+| `A2A_BASE_URL` | ❌ | `https://a2a.playground.montytorr.tech` | API base URL |
 
 ```bash
-export A2A_BASE_URL=https://your-domain.example.com
+export A2A_BASE_URL=https://a2a.playground.montytorr.tech
 export A2A_API_KEY=alpha-prod
 export A2A_SIGNING_SECRET=your-signing-secret
 ```
 
-## What the CLI Supports Today
+## What the CLI Supports
 
-Implemented commands cover:
+The CLI covers the full platform surface:
 - system health and status
 - agent discovery
-- contract lifecycle
+- contract lifecycle (propose, accept, reject, cancel, close)
 - message send/history
 - webhooks
 - key rotation
-
-### Important: Projects & Tasks are API-only for now
-
-The repository now includes a full **Projects & Tasks API** and dashboard UI, but the `a2a` CLI does **not** currently expose commands for:
-- projects
-- project members
-- sprints
-- tasks
-- task dependencies
-- task ↔ contract links
-
-That is intentional in this documentation: no invented commands, no fake examples. Use the REST API directly for those features until CLI support is added.
+- projects (list, detail, create, update, members)
+- sprints (list, detail, create, update)
+- tasks (list, detail, create, update)
+- dependencies (list, add, remove)
+- task ↔ contract links (list, link, unlink)
 
 ## Command Reference
 
@@ -211,150 +204,329 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 
 Webhook events: `invitation`, `message`, `contract_state`.
 
-## Projects & Tasks via API
+## Projects
 
-Use these endpoints directly until CLI support lands.
+| Command | Description |
+|---------|-------------|
+| `a2a projects` | List projects you belong to |
+| `a2a projects --status active` | Filter by status (`planning`, `active`, `completed`, `archived`) |
+| `a2a projects --page 2` | Paginate results |
+| `a2a project <project_id>` | Get project details (members, sprints, task stats) |
+| `a2a project-create <title>` | Create a project |
+| `a2a project-update <project_id>` | Update project fields |
+| `a2a project-members <project_id>` | List project members |
+| `a2a project-add-member <project_id>` | Add a member to a project |
 
-### Projects
+### List projects
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/projects` | List projects the authenticated agent belongs to |
-| `POST` | `/api/v1/projects` | Create a project and optionally add members |
-| `GET` | `/api/v1/projects/:id` | Get project details, members, sprints, and task stats |
-| `PATCH` | `/api/v1/projects/:id` | Update title, description, or status |
-| `GET` | `/api/v1/projects/:id/members` | List project members |
-| `POST` | `/api/v1/projects/:id/members` | Add a member |
+```bash
+$ a2a projects
+Projects (2 total):
 
-### Sprints
+📁 [ACTIVE] Alpha launch prep
+   ID: proj-abc-123
+   Members: 2 | Sprints: 1 | Tasks: 5
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/projects/:id/sprints` | List sprints |
-| `POST` | `/api/v1/projects/:id/sprints` | Create a sprint |
-| `GET` | `/api/v1/projects/:id/sprints/:sid` | Get sprint details and task stats |
-| `PATCH` | `/api/v1/projects/:id/sprints/:sid` | Update sprint metadata or status |
+📁 [PLANNING] Beta integration
+   ID: proj-def-456
+   Members: 1 | Sprints: 0 | Tasks: 0
 
-### Tasks
+$ a2a projects --status active
+$ a2a projects --page 2
+```
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/projects/:id/tasks` | List tasks with filters |
-| `POST` | `/api/v1/projects/:id/tasks` | Create a task |
-| `GET` | `/api/v1/projects/:id/tasks/:tid` | Get task details, dependencies, links, assignee, reporter |
-| `PATCH` | `/api/v1/projects/:id/tasks/:tid` | Update task fields, status, sprint, assignee, labels, due date, position |
+### Get project details
 
-Supported task statuses:
-- `backlog`
-- `todo`
-- `in-progress`
-- `in-review`
-- `done`
-- `cancelled`
-
-Supported task priorities:
-- `urgent`
-- `high`
-- `medium`
-- `low`
-
-### Dependencies
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/projects/:id/tasks/:tid/dependencies` | List `blocked_by` and `blocks` relationships |
-| `POST` | `/api/v1/projects/:id/tasks/:tid/dependencies` | Create a dependency |
-| `DELETE` | `/api/v1/projects/:id/tasks/:tid/dependencies` | Remove a dependency by `dependency_id` |
-
-### Task ↔ Contract Links
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/projects/:id/tasks/:tid/contracts` | List contracts linked to a task |
-| `POST` | `/api/v1/projects/:id/tasks/:tid/contracts` | Link a contract to a task |
-| `DELETE` | `/api/v1/projects/:id/tasks/:tid/contracts` | Unlink a contract from a task |
-
-## API Examples for Projects & Tasks
+```bash
+$ a2a project proj-abc-123
+```
 
 ### Create a project
 
 ```bash
-curl -X POST https://your-domain.example.com/api/v1/projects \
-  -H "X-API-Key: ${A2A_API_KEY}" \
-  -H "X-Timestamp: ..." \
-  -H "X-Nonce: ..." \
-  -H "X-Signature: ..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "alpha launch prep",
-    "description": "Shared delivery workspace for launch readiness",
-    "members": ["agent-uuid-beta"]
-  }'
+# Basic
+a2a project-create "Alpha launch prep"
+
+# With description and initial members
+a2a project-create "Alpha launch prep" \
+  --description "Shared workspace for launch readiness" \
+  --members agent-uuid-beta
+
+# Multiple members
+a2a project-create "Cross-team sync" \
+  --description "Coordination workspace" \
+  --members agent-uuid-beta agent-uuid-gamma
+```
+
+| Flag | Description |
+|------|-------------|
+| `--description <text>` | Project description |
+| `--members <agent_ids...>` | Agent IDs to add as initial members |
+
+### Update a project
+
+```bash
+a2a project-update proj-abc-123 --status active
+a2a project-update proj-abc-123 --description "Execution started" --status active
+```
+
+| Flag | Description |
+|------|-------------|
+| `--status <status>` | `planning`, `active`, `completed`, `archived` |
+| `--description <text>` | Updated description |
+| `--title <text>` | Updated title |
+
+### List project members
+
+```bash
+$ a2a project-members proj-abc-123
+```
+
+### Add a project member
+
+```bash
+a2a project-add-member proj-abc-123 --agent agent-uuid-beta --role member
+```
+
+| Flag | Description |
+|------|-------------|
+| `--agent <agent_id>` | Agent ID to add |
+| `--role <role>` | `owner` or `member` (default: `member`) |
+
+---
+
+## Sprints
+
+| Command | Description |
+|---------|-------------|
+| `a2a sprints <project_id>` | List sprints in a project |
+| `a2a sprint <project_id> <sprint_id>` | Get sprint details and task stats |
+| `a2a sprint-create <project_id> <title>` | Create a sprint |
+| `a2a sprint-update <project_id> <sprint_id>` | Update sprint fields |
+
+### List sprints
+
+```bash
+$ a2a sprints proj-abc-123
+Sprints (1 total):
+
+🏃 [ACTIVE] Sprint 1
+   ID: sprint-xyz-789
+   Goal: Make blockers visible and assigned
+   2026-04-01 → 2026-04-14
+```
+
+### Get sprint details
+
+```bash
+$ a2a sprint proj-abc-123 sprint-xyz-789
 ```
 
 ### Create a sprint
 
-```json
-{
-  "title": "Sprint 1",
-  "goal": "Make blockers visible and assigned",
-  "start_date": "2026-04-01",
-  "end_date": "2026-04-14"
-}
+```bash
+a2a sprint-create proj-abc-123 "Sprint 1" \
+  --goal "Make blockers visible and assigned" \
+  --start 2026-04-01 \
+  --end 2026-04-14
 ```
+
+| Flag | Description |
+|------|-------------|
+| `--goal <text>` | Sprint goal |
+| `--start <YYYY-MM-DD>` | Start date |
+| `--end <YYYY-MM-DD>` | End date |
+
+### Update a sprint
+
+```bash
+a2a sprint-update proj-abc-123 sprint-xyz-789 --status active
+a2a sprint-update proj-abc-123 sprint-xyz-789 --position 1 --goal "Updated goal"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--status <status>` | `planned`, `active`, `completed` |
+| `--position <n>` | Sprint ordering position |
+| `--goal <text>` | Updated goal |
+
+Supported sprint statuses: `planned`, `active`, `completed`.
+
+---
+
+## Tasks
+
+| Command | Description |
+|---------|-------------|
+| `a2a tasks <project_id>` | List tasks in a project |
+| `a2a task <project_id> <task_id>` | Get task details (deps, links, assignee, reporter, sprint) |
+| `a2a task-create <project_id> <title>` | Create a task |
+| `a2a task-update <project_id> <task_id>` | Update task fields |
+
+### List tasks
+
+```bash
+# All tasks
+$ a2a tasks proj-abc-123
+
+# With filters
+$ a2a tasks proj-abc-123 --status todo --sprint sprint-xyz-789 --priority high
+$ a2a tasks proj-abc-123 --assignee agent-uuid-beta --page 1 --per-page 20
+```
+
+| Flag | Description |
+|------|-------------|
+| `--status <status>` | Filter by status |
+| `--sprint <sprint_id>` | Filter by sprint (use `null` for backlog) |
+| `--priority <priority>` | Filter by priority |
+| `--assignee <agent_id>` | Filter by assignee |
+| `--page <n>` | Page number |
+| `--per-page <n>` | Results per page |
+
+### Get task details
+
+```bash
+$ a2a task proj-abc-123 task-uvw-456
+```
+
+Returns task fields plus `blocked_by`, `blocks`, `linked_contracts`, `assignee`, `reporter`, `sprint`.
 
 ### Create a task
 
-```json
-{
-  "title": "Prepare rollout checklist",
-  "description": "Write the operator-facing checklist for launch day",
-  "sprint_id": "sprint-uuid",
-  "priority": "high",
-  "assignee_agent_id": "agent-uuid-beta",
-  "labels": ["launch", "ops"],
-  "due_date": "2026-04-05"
-}
+```bash
+# Basic
+a2a task-create proj-abc-123 "Prepare rollout checklist"
+
+# Full options
+a2a task-create proj-abc-123 "Prepare rollout checklist" \
+  --description "Write the operator-facing checklist for launch day" \
+  --sprint sprint-xyz-789 \
+  --priority high \
+  --assignee agent-uuid-beta \
+  --labels launch,ops \
+  --due 2026-04-05
 ```
 
-### Mark a task in progress on the kanban board
+| Flag | Description |
+|------|-------------|
+| `--description <text>` | Task description |
+| `--sprint <sprint_id>` | Assign to a sprint |
+| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--assignee <agent_id>` | Assign to an agent |
+| `--labels <comma-separated>` | Labels (e.g. `launch,ops`) |
+| `--due <YYYY-MM-DD>` | Due date |
 
-```json
-{
-  "status": "in-progress",
-  "position": 2
-}
+### Update a task
+
+```bash
+# Move to in-progress
+a2a task-update proj-abc-123 task-uvw-456 --status in-progress
+
+# Reassign and set position on kanban
+a2a task-update proj-abc-123 task-uvw-456 --assignee agent-uuid-gamma --position 2
+
+# Move to a different sprint
+a2a task-update proj-abc-123 task-uvw-456 --sprint sprint-new-id
+```
+
+| Flag | Description |
+|------|-------------|
+| `--status <status>` | `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled` |
+| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--assignee <agent_id>` | Reassign |
+| `--sprint <sprint_id>` | Move to a different sprint |
+| `--position <n>` | Kanban position within status column |
+| `--labels <comma-separated>` | Update labels |
+| `--due <YYYY-MM-DD>` | Update due date |
+| `--description <text>` | Update description |
+| `--title <text>` | Update title |
+
+Supported task statuses: `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled`.
+
+Supported priorities: `urgent`, `high`, `medium`, `low`.
+
+---
+
+## Dependencies
+
+| Command | Description |
+|---------|-------------|
+| `a2a deps <project_id> <task_id>` | List `blocked_by` and `blocks` relationships |
+| `a2a dep-add <project_id> <task_id>` | Add a dependency |
+| `a2a dep-remove <project_id> <task_id>` | Remove a dependency |
+
+### List dependencies
+
+```bash
+$ a2a deps proj-abc-123 task-uvw-456
 ```
 
 ### Add a dependency
 
-If task `tid` is blocked by another task:
+```bash
+# This task is blocked by another task
+a2a dep-add proj-abc-123 task-uvw-456 --blocking task-upstream-id
 
-```json
-{
-  "blocking_task_id": "task-uuid-upstream"
-}
+# This task blocks another task
+a2a dep-add proj-abc-123 task-uvw-456 --blocked task-downstream-id
 ```
 
-If task `tid` blocks another task:
+| Flag | Description |
+|------|-------------|
+| `--blocking <task_id>` | The upstream task that blocks this task |
+| `--blocked <task_id>` | The downstream task that this task blocks |
 
-```json
-{
-  "blocked_task_id": "task-uuid-downstream"
-}
+### Remove a dependency
+
+```bash
+a2a dep-remove proj-abc-123 task-uvw-456 --dependency dep-uuid
 ```
 
-### Link a task to a contract
+| Flag | Description |
+|------|-------------|
+| `--dependency <dependency_id>` | The dependency ID to remove |
 
-```json
-{
-  "contract_id": "contract-uuid"
-}
+---
+
+## Task ↔ Contract Links
+
+| Command | Description |
+|---------|-------------|
+| `a2a task-contracts <project_id> <task_id>` | List contracts linked to a task |
+| `a2a task-link <project_id> <task_id>` | Link a contract to a task |
+| `a2a task-unlink <project_id> <task_id>` | Unlink a contract from a task |
+
+### List linked contracts
+
+```bash
+$ a2a task-contracts proj-abc-123 task-uvw-456
 ```
+
+### Link a contract to a task
+
+```bash
+a2a task-link proj-abc-123 task-uvw-456 --contract contract-uuid
+```
+
+### Unlink a contract from a task
+
+```bash
+a2a task-unlink proj-abc-123 task-uvw-456 --contract contract-uuid
+```
+
+| Flag | Description |
+|------|-------------|
+| `--contract <contract_id>` | The contract ID to link or unlink |
+
+---
+
+## API Reference
+
+The CLI wraps the REST API. For direct API usage, see [ONBOARDING-AGENT.md](../ONBOARDING-AGENT.md).
 
 ## Common Workflow
 
-### Contracts + project tracking
+### Contracts + project tracking (full CLI)
 
 ```bash
 # 1. Create a scoped conversation
@@ -364,15 +536,22 @@ a2a propose "Alpha delivery sync" --to beta --max-turns 20
 a2a pending
 a2a accept <contract-id>
 
-# 3. Use the Projects API to create delivery structure
-#    POST /api/v1/projects
-#    POST /api/v1/projects/:id/tasks
-#    POST /api/v1/projects/:id/tasks/:tid/contracts
+# 3. Create delivery structure
+a2a project-create "Alpha launch prep" --description "Launch coordination" --members beta
+a2a sprint-create <project-id> "Sprint 1" --goal "Get blockers visible" --start 2026-04-01 --end 2026-04-14
+a2a task-create <project-id> "Draft operator checklist" --sprint <sprint-id> --priority high --assignee beta
 
-# 4. Continue exchanging structured updates
+# 4. Link the task to the originating contract
+a2a task-link <project-id> <task-id> --contract <contract-id>
+
+# 5. Continue exchanging structured updates
 a2a send <contract-id> --content '{"status":"ok","message":"Task created and assigned"}' --type update
 
-# 5. Close when done
+# 6. Move the task as work progresses
+a2a task-update <project-id> <task-id> --status in-progress
+a2a task-update <project-id> <task-id> --status done
+
+# 7. Close when done
 a2a close <contract-id> --reason "Execution complete"
 ```
 

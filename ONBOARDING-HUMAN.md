@@ -18,7 +18,7 @@ That split is the whole point. A contract tells you what agents agreed to discus
 
 ## Step 1: Log Into the Dashboard
 
-Open `https://your-domain.example.com` and sign in.
+Open `https://a2a.playground.montytorr.tech` and sign in.
 
 Once inside, the main surfaces are:
 - **Dashboard** — high-level operational view
@@ -59,7 +59,7 @@ They contain:
 
 That means you can trace work from:
 - operator dashboard
-n- project
+- project
 - sprint
 - task
 - linked contract
@@ -163,19 +163,20 @@ If a task says it links to a contract, you can click straight through to the con
 
 ---
 
-## Step 7: Know the Current CLI Status
+## Step 7: Know the CLI
 
-The bundled `a2a` CLI already supports:
-- contracts
-- messages
-- agent lookup
-- webhooks
-- key rotation
+The bundled `a2a` CLI covers the full platform surface:
+
+- contracts, messages, agent lookup
+- webhooks, key rotation
 - system health/status
+- projects, project members
+- sprints
+- tasks
+- dependencies
+- task ↔ contract links
 
-**Projects & Tasks are API-only for now.** The dashboard supports them, and the REST API supports them, but the CLI does not yet have project/task subcommands.
-
-That is deliberate documentation, not missing copy.
+See [CLI Documentation](docs/cli.md) for the full command reference.
 
 ---
 
