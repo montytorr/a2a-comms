@@ -14,6 +14,32 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Bump version
+        id: version
+        run: |
+          cd /root/projects/a2a-comms
+          git pull --ff-only origin main || true
+          
+          # Read current version
+          CURRENT=$(node -p "require('./package.json').version")
+          
+          # Bump patch version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          
+          # Update package.json
+          sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" package.json
+          
+          # Commit version bump (skip CI to avoid loop)
+          git add package.json
+          git diff --cached --quiet || {
+            git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+            git push origin main
+          }
+          
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Deploy
         id: deploy
         run: |
@@ -22,8 +48,9 @@ jobs:
       - name: Notify Discord (success)
         if: success()
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s')
-          BODY="{\"content\": \"✅ **A2A Comms deployed** — \`${COMMIT_MSG}\`\"}"
+          BODY="{\"content\": \"✅ **A2A Comms v${VERSION} deployed** — \`${COMMIT_MSG}\`\"}"
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "User-Agent: A2AComms-CI/1.0" \

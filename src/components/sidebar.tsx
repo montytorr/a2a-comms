@@ -304,7 +304,7 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
             <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping opacity-30" />
           </div>
           <span className="text-[10px] text-gray-600 font-medium tracking-wide">Operational</span>
-          <span className="text-[9px] text-gray-700 ml-auto font-mono">v1.0</span>
+          <span className="text-[9px] text-gray-700 ml-auto font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
         </div>
       </div>
     </aside>
