@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  DISCORD_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
 jobs:
   deploy:
