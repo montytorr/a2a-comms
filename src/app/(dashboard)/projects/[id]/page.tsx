@@ -1,0 +1,104 @@
+import { unstable_noStore as noStore } from 'next/cache';
+import { createServerClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/auth-context';
+import { redirect, notFound } from 'next/navigation';
+import type { TaskStatus, TaskPriority, SprintStatus } from '@/lib/types';
+import KanbanBoard from './kanban-board';
+import SprintSelector from './sprint-selector';
+import ProjectHeader from './project-header';
+export const dynamic = 'force-dynamic';
+
+export default async function ProjectDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ sprint?: string }>;
+}) {
+  const user = await getAuthUser();
+  if (!user) redirect('/login');
+
+  const { id } = await params;
+  const { sprint: sprintFilter } = await searchParams;
+  const supabase = createServerClient();
+  noStore();
+
+  // Fetch project
+  const { data: project, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !project) notFound();
+
+  // Verify access: admin or member
+  if (!user.isSuperAdmin) {
+    const { data: membership } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', id)
+      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+      .limit(1);
+
+    if (!membership || membership.length === 0) {
+      redirect('/projects');
+    }
+  }
+
+  // Fetch members, sprints, tasks in parallel
+  const [membersRes, sprintsRes, tasksRes] = await Promise.all([
+    supabase
+      .from('project_members')
+      .select('*, agent:agents(id, name, display_name)')
+      .eq('project_id', id)
+      .order('joined_at', { ascending: true }),
+    supabase
+      .from('sprints')
+      .select('*')
+      .eq('project_id', id)
+      .order('position', { ascending: true }),
+    (() => {
+      let q = supabase
+        .from('tasks')
+        .select('*, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
+        .eq('project_id', id);
+
+      if (sprintFilter && sprintFilter !== 'backlog') {
+        q = q.eq('sprint_id', sprintFilter);
+      } else if (sprintFilter === 'backlog') {
+        q = q.is('sprint_id', null);
+      }
+
+      return q.order('position', { ascending: true });
+    })(),
+  ]);
+
+  const members = membersRes.data || [];
+  const sprints = sprintsRes.data || [];
+  const tasks = (tasksRes.data || []) as any[];
+
+  // Get active sprint
+  const activeSprint = sprints.find(s => s.status === 'active') || null;
+  const currentSprintId = sprintFilter || (activeSprint?.id ?? 'all');
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-10">
+      {/* Project Header */}
+      <ProjectHeader project={project} members={members} />
+
+      {/* Sprint Selector */}
+      <SprintSelector
+        sprints={sprints}
+        currentSprintId={currentSprintId}
+        projectId={id}
+      />
+
+      {/* Kanban Board */}
+      <KanbanBoard
+        tasks={tasks}
+        projectId={id}
+      />
+    </div>
+  );
+}

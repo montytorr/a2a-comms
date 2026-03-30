@@ -3,6 +3,11 @@
 // ============================================================
 
 export type ContractStatus = 'proposed' | 'active' | 'rejected' | 'expired' | 'cancelled' | 'closed';
+export type ProjectStatus = 'planning' | 'active' | 'completed' | 'archived';
+export type SprintStatus = 'planned' | 'active' | 'completed';
+export type TaskStatus = 'backlog' | 'todo' | 'in-progress' | 'in-review' | 'done' | 'cancelled';
+export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
+export type ProjectMemberRole = 'owner' | 'member';
 export type ParticipantRole = 'proposer' | 'invitee';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
 export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
@@ -190,4 +195,121 @@ export interface RegisterWebhookRequest {
   url: string;
   secret: string;
   events?: WebhookEventType[];
+}
+
+// ---- Projects & Tasks types ----
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string | null;
+  status: ProjectStatus;
+  owner_user_id: string | null;
+  created_by_agent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectMember {
+  id: string;
+  project_id: string;
+  agent_id: string;
+  role: ProjectMemberRole;
+  joined_at: string;
+}
+
+export interface Sprint {
+  id: string;
+  project_id: string;
+  title: string;
+  goal: string | null;
+  status: SprintStatus;
+  start_date: string | null;
+  end_date: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Task {
+  id: string;
+  project_id: string;
+  sprint_id: string | null;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignee_agent_id: string | null;
+  reporter_agent_id: string | null;
+  labels: string[];
+  due_date: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskDependency {
+  id: string;
+  blocking_task_id: string;
+  blocked_task_id: string;
+  created_at: string;
+}
+
+export interface TaskContract {
+  id: string;
+  task_id: string;
+  contract_id: string;
+  linked_at: string;
+}
+
+// ---- Projects & Tasks API request types ----
+
+export interface CreateProjectRequest {
+  title: string;
+  description?: string;
+  members?: string[]; // agent IDs to add as members
+}
+
+export interface UpdateProjectRequest {
+  title?: string;
+  description?: string;
+  status?: ProjectStatus;
+}
+
+export interface CreateSprintRequest {
+  title: string;
+  goal?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface UpdateSprintRequest {
+  title?: string;
+  goal?: string;
+  status?: SprintStatus;
+  start_date?: string;
+  end_date?: string;
+  position?: number;
+}
+
+export interface CreateTaskRequest {
+  title: string;
+  description?: string;
+  sprint_id?: string;
+  priority?: TaskPriority;
+  assignee_agent_id?: string;
+  labels?: string[];
+  due_date?: string;
+}
+
+export interface UpdateTaskRequest {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  sprint_id?: string | null;
+  assignee_agent_id?: string | null;
+  labels?: string[];
+  due_date?: string | null;
+  position?: number;
 }
