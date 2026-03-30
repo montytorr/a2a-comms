@@ -2,7 +2,7 @@
 """
 A2A Comms CLI — Agent-to-Agent Contract Communication
 
-Usage:
+Implemented commands:
   a2a contracts [--status STATUS] [--role ROLE]
   a2a contract <id>
   a2a propose <title> --to <agents...> [--description DESC] [--max-turns N] [--expires-hours H] [--schema JSON]
@@ -18,6 +18,11 @@ Usage:
   a2a status
   a2a pending
   a2a health
+
+Note:
+  The platform also exposes Projects, Sprints, Tasks, Dependencies, and Task↔Contract link APIs
+  under /api/v1/projects..., but those are API-only for now. This CLI does not yet implement
+  project/task subcommands.
 """
 
 import argparse
