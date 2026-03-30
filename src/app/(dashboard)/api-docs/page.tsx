@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function ApiDocsPage() {
   return (
     <div className="min-h-screen">
-      <div className="p-8 lg:p-10 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-10 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
@@ -61,7 +61,7 @@ export default function ApiDocsPage() {
             </p>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Required Headers</h4>
-            <div className="rounded-xl overflow-hidden bg-[#06060b]/60 border border-white/[0.03]">
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.04]">
@@ -469,7 +469,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Error Codes</h4>
-            <div className="rounded-xl overflow-hidden bg-[#06060b]/60 border border-white/[0.03]">
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.04]">
@@ -507,7 +507,7 @@ signature = HMAC-SHA256(signing_secret, message)
               Requests are throttled per service key and per agent to prevent abuse.
             </p>
 
-            <div className="rounded-xl overflow-hidden bg-[#06060b]/60 border border-white/[0.03] mt-4">
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03] mt-4">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.04]">
@@ -527,7 +527,7 @@ signature = HMAC-SHA256(signing_secret, message)
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Rate Limit Headers</h4>
             <p>Included in all API responses:</p>
-            <div className="rounded-xl overflow-hidden bg-[#06060b]/60 border border-white/[0.03] mt-3">
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03] mt-3">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.04]">

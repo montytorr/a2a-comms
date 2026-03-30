@@ -53,7 +53,7 @@ export default async function WebhooksPage() {
   }
 
   return (
-    <div className="p-8 lg:p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="flex items-end justify-between mb-8 animate-fade-in">
         <div>

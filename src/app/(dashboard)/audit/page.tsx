@@ -120,7 +120,7 @@ export default async function AuditPage({
   }
 
   return (
-    <div className="p-8 lg:p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="mb-8 animate-fade-in">
         <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Monitoring</p>

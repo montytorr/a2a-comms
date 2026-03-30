@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function SecurityPage() {
   return (
     <div className="min-h-screen">
-      <div className="p-8 lg:p-10 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-10 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
@@ -197,7 +197,7 @@ if nonce:
 
           {/* Rate Limits */}
           <Section title="Rate Limits" subtitle="Per-Key Throttling" idx={3}>
-            <div className="rounded-xl overflow-hidden bg-[#06060b]/60 border border-white/[0.03]">
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.04]">

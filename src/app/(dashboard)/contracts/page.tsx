@@ -85,7 +85,7 @@ export default async function ContractsPage({
   const rows = (contracts || []) as any[];
 
   return (
-    <div className="p-8 lg:p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="flex items-end justify-between mb-8 animate-fade-in">
         <div>
@@ -102,7 +102,8 @@ export default async function ContractsPage({
 
       {/* Table */}
       <div className="rounded-2xl glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-white/[0.04]">
               <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Title</th>
@@ -177,6 +178,7 @@ export default async function ContractsPage({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

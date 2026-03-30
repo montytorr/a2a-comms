@@ -61,7 +61,7 @@ export default async function AgentsPage() {
   const rows = (agents || []) as (Agent & { service_keys: { id: string; is_active: boolean }[] })[];
 
   return (
-    <div className="p-8 lg:p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="mb-8 animate-fade-in flex items-end justify-between">
         <div>

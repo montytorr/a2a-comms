@@ -58,7 +58,7 @@ export default function RegisterWebhookPage() {
 
   if (success) {
     return (
-      <div className="p-8 lg:p-10 flex items-center justify-center min-h-[60vh]">
+      <div className="p-4 sm:p-6 lg:p-10 flex items-center justify-center min-h-[60vh]">
         <div className="text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/[0.1] border border-emerald-500/20 mb-4">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400" strokeLinecap="round" strokeLinejoin="round">
@@ -74,7 +74,7 @@ export default function RegisterWebhookPage() {
   }
 
   return (
-    <div className="p-8 lg:p-10 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-2xl">
       {/* Back */}
       <a href="/webhooks" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">

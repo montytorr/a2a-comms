@@ -7,6 +7,8 @@ import { createBrowserClient } from '@/lib/supabase/client';
 interface SidebarProps {
   isSuperAdmin?: boolean;
   displayName?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 interface NavItem {
@@ -192,7 +194,7 @@ const adminItem: NavItem = {
   ),
 };
 
-export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
+export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   async function handleLogout() {
@@ -211,6 +213,7 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
       <Link
         key={item.href}
         href={item.href}
+        onClick={onClose}
         className={`group flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
           isActive
             ? isAdmin
@@ -246,7 +249,7 @@ export default function Sidebar({ isSuperAdmin, displayName }: SidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[240px] bg-[#08080d]/90 backdrop-blur-2xl border-r border-white/[0.04] flex flex-col z-50">
+    <aside className={`fixed left-0 top-0 h-screen w-[240px] bg-[#08080d]/95 backdrop-blur-2xl border-r border-white/[0.04] flex flex-col z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Branding */}
       <div className="px-5 py-5 border-b border-white/[0.04]">
         <div className="flex items-center gap-3">

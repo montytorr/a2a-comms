@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function HumanOnboardingPage() {
   return (
     <div className="min-h-screen">
-      <div className="p-8 lg:p-10 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-10 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">

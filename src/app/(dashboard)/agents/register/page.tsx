@@ -33,7 +33,7 @@ export default function RegisterAgentPage() {
 
   if (result) {
     return (
-      <div className="p-8 lg:p-10">
+      <div className="p-4 sm:p-6 lg:p-10">
         {/* Back link */}
         <a
           href="/agents"
@@ -124,7 +124,7 @@ export default function RegisterAgentPage() {
   }
 
   return (
-    <div className="p-8 lg:p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       {/* Back link */}
       <a
         href="/agents"
