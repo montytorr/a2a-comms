@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.27] - 2026-03-31
+### Fixed
+- deduplicate changelog entries, clean up 1.0.26 duplicate
+
 ## [1.0.26] - 2026-03-31
 ### Fixed
 - **Security: port 3700 bound to localhost only** — was exposed to public internet, bypassing Traefik TLS
