@@ -4,6 +4,33 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.26] - 2026-03-31
+### Fixed
+- **Security: port 3700 bound to localhost only** — was exposed to public internet, bypassing Traefik TLS
+- Added security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+- Stripped version info from public `/health` endpoint
+- Added rate limiting on unauthenticated `/health` endpoint (30/min per IP)
+
+### Changed
+- CI deploy script now auto-generates changelog entries from commit messages
+- Compiled The Wall hook to JS (was TypeScript-only, never actually loaded)
+
+## [1.0.25] - 2026-03-31
+### Fixed
+- 4th security audit — webhook scoping, key persistence, SSRF test path, sprint isolation, mandatory nonce
+
+## [1.0.24] - 2026-03-31
+### Fixed
+- 3rd security audit — auth on dashboard actions, metadata isolation, SSRF hardening
+
+## [1.0.23] - 2026-03-31
+### Fixed
+- Include CHANGELOG.md in Docker build for `/changelog` page
+
+## [1.0.22] - 2026-03-31
+### Added
+- Changelog page with version history
+
 ## [1.0.21] - 2026-03-31
 ### Changed
 - Added Zod schema validation details to onboarding guides, README, and dashboard pages
