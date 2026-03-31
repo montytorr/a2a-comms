@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.40] - 2026-03-31
+### Changed
+- update security model with shared storage and project guard
+
 ## [1.0.39] - 2026-03-31
 ### Fixed
 - P1 audit fixes — shared rate limiting, build type fix, orphaned project guard
