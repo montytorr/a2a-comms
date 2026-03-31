@@ -26,7 +26,24 @@ function getActionIcon(action: string) {
   if (action.includes('close')) return '🔒';
   if (action.includes('message') || action.includes('send')) return '💬';
   if (action.includes('kill')) return '⚡';
+  if (action.includes('project')) return '📁';
+  if (action.includes('task')) return '✏️';
+  if (action.includes('webhook')) return '🔗';
+  if (action.includes('agent') || action.includes('register')) return '🤖';
   return '•';
+}
+
+function getAuditLink(entry: AuditLogEntry): string | null {
+  if (!entry.resource_id && !entry.resource_type) return null;
+  switch (entry.resource_type) {
+    case 'contract': return entry.resource_id ? `/contracts/${entry.resource_id}` : null;
+    case 'project': return entry.resource_id ? `/projects/${entry.resource_id}` : null;
+    case 'agent': return entry.resource_id ? `/agents/${entry.resource_id}` : null;
+    case 'task': return '/projects';
+    case 'message': return '/messages';
+    case 'system': return '/kill-switch';
+    default: return null;
+  }
 }
 
 export default async function DashboardPage() {
@@ -62,6 +79,9 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(10);
 
+  // Scoped project/task queries for non-admin
+  let scopedProjectIds: string[] | null = null;
+
   if (!isAdmin && agentIds.length > 0) {
     // For contracts, we need to check contract_participants for the user's agents
     // Get contract IDs where user's agents are participants
@@ -70,6 +90,13 @@ export default async function DashboardPage() {
       .select('contract_id')
       .in('agent_id', agentIds);
     const contractIds = (participantContracts || []).map(p => p.contract_id);
+
+    // Get project IDs where user's agents are members
+    const { data: memberProjects } = await supabase
+      .from('project_members')
+      .select('project_id')
+      .in('agent_id', agentIds);
+    scopedProjectIds = (memberProjects || []).map(p => p.project_id);
 
     if (contractIds.length > 0) {
       contractsQuery = supabase
@@ -116,6 +143,7 @@ export default async function DashboardPage() {
     }
   } else if (!isAdmin && agentIds.length === 0) {
     // No agents — show nothing
+    scopedProjectIds = [];
     contractsQuery = supabase
       .from('contracts')
       .select('id, status')
@@ -135,7 +163,46 @@ export default async function DashboardPage() {
       .limit(10);
   }
 
-  const [contractsRes, messagesRes, configRes, auditRes, pendingRes] = await Promise.all([
+  // Build second-row stat queries
+  // Total Agents — always global (public info)
+  const agentsCountQuery = supabase
+    .from('agents')
+    .select('id', { count: 'exact', head: true });
+
+  // Active Projects — scoped for non-admin
+  let activeProjectsQuery = supabase
+    .from('projects')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'active');
+  if (scopedProjectIds !== null) {
+    if (scopedProjectIds.length > 0) {
+      activeProjectsQuery = activeProjectsQuery.in('id', scopedProjectIds);
+    } else {
+      activeProjectsQuery = activeProjectsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+    }
+  }
+
+  // Tasks In Progress — scoped via project
+  let tasksInProgressQuery = supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'in-progress');
+  if (scopedProjectIds !== null) {
+    if (scopedProjectIds.length > 0) {
+      tasksInProgressQuery = tasksInProgressQuery.in('project_id', scopedProjectIds);
+    } else {
+      tasksInProgressQuery = tasksInProgressQuery.eq('project_id', '00000000-0000-0000-0000-000000000000');
+    }
+  }
+
+  // Webhook Deliveries (24h)
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const webhookDeliveriesQuery = supabase
+    .from('webhooks')
+    .select('id', { count: 'exact', head: true })
+    .gte('last_delivery_at', twentyFourHoursAgo);
+
+  const [contractsRes, messagesRes, configRes, auditRes, pendingRes, agentsCountRes, activeProjectsRes, tasksInProgressRes, webhookDeliveriesRes] = await Promise.all([
     contractsQuery,
     messagesQuery,
     supabase
@@ -145,6 +212,10 @@ export default async function DashboardPage() {
       .single(),
     auditQuery,
     pendingQuery,
+    agentsCountQuery,
+    activeProjectsQuery,
+    tasksInProgressQuery,
+    webhookDeliveriesQuery,
   ]);
 
   const activeContracts = (contractsRes.data as Contract[] | null) || [];
@@ -153,6 +224,10 @@ export default async function DashboardPage() {
   const killSwitch = configRes.data as SystemConfig | null;
   const isKillSwitchActive = (killSwitch?.value as Record<string, unknown>)?.active === true;
   const recentAudit = (auditRes.data as AuditLogEntry[] | null) || [];
+  const totalAgents = agentsCountRes.count || 0;
+  const activeProjects = activeProjectsRes.count || 0;
+  const tasksInProgress = tasksInProgressRes.count || 0;
+  const webhookDeliveries = webhookDeliveriesRes.count || 0;
 
   return (
     <AutoRefresh intervalMs={15000}>
@@ -166,8 +241,8 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      {/* Stats Grid — Row 1 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {/* Active Contracts */}
         <Link
           href="/contracts?status=active"
@@ -295,6 +370,105 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      {/* Stats Grid — Row 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {/* Total Agents */}
+        <Link
+          href="/agents"
+          className="group relative rounded-2xl glass-card-hover overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/[0.06] to-rose-600/[0.03] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-500/20 to-transparent" />
+          <div className="relative p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Total Agents</p>
+              <div className="w-8 h-8 rounded-lg bg-pink-500/[0.08] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-pink-400">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-[42px] font-bold text-pink-400 tracking-tighter leading-none animate-data-shimmer">
+              {totalAgents}
+            </p>
+            <p className="text-[11px] text-gray-600 mt-2 group-hover:text-gray-400 transition-colors">View all agents →</p>
+          </div>
+        </Link>
+
+        {/* Active Projects */}
+        <Link
+          href="/projects"
+          className="group relative rounded-2xl glass-card-hover overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-500/[0.06] to-teal-600/[0.03] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/20 to-transparent" />
+          <div className="relative p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Active Projects</p>
+              <div className="w-8 h-8 rounded-lg bg-teal-500/[0.08] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-teal-400">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-[42px] font-bold text-teal-400 tracking-tighter leading-none animate-data-shimmer">
+              {activeProjects}
+            </p>
+            <p className="text-[11px] text-gray-600 mt-2 group-hover:text-gray-400 transition-colors">View projects →</p>
+          </div>
+        </Link>
+
+        {/* Tasks In Progress */}
+        <Link
+          href="/projects"
+          className="group relative rounded-2xl glass-card-hover overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.06] to-indigo-600/[0.03] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+          <div className="relative p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Tasks In Progress</p>
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/[0.08] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-indigo-400">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-[42px] font-bold text-indigo-400 tracking-tighter leading-none animate-data-shimmer">
+              {tasksInProgress}
+            </p>
+            <p className="text-[11px] text-gray-600 mt-2 group-hover:text-gray-400 transition-colors">View tasks →</p>
+          </div>
+        </Link>
+
+        {/* Webhook Deliveries (24h) */}
+        <Link
+          href="/webhooks"
+          className="group relative rounded-2xl glass-card-hover overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.06] to-yellow-600/[0.03] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+          <div className="relative p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Webhooks (24h)</p>
+              <div className="w-8 h-8 rounded-lg bg-amber-500/[0.08] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-amber-400">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-[42px] font-bold text-amber-400 tracking-tighter leading-none animate-data-shimmer">
+              {webhookDeliveries}
+            </p>
+            <p className="text-[11px] text-gray-600 mt-2 group-hover:text-gray-400 transition-colors">View webhooks →</p>
+          </div>
+        </Link>
+      </div>
+
       {/* Recent Activity */}
       <div className="rounded-2xl glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.15s' }}>
         <div className="px-6 py-4 border-b border-white/[0.04] flex items-center justify-between">
@@ -320,7 +494,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             recentAudit.map((entry, idx) => {
-              const isContract = entry.resource_type === 'contract' && entry.resource_id;
+              const linkHref = getAuditLink(entry);
               const inner = (
                 <>
                   {/* Timeline connector */}
@@ -348,7 +522,7 @@ export default async function DashboardPage() {
                     <span className="text-[10px] text-gray-600 whitespace-nowrap font-mono tabular-nums">
                       {timeAgo(entry.created_at)}
                     </span>
-                    {isContract && (
+                    {linkHref && (
                       <svg className="w-3 h-3 text-gray-700 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
@@ -356,13 +530,13 @@ export default async function DashboardPage() {
                   </div>
                 </>
               );
-              const className = "px-6 py-3 flex items-start gap-0 hover:bg-white/[0.015] transition-all duration-200 group cursor-pointer";
-              return isContract ? (
-                <Link key={entry.id} href={`/contracts/${entry.resource_id}`} className={className}>
+              const rowClassName = "px-6 py-3 flex items-start gap-0 hover:bg-white/[0.015] transition-all duration-200 group cursor-pointer";
+              return linkHref ? (
+                <Link key={entry.id} href={linkHref} className={rowClassName}>
                   {inner}
                 </Link>
               ) : (
-                <div key={entry.id} className={className}>
+                <div key={entry.id} className={rowClassName}>
                   {inner}
                 </div>
               );
