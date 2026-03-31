@@ -1,0 +1,78 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="100" x2="900" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#111C33"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(512 512) rotate(90) scale(360 360)">
+      <stop stop-color="#173257" stop-opacity="0.75"/>
+      <stop offset="0.55" stop-color="#0F1B33" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leftGrad" x1="214" y1="250" x2="470" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2DD4BF"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="rightGrad" x1="810" y1="250" x2="560" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="392" y1="392" x2="632" y2="632" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#CFE2FF"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="170" y1="170" x2="860" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.34 0"/>
+    </filter>
+  </defs>
+
+  <rect x="64" y="64" width="896" height="896" rx="220" fill="url(#bg)"/>
+  <rect x="66" y="66" width="892" height="892" rx="218" stroke="#E2E8F0" stroke-opacity="0.07" stroke-width="4"/>
+  <circle cx="512" cy="512" r="340" fill="url(#glow)"/>
+
+  <!-- protocol orbit -->
+  <circle cx="512" cy="512" r="312" stroke="url(#orbit)" stroke-opacity="0.18" stroke-width="16"/>
+  <circle cx="512" cy="512" r="312" stroke="#E2E8F0" stroke-opacity="0.08" stroke-width="4" stroke-dasharray="2 26"/>
+
+  <!-- shared primitive nodes -->
+  <g opacity="0.55">
+    <circle cx="512" cy="200" r="18" fill="#22D3EE"/>
+    <circle cx="824" cy="512" r="18" fill="#8B5CF6"/>
+    <circle cx="512" cy="824" r="18" fill="#22D3EE"/>
+    <circle cx="200" cy="512" r="18" fill="#8B5CF6"/>
+  </g>
+
+  <!-- outer glow for agent wedges -->
+  <path d="M214 246L438 512L214 778V640L332 512L214 384V246Z" fill="#22D3EE" opacity="0.25" filter="url(#softGlow)"/>
+  <path d="M810 246L586 512L810 778V640L692 512L810 384V246Z" fill="#8B5CF6" opacity="0.25" filter="url(#softGlow)"/>
+
+  <!-- agent wedges -->
+  <path d="M214 246L438 512L214 778V640L332 512L214 384V246Z" fill="url(#leftGrad)"/>
+  <path d="M810 246L586 512L810 778V640L692 512L810 384V246Z" fill="url(#rightGrad)"/>
+
+  <!-- bridge rails -->
+  <rect x="322" y="496" width="96" height="32" rx="16" fill="#D1FAF5" opacity="0.28"/>
+  <rect x="606" y="496" width="96" height="32" rx="16" fill="#E9D5FF" opacity="0.28"/>
+
+  <!-- central contract / project tile -->
+  <rect x="392" y="392" width="240" height="240" rx="56" fill="url(#tile)"/>
+  <rect x="392" y="392" width="240" height="240" rx="56" stroke="#F8FBFF" stroke-opacity="0.4" stroke-width="6"/>
+  <path d="M410 420H614V470C614 470 544 450 498 450C454 450 410 468 410 468V420Z" fill="#FFFFFF" fill-opacity="0.28"/>
+
+  <g>
+    <rect x="444" y="444" width="56" height="56" rx="16" fill="#0F172A"/>
+    <rect x="524" y="444" width="56" height="56" rx="16" fill="#0F172A" opacity="0.72"/>
+    <rect x="444" y="524" width="56" height="56" rx="16" fill="#0F172A" opacity="0.72"/>
+    <rect x="524" y="524" width="56" height="56" rx="16" fill="#0F172A"/>
+  </g>
+</svg>
