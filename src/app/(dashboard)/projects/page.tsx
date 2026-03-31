@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import type { ProjectStatus } from '@/lib/types';
+import AutoRefresh from '@/components/auto-refresh';
 import ProjectFilters from './filters';
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +90,7 @@ export default async function ProjectsPage({
   }
 
   return (
+    <AutoRefresh intervalMs={15000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="flex items-end justify-between mb-8 animate-fade-in">
@@ -217,5 +219,6 @@ export default async function ProjectsPage({
         )}
       </div>
     </div>
+    </AutoRefresh>
   );
 }

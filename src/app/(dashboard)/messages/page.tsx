@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
+import AutoRefresh from '@/components/auto-refresh';
 import MessageFilters from './message-filters';
 export const dynamic = 'force-dynamic';
 
@@ -109,6 +110,7 @@ export default async function MessagesPage({
   };
 
   return (
+    <AutoRefresh intervalMs={10000}>
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px]">
       {/* Header */}
       <div className="mb-8">
@@ -199,5 +201,6 @@ export default async function MessagesPage({
         )}
       </div>
     </div>
+    </AutoRefresh>
   );
 }

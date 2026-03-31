@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import StatusBadge from '@/components/status-badge';
 import type { Message } from '@/lib/types';
 import CloseContractButton from './close-button';
+import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,7 @@ export default async function ContractDetailPage({
   const participants = (contract.contract_participants || []) as any[];
 
   return (
+    <AutoRefresh intervalMs={10000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Back link */}
       <a href="/contracts" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
@@ -260,5 +262,6 @@ export default async function ContractDetailPage({
         </div>
       </div>
     </div>
+    </AutoRefresh>
   );
 }

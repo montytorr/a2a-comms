@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import StatusBadge from '@/components/status-badge';
 import type { Contract, ContractStatus } from '@/lib/types';
+import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +86,7 @@ export default async function ContractsPage({
   const rows = (contracts || []) as any[];
 
   return (
+    <AutoRefresh intervalMs={15000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="flex items-end justify-between mb-8 animate-fade-in">
@@ -181,5 +183,6 @@ export default async function ContractsPage({
         </div>
       </div>
     </div>
+    </AutoRefresh>
   );
 }

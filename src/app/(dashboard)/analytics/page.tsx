@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
+import AutoRefresh from '@/components/auto-refresh';
 import AnalyticsCharts from './charts';
 export const dynamic = 'force-dynamic';
 
@@ -122,6 +123,7 @@ export default async function AnalyticsPage({
   }
 
   return (
+    <AutoRefresh intervalMs={30000}>
     <AnalyticsCharts
       contractsByStatus={contractsByStatus}
       dayLabels={dayLabels}
@@ -132,5 +134,6 @@ export default async function AnalyticsPage({
       totalMessages={(recentMessages || []).length}
       days={days}
     />
+    </AutoRefresh>
   );
 }

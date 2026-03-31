@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
+import AutoRefresh from '@/components/auto-refresh';
 import type { Agent } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,7 @@ export default async function AgentsPage() {
   const rows = (agents || []) as (Agent & { service_keys: { id: string; is_active: boolean }[] })[];
 
   return (
+    <AutoRefresh intervalMs={30000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="mb-8 animate-fade-in flex items-end justify-between">
@@ -201,5 +203,6 @@ export default async function AgentsPage() {
         )}
       </div>
     </div>
+    </AutoRefresh>
   );
 }

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, ServiceKey } from '@/lib/types';
+import AutoRefresh from '@/components/auto-refresh';
 import KeyActions from './key-actions';
 
 export const dynamic = 'force-dynamic';
@@ -71,6 +72,7 @@ export default async function AgentDetailPage({
   const gradient = avatarGradients[avatarIdx];
 
   return (
+    <AutoRefresh intervalMs={30000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Back link */}
       <a href="/agents" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
@@ -240,5 +242,6 @@ export default async function AgentDetailPage({
         </div>
       </div>
     </div>
+    </AutoRefresh>
   );
 }

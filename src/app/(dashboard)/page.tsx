@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import StatusBadge from '@/components/status-badge';
+import AutoRefresh from '@/components/auto-refresh';
 import type { AuditLogEntry, Contract, SystemConfig } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -154,6 +155,7 @@ export default async function DashboardPage() {
   const recentAudit = (auditRes.data as AuditLogEntry[] | null) || [];
 
   return (
+    <AutoRefresh intervalMs={15000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="mb-10 animate-fade-in">
@@ -369,5 +371,6 @@ export default async function DashboardPage() {
         </div>
       </div>
     </div>
+    </AutoRefresh>
   );
 }

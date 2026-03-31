@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import type { AuditLogEntry } from '@/lib/types';
 import AuditTable from './audit-table';
+import AutoRefresh from '@/components/auto-refresh';
 import AuditFilters from './audit-filters';
 export const dynamic = 'force-dynamic';
 
@@ -120,6 +121,7 @@ export default async function AuditPage({
   }
 
   return (
+    <AutoRefresh intervalMs={15000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="mb-8 animate-fade-in">
@@ -163,5 +165,6 @@ export default async function AuditPage({
         </div>
       )}
     </div>
+    </AutoRefresh>
   );
 }
