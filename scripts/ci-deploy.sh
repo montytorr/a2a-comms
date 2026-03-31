@@ -17,6 +17,9 @@ git diff --cached --quiet || {
   git push origin main
 }
 
+# Stop and remove existing container to avoid name conflicts
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans 2>&1 || true
+
 # Build and deploy with prod overlay
 docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache 2>&1
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d 2>&1
