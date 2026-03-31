@@ -53,11 +53,11 @@ export async function GET(
   const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes] = await Promise.all([
     supabase
       .from('task_dependencies')
-      .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+      .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
     supabase
       .from('task_dependencies')
-      .select('*, blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status)')
+      .select('*, blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
     supabase
       .from('task_contracts')
@@ -74,11 +74,34 @@ export async function GET(
       : Promise.resolve({ data: null }),
   ]);
 
+  // Filter dependencies to same-project tasks only
+  const blockedBy = (depsBlockingRes.data || [])
+    .filter(d => d.blocking_task?.project_id === id)
+    .map(d => ({ id: d.blocking_task.id, title: d.blocking_task.title, status: d.blocking_task.status }));
+
+  const blocks = (depsBlockedRes.data || [])
+    .filter(d => d.blocked_task?.project_id === id)
+    .map(d => ({ id: d.blocked_task.id, title: d.blocked_task.title, status: d.blocked_task.status }));
+
+  // Filter linked contracts to ones the caller participates in
+  const contractIds = (contractsRes.data || []).map(d => d.contract?.id).filter(Boolean);
+  let visibleContractIds = new Set<string>();
+  if (contractIds.length > 0) {
+    const { data: participation } = await supabase
+      .from('contract_participants')
+      .select('contract_id')
+      .eq('agent_id', auth.agent.id)
+      .in('contract_id', contractIds);
+    visibleContractIds = new Set((participation || []).map(p => p.contract_id));
+  }
+
   return NextResponse.json({
     ...task,
-    blocked_by: (depsBlockingRes.data || []).map(d => d.blocking_task),
-    blocks: (depsBlockedRes.data || []).map(d => d.blocked_task),
-    linked_contracts: (contractsRes.data || []).map(d => d.contract),
+    blocked_by: blockedBy,
+    blocks: blocks,
+    linked_contracts: (contractsRes.data || [])
+      .filter(d => d.contract?.id && visibleContractIds.has(d.contract.id))
+      .map(d => d.contract),
     assignee: assigneeRes.data || null,
     reporter: reporterRes.data || null,
     sprint: sprintRes.data || null,

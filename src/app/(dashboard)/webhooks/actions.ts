@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/auth-context';
 import { createHmac } from 'crypto';
 
 export interface WebhookTestResult {
@@ -12,6 +13,9 @@ export interface WebhookTestResult {
 }
 
 export async function testWebhook(webhookId: string): Promise<WebhookTestResult> {
+  const user = await getAuthUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
   const supabase = createServerClient();
 
   // Fetch webhook with its secret
@@ -23,6 +27,19 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
 
   if (fetchError || !webhook) {
     return { success: false, error: 'Webhook not found' };
+  }
+
+  // Verify ownership: user must own the agent or be admin
+  if (!user.isSuperAdmin) {
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('owner_user_id')
+      .eq('id', webhook.agent_id)
+      .single();
+
+    if (!agent || agent.owner_user_id !== user.id) {
+      return { success: false, error: 'You can only test webhooks for your own agents' };
+    }
   }
 
   const payload = JSON.stringify({

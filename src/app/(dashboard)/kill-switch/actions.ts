@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/auth-context';
 
 export async function getKillSwitchStatus(): Promise<{
   enabled: boolean;
@@ -20,13 +21,17 @@ export async function getKillSwitchStatus(): Promise<{
   }
 
   return {
-    enabled: (data.value as any)?.enabled === true,
+    enabled: (data.value as any)?.active === true,
     updated_at: data.updated_at,
     updated_by: data.updated_by,
   };
 }
 
 export async function activateKillSwitch() {
+  const user = await getAuthUser();
+  if (!user) throw new Error('Not authenticated');
+  if (!user.isSuperAdmin) throw new Error('Admin access required');
+
   const supabase = createServerClient();
   const now = new Date().toISOString();
 
@@ -35,9 +40,9 @@ export async function activateKillSwitch() {
     .from('system_config')
     .upsert({
       key: 'kill_switch',
-      value: { enabled: true, activated_at: now },
+      value: { active: true, activated_at: now },
       updated_at: now,
-      updated_by: 'operator',
+      updated_by: user.displayName,
     });
 
   // Close all active contracts
@@ -64,7 +69,7 @@ export async function activateKillSwitch() {
 
   // Audit log
   await supabase.from('audit_log').insert({
-    actor: 'operator',
+    actor: user.displayName,
     action: 'killswitch.activate',
     resource_type: 'system',
     details: { reason: 'Kill switch activated via UI' },
@@ -72,6 +77,10 @@ export async function activateKillSwitch() {
 }
 
 export async function deactivateKillSwitch() {
+  const user = await getAuthUser();
+  if (!user) throw new Error('Not authenticated');
+  if (!user.isSuperAdmin) throw new Error('Admin access required');
+
   const supabase = createServerClient();
   const now = new Date().toISOString();
 
@@ -80,14 +89,14 @@ export async function deactivateKillSwitch() {
     .from('system_config')
     .upsert({
       key: 'kill_switch',
-      value: { enabled: false, deactivated_at: now },
+      value: { active: false, deactivated_at: now },
       updated_at: now,
-      updated_by: 'operator',
+      updated_by: user.displayName,
     });
 
   // Audit log
   await supabase.from('audit_log').insert({
-    actor: 'operator',
+    actor: user.displayName,
     action: 'killswitch.deactivate',
     resource_type: 'system',
     details: { reason: 'Kill switch deactivated via UI' },

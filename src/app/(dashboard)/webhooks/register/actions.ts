@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
+import { validateWebhookUrl } from '@/lib/url-validator';
 
 export async function getAgents() {
   const user = await getAuthUser();
@@ -46,6 +47,12 @@ export async function registerWebhook(params: {
 
   if (!user.isSuperAdmin && agent.owner_user_id !== user.id) {
     return { error: 'You can only register webhooks for your own agents' };
+  }
+
+  // SSRF protection: validate webhook URL
+  const urlCheck = validateWebhookUrl(params.url);
+  if (!urlCheck.valid) {
+    return { error: urlCheck.error || 'Invalid webhook URL' };
   }
 
   // Check for duplicate URL per agent

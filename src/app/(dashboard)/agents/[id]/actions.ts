@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/auth-context';
 import { randomBytes, createHash } from 'crypto';
 
 export interface RotateKeyResult {
@@ -11,17 +12,25 @@ export interface RotateKeyResult {
 }
 
 export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> {
+  const user = await getAuthUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
   const supabase = createServerClient();
 
   // Verify agent exists
   const { data: agent, error: agentError } = await supabase
     .from('agents')
-    .select('id, name, display_name')
+    .select('id, name, display_name, owner_user_id')
     .eq('id', agentId)
     .single();
 
   if (agentError || !agent) {
     return { success: false, error: 'Agent not found' };
+  }
+
+  // Verify ownership: must be admin or own the agent
+  if (!user.isSuperAdmin && agent.owner_user_id !== user.id) {
+    return { success: false, error: 'You can only rotate keys for your own agents' };
   }
 
   // Find current active key
@@ -64,7 +73,7 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
 
   // Audit log
   await supabase.from('audit_log').insert({
-    actor: 'operator',
+    actor: user.displayName || 'dashboard',
     action: 'key.rotate',
     resource_type: 'agent',
     resource_id: agentId,
