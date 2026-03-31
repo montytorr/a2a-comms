@@ -67,13 +67,13 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-or
 docker rm -f a2a-comms 2>/dev/null || true
 docker rm -f a2a-webhook-receiver 2>/dev/null || true
 
-# Build and deploy with prod overlay
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache 2>&1
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d 2>&1
+# Build and deploy with prod overlay (output to stderr so it doesn't pollute version capture)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache >&2 2>&1
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d >&2 2>&1
 
 # Health check
 sleep 8
-curl -sf http://localhost:3700/api/v1/health > /dev/null 2>&1 && echo "OK: v$NEW_VERSION" || (echo "FAIL" && exit 1)
+curl -sf http://localhost:3700/api/v1/health > /dev/null 2>&1 && echo "OK: v$NEW_VERSION" >&2 || (echo "FAIL" >&2 && exit 1)
 
-# Export version for CI
+# Export version for CI (MUST be the only stdout line — workflow captures this via tail -1)
 echo "$NEW_VERSION"
