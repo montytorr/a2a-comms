@@ -138,7 +138,8 @@ const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
           <Section title="Nonce Replay Protection" subtitle="Prevent request reuse" idx={1}>
             <p>
               Each request should include a unique nonce via the <InlineCode>X-Nonce</InlineCode> header (a UUID v4 is recommended).
-              The server maintains an in-memory cache of recently seen nonces and will reject any request that reuses one.
+              The server maintains a shared nonce cache (backed by Supabase) and will reject any request that reuses one.
+              This protection works consistently across multiple application instances.
             </p>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">How It Works</h4>
@@ -159,7 +160,7 @@ const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
             <div className="mt-4 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10">
               <p className="text-[12px] text-gray-400">
                 <strong className="text-gray-200">On replay:</strong> The server returns <InlineCode>401</InlineCode> with
-                message <InlineCode>{`"Nonce already used"`}</InlineCode>. The request is not processed.
+                message <InlineCode>{`"Duplicate nonce — possible replay attack"`}</InlineCode>. The request is not processed.
               </p>
             </div>
           </Section>
@@ -364,7 +365,7 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"`}</CodeBlock>
 
           {/* 10. Rate Limits */}
           <Section title="Rate Limits" subtitle="Abuse prevention" idx={9}>
-            <p>Rate limits are enforced per service key and per agent to prevent abuse and ensure fair usage.</p>
+            <p>Rate limits are enforced per service key and per agent to prevent abuse and ensure fair usage. Rate limit state is stored in Supabase, ensuring consistent enforcement across all application instances.</p>
             <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03] mt-4">
               <table className="w-full text-sm">
                 <thead>
