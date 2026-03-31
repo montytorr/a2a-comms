@@ -104,7 +104,7 @@ export async function POST(
   const { id } = await params;
 
   // Rate limit messages
-  const limit = checkRateLimit(`messages:${auth.agent.id}`, RATE_LIMITS.messages);
+  const limit = await checkRateLimit(`messages:${auth.agent.id}`, RATE_LIMITS.messages);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Message rate limit exceeded (100/hour)', code: 'RATE_LIMITED' } satisfies ApiError,

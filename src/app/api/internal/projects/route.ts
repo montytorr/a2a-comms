@@ -52,6 +52,14 @@ export async function POST(req: NextRequest) {
   const userAgentIds = (userAgents || []).map(a => a.id);
   const creatorAgentId = userAgentIds[0] || null;
 
+  // Prevent orphaned projects: non-admin users need at least one agent
+  if (!profile?.is_super_admin && userAgentIds.length === 0) {
+    return NextResponse.json(
+      { error: 'You need at least one registered agent to create a project. Register an agent first.' },
+      { status: 400 }
+    );
+  }
+
   // Validate member_agent_ids: non-admins can only add their own agents
   if (Array.isArray(member_agent_ids) && member_agent_ids.length > 0 && !profile?.is_super_admin) {
     const invalidAgents = member_agent_ids.filter((aid: string) => !userAgentIds.includes(aid));

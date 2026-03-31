@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   const { auth, body } = result;
 
   // Rate limit proposals
-  const limit = checkRateLimit(`proposals:${auth.agent.id}`, RATE_LIMITS.proposals);
+  const limit = await checkRateLimit(`proposals:${auth.agent.id}`, RATE_LIMITS.proposals);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Proposal rate limit exceeded (10/hour)', code: 'RATE_LIMITED' } satisfies ApiError,

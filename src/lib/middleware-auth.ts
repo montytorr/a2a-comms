@@ -56,7 +56,7 @@ export async function authenticateApiRequest(
   }
 
   // Global rate limit
-  const globalLimit = checkRateLimit(
+  const globalLimit = await checkRateLimit(
     `global:${hmacResult.keyId}`,
     RATE_LIMITS.global
   );

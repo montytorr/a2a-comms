@@ -1,24 +1,71 @@
-// NOTE: In-memory storage — SINGLE-INSTANCE ONLY.
-// In multi-instance deployments, nonce replay protection and rate limiting
-// will NOT work correctly. Replace with Redis or equivalent shared store
-// before horizontal scaling. See: https://github.com/montytorr/a2a-comms/issues
+// ── Nonce replay protection ──
+// Primary: Supabase `nonce_cache` table (shared across instances).
+// Fallback: in-memory Map (single-instance only, used when Supabase is unreachable).
+// Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
 import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
 
 const TIMESTAMP_TOLERANCE_SECONDS = 300; // ±5 minutes
 const MAX_BODY_SIZE = 50 * 1024; // 50KB
 
-// ── Nonce replay protection (in-memory, same pattern as rate-limit.ts) ──
+// ── In-memory fallback for nonce replay protection ──
+const fallbackNonceCache = new Map<string, number>(); // nonce → expiry timestamp (ms)
 
-const nonceCache = new Map<string, number>(); // nonce → expiry timestamp (ms)
-
-// Clean up expired nonces every 5 minutes
-setInterval(() => {
+// Clean up expired nonces every 5 minutes (fallback + Supabase cleanup)
+setInterval(async () => {
+  // Clean fallback cache
   const now = Date.now();
-  for (const [nonce, expiresAt] of nonceCache) {
-    if (expiresAt < now) nonceCache.delete(nonce);
+  for (const [nonce, expiresAt] of fallbackNonceCache) {
+    if (expiresAt < now) fallbackNonceCache.delete(nonce);
+  }
+  // Also trigger Supabase cleanup
+  try {
+    const supabase = createServerClient();
+    await supabase.rpc('cleanup_expired_nonces');
+  } catch {
+    // Supabase cleanup failed — fallback cache handles it locally
   }
 }, 5 * 60 * 1000);
+
+/**
+ * Check if a nonce has been seen before and record it.
+ * Uses Supabase shared storage with in-memory fallback.
+ */
+async function checkAndRecordNonce(nonce: string, expiresAtMs: number): Promise<boolean> {
+  try {
+    const supabase = createServerClient();
+    const expiresAt = new Date(expiresAtMs).toISOString();
+
+    // Check existence
+    const { data: existing } = await supabase
+      .from('nonce_cache')
+      .select('nonce')
+      .eq('nonce', nonce)
+      .maybeSingle();
+
+    if (existing) return true; // duplicate
+
+    // Insert — conflict = duplicate nonce
+    const { error: insertError } = await supabase
+      .from('nonce_cache')
+      .insert({ nonce, expires_at: expiresAt });
+
+    if (insertError) {
+      // Unique constraint violation = duplicate nonce
+      if (insertError.code === '23505') return true;
+      throw insertError;
+    }
+
+    return false; // new nonce, recorded
+  } catch (err) {
+    // Supabase unreachable — fall back to in-memory
+    console.warn('[hmac] Supabase nonce check failed, using in-memory fallback:', err);
+
+    if (fallbackNonceCache.has(nonce)) return true;
+    fallbackNonceCache.set(nonce, expiresAtMs);
+    return false;
+  }
+}
 
 // ── RFC 8785 JSON Canonicalization ──
 
@@ -67,8 +114,8 @@ export interface HmacValidationResult {
  *   X-Nonce: <uuid>            — unique request nonce (required)
  */
 /**
- * @warning Uses in-memory nonce cache. Single-instance only.
- * For horizontal scaling, replace nonceCache with Redis.
+ * Validate HMAC-signed API request.
+ * Nonce replay protection uses Supabase shared storage (falls back to in-memory).
  */
 export async function validateHmac(
   method: string,
@@ -103,18 +150,17 @@ export async function validateHmac(
     };
   }
 
-  // Nonce replay protection
+  // Nonce replay protection (shared via Supabase, in-memory fallback)
   if (nonce) {
-    if (nonceCache.has(nonce)) {
+    const nonceExpiresAt = Date.now() + TIMESTAMP_TOLERANCE_SECONDS * 1000;
+    const isDuplicate = await checkAndRecordNonce(nonce, nonceExpiresAt);
+    if (isDuplicate) {
       return {
         valid: false,
         error: 'Duplicate nonce — possible replay attack',
         code: 'NONCE_REPLAY',
       };
     }
-    // Store nonce with TTL matching timestamp tolerance window
-    const nonceExpiresAt = Date.now() + TIMESTAMP_TOLERANCE_SECONDS * 1000;
-    nonceCache.set(nonce, nonceExpiresAt);
   } else {
     return {
       valid: false,

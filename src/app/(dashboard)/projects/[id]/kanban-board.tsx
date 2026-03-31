@@ -45,7 +45,7 @@ function getAvatarIndex(name: string): number {
   return Math.abs(hash) % avatarGradients.length;
 }
 
-interface TaskRow {
+export interface TaskRow {
   id: string;
   title: string;
   status: string;

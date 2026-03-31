@@ -1,20 +1,29 @@
-// NOTE: In-memory storage — SINGLE-INSTANCE ONLY.
-// In multi-instance deployments, nonce replay protection and rate limiting
-// will NOT work correctly. Replace with Redis or equivalent shared store
-// before horizontal scaling. See: https://github.com/montytorr/a2a-comms/issues
+// ── Rate Limiting ──
+// Primary: Supabase `rate_limit_buckets` table (shared across instances).
+// Fallback: in-memory Map (single-instance only, used when Supabase is unreachable).
+// Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
+
+import { createServerClient } from './supabase/server';
 
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
-const buckets = new Map<string, RateLimitEntry>();
+// ── In-memory fallback ──
+const fallbackBuckets = new Map<string, RateLimitEntry>();
 
-// Clean up stale entries every 5 minutes
-setInterval(() => {
+// Clean up stale entries every 5 minutes (fallback + Supabase cleanup)
+setInterval(async () => {
   const now = Date.now();
-  for (const [key, entry] of buckets) {
-    if (entry.resetAt < now) buckets.delete(key);
+  for (const [key, entry] of fallbackBuckets) {
+    if (entry.resetAt < now) fallbackBuckets.delete(key);
+  }
+  try {
+    const supabase = createServerClient();
+    await supabase.rpc('cleanup_expired_buckets');
+  } catch {
+    // Supabase cleanup failed — fallback cache handles it locally
   }
 }, 5 * 60 * 1000);
 
@@ -30,31 +39,64 @@ export const RATE_LIMITS = {
 } as const;
 
 /**
- * @warning Uses in-memory rate limit buckets. Single-instance only.
- * For horizontal scaling, replace buckets with Redis.
+ * Check rate limit using Supabase shared storage.
+ * Falls back to in-memory if Supabase is unreachable.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
+  key: string,
+  config: RateLimitConfig
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  try {
+    const supabase = createServerClient();
+
+    // Use atomic Postgres function for check-and-increment
+    const { data, error } = await supabase.rpc('rate_limit_increment', {
+      p_key: key,
+      p_window_ms: config.windowMs,
+    });
+
+    if (error) throw error;
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error('No data returned from rate_limit_increment');
+
+    const newCount: number = row.new_count;
+    const resetAt = new Date(row.bucket_reset_at).getTime();
+
+    if (newCount > config.maxRequests) {
+      return { allowed: false, remaining: 0, resetAt };
+    }
+
+    return {
+      allowed: true,
+      remaining: config.maxRequests - newCount,
+      resetAt,
+    };
+  } catch (err) {
+    // Supabase unreachable — fall back to in-memory
+    console.warn('[rate-limit] Supabase rate limit check failed, using in-memory fallback:', err);
+    return checkRateLimitFallback(key, config);
+  }
+}
+
+/** In-memory fallback (single-instance only) */
+function checkRateLimitFallback(
   key: string,
   config: RateLimitConfig
 ): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
-  const bucketKey = `${key}`;
 
-  let entry = buckets.get(bucketKey);
+  let entry = fallbackBuckets.get(key);
 
   if (!entry || entry.resetAt < now) {
     entry = { count: 0, resetAt: now + config.windowMs };
-    buckets.set(bucketKey, entry);
+    fallbackBuckets.set(key, entry);
   }
 
   entry.count++;
 
   if (entry.count > config.maxRequests) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: entry.resetAt,
-    };
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
   }
 
   return {
