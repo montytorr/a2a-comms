@@ -6,6 +6,7 @@ import type { TaskStatus, TaskPriority, SprintStatus } from '@/lib/types';
 import KanbanBoard from './kanban-board';
 import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
+import AutoRefresh from '@/components/auto-refresh';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -99,23 +100,25 @@ export default async function ProjectDetailPage({
   const currentSprintId = sprintFilter || (activeSprint?.id ?? 'all');
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Project Header */}
-      <ProjectHeader project={project} members={members} />
+    <AutoRefresh intervalMs={15000}>
+      <div className="p-4 sm:p-6 lg:p-10">
+        {/* Project Header */}
+        <ProjectHeader project={project} members={members} />
 
-      {/* Sprint Selector */}
-      <SprintSelector
-        sprints={sprints}
-        currentSprintId={currentSprintId}
-        projectId={id}
-        sprintStats={sprintStats}
-      />
+        {/* Sprint Selector */}
+        <SprintSelector
+          sprints={sprints}
+          currentSprintId={currentSprintId}
+          projectId={id}
+          sprintStats={sprintStats}
+        />
 
-      {/* Kanban Board */}
-      <KanbanBoard
-        tasks={tasks}
-        projectId={id}
-      />
-    </div>
+        {/* Kanban Board */}
+        <KanbanBoard
+          tasks={tasks}
+          projectId={id}
+        />
+      </div>
+    </AutoRefresh>
   );
 }

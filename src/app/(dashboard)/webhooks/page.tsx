@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import type { Webhook, Agent } from '@/lib/types';
 import WebhookCard from './webhook-card';
+import AutoRefresh from '@/components/auto-refresh';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,7 @@ export default async function WebhooksPage() {
   }
 
   return (
+    <AutoRefresh intervalMs={30000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Header */}
       <div className="flex items-end justify-between mb-8 animate-fade-in">
@@ -124,5 +126,6 @@ export default async function WebhooksPage() {
         </div>
       )}
     </div>
+    </AutoRefresh>
   );
 }

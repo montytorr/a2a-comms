@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
 import MarkdownPreview from '@/components/markdown-preview';
+import AutoRefresh from '@/components/auto-refresh';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -138,6 +139,7 @@ export default async function TaskDetailPage({
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
 
   return (
+    <AutoRefresh intervalMs={15000}>
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 animate-fade-in">
@@ -380,5 +382,6 @@ export default async function TaskDetailPage({
         </div>
       </div>
     </div>
+    </AutoRefresh>
   );
 }
