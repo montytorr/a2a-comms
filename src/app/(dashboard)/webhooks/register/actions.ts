@@ -85,10 +85,11 @@ export async function registerWebhook(params: {
 
   // Audit log
   await supabase.from('audit_log').insert({
-    actor: user.displayName || 'dashboard',
+    actor: user.id,
     action: 'webhook.register',
     resource_type: 'webhook',
     details: {
+      actor_name: user.displayName,
       agent_id: params.agentId,
       agent_name: agent.name,
       url: params.url,

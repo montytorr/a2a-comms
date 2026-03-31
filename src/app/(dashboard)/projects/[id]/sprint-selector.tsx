@@ -1,14 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { SprintStatus } from '@/lib/types';
 import SprintStatusDropdown from './sprint-status-dropdown';
-
-const sprintStatusConfig: Record<SprintStatus, { bg: string; text: string }> = {
-  planned: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500' },
-  active: { bg: 'bg-cyan-500/[0.08]', text: 'text-cyan-400' },
-  completed: { bg: 'bg-emerald-500/[0.06]', text: 'text-emerald-400' },
-};
 
 interface SprintSelectorProps {
   sprints: Array<{

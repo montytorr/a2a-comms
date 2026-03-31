@@ -54,8 +54,8 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
     }
   }
 
-  // Generate new key
-  const keyId = `${agent.name}-prod`;
+  // Generate new key with unique key_id (avoids UNIQUE constraint conflict with grace-period old key)
+  const keyId = `${agent.name}-${Date.now().toString(36)}`;
   const signingSecret = randomBytes(32).toString('hex');
   const keyHash = createHash('sha256').update(signingSecret).digest('hex');
 
@@ -74,11 +74,12 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
 
   // Audit log
   await supabase.from('audit_log').insert({
-    actor: user.displayName || 'dashboard',
+    actor: user.id,
     action: 'key.rotate',
     resource_type: 'agent',
     resource_id: agentId,
     details: {
+      actor_name: user.displayName,
       agent_name: agent.name,
       new_key_id: keyId,
       old_keys_expiring: currentKeys?.map((k) => k.key_id) || [],

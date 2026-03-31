@@ -67,14 +67,17 @@ export async function GET(
 
   // Filter to only contracts where the calling agent is a participant
   if (links && links.length > 0) {
-    const contractIds = links.map(l => (l as any).contract?.id).filter(Boolean);
+    const contractIds = links.map(l => (l as Record<string, unknown>).contract as { id: string } | null).map(c => c?.id).filter(Boolean) as string[];
     const { data: participations } = await supabase
       .from('contract_participants')
       .select('contract_id')
       .in('contract_id', contractIds)
       .eq('agent_id', auth.agent.id);
     const visibleIds = new Set((participations || []).map(p => p.contract_id));
-    const filtered = links.filter((l: any) => l.contract && visibleIds.has(l.contract.id));
+    const filtered = links.filter((l) => {
+      const contract = (l as Record<string, unknown>).contract as { id: string } | null;
+      return contract && visibleIds.has(contract.id);
+    });
     return NextResponse.json({ data: filtered });
   }
 

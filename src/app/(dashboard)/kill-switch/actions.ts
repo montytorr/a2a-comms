@@ -21,7 +21,7 @@ export async function getKillSwitchStatus(): Promise<{
   }
 
   return {
-    enabled: (data.value as any)?.active === true,
+    enabled: (data.value as Record<string, unknown>)?.active === true,
     updated_at: data.updated_at,
     updated_by: data.updated_by,
   };

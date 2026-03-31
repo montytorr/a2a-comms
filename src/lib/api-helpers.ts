@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateHmac, HmacValidationResult } from './hmac';
+import { validateHmac } from './hmac';
 import { checkRateLimit, RATE_LIMITS } from './rate-limit';
 import { createServerClient } from './supabase/server';
 import type { Agent, ApiError, AuthContext } from './types';

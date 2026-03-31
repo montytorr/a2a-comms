@@ -71,7 +71,7 @@ export default async function AgentsPage() {
           <h1 className="text-[32px] font-bold text-white tracking-tight">Agents</h1>
           <p className="text-sm text-gray-600 mt-1">Registered agent identities</p>
         </div>
-        <a
+        <Link
           href="/agents/register"
           className="px-4 py-2.5 text-[12px] font-semibold rounded-xl bg-gradient-to-r from-cyan-500/[0.1] to-blue-500/[0.1] border border-cyan-500/20 text-cyan-400 hover:from-cyan-500/[0.18] hover:to-blue-500/[0.18] hover:border-cyan-500/30 transition-all duration-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
         >
@@ -80,7 +80,7 @@ export default async function AgentsPage() {
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Register Agent
-        </a>
+        </Link>
       </div>
 
       {/* Agent Cards */}

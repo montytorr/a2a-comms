@@ -63,7 +63,7 @@ function truncate(str: string, max: number): string {
   return str.slice(0, max) + '…';
 }
 
-export default function FeedClient({ isSuperAdmin, agentIds, agentNames, contractIds }: FeedClientProps) {
+export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: FeedClientProps) {
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -84,38 +84,43 @@ export default function FeedClient({ isSuperAdmin, agentIds, agentNames, contrac
     return supabaseRef.current;
   }, []);
 
-  const auditToEvent = useCallback((row: Record<string, any>): FeedEvent => ({
+  const auditToEvent = useCallback((row: Record<string, unknown>): FeedEvent => ({
     id: `audit-${row.id}`,
     type: 'audit',
-    timestamp: row.created_at,
-    actor: row.actor || 'system',
-    summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}${row.resource_id ? ` (${row.resource_id.slice(0, 8)}…)` : ''}`,
+    timestamp: row.created_at as string,
+    actor: (row.actor as string) || 'system',
+    summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}${row.resource_id ? ` (${String(row.resource_id).slice(0, 8)}…)` : ''}`,
     link: row.resource_type === 'contract' && row.resource_id ? `/contracts/${row.resource_id}` : '/audit',
   }), []);
 
-  const messageToEvent = useCallback((row: Record<string, any>): FeedEvent => {
-    const contentStr = typeof row.content === 'object'
-      ? (row.content?.summary || JSON.stringify(row.content))
-      : String(row.content || '');
-    const senderName = row.sender?.display_name || row.sender?.name || row.sender_id?.slice(0, 8) || 'unknown';
+  const messageToEvent = useCallback((row: Record<string, unknown>): FeedEvent => {
+    const content = row.content;
+    const sender = row.sender as Record<string, unknown> | null;
+    const contentStr = typeof content === 'object' && content !== null
+      ? ((content as Record<string, unknown>).summary as string || JSON.stringify(content))
+      : String(content || '');
+    const senderName = sender?.display_name as string || sender?.name as string || String(row.sender_id || '').slice(0, 8) || 'unknown';
     return {
       id: `msg-${row.id}`,
       type: 'message',
-      timestamp: row.created_at,
+      timestamp: row.created_at as string,
       actor: senderName,
       summary: `Message: ${truncate(contentStr, 120)}`,
       link: row.contract_id ? `/contracts/${row.contract_id}` : undefined,
     };
   }, []);
 
-  const contractToEvent = useCallback((row: Record<string, any>, eventType: string): FeedEvent => ({
-    id: `contract-${row.id}-${Date.now()}`,
-    type: 'contract',
-    timestamp: row.updated_at || row.created_at,
-    actor: row.proposer?.display_name || row.proposer?.name || 'system',
-    summary: `Contract "${row.title}" ${eventType === 'INSERT' ? 'created' : 'updated'} — ${row.status}`,
-    link: `/contracts/${row.id}`,
-  }), []);
+  const contractToEvent = useCallback((row: Record<string, unknown>, eventType: string): FeedEvent => {
+    const proposer = row.proposer as Record<string, unknown> | null;
+    return {
+      id: `contract-${row.id}-${Date.now()}`,
+      type: 'contract',
+      timestamp: (row.updated_at || row.created_at) as string,
+      actor: (proposer?.display_name as string) || (proposer?.name as string) || 'system',
+      summary: `Contract "${row.title}" ${eventType === 'INSERT' ? 'created' : 'updated'} — ${row.status}`,
+      link: `/contracts/${row.id}`,
+    };
+  }, []);
 
   const loadHistory = useCallback(async (pageNum: number) => {
     if (!hasAccess) return [];
@@ -233,17 +238,17 @@ export default function FeedClient({ isSuperAdmin, agentIds, agentNames, contrac
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          const row = payload.new as Record<string, any>;
+          const row = payload.new as Record<string, unknown>;
           // Scope: only show messages from user's contracts
-          if (!isSuperAdmin && !contractIds.includes(row.contract_id)) return;
+          if (!isSuperAdmin && !contractIds.includes(row.contract_id as string)) return;
           const contentStr = typeof row.content === 'object'
             ? JSON.stringify(row.content)
             : String(row.content || '');
           addEvent({
             id: `msg-${row.id}`,
             type: 'message',
-            timestamp: row.created_at,
-            actor: row.sender_id?.slice(0, 8) || 'unknown',
+            timestamp: row.created_at as string,
+            actor: String(row.sender_id || '').slice(0, 8) || 'unknown',
             summary: `New message in contract — ${truncate(contentStr, 120)}`,
             link: row.contract_id ? `/contracts/${row.contract_id}` : undefined,
           });
@@ -253,15 +258,15 @@ export default function FeedClient({ isSuperAdmin, agentIds, agentNames, contrac
         'postgres_changes',
         { event: '*', schema: 'public', table: 'contracts' },
         (payload) => {
-          const row = payload.new as Record<string, any>;
+          const row = payload.new as Record<string, unknown>;
           // Scope: only show user's contracts
-          if (!isSuperAdmin && !contractIds.includes(row.id)) return;
+          if (!isSuperAdmin && !contractIds.includes(row.id as string)) return;
           const eventName = payload.eventType === 'INSERT' ? 'created' : 'updated';
           addEvent({
             id: `contract-${row.id}-${Date.now()}`,
             type: 'contract',
-            timestamp: row.updated_at || row.created_at,
-            actor: row.proposer_id?.slice(0, 8) || 'system',
+            timestamp: (row.updated_at || row.created_at) as string,
+            actor: String(row.proposer_id || '').slice(0, 8) || 'system',
             summary: `Contract "${row.title}" ${eventName} — status: ${row.status}`,
             link: `/contracts/${row.id}`,
           });
@@ -271,14 +276,14 @@ export default function FeedClient({ isSuperAdmin, agentIds, agentNames, contrac
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'audit_log' },
         (payload) => {
-          const row = payload.new as Record<string, any>;
+          const row = payload.new as Record<string, unknown>;
           // Scope: only show audit for user's agents
-          if (!isSuperAdmin && !agentNames.includes(row.actor)) return;
+          if (!isSuperAdmin && !agentNames.includes(row.actor as string)) return;
           addEvent({
             id: `audit-${row.id}`,
             type: 'audit',
-            timestamp: row.created_at,
-            actor: row.actor || 'system',
+            timestamp: row.created_at as string,
+            actor: (row.actor as string) || 'system',
             summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}`,
             link: '/audit',
           });

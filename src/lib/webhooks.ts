@@ -80,7 +80,15 @@ export async function deliverWebhooks(
   await Promise.allSettled(deliveries);
 }
 
-async function incrementFailure(supabase: any, wh: any) {
+interface WebhookRecord {
+  id: string;
+  url: string;
+  secret: string;
+  failure_count: number;
+  is_active: boolean;
+}
+
+async function incrementFailure(supabase: ReturnType<typeof createServerClient>, wh: WebhookRecord) {
   const newCount = (wh.failure_count || 0) + 1;
   await supabase
     .from('webhooks')

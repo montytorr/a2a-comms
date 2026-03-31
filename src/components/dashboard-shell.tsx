@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
 import Sidebar from './sidebar';
 
 interface DashboardShellProps {
@@ -12,12 +11,6 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ isSuperAdmin, displayName, children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const pathname = usePathname();
-
-  // Close sidebar on navigation (mobile)
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {

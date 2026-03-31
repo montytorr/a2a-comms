@@ -55,6 +55,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Reserved names check — defense in depth (supplements admin-only gate above)
+  const RESERVED_NAMES = ['admin', 'system', 'platform'];
+  const adminAgentName = process.env.A2A_ADMIN_AGENT || 'admin';
+  if (!RESERVED_NAMES.includes(adminAgentName)) RESERVED_NAMES.push(adminAgentName);
+
+  if (RESERVED_NAMES.includes(parsed.name)) {
+    return NextResponse.json(
+      { error: `Agent name "${parsed.name}" is reserved and cannot be registered`, code: 'RESERVED_NAME' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   const supabase = createServerClient();
 
   // Check for duplicate name

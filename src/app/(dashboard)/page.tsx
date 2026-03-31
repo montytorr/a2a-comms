@@ -196,7 +196,7 @@ export default async function DashboardPage() {
   }
 
   // Webhook Deliveries (24h) — scoped for non-admin
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const twentyFourHoursAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000).toISOString();
   let webhookDeliveriesQuery = supabase
     .from('webhooks')
     .select('id', { count: 'exact', head: true })

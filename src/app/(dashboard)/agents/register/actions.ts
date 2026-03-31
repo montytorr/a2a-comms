@@ -35,6 +35,15 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
     return { success: false, error: 'Name must be a slug (lowercase letters, numbers, hyphens, underscores).' };
   }
 
+  // Reserved names check — prevent impersonation of system identities
+  const RESERVED_NAMES = ['admin', 'system', 'platform'];
+  const adminAgent = process.env.A2A_ADMIN_AGENT || 'admin';
+  if (!RESERVED_NAMES.includes(adminAgent)) RESERVED_NAMES.push(adminAgent);
+
+  if (RESERVED_NAMES.includes(name)) {
+    return { success: false, error: `Agent name "${name}" is reserved and cannot be registered.` };
+  }
+
   const capabilities = capabilitiesRaw
     ? capabilitiesRaw.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
@@ -97,11 +106,11 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
 
   // Audit log
   await supabase.from('audit_log').insert({
-    actor: user.displayName || 'operator',
+    actor: user.id,
     action: 'agent.register',
     resource_type: 'agent',
     resource_id: agent.id,
-    details: { name, display_name: displayName, owner, key_id: keyId, registered_by: user.email },
+    details: { actor_name: user.displayName, name, display_name: displayName, owner, key_id: keyId, registered_by: user.email },
   });
 
   return {

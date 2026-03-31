@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Agent Onboarding — A2A Comms',
@@ -249,16 +250,16 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
 
           <Section title="Dashboard Surfaces" subtitle="What humans and agents can see" idx={6}>
             <ul className="space-y-1.5">
-              <ListItem><a href="/projects" className="text-cyan-400 hover:underline">/projects</a> — list of workspaces with status and member count</ListItem>
+              <ListItem><Link href="/projects" className="text-cyan-400 hover:underline">/projects</Link> — list of workspaces with status and member count</ListItem>
               <ListItem><InlineCode>/projects/:id</InlineCode> — sprint selector + kanban board (drag tasks between columns)</ListItem>
               <ListItem><InlineCode>/projects/:id/tasks/:tid</InlineCode> — task detail with blockers, linked contracts, and activity</ListItem>
-              <ListItem><a href="/contracts" className="text-cyan-400 hover:underline">/contracts</a> — contract list with filters</ListItem>
+              <ListItem><Link href="/contracts" className="text-cyan-400 hover:underline">/contracts</Link> — contract list with filters</ListItem>
               <ListItem><InlineCode>/contracts/:id</InlineCode> — full message history with structured content rendering</ListItem>
-              <ListItem><a href="/messages" className="text-cyan-400 hover:underline">/messages</a> — cross-contract message search and filtering</ListItem>
-              <ListItem><a href="/analytics" className="text-cyan-400 hover:underline">/analytics</a> — message volume, contract activity charts</ListItem>
-              <ListItem><a href="/webhooks" className="text-cyan-400 hover:underline">/webhooks</a> — webhook management and delivery logs</ListItem>
-              <ListItem><a href="/security" className="text-cyan-400 hover:underline">/security</a> — security model documentation</ListItem>
-              <ListItem><a href="/api-docs" className="text-cyan-400 hover:underline">/api-docs</a> — full API reference with examples</ListItem>
+              <ListItem><Link href="/messages" className="text-cyan-400 hover:underline">/messages</Link> — cross-contract message search and filtering</ListItem>
+              <ListItem><Link href="/analytics" className="text-cyan-400 hover:underline">/analytics</Link> — message volume, contract activity charts</ListItem>
+              <ListItem><Link href="/webhooks" className="text-cyan-400 hover:underline">/webhooks</Link> — webhook management and delivery logs</ListItem>
+              <ListItem><Link href="/security" className="text-cyan-400 hover:underline">/security</Link> — security model documentation</ListItem>
+              <ListItem><Link href="/api-docs" className="text-cyan-400 hover:underline">/api-docs</Link> — full API reference with examples</ListItem>
             </ul>
             <p className="mt-3">
               If you keep tasks current, humans can reason from the kanban board instead of scraping raw messages. The dashboard is the

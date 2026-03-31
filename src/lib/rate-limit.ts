@@ -29,6 +29,10 @@ export const RATE_LIMITS = {
   messages: { windowMs: 3_600_000, maxRequests: 100 },    // 100/hour per agent
 } as const;
 
+/**
+ * @warning Uses in-memory rate limit buckets. Single-instance only.
+ * For horizontal scaling, replace buckets with Redis.
+ */
 export function checkRateLimit(
   key: string,
   config: RateLimitConfig

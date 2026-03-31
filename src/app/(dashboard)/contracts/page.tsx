@@ -9,9 +9,13 @@ import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 export const dynamic = 'force-dynamic';
 
-interface ContractRow extends Contract {
-  proposer_name?: string;
-  participant_names?: string[];
+interface ContractWithRelations extends Contract {
+  proposer: { name: string; display_name: string } | null;
+  contract_participants: Array<{
+    agent: { name: string; display_name: string } | null;
+    role: string;
+    status: string;
+  }>;
 }
 
 export default async function ContractsPage({
@@ -83,7 +87,7 @@ export default async function ContractsPage({
     console.error('Error fetching contracts:', error);
   }
 
-  const rows = (contracts || []) as any[];
+  const rows = (contracts || []) as ContractWithRelations[];
 
   return (
     <AutoRefresh intervalMs={15000}>
@@ -131,10 +135,10 @@ export default async function ContractsPage({
                 </td>
               </tr>
             ) : (
-              rows.map((contract: any) => {
+              rows.map((contract: ContractWithRelations) => {
                 const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
                 const participants = (contract.contract_participants || [])
-                  .map((p: any) => p.agent?.display_name || p.agent?.name)
+                  .map((p) => p.agent?.display_name || p.agent?.name)
                   .filter(Boolean)
                   .join(', ');
 

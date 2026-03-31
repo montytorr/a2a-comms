@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { activateKillSwitch, deactivateKillSwitch, getKillSwitchStatus } from './actions';
 
 interface KillSwitchClientProps {
   isSuperAdmin: boolean;
+  initialStatus: {
+    enabled: boolean;
+    updated_at: string | null;
+    updated_by: string | null;
+  };
 }
 
-export default function KillSwitchClient({ isSuperAdmin }: KillSwitchClientProps) {
-  const [isActive, setIsActive] = useState<boolean | null>(null);
+export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSwitchClientProps) {
+  const [isActive, setIsActive] = useState<boolean | null>(initialStatus.enabled);
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [updatedBy, setUpdatedBy] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(initialStatus.updated_at);
+  const [updatedBy, setUpdatedBy] = useState<string | null>(initialStatus.updated_by);
 
-  useEffect(() => {
-    loadStatus();
-  }, []);
-
-  async function loadStatus() {
+  const loadStatus = useCallback(async () => {
     try {
       const status = await getKillSwitchStatus();
       setIsActive(status.enabled);
@@ -27,7 +28,7 @@ export default function KillSwitchClient({ isSuperAdmin }: KillSwitchClientProps
     } catch {
       setIsActive(false);
     }
-  }
+  }, []);
 
   async function handleActivate() {
     setLoading(true);
@@ -53,17 +54,6 @@ export default function KillSwitchClient({ isSuperAdmin }: KillSwitchClientProps
       console.error('Failed to deactivate kill switch:', err);
     }
     setLoading(false);
-  }
-
-  if (isActive === null) {
-    return (
-      <div className="flex items-center justify-center h-[85vh]">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full border-2 border-white/[0.04]" />
-          <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-transparent border-t-cyan-500 animate-spin" />
-        </div>
-      </div>
-    );
   }
 
   return (

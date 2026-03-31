@@ -1,10 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import StatusBadge from '@/components/status-badge';
-import type { Message } from '@/lib/types';
 import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
@@ -31,12 +31,20 @@ function getInitials(name: string): string {
   return name.split(/[\s-_]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function formatJson(content: unknown): string {
-  try {
-    return JSON.stringify(content, null, 2);
-  } catch {
-    return String(content);
-  }
+interface ContractParticipant {
+  id: string;
+  role: string;
+  status: string;
+  responded_at: string | null;
+  agent: { id: string; name: string; display_name: string } | null;
+}
+
+interface ContractMessage {
+  id: string;
+  content: unknown;
+  message_type: string;
+  created_at: string;
+  sender: { id: string; name: string; display_name: string } | null;
 }
 
 export default async function ContractDetailPage({
@@ -93,20 +101,20 @@ export default async function ContractDetailPage({
     .eq('contract_id', id)
     .order('created_at', { ascending: true });
 
-  const messageList = (messages || []) as any[];
-  const participants = (contract.contract_participants || []) as any[];
+  const messageList = (messages || []) as ContractMessage[];
+  const participants = (contract.contract_participants || []) as ContractParticipant[];
 
   return (
     <AutoRefresh intervalMs={10000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Back link */}
-      <a href="/contracts" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
+      <Link href="/contracts" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
         </svg>
         Back to Contracts
-      </a>
+      </Link>
 
       {/* Contract Header */}
       <div className="rounded-2xl glass-card overflow-hidden mb-8 animate-fade-in">
@@ -166,7 +174,7 @@ export default async function ContractDetailPage({
           <div className="mt-6 pt-6 border-t border-white/[0.04]">
             <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-3">Participants</p>
             <div className="flex flex-wrap gap-3">
-              {participants.map((p: any) => {
+              {participants.map((p: ContractParticipant) => {
                 const name = p.agent?.display_name || p.agent?.name || 'Unknown';
                 const gradient = getAvatarColor(name);
                 return (
@@ -231,7 +239,7 @@ export default async function ContractDetailPage({
               <p className="text-[11px] text-gray-700 mt-1">Messages will appear here once exchanged</p>
             </div>
           ) : (
-            messageList.map((msg: any) => {
+            messageList.map((msg: ContractMessage) => {
               const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
               const gradient = getAvatarColor(senderName);
               return (

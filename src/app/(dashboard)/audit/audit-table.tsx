@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import type { AuditLogEntry } from '@/lib/types';
 
 function timeAgo(dateStr: string): string {
@@ -69,7 +68,7 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
               <div key={entry.id} className="group">
                 <div
                   className={`flex items-center gap-4 px-6 py-3.5 hover:bg-white/[0.015] transition-all duration-300 ${hasDetails || isContract ? 'cursor-pointer' : ''}`}
-                  onClick={(e) => {
+                  onClick={() => {
                     if (hasDetails) {
                       setExpandedId(isExpanded ? null : entry.id);
                     } else if (isContract) {

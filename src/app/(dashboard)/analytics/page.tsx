@@ -107,7 +107,7 @@ export default async function AnalyticsPage({
 
   // 3. Per-agent message count — resolve names
   const agentIds = Object.keys(agentMessageCount);
-  let agentNameMap: Record<string, string> = {};
+  const agentNameMap: Record<string, string> = {};
   if (agentIds.length > 0) {
     const { data: agents } = await supabase
       .from('agents')
@@ -150,7 +150,7 @@ export default async function AnalyticsPage({
       ? activeProjectsQuery.in('id', scopedProjectIds)
       : activeProjectsQuery.eq('id', noResultId);
   }
-  const { data: _apData, count: activeProjectsCount } = await activeProjectsQuery;
+  const { count: activeProjectsCount } = await activeProjectsQuery;
 
   // 6. Tasks Done in time period
   let tasksDoneQuery = supabase

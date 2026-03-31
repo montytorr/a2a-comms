@@ -130,34 +130,48 @@ export default async function TaskDetailPage({
   const assignee = assigneeRes.data;
   const reporter = reporterRes.data;
   const sprint = sprintRes.data;
-  const blockedBy = ((blockedByRes.data || []) as any[]).filter(
-    (dep: any) => dep.tasks?.project_id === projectId
+  interface TaskDep {
+    id: string;
+    tasks: { id: string; title: string; status: string; project_id: string } | null;
+  }
+  interface LinkedContract {
+    id: string;
+    contract: { id: string; title: string; status: string } | null;
+  }
+  const blockedBy = ((blockedByRes.data || []) as TaskDep[]).filter(
+    (dep) => dep.tasks?.project_id === projectId
   );
-  const blocks = ((blocksRes.data || []) as any[]).filter(
-    (dep: any) => dep.tasks?.project_id === projectId
+  const blocks = ((blocksRes.data || []) as TaskDep[]).filter(
+    (dep) => dep.tasks?.project_id === projectId
   );
-  const linkedContracts = (contractsRes.data || []) as any[];
+  const linkedContracts = (contractsRes.data || []) as LinkedContract[];
 
   // Filter linked contracts by participation unless superAdmin
   let visibleContracts = linkedContracts;
   if (!user.isSuperAdmin && linkedContracts.length > 0) {
-    const contractIds = linkedContracts.map((lc: any) => lc.contract?.id).filter(Boolean);
+    const contractIds = linkedContracts.map((lc) => lc.contract?.id).filter(Boolean) as string[];
     if (contractIds.length > 0) {
       const { data: visibleParts } = await supabase
         .from('contract_participants')
         .select('contract_id')
         .in('contract_id', contractIds)
         .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
-      const visibleIds = new Set((visibleParts || []).map((p: any) => p.contract_id));
-      visibleContracts = linkedContracts.filter((lc: any) => lc.contract && visibleIds.has(lc.contract.id));
+      const visibleIds = new Set((visibleParts || []).map((p) => p.contract_id));
+      visibleContracts = linkedContracts.filter((lc) => lc.contract && visibleIds.has(lc.contract.id));
     } else {
       visibleContracts = [];
     }
   }
 
-  const auditEntries = auditRes.data || [];
+  interface AuditEntry {
+    id: string;
+    actor: string;
+    action: string;
+    details: Record<string, unknown> | null;
+    created_at: string;
+  }
+  const auditEntries = (auditRes.data || []) as AuditEntry[];
 
-  const sc = statusConfig[task.status as TaskStatus] || statusConfig.backlog;
   const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
 
@@ -215,7 +229,7 @@ export default async function TaskDetailPage({
                 <div className="mb-4">
                   <p className="text-[11px] font-medium text-red-400/80 mb-2">Blocked by</p>
                   <div className="space-y-1.5">
-                    {blockedBy.map((dep: any) => {
+                    {blockedBy.map((dep) => {
                       const t = dep.tasks;
                       if (!t) return null;
                       const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
@@ -239,7 +253,7 @@ export default async function TaskDetailPage({
                 <div>
                   <p className="text-[11px] font-medium text-amber-400/80 mb-2">Blocks</p>
                   <div className="space-y-1.5">
-                    {blocks.map((dep: any) => {
+                    {blocks.map((dep) => {
                       const t = dep.tasks;
                       if (!t) return null;
                       const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
@@ -266,7 +280,7 @@ export default async function TaskDetailPage({
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.15s' }}>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Linked Contracts</p>
               <div className="space-y-1.5">
-                {visibleContracts.map((lc: any) => {
+                {visibleContracts.map((lc) => {
                   const c = lc.contract;
                   if (!c) return null;
                   return (
@@ -293,7 +307,7 @@ export default async function TaskDetailPage({
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Activity</p>
               <div className="space-y-3">
-                {auditEntries.map((entry: any) => (
+                {auditEntries.map((entry) => (
                   <div key={entry.id} className="flex items-start gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-600 mt-1.5 shrink-0" />
                     <div className="flex-1 min-w-0">

@@ -65,12 +65,17 @@ export async function GET(
       .eq('blocking_task_id', tid),
   ]);
 
+  type TaskDependencyWithJoin = {
+    blocking_task?: { project_id: string } | null;
+    blocked_task?: { project_id: string } | null;
+  };
+
   // Filter to only deps where the joined task belongs to this project
-  const filteredBlockedBy = (blockedByRes.data || []).filter(
-    (dep: any) => dep.blocking_task?.project_id === id
+  const filteredBlockedBy = ((blockedByRes.data || []) as TaskDependencyWithJoin[]).filter(
+    (dep) => dep.blocking_task?.project_id === id
   );
-  const filteredBlocks = (blocksRes.data || []).filter(
-    (dep: any) => dep.blocked_task?.project_id === id
+  const filteredBlocks = ((blocksRes.data || []) as TaskDependencyWithJoin[]).filter(
+    (dep) => dep.blocked_task?.project_id === id
   );
 
   return NextResponse.json({

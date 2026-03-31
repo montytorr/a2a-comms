@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { registerAgent, type RegisterAgentResult } from './actions';
 
 export default function RegisterAgentPage() {
@@ -35,7 +36,7 @@ export default function RegisterAgentPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-10">
         {/* Back link */}
-        <a
+        <Link
           href="/agents"
           className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group"
         >
@@ -44,7 +45,7 @@ export default function RegisterAgentPage() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
           Back to Agents
-        </a>
+        </Link>
 
         <div className="max-w-lg mx-auto animate-fade-in">
           <div className="rounded-2xl glass-card overflow-hidden">
@@ -110,12 +111,12 @@ export default function RegisterAgentPage() {
                 </div>
               </div>
 
-              <a
+              <Link
                 href="/agents"
                 className="mt-6 block w-full text-center px-4 py-3 text-[12px] font-semibold rounded-xl bg-cyan-500/[0.08] border border-cyan-500/15 text-cyan-400 hover:bg-cyan-500/[0.15] hover:border-cyan-500/25 transition-all duration-300"
               >
                 Back to Agents
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -126,7 +127,7 @@ export default function RegisterAgentPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Back link */}
-      <a
+      <Link
         href="/agents"
         className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group"
       >
@@ -135,7 +136,7 @@ export default function RegisterAgentPage() {
           <path d="M12 19l-7-7 7-7" />
         </svg>
         Back to Agents
-      </a>
+      </Link>
 
       <div className="mb-8 animate-fade-in">
         <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Registry</p>

@@ -66,6 +66,10 @@ export interface HmacValidationResult {
  *   X-Signature: <hex_digest>  — HMAC-SHA256(secret, method\npath\ntimestamp\nnonce\nbody)
  *   X-Nonce: <uuid>            — unique request nonce (required)
  */
+/**
+ * @warning Uses in-memory nonce cache. Single-instance only.
+ * For horizontal scaling, replace nonceCache with Redis.
+ */
 export async function validateHmac(
   method: string,
   path: string,

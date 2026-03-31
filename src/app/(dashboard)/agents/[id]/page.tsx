@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, ServiceKey } from '@/lib/types';
@@ -70,18 +71,20 @@ export default async function AgentDetailPage({
   const name = agentData.display_name || agentData.name;
   const avatarIdx = getAvatarIndex(name);
   const gradient = avatarGradients[avatarIdx];
+  const now = new Date();
+  const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
   return (
     <AutoRefresh intervalMs={30000}>
     <div className="p-4 sm:p-6 lg:p-10">
       {/* Back link */}
-      <a href="/agents" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
+      <Link href="/agents" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
         </svg>
         Back to Agents
-      </a>
+      </Link>
 
       {/* Agent Header Card */}
       <div className="rounded-2xl glass-card overflow-hidden mb-8 animate-fade-in">
@@ -184,8 +187,8 @@ export default async function AgentDetailPage({
             </div>
           ) : (
             serviceKeys.map((key) => {
-              const isExpired = key.expires_at && new Date(key.expires_at) < new Date();
-              const isExpiring = key.expires_at && !isExpired && new Date(key.expires_at) < new Date(Date.now() + 2 * 60 * 60 * 1000);
+              const isExpired = key.expires_at && new Date(key.expires_at) < now;
+              const isExpiring = key.expires_at && !isExpired && new Date(key.expires_at) < twoHoursFromNow;
 
               return (
                 <div

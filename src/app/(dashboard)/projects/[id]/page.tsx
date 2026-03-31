@@ -2,7 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
-import type { TaskStatus, TaskPriority, SprintStatus } from '@/lib/types';
+import type { Task } from '@/lib/types';
 import KanbanBoard from './kanban-board';
 import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
@@ -82,7 +82,7 @@ export default async function ProjectDetailPage({
   const members = membersRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
-  const tasks = (tasksRes.data || []) as any[];
+  const tasks = (tasksRes.data || []) as Task[];
 
   // Compute completion stats per sprint
   const sprintStats: Record<string, { total: number; done: number }> = {};

@@ -31,7 +31,7 @@ function LoginForm() {
 
       const redirect = searchParams.get('redirect') || '/';
       window.location.href = redirect;
-    } catch (err) {
+    } catch {
       setError('Connection error — please try again');
       setLoading(false);
     }

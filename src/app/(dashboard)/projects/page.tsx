@@ -60,9 +60,9 @@ export default async function ProjectsPage({
   // Get member counts and task stats for all projects
   const projectIds = rows.map(p => p.id);
   
-  let memberCounts: Record<string, number> = {};
-  let taskStats: Record<string, { total: number; done: number }> = {};
-  let sprintNames: Record<string, string | null> = {};
+  const memberCounts: Record<string, number> = {};
+  const taskStats: Record<string, { total: number; done: number }> = {};
+  const sprintNames: Record<string, string | null> = {};
 
   if (projectIds.length > 0) {
     const [membersRes, tasksRes, sprintsRes] = await Promise.all([
