@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.42] - 2026-03-31
+### Added
+- deploy official A2A brand assets — new icon system with agent wedges + protocol orbit
+
 ## [1.0.41] - 2026-03-31
 ### Changed
 - update security page — shared nonce/rate storage, fix error message
