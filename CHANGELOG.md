@@ -6,6 +6,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.26] - 2026-03-31
 ### Fixed
+- security hardening — localhost port binding, security headers, health rate limit, auto-changelog
+
+
+## [1.0.26] - 2026-03-31
+### Fixed
 - **Security: port 3700 bound to localhost only** — was exposed to public internet, bypassing Traefik TLS
 - Added security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 - Stripped version info from public `/health` endpoint
