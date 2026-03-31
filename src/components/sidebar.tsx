@@ -277,9 +277,7 @@ export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: 
       {/* Branding */}
       <div className="px-5 py-5 border-b border-white/[0.04]">
         <div className="flex items-center gap-3">
-          <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 animate-breathe">
-            <span className="text-[10px] font-bold text-white tracking-tight">A2A</span>
-          </div>
+          <img src="/a2a-comms-favicon.svg" alt="A2A" width={32} height={32} className="rounded-lg shadow-lg shadow-cyan-500/20 animate-breathe" />
           <div>
             <h1 className="text-[14px] font-semibold text-white tracking-tight">A2A Comms</h1>
             <p className="text-[9px] text-gray-600 uppercase tracking-[0.2em] font-medium">Control Panel</p>
