@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
+import QuickTaskForm from './quick-task-form';
 
 const columns: { id: TaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },
@@ -57,9 +58,10 @@ interface TaskRow {
 interface KanbanBoardProps {
   tasks: TaskRow[];
   projectId: string;
+  sprintId?: string;
 }
 
-export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
+export default function KanbanBoard({ tasks, projectId, sprintId }: KanbanBoardProps) {
   const tasksByStatus = columns.reduce((acc, col) => {
     acc[col.id] = tasks.filter(t => t.status === col.id);
     return acc;
@@ -89,12 +91,12 @@ export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
 
               {/* Cards */}
               <div className="space-y-2">
-                {colTasks.length === 0 ? (
+                {colTasks.length === 0 && (
                   <div className="rounded-xl border border-dashed border-white/[0.06] py-8 text-center">
                     <p className="text-[10px] text-gray-700">No tasks</p>
                   </div>
-                ) : (
-                  colTasks.map((task) => {
+                )}
+                {colTasks.map((task) => {
                     const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
                     const assigneeName = task.assignee?.display_name || task.assignee?.name;
                     const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
@@ -159,8 +161,8 @@ export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
                         </div>
                       </Link>
                     );
-                  })
-                )}
+                  })}
+                <QuickTaskForm projectId={projectId} status={col.id} sprintId={sprintId} />
               </div>
             </div>
           );

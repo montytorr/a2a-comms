@@ -2,14 +2,7 @@
 
 import Link from 'next/link';
 import MarkdownPreview from '@/components/markdown-preview';
-import type { ProjectStatus } from '@/lib/types';
-
-const statusConfig: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {
-  planning: { bg: 'bg-amber-500/[0.08]', text: 'text-amber-400', dot: 'bg-amber-400' },
-  active: { bg: 'bg-cyan-500/[0.08]', text: 'text-cyan-400', dot: 'bg-cyan-400' },
-  completed: { bg: 'bg-emerald-500/[0.08]', text: 'text-emerald-400', dot: 'bg-emerald-400' },
-  archived: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', dot: 'bg-gray-500' },
-};
+import ProjectStatusDropdown from './project-status-dropdown';
 
 const avatarGradients = [
   'from-cyan-500 to-blue-600',
@@ -43,8 +36,6 @@ interface ProjectHeaderProps {
 }
 
 export default function ProjectHeader({ project, members }: ProjectHeaderProps) {
-  const sc = statusConfig[project.status as ProjectStatus] || statusConfig.planning;
-
   return (
     <div className="mb-8 animate-fade-in">
       {/* Breadcrumb */}
@@ -60,10 +51,7 @@ export default function ProjectHeader({ project, members }: ProjectHeaderProps) 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-[28px] font-bold text-white tracking-tight">{project.title}</h1>
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${sc.bg} ${sc.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-              {project.status}
-            </span>
+            <ProjectStatusDropdown projectId={project.id} currentStatus={project.status} />
           </div>
           {project.description && (
             <div className="max-w-2xl">

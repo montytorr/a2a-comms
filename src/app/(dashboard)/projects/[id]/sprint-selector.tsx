@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import type { SprintStatus } from '@/lib/types';
+import SprintStatusDropdown from './sprint-status-dropdown';
 
 const sprintStatusConfig: Record<SprintStatus, { bg: string; text: string }> = {
   planned: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500' },
@@ -44,30 +45,38 @@ export default function SprintSelector({ sprints, currentSprintId, projectId, sp
           const pct = stats && stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : null;
 
           return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                const params = tab.id === 'all' ? '' : `?sprint=${tab.id}`;
-                router.push(`/projects/${projectId}${params}`);
-              }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-300 border flex items-center gap-1.5 ${
-                isActive
-                  ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]'
-                  : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
-              }`}
-            >
+            <div key={tab.id} className="flex items-center gap-0.5 group/sprint">
+              <button
+                onClick={() => {
+                  const params = tab.id === 'all' ? '' : `?sprint=${tab.id}`;
+                  router.push(`/projects/${projectId}${params}`);
+                }}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-300 border flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]'
+                    : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
+                }`}
+              >
+                {sprintStatus && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${sprintStatus === 'active' ? 'bg-cyan-400' : sprintStatus === 'completed' ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                )}
+                {tab.label}
+                {pct !== null && stats && stats.total > 0 && (
+                  <span className={`ml-1 text-[9px] font-mono tabular-nums ${
+                    pct === 100 ? 'text-emerald-400' : isActive ? 'text-cyan-400/70' : 'text-gray-600'
+                  }`}>
+                    {pct}%
+                  </span>
+                )}
+              </button>
               {sprintStatus && (
-                <span className={`w-1.5 h-1.5 rounded-full ${sprintStatus === 'active' ? 'bg-cyan-400' : sprintStatus === 'completed' ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                <SprintStatusDropdown
+                  projectId={projectId}
+                  sprintId={tab.id}
+                  currentStatus={sprintStatus}
+                />
               )}
-              {tab.label}
-              {pct !== null && stats && stats.total > 0 && (
-                <span className={`ml-1 text-[9px] font-mono tabular-nums ${
-                  pct === 100 ? 'text-emerald-400' : isActive ? 'text-cyan-400/70' : 'text-gray-600'
-                }`}>
-                  {pct}%
-                </span>
-              )}
-            </button>
+            </div>
           );
         })}
       </div>

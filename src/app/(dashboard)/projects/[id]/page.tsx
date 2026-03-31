@@ -117,6 +117,7 @@ export default async function ProjectDetailPage({
         <KanbanBoard
           tasks={tasks}
           projectId={id}
+          sprintId={sprintFilter && sprintFilter !== 'all' && sprintFilter !== 'backlog' ? sprintFilter : undefined}
         />
       </div>
     </AutoRefresh>

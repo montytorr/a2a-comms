@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
 import MarkdownPreview from '@/components/markdown-preview';
 import AutoRefresh from '@/components/auto-refresh';
+import TaskStatusDropdown from './task-status-dropdown';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -161,10 +162,7 @@ export default async function TaskDetailPage({
               <div className="flex-1">
                 <h1 className="text-[24px] font-bold text-white tracking-tight mb-3">{task.title}</h1>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase ${sc.bg} ${sc.text}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                    {task.status}
-                  </span>
+                  <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase ${pc.bg} ${pc.text}`}>
                     {pc.icon} {task.priority}
                   </span>
