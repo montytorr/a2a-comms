@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
+import { resolveAndValidateHost } from './url-validator';
 
 interface WebhookEvent {
   event: 'invitation' | 'message' | 'contract_state';
@@ -37,6 +38,13 @@ export async function deliverWebhooks(
       .digest('hex');
 
     try {
+      // Validate resolved IPs at delivery time (DNS rebinding protection)
+      const dnsCheck = await resolveAndValidateHost(wh.url);
+      if (!dnsCheck.valid) {
+        await incrementFailure(supabase, wh);
+        return;
+      }
+
       const resp = await fetch(wh.url, {
         method: 'POST',
         headers: {
@@ -47,7 +55,14 @@ export async function deliverWebhooks(
         },
         body: payload,
         signal: AbortSignal.timeout(10000), // 10s timeout
+        redirect: 'manual', // Prevent redirect-based SSRF
       });
+
+      // Treat redirects as failures (3xx)
+      if (resp.status >= 300 && resp.status < 400) {
+        await incrementFailure(supabase, wh);
+        return;
+      }
 
       if (resp.ok) {
         await supabase

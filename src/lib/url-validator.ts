@@ -1,3 +1,63 @@
+import dns from 'dns/promises';
+
+/**
+ * Resolve hostname and validate all resolved IPs are not private/reserved.
+ * Call this at delivery time to prevent DNS rebinding.
+ */
+export async function resolveAndValidateHost(urlString: string): Promise<{ valid: boolean; error?: string }> {
+  let url: URL;
+  try {
+    url = new URL(urlString);
+  } catch {
+    return { valid: false, error: 'Invalid URL' };
+  }
+
+  // First do static validation
+  const staticCheck = validateWebhookUrl(urlString);
+  if (!staticCheck.valid) return staticCheck;
+
+  try {
+    const addresses = await dns.resolve4(url.hostname).catch(() => [] as string[]);
+    const addresses6 = await dns.resolve6(url.hostname).catch(() => [] as string[]);
+    const allAddresses = [...addresses, ...addresses6];
+
+    if (allAddresses.length === 0) {
+      return { valid: false, error: 'Could not resolve hostname' };
+    }
+
+    for (const addr of allAddresses) {
+      if (isPrivateIP(addr)) {
+        return { valid: false, error: `Resolved IP ${addr} is in a private/reserved range` };
+      }
+    }
+  } catch {
+    return { valid: false, error: 'DNS resolution failed' };
+  }
+
+  return { valid: true };
+}
+
+function isPrivateIP(ip: string): boolean {
+  // IPv4
+  const v4Match = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4Match) {
+    const [, a, b] = v4Match.map(Number);
+    if (a === 10) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a >= 224) return true;
+    return false;
+  }
+  // IPv6 private
+  const lower = ip.toLowerCase();
+  if (lower === '::1') return true;
+  if (lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80')) return true;
+  return false;
+}
+
 /**
  * Validate a webhook URL to prevent SSRF attacks.
  * Blocks: private IPs, localhost, link-local, multicast, reserved ranges.

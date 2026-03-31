@@ -65,7 +65,20 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ data: links || [] });
+  // Filter to only contracts where the calling agent is a participant
+  if (links && links.length > 0) {
+    const contractIds = links.map(l => (l as any).contract?.id).filter(Boolean);
+    const { data: participations } = await supabase
+      .from('contract_participants')
+      .select('contract_id')
+      .in('contract_id', contractIds)
+      .eq('agent_id', auth.agent.id);
+    const visibleIds = new Set((participations || []).map(p => p.contract_id));
+    const filtered = links.filter((l: any) => l.contract && visibleIds.has(l.contract.id));
+    return NextResponse.json({ data: filtered });
+  }
+
+  return NextResponse.json({ data: [] });
 }
 
 export async function POST(
@@ -124,6 +137,21 @@ export async function POST(
     return NextResponse.json(
       { error: 'Contract not found', code: 'NOT_FOUND' } satisfies ApiError,
       { status: 404 }
+    );
+  }
+
+  // Verify the calling agent is a participant in the contract
+  const { data: participation } = await supabase
+    .from('contract_participants')
+    .select('id')
+    .eq('contract_id', parsed.contract_id)
+    .eq('agent_id', auth.agent.id)
+    .single();
+
+  if (!participation) {
+    return NextResponse.json(
+      { error: 'You must be a participant in the contract to link it', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
     );
   }
 

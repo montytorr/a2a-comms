@@ -107,11 +107,11 @@ export default async function TaskDetailPage({
       : Promise.resolve({ data: null }),
     supabase
       .from('task_dependencies')
-      .select('id, blocking_task_id, tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+      .select('id, blocking_task_id, tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
     supabase
       .from('task_dependencies')
-      .select('id, blocked_task_id, tasks!task_dependencies_blocked_task_id_fkey(id, title, status)')
+      .select('id, blocked_task_id, tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
     supabase
       .from('task_contracts')
@@ -130,9 +130,31 @@ export default async function TaskDetailPage({
   const assignee = assigneeRes.data;
   const reporter = reporterRes.data;
   const sprint = sprintRes.data;
-  const blockedBy = (blockedByRes.data || []) as any[];
-  const blocks = (blocksRes.data || []) as any[];
+  const blockedBy = ((blockedByRes.data || []) as any[]).filter(
+    (dep: any) => dep.tasks?.project_id === projectId
+  );
+  const blocks = ((blocksRes.data || []) as any[]).filter(
+    (dep: any) => dep.tasks?.project_id === projectId
+  );
   const linkedContracts = (contractsRes.data || []) as any[];
+
+  // Filter linked contracts by participation unless superAdmin
+  let visibleContracts = linkedContracts;
+  if (!user.isSuperAdmin && linkedContracts.length > 0) {
+    const contractIds = linkedContracts.map((lc: any) => lc.contract?.id).filter(Boolean);
+    if (contractIds.length > 0) {
+      const { data: visibleParts } = await supabase
+        .from('contract_participants')
+        .select('contract_id')
+        .in('contract_id', contractIds)
+        .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+      const visibleIds = new Set((visibleParts || []).map((p: any) => p.contract_id));
+      visibleContracts = linkedContracts.filter((lc: any) => lc.contract && visibleIds.has(lc.contract.id));
+    } else {
+      visibleContracts = [];
+    }
+  }
+
   const auditEntries = auditRes.data || [];
 
   const sc = statusConfig[task.status as TaskStatus] || statusConfig.backlog;
@@ -240,11 +262,11 @@ export default async function TaskDetailPage({
           )}
 
           {/* Linked Contracts */}
-          {linkedContracts.length > 0 && (
+          {visibleContracts.length > 0 && (
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.15s' }}>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Linked Contracts</p>
               <div className="space-y-1.5">
-                {linkedContracts.map((lc: any) => {
+                {visibleContracts.map((lc: any) => {
                   const c = lc.contract;
                   if (!c) return null;
                   return (

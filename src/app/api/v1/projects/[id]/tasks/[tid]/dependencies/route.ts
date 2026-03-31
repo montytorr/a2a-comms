@@ -57,17 +57,25 @@ export async function GET(
   const [blockedByRes, blocksRes] = await Promise.all([
     supabase
       .from('task_dependencies')
-      .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+      .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
     supabase
       .from('task_dependencies')
-      .select('*, blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status)')
+      .select('*, blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
   ]);
 
+  // Filter to only deps where the joined task belongs to this project
+  const filteredBlockedBy = (blockedByRes.data || []).filter(
+    (dep: any) => dep.blocking_task?.project_id === id
+  );
+  const filteredBlocks = (blocksRes.data || []).filter(
+    (dep: any) => dep.blocked_task?.project_id === id
+  );
+
   return NextResponse.json({
-    blocked_by: blockedByRes.data || [],
-    blocks: blocksRes.data || [],
+    blocked_by: filteredBlockedBy,
+    blocks: filteredBlocks,
   });
 }
 
