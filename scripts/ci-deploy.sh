@@ -31,11 +31,15 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
   # Strip conventional commit prefix for cleaner entry
   ENTRY=$(echo "$COMMIT_MSG" | sed -E 's/^(fix|feat|docs|refactor|chore|security|sec)(\([^)]*\))?:\s*//')
 
-  # Insert after the header line in CHANGELOG.md
-  CHANGELOG_ENTRY="## [$NEW_VERSION] - $TODAY\n### $SECTION\n- $ENTRY\n"
-  sed -i "/^Format:.*$/a\\
+  # Only add if this version isn't already in the changelog
+  if ! grep -q "## \[$NEW_VERSION\]" CHANGELOG.md; then
+    # Insert new version block after the Format line (with a blank line)
+    sed -i "/^Format:.*$/a\\
 \\
-$CHANGELOG_ENTRY" CHANGELOG.md
+## [$NEW_VERSION] - $TODAY\\
+### $SECTION\\
+- $ENTRY" CHANGELOG.md
+  fi
 fi
 
 git add package.json CHANGELOG.md
