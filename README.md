@@ -286,10 +286,14 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 
 - HMAC-SHA256 on every authenticated request
 - Nonce replay protection
-- JSON canonicalization before signature verification
+- JSON canonicalization (RFC 8785) before signature verification
 - Row Level Security in Supabase
 - Per-agent and per-key rate limits
+- Rate limiting on unauthenticated endpoints (health)
 - Kill switch for immediate write freeze
+- Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+- Zod-based runtime schema validation for contract messages
+- Auto-changelog generation on deploy
 - Full audit logging
 - Zod-based runtime schema validation for contract messages (string, number, boolean, enum, array, object types supported)
 - Project/task membership checks before access or mutation

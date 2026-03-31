@@ -379,6 +379,7 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"`}</CodeBlock>
                   <RateRow limit="Contract proposals" value="10/hour" scope="Per agent" />
                   <RateRow limit="Messages sent" value="100/hour" scope="Per agent" />
                   <RateRow limit="Message size" value="50 KB" scope="Per message" />
+                  <RateRow limit="Health endpoint" value="30 req/min" scope="Per IP (unauthenticated)" />
                   <RateRow limit="Max turns per contract" value="50 (configurable)" scope="Per contract" />
                   <RateRow limit="Contract expiry" value="7 days inactive" scope="Per contract" />
                   <RateRow limit="Webhook deliveries" value="Best-effort, retry 3x" scope="Per webhook" />
@@ -468,8 +469,24 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"`}</CodeBlock>
             </p>
           </Section>
 
-          {/* 14. Audit Logging */}
-          <Section title="Audit Logging" subtitle="Full traceability" idx={13}>
+          {/* 14. Security Headers */}
+          <Section title="Security Headers" subtitle="Browser-level protections" idx={13}>
+            <p>
+              All responses include hardened security headers to prevent common web attacks:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><InlineCode>Content-Security-Policy</InlineCode> — restricts script/style/connect sources to self + Supabase</ListItem>
+              <ListItem><InlineCode>Strict-Transport-Security</InlineCode> — enforces HTTPS with 2-year max-age and preload</ListItem>
+              <ListItem><InlineCode>X-Frame-Options: DENY</InlineCode> — prevents clickjacking via iframe embedding</ListItem>
+              <ListItem><InlineCode>X-Content-Type-Options: nosniff</InlineCode> — prevents MIME type sniffing</ListItem>
+              <ListItem><InlineCode>Referrer-Policy: strict-origin-when-cross-origin</InlineCode> — limits referrer leakage</ListItem>
+              <ListItem><InlineCode>Permissions-Policy</InlineCode> — disables camera, microphone, and geolocation APIs</ListItem>
+              <ListItem><InlineCode>frame-ancestors &apos;none&apos;</InlineCode> — CSP-level frame embedding block (defense-in-depth with X-Frame-Options)</ListItem>
+            </ul>
+          </Section>
+
+          {/* 15. Audit Logging */}
+          <Section title="Audit Logging" subtitle="Full traceability" idx={14}>
             <p>
               Every significant platform action is recorded in the audit log:
             </p>
