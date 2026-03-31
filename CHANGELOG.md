@@ -10,6 +10,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.44] - 2026-03-31
 ### Docs
 - **Webhook API reference rewritten** — AGENTS.md now reflects the actual platform payload format:
@@ -23,11 +31,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.43] - 2026-03-31
 ### Fixed
 - Replaced sidebar text logo with brand SVG icon — text fallback was showing instead of the branded icon in production build
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.42] - 2026-03-31
 ### Added
@@ -38,17 +62,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.41] - 2026-03-31
 ### Changed
 - Security page updated to document shared nonce/rate-limit storage (Supabase-backed) and project guard behavior
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.40] - 2026-03-31
 ### Changed
 - Security model documentation updated: shared rate limiting architecture, orphaned project guard explanation added
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.39] - 2026-03-31
 ### Fixed
@@ -58,11 +106,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.38] - 2026-03-31
 ### Added
 - Custom favicon, apple-icon, and PWA manifest using A2A brand assets
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.36] - 2026-03-31
 ### Fixed
@@ -70,11 +134,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.35] - 2026-03-31
 ### Fixed
 - `TaskDep` type cast — used `unknown` intermediate for Supabase join results to avoid TypeScript strict-mode errors
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.34] - 2026-03-31
 ### Fixed
@@ -82,11 +162,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.33] - 2026-03-31
 ### Fixed
 - Auth middleware now excludes static assets (`/manifest.webmanifest`, icons) — was causing 401s on PWA icon requests
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.32] - 2026-03-31
 ### Added
@@ -94,11 +190,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.31] - 2026-03-31
 ### Fixed
 - RLS migration type cast — `resource_id` column is UUID not text; fixed Supabase migration 007 to cast correctly
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.30] - 2026-03-31
 ### Security — Round 5 Audit
@@ -110,6 +222,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.29] - 2026-03-31
 ### Changed
 - Dashboard security page updated with security headers section (CSP, HSTS, X-Frame-Options, etc.)
@@ -117,17 +237,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.28] - 2026-03-31
 ### Fixed
 - CI deploy script hardened — added `docker rm -f` fallback before `docker rename` to handle container name conflicts on redeploy
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.27] - 2026-03-31
 ### Fixed
 - Deduplicated changelog entries — cleaned up double 1.0.26 entry from merge
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.26] - 2026-03-31
 ### Security — Infrastructure Hardening
@@ -137,6 +281,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **CI auto-changelog** — deploy script now auto-generates CHANGELOG.md entries from commit messages on every push
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.25] - 2026-03-31
 ### Security — Round 4 Audit
@@ -149,6 +301,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.24] - 2026-03-31
 ### Security — Round 3 Audit
 - **Dashboard action auth** — all dashboard server actions (`contracts/[id]/actions.ts`, `projects/[id]/actions.ts`) now verify Supabase session before mutating data
@@ -159,17 +319,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.23] - 2026-03-31
 ### Fixed
 - `CHANGELOG.md` now included in Docker build context — was missing from `.dockerignore` allowlist, causing the `/changelog` page to render empty
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.22] - 2026-03-31
 ### Added
 - **Changelog page** (`/changelog`) — parsed from `CHANGELOG.md`, rendered with version cards, dates, and change categories in the dashboard sidebar
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.21] - 2026-03-31
 ### Docs
@@ -179,6 +363,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - README and human onboarding updated
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.20] - 2026-03-31
 ### Security — Round 2 Audit
@@ -190,12 +382,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.19] - 2026-03-31
 ### Added
 - **Enhanced dashboard home** — 4 new stat cards: total agents, active projects, tasks in-progress, webhook deliveries (24h). All audit entries now link to relevant detail pages.
 - **Enhanced analytics page** — 4 new summary stats (active projects, tasks done, avg response time, webhooks fired). 4 new charts: contracts created/day, task status donut, top contracts by messages, hourly activity heatmap. CSS-only, no chart libraries.
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.18] - 2026-03-31
 ### Security — Round 1 Audit (7 findings fixed)
@@ -209,11 +417,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.17] - 2026-03-31
 ### Docs
 - Aligned all markdown documentation files (`AGENTS.md`, `ONBOARDING-AGENT.md`, `ONBOARDING-HUMAN.md`, `README.md`, skill `SKILL.md`)
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.16] - 2026-03-31
 ### Added / Fixed
@@ -224,11 +448,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.15] - 2026-03-31
 ### Fixed
 - AutoRefresh indicator upgraded to match Feed page style (pulsing dot + `LIVE` text)
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.14] - 2026-03-31
 ### Added
@@ -236,11 +476,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.13] - 2026-03-31
 ### Fixed
 - Deployment fix (internal — Docker compose sequencing)
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.12] - 2026-03-31
 ### Fixed
@@ -248,11 +504,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.11] - 2026-03-31
 ### Fixed
 - Added `trading-v2-network` to `docker-compose.yml` for Traefik reverse proxy routing
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.10] - 2026-03-31
 ### Added
@@ -261,17 +533,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.9] - 2026-03-31
 ### Added
 - Auto-refresh polling on project, task, and webhook pages (30s interval)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.8] - 2026-03-30
 ### Fixed
 - Dark theme applied globally to all `<select>` inputs — was rendering with browser-default light background
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.7] - 2026-03-30
 ### Added
@@ -280,11 +576,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.6] - 2026-03-30
 ### Docs
 - All documentation aligned with CLI v1.0.5 project management commands (`projects`, `project-create`, `sprints`, `sprint-create`, `tasks`, `task-create`, `task-update`, `deps`, `dep-add`, `task-link`)
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.5] - 2026-03-30
 ### Added
@@ -292,11 +604,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.4] - 2026-03-30
 ### Docs
 - Projects & Tasks integrated across all platform documentation (README, AGENTS.md, onboarding guides)
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.3] - 2026-03-30
 ### Added
@@ -311,11 +639,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
+
 ## [1.0.2] - 2026-03-30
 ### Changed
 - Removed internal `CLAUDE.md` config file from repository
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.1] - 2026-03-30
 ### Added
@@ -325,6 +669,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Fixed webhook secret name in deploy workflow
 
 ---
+
+## [1.0.46] - 2026-03-31
+### Changed
+- improve changelog auto-gen — include commit body as bullet points
+- Previously only pulled commit subject line, producing one-liner entries.
+- Now reads full commit body and appends each line as a bullet point.
+- Docs section label added (was falling through to 'Changed').
+- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.0] - 2026-03-28
 ### Added — Initial Release
