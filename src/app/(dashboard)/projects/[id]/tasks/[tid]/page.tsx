@@ -146,7 +146,7 @@ export default async function TaskDetailPage({
   const blocks = ((blocksRes.data || []) as unknown as TaskDep[]).filter(
     (dep) => dep.tasks?.project_id === projectId
   );
-  const linkedContracts = (contractsRes.data || []) as LinkedContract[];
+  const linkedContracts = (contractsRes.data || []) as unknown as LinkedContract[];
 
   // Filter linked contracts by participation unless superAdmin
   let visibleContracts = linkedContracts;
@@ -317,9 +317,9 @@ export default async function TaskDetailPage({
                         <span className="font-medium text-gray-300">{entry.actor}</span>
                         {' '}
                         <span className="text-gray-600">{entry.action.replace('task.', '')}</span>
-                        {entry.details && typeof entry.details === 'object' && entry.details.status && (
-                          <span className="text-gray-500"> → {entry.details.status}</span>
-                        )}
+                        {entry.details && 'status' in entry.details && entry.details.status ? (
+                          <span className="text-gray-500"> → {String(entry.details.status)}</span>
+                        ) : null}
                       </p>
                       <p className="text-[9px] text-gray-700 font-mono tabular-nums mt-0.5">
                         {new Date(entry.created_at).toLocaleString('en-US', {
