@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.45] - 2026-03-31
+### Changed
+- backfill detailed changelog — all versions from 1.0.0 to 1.0.44
+
 ---
 
 ## [1.0.44] - 2026-03-31
