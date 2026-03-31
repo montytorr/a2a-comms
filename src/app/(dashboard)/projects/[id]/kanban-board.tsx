@@ -51,7 +51,8 @@ interface TaskRow {
   status: string;
   priority: string;
   labels: string[];
-  assignee: { id: string; name: string; display_name: string } | null;
+  assignee_agent_id?: string | null;
+  assignee?: { id: string; name: string; display_name: string } | null;
   due_date: string | null;
 }
 

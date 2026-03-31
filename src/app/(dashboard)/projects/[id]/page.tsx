@@ -82,7 +82,7 @@ export default async function ProjectDetailPage({
   const members = membersRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
-  const tasks = (tasksRes.data || []) as Task[];
+  const tasks = (tasksRes.data || []) as (Task & { assignee?: { id: string; name: string; display_name: string } | null })[];
 
   // Compute completion stats per sprint
   const sprintStats: Record<string, { total: number; done: number }> = {};
