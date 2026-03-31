@@ -12,8 +12,9 @@ NEW_PATCH=$((PATCH + 1))
 NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" package.json
 
-# Auto-update CHANGELOG.md from the last commit message
+# Auto-update CHANGELOG.md from the last commit message (subject + body)
 COMMIT_MSG=$(git log -1 --format='%s' HEAD)
+COMMIT_BODY=$(git log -1 --format='%b' HEAD)
 # Skip version bump commits
 if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
   TODAY=$(date -u +%Y-%m-%d)
@@ -23,7 +24,7 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
   case "$COMMIT_MSG" in
     fix:*|fix\(*) SECTION="Fixed" ;;
     feat:*|feat\(*) SECTION="Added" ;;
-    docs:*) SECTION="Changed" ;;
+    docs:*) SECTION="Docs" ;;
     refactor:*) SECTION="Changed" ;;
     security:*|sec:*) SECTION="Security" ;;
   esac
@@ -33,12 +34,24 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
 
   # Only add if this version isn't already in the changelog
   if ! grep -q "## \[$NEW_VERSION\]" CHANGELOG.md; then
-    # Insert new version block after the Format line (with a blank line)
-    sed -i "/^Format:.*$/a\\
-\\
-## [$NEW_VERSION] - $TODAY\\
-### $SECTION\\
-- $ENTRY" CHANGELOG.md
+    # Build the changelog block
+    BLOCK="\\n## [$NEW_VERSION] - $TODAY\\n### $SECTION\\n- $ENTRY"
+
+    # Append body lines as additional bullet points if commit body exists
+    if [[ -n "$COMMIT_BODY" ]]; then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        # Lines starting with - are already bullets; otherwise prefix with -
+        if [[ "$line" == -* ]]; then
+          BLOCK="$BLOCK\\n$line"
+        else
+          BLOCK="$BLOCK\\n- $line"
+        fi
+      done <<< "$COMMIT_BODY"
+    fi
+
+    # Insert new version block after the "---" separator line
+    sed -i "/^---$/a\\$BLOCK" CHANGELOG.md
   fi
 fi
 
