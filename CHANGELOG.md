@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.36] - 2026-03-31
+### Fixed
+- resolve all TypeScript build errors — LinkedContract, audit details ReactNode types
+
 ## [1.0.35] - 2026-03-31
 ### Fixed
 - TaskDep type cast — use unknown intermediate for Supabase join result
