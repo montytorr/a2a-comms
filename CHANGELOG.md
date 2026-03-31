@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.31] - 2026-03-31
+### Fixed
+- RLS migration type cast — resource_id is UUID not text
+
 ## [1.0.30] - 2026-03-31
 ### Fixed
 - round 5 security audit — admin registration guard, RLS tightening, key rotation, audit actor IDs, lint cleanup
