@@ -62,6 +62,7 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
   const { error: keyError } = await supabase.from('service_keys').insert({
     key_id: keyId,
     key_hash: keyHash,
+    signing_secret: signingSecret,
     agent_id: agentId,
     label: `${agent.display_name} production key (rotated)`,
     is_active: true,

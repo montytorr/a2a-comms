@@ -83,6 +83,7 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
   const { error: keyError } = await supabase.from('service_keys').insert({
     key_id: keyId,
     key_hash: keyHash,
+    signing_secret: signingSecret,
     agent_id: agent.id,
     label: `${displayName} production key`,
     is_active: true,

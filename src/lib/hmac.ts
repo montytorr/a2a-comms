@@ -1,5 +1,7 @@
-// NOTE: In-memory storage — works for single-instance deployment only.
-// For horizontal scaling, replace with Redis or shared store.
+// NOTE: In-memory storage — SINGLE-INSTANCE ONLY.
+// In multi-instance deployments, nonce replay protection and rate limiting
+// will NOT work correctly. Replace with Redis or equivalent shared store
+// before horizontal scaling. See: https://github.com/montytorr/a2a-comms/issues
 import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
 
@@ -62,7 +64,7 @@ export interface HmacValidationResult {
  *   X-API-Key: <key_id>        — public identifier
  *   X-Timestamp: <unix_epoch>  — request timestamp
  *   X-Signature: <hex_digest>  — HMAC-SHA256(secret, method\npath\ntimestamp\nnonce\nbody)
- *   X-Nonce: <uuid>            — unique request nonce (optional, recommended)
+ *   X-Nonce: <uuid>            — unique request nonce (required)
  */
 export async function validateHmac(
   method: string,
@@ -110,7 +112,11 @@ export async function validateHmac(
     const nonceExpiresAt = Date.now() + TIMESTAMP_TOLERANCE_SECONDS * 1000;
     nonceCache.set(nonce, nonceExpiresAt);
   } else {
-    console.warn('[hmac] DEPRECATION: Request without X-Nonce header. Nonce will be required in a future version.');
+    return {
+      valid: false,
+      error: 'Missing required header: X-Nonce',
+      code: 'MISSING_NONCE',
+    };
   }
 
   // Validate body size
@@ -166,14 +172,8 @@ export async function validateHmac(
     };
   }
 
-  // Build signing message — with or without nonce for backward compatibility
-  let message: string;
-  if (nonce) {
-    message = `${method}\n${path}\n${timestamp}\n${nonce}\n${canonicalBody}`;
-  } else {
-    // Legacy format (no nonce) — backward compatible
-    message = `${method}\n${path}\n${timestamp}\n${canonicalBody}`;
-  }
+  // Build signing message (nonce is required)
+  const message = `${method}\n${path}\n${timestamp}\n${nonce}\n${canonicalBody}`;
 
   const expectedSignature = crypto
     .createHmac('sha256', keyData.signing_secret)

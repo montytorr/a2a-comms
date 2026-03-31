@@ -1,5 +1,7 @@
-// NOTE: In-memory storage — works for single-instance deployment only.
-// For horizontal scaling, replace with Redis or shared store.
+// NOTE: In-memory storage — SINGLE-INSTANCE ONLY.
+// In multi-instance deployments, nonce replay protection and rate limiting
+// will NOT work correctly. Replace with Redis or equivalent shared store
+// before horizontal scaling. See: https://github.com/montytorr/a2a-comms/issues
 
 interface RateLimitEntry {
   count: number;

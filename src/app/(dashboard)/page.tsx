@@ -195,12 +195,17 @@ export default async function DashboardPage() {
     }
   }
 
-  // Webhook Deliveries (24h)
+  // Webhook Deliveries (24h) — scoped for non-admin
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const webhookDeliveriesQuery = supabase
+  let webhookDeliveriesQuery = supabase
     .from('webhooks')
     .select('id', { count: 'exact', head: true })
     .gte('last_delivery_at', twentyFourHoursAgo);
+  if (!isAdmin && agentIds.length > 0) {
+    webhookDeliveriesQuery = webhookDeliveriesQuery.in('agent_id', agentIds);
+  } else if (!isAdmin) {
+    webhookDeliveriesQuery = webhookDeliveriesQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
+  }
 
   const [contractsRes, messagesRes, configRes, auditRes, pendingRes, agentsCountRes, activeProjectsRes, tasksInProgressRes, webhookDeliveriesRes] = await Promise.all([
     contractsQuery,

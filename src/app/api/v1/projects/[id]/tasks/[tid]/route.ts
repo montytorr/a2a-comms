@@ -173,6 +173,24 @@ export async function PATCH(
   }
 
   const supabase = createServerClient();
+
+  // Validate sprint belongs to same project
+  if (updates.sprint_id) {
+    const { data: sprint } = await supabase
+      .from('sprints')
+      .select('id')
+      .eq('id', updates.sprint_id as string)
+      .eq('project_id', id)
+      .single();
+
+    if (!sprint) {
+      return NextResponse.json(
+        { error: 'Sprint not found in this project', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+  }
+
   const { data: task, error } = await supabase
     .from('tasks')
     .update(updates)

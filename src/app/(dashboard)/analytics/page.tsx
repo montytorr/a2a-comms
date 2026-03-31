@@ -181,12 +181,25 @@ export default async function AnalyticsPage({
     ? Math.round((totalResponseTimeMs / responseTimePairs / 3600000) * 10) / 10
     : null;
 
-  // 8. Webhooks Fired — audit_log entries with 'webhook' in action
+  // 8. Webhooks Fired — audit_log entries with 'webhook' in action (scoped for non-admin)
   let webhooksFiredQuery = supabase
     .from('audit_log')
     .select('id', { count: 'exact', head: true })
     .ilike('action', '%webhook%')
     .gte('created_at', cutoffISO);
+  if (!user.isSuperAdmin) {
+    const safeAgentIdsForWebhooks = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+    const { data: agentNamesData } = await supabase
+      .from('agents')
+      .select('name')
+      .in('id', safeAgentIdsForWebhooks);
+    const agentNames = (agentNamesData || []).map(a => a.name);
+    if (agentNames.length > 0) {
+      webhooksFiredQuery = webhooksFiredQuery.in('actor', agentNames);
+    } else {
+      webhooksFiredQuery = webhooksFiredQuery.eq('actor', '__none__');
+    }
+  }
   const { count: webhooksFiredCount } = await webhooksFiredQuery;
 
   // 9. Contracts Created per Day

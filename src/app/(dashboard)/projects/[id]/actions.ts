@@ -78,6 +78,17 @@ export async function createTask(
   await requireProjectMembership(projectId);
 
   const supabase = createServerClient();
+
+  // Validate sprint belongs to same project
+  if (sprintId) {
+    const { data: sprint } = await supabase
+      .from('sprints')
+      .select('id')
+      .eq('id', sprintId)
+      .eq('project_id', projectId)
+      .single();
+    if (!sprint) throw new Error('Sprint not found in this project');
+  }
   const { error } = await supabase.from('tasks').insert({
     project_id: projectId,
     title,

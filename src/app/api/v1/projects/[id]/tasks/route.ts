@@ -134,6 +134,23 @@ export async function POST(
 
   const supabase = createServerClient();
 
+  // Validate sprint belongs to same project
+  if (parsed.sprint_id) {
+    const { data: sprint } = await supabase
+      .from('sprints')
+      .select('id')
+      .eq('id', parsed.sprint_id)
+      .eq('project_id', id)
+      .single();
+
+    if (!sprint) {
+      return NextResponse.json(
+        { error: 'Sprint not found in this project', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+  }
+
   // Get next position
   const { data: existingTasks } = await supabase
     .from('tasks')

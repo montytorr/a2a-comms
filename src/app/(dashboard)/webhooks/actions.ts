@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { createHmac } from 'crypto';
+import { resolveAndValidateHost } from '@/lib/url-validator';
 
 export interface WebhookTestResult {
   success: boolean;
@@ -53,6 +54,12 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
     .update(payload)
     .digest('hex');
 
+  // Validate resolved IPs at delivery time (same as production delivery)
+  const dnsCheck = await resolveAndValidateHost(webhook.url);
+  if (!dnsCheck.valid) {
+    return { success: false, error: `URL validation failed: ${dnsCheck.error}` };
+  }
+
   const start = Date.now();
 
   try {
@@ -65,9 +72,21 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
       },
       body: payload,
       signal: AbortSignal.timeout(10000),
+      redirect: 'manual',
     });
 
     const responseTime = Date.now() - start;
+
+    // Block redirects (SSRF protection)
+    if (response.status >= 300 && response.status < 400) {
+      return {
+        success: false,
+        status: response.status,
+        statusText: 'Redirect blocked (SSRF protection)',
+        responseTime,
+      };
+    }
+
     const is2xx = response.status >= 200 && response.status < 300;
 
     return {
