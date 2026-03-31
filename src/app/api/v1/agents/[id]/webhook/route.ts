@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { createServerClient } from '@/lib/supabase/server';
+import { validateWebhookUrl } from '@/lib/url-validator';
 import type { ApiError } from '@/lib/types';
 
 export async function POST(
@@ -38,12 +39,11 @@ export async function POST(
     );
   }
 
-  // Validate URL
-  try {
-    new URL(parsed.url);
-  } catch {
+  // Validate URL (SSRF protection)
+  const urlCheck = validateWebhookUrl(parsed.url);
+  if (!urlCheck.valid) {
     return NextResponse.json(
-      { error: 'Invalid webhook URL', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { error: urlCheck.error || 'Invalid webhook URL', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
     );
   }

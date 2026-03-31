@@ -69,7 +69,14 @@ export async function POST(
     );
   }
 
-  let parsed: { agent_id: string; role?: string };
+  if (callerMember.role !== 'owner') {
+    return NextResponse.json(
+      { error: 'Only project owners can add members', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  let parsed: { agent_id: string };
   try {
     parsed = JSON.parse(body);
   } catch {
@@ -86,13 +93,7 @@ export async function POST(
     );
   }
 
-  const role = parsed.role || 'member';
-  if (!['owner', 'member'].includes(role)) {
-    return NextResponse.json(
-      { error: 'Invalid role. Must be owner or member', code: 'VALIDATION_ERROR' } satisfies ApiError,
-      { status: 400 }
-    );
-  }
+  const role = 'member'; // Always add as member — owner promotion requires separate flow
 
   // Verify agent exists
   const supabase = createServerClient();

@@ -15,6 +15,17 @@ async function verifyMembership(projectId: string, agentId: string) {
   return data;
 }
 
+async function verifyTaskInProject(taskId: string, projectId: string) {
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('id', taskId)
+    .eq('project_id', projectId)
+    .single();
+  return !!data;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; tid: string }> }
@@ -30,6 +41,14 @@ export async function GET(
     return NextResponse.json(
       { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
+    );
+  }
+
+  const taskInProject = await verifyTaskInProject(tid, id);
+  if (!taskInProject) {
+    return NextResponse.json(
+      { error: 'Task not found in this project', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
     );
   }
 
@@ -64,6 +83,14 @@ export async function POST(
     return NextResponse.json(
       { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
+    );
+  }
+
+  const taskInProject = await verifyTaskInProject(tid, id);
+  if (!taskInProject) {
+    return NextResponse.json(
+      { error: 'Task not found in this project', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
     );
   }
 
@@ -149,6 +176,14 @@ export async function DELETE(
     return NextResponse.json(
       { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
+    );
+  }
+
+  const taskInProject = await verifyTaskInProject(tid, id);
+  if (!taskInProject) {
+    return NextResponse.json(
+      { error: 'Task not found in this project', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
     );
   }
 

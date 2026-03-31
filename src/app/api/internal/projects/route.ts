@@ -52,6 +52,17 @@ export async function POST(req: NextRequest) {
   const userAgentIds = (userAgents || []).map(a => a.id);
   const creatorAgentId = userAgentIds[0] || null;
 
+  // Validate member_agent_ids: non-admins can only add their own agents
+  if (Array.isArray(member_agent_ids) && member_agent_ids.length > 0 && !profile?.is_super_admin) {
+    const invalidAgents = member_agent_ids.filter((aid: string) => !userAgentIds.includes(aid));
+    if (invalidAgents.length > 0) {
+      return NextResponse.json(
+        { error: 'You can only add your own agents to projects. Use the API for cross-agent projects.' },
+        { status: 403 }
+      );
+    }
+  }
+
   // Create the project
   const { data: project, error: createErr } = await supabase
     .from('projects')

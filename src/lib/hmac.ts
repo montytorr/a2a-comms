@@ -1,3 +1,5 @@
+// NOTE: In-memory storage — works for single-instance deployment only.
+// For horizontal scaling, replace with Redis or shared store.
 import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
 

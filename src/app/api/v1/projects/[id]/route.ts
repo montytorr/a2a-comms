@@ -96,6 +96,13 @@ export async function PATCH(
     );
   }
 
+  if (member.role !== 'owner') {
+    return NextResponse.json(
+      { error: 'Only project owners can update project settings', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   let parsed: UpdateProjectRequest;
   try {
     parsed = JSON.parse(body);

@@ -15,6 +15,17 @@ async function verifyMembership(projectId: string, agentId: string) {
   return data;
 }
 
+async function verifyTaskInProject(taskId: string, projectId: string) {
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('id', taskId)
+    .eq('project_id', projectId)
+    .single();
+  return !!data;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; tid: string }> }
@@ -30,6 +41,14 @@ export async function GET(
     return NextResponse.json(
       { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
+    );
+  }
+
+  const taskInProject = await verifyTaskInProject(tid, id);
+  if (!taskInProject) {
+    return NextResponse.json(
+      { error: 'Task not found in this project', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
     );
   }
 
@@ -106,6 +125,17 @@ export async function POST(
     );
   }
 
+  const [taskValid, otherTaskValid] = await Promise.all([
+    verifyTaskInProject(tid, id),
+    verifyTaskInProject(parsed.blocking_task_id || parsed.blocked_task_id!, id),
+  ]);
+  if (!taskValid || !otherTaskValid) {
+    return NextResponse.json(
+      { error: 'Both tasks must belong to this project', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
+    );
+  }
+
   const supabase = createServerClient();
 
   const { data: dep, error } = await supabase
@@ -178,6 +208,40 @@ export async function DELETE(
   }
 
   const supabase = createServerClient();
+
+  // Verify the task belongs to this project
+  const taskInProject = await verifyTaskInProject(tid, id);
+  if (!taskInProject) {
+    return NextResponse.json(
+      { error: 'Task not found in this project', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
+    );
+  }
+
+  // Verify the dependency exists and both tasks belong to this project
+  const { data: dep } = await supabase
+    .from('task_dependencies')
+    .select('blocking_task_id, blocked_task_id')
+    .eq('id', parsed.dependency_id)
+    .single();
+
+  if (!dep) {
+    return NextResponse.json(
+      { error: 'Dependency not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
+    );
+  }
+
+  const [blockingInProject, blockedInProject] = await Promise.all([
+    verifyTaskInProject(dep.blocking_task_id, id),
+    verifyTaskInProject(dep.blocked_task_id, id),
+  ]);
+  if (!blockingInProject || !blockedInProject) {
+    return NextResponse.json(
+      { error: 'Dependency does not belong to this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('task_dependencies')

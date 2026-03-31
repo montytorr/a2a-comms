@@ -1,5 +1,5 @@
-// In-memory rate limiter (sufficient for single-instance deployment)
-// For multi-instance, swap for Redis-backed implementation
+// NOTE: In-memory storage — works for single-instance deployment only.
+// For horizontal scaling, replace with Redis or shared store.
 
 interface RateLimitEntry {
   count: number;
