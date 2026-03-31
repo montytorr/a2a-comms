@@ -132,16 +132,18 @@ export default async function TaskDetailPage({
   const sprint = sprintRes.data;
   interface TaskDep {
     id: string;
+    blocking_task_id?: string;
+    blocked_task_id?: string;
     tasks: { id: string; title: string; status: string; project_id: string } | null;
   }
   interface LinkedContract {
     id: string;
     contract: { id: string; title: string; status: string } | null;
   }
-  const blockedBy = ((blockedByRes.data || []) as TaskDep[]).filter(
+  const blockedBy = ((blockedByRes.data || []) as unknown as TaskDep[]).filter(
     (dep) => dep.tasks?.project_id === projectId
   );
-  const blocks = ((blocksRes.data || []) as TaskDep[]).filter(
+  const blocks = ((blocksRes.data || []) as unknown as TaskDep[]).filter(
     (dep) => dep.tasks?.project_id === projectId
   );
   const linkedContracts = (contractsRes.data || []) as LinkedContract[];
