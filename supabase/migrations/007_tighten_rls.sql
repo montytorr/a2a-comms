@@ -111,7 +111,7 @@ CREATE POLICY "audit_log_select_own" ON audit_log FOR SELECT TO authenticated
       SELECT 1 FROM agents a
       WHERE a.owner_user_id = auth.uid()
       AND (
-        audit_log.resource_id = a.id::text
+        audit_log.resource_id = a.id
         OR audit_log.actor = a.name
       )
     )
