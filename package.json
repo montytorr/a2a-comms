@@ -1,6 +1,6 @@
 {
   "name": "a2a-comms",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "private": true,
   "scripts": {
     "dev": "next dev",

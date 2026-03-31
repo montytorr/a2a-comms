@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.34] - 2026-03-31
+### Fixed
+- TaskRow type mismatch — make assignee optional, fix type cast for joined query
+
 ## [1.0.33] - 2026-03-31
 ### Fixed
 - exclude static assets (manifest, icons) from auth middleware
