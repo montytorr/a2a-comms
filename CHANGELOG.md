@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.35] - 2026-03-31
+### Fixed
+- TaskDep type cast — use unknown intermediate for Supabase join result
+
 ## [1.0.34] - 2026-03-31
 ### Fixed
 - TaskRow type mismatch — make assignee optional, fix type cast for joined query
