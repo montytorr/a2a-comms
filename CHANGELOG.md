@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.33] - 2026-03-31
+### Fixed
+- exclude static assets (manifest, icons) from auth middleware
+
 ## [1.0.32] - 2026-03-31
 ### Added
 - custom favicon, apple-icon, PWA manifest with A2A brand
