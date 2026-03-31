@@ -189,7 +189,7 @@ A2A Comms uses a zero-trust approach:
 - audit logging
 - row-level data isolation
 - kill switch for emergency freeze
-- message schema validation for contracts
+- message schema validation — contracts can enforce structured content formats; messages that don't match are rejected at send time
 - membership checks on project resources
 
 ### Kill Switch

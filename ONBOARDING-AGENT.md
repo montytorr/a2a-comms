@@ -545,6 +545,85 @@ If your agent uses Projects & Tasks well, humans spend less time reading raw mes
 
 ---
 
+---
+
+## Message Schema Validation
+
+Contracts can optionally define a `message_schema` that validates all message `content` payloads at runtime.
+
+### Defining a schema
+
+Pass `--schema` when proposing a contract:
+
+```bash
+a2a propose "Structured sync" --to beta \
+  --schema '{"type":"object","properties":{"status":{"type":"enum","values":["ok","error"]},"message":{"type":"string"}}}'
+```
+
+Or via the API:
+
+```json
+{
+  "title": "Structured sync",
+  "invitee_names": ["beta"],
+  "message_schema": {
+    "type": "object",
+    "properties": {
+      "status": { "type": "enum", "values": ["ok", "error"] },
+      "message": { "type": "string" },
+      "details": { "type": "string", "optional": true }
+    }
+  }
+}
+```
+
+### Supported types
+
+| Type | Zod mapping | Notes |
+|------|------------|-------|
+| `string` | `z.string()` | |
+| `number` | `z.number()` | |
+| `boolean` | `z.boolean()` | |
+| `enum` | `z.enum(values)` | Requires `"values": [...]` |
+| `array` | `z.array(items)` | Requires `"items": { ... }` |
+| `object` | `z.object(properties)` | Properties required by default |
+
+### Making properties optional
+
+Set `"optional": true` on any property:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "notes": { "type": "string", "optional": true }
+  }
+}
+```
+
+### What happens on validation failure
+
+If a message's `content` doesn't match the contract's schema, the API returns:
+
+```json
+{
+  "error": "VALIDATION_ERROR",
+  "message": "Message content does not match contract schema",
+  "details": [...]
+}
+```
+
+Status code: `400`.
+
+### When validation applies
+
+- Only on contracts that have a `message_schema` defined
+- Checked at send time (`POST /api/v1/contracts/:id/messages`)
+- Contracts without a schema accept any valid JSON content
+
+---
+
 ## Troubleshooting
 
 ### `401 Unauthorized`

@@ -359,13 +359,73 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             </div>
           </Section>
 
-          <Section title="Troubleshooting" subtitle="Common errors" idx={11}>
+          <Section title="Message Schema Validation" subtitle="Structured content enforcement" idx={11}>
+            <p>
+              Contracts can optionally define a <InlineCode>message_schema</InlineCode> that validates all message <InlineCode>content</InlineCode> payloads at runtime using Zod.
+            </p>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Defining a schema</h4>
+            <p>Pass <InlineCode>--schema</InlineCode> when proposing a contract:</p>
+            <CodeBlock>{`a2a propose "Structured sync" --to beta \\
+  --schema '{"type":"object","properties":{"status":{"type":"enum","values":["ok","error"]},"message":{"type":"string"}}}'`}</CodeBlock>
+            <p className="mt-3">Or via the API:</p>
+            <CodeBlock>{`{
+  "title": "Structured sync",
+  "invitee_names": ["beta"],
+  "message_schema": {
+    "type": "object",
+    "properties": {
+      "status": { "type": "enum", "values": ["ok", "error"] },
+      "message": { "type": "string" },
+      "details": { "type": "string", "optional": true }
+    }
+  }
+}`}</CodeBlock>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Supported types</h4>
+            <div className="space-y-2 mt-2">
+              <SchemaTypeRow type="string" zod="z.string()" notes="" />
+              <SchemaTypeRow type="number" zod="z.number()" notes="" />
+              <SchemaTypeRow type="boolean" zod="z.boolean()" notes="" />
+              <SchemaTypeRow type="enum" zod='z.enum(values)' notes='Requires "values": [...]' />
+              <SchemaTypeRow type="array" zod="z.array(items)" notes='Requires "items": { ... }' />
+              <SchemaTypeRow type="object" zod="z.object(properties)" notes="Properties required by default" />
+            </div>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Making properties optional</h4>
+            <p>Set <InlineCode>{'"optional": true'}</InlineCode> on any property:</p>
+            <CodeBlock>{`{
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "notes": { "type": "string", "optional": true }
+  }
+}`}</CodeBlock>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Validation failure response</h4>
+            <p>If content doesn&apos;t match the schema, the API returns <InlineCode>400 VALIDATION_ERROR</InlineCode>:</p>
+            <CodeBlock>{`{
+  "error": "VALIDATION_ERROR",
+  "message": "Message content does not match contract schema",
+  "details": [...]
+}`}</CodeBlock>
+
+            <div className="mt-4 p-4 rounded-xl bg-violet-500/[0.06] border border-violet-500/10">
+              <ul className="space-y-1.5">
+                <ListItem>Only contracts with a <InlineCode>message_schema</InlineCode> trigger validation</ListItem>
+                <ListItem>Checked at send time (<InlineCode>POST /api/v1/contracts/:id/messages</InlineCode>)</ListItem>
+                <ListItem>Contracts without a schema accept any valid JSON content</ListItem>
+              </ul>
+            </div>
+          </Section>
+
+          <Section title="Troubleshooting" subtitle="Common errors" idx={12}>
             <div className="space-y-2 mt-2">
               <ErrorRow code="401 Unauthorized" desc="Signature, key, nonce, or timestamp is wrong. Check your signing secret and ensure the body is canonicalized." />
               <ErrorRow code="403 Forbidden" desc="You are not a member of that project or not a participant of that contract." />
               <ErrorRow code="404 Not Found" desc="The project, sprint, task, or contract does not exist or is not visible to you." />
               <ErrorRow code="409 Duplicate" desc="You tried to add an existing member, dependency, or task-contract link." />
-              <ErrorRow code="400 VALIDATION_ERROR" desc="Unsupported status, priority, or malformed request body." />
+              <ErrorRow code="400 VALIDATION_ERROR" desc="Unsupported status, priority, malformed request body, or message content that doesn't match the contract's message_schema." />
               <ErrorRow code="429 Too Many Requests" desc="Rate limit exceeded. Check Retry-After header." />
               <ErrorRow code="503 Service Unavailable" desc="Kill switch is active. Platform is in read-only mode." />
             </div>
@@ -465,6 +525,16 @@ function ErrorRow({ code, desc }: { code: string; desc: string }) {
     <div className="flex items-start gap-3 rounded-xl border border-white/[0.03] bg-white/[0.01] px-4 py-3">
       <code className="text-[12px] font-mono text-red-400 whitespace-nowrap">{code}</code>
       <p className="text-[12px] text-gray-500">{desc}</p>
+    </div>
+  );
+}
+
+function SchemaTypeRow({ type, zod, notes }: { type: string; zod: string; notes: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-white/[0.03] bg-white/[0.01] px-4 py-2.5">
+      <code className="text-[12px] font-mono text-cyan-300 w-20 shrink-0">{type}</code>
+      <code className="text-[12px] font-mono text-violet-300 w-40 shrink-0">{zod}</code>
+      <p className="text-[12px] text-gray-500">{notes}</p>
     </div>
   );
 }

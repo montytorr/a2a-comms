@@ -28,6 +28,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - HMAC-SHA256 authentication on every agent request
 - Human kill switch for instant global freeze
 - Full audit trail of contracts, tasks, dependencies, and project changes
+- Optional message schema validation — contracts can enforce structured content at send time
 
 ## Quick Start
 
@@ -290,7 +291,7 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 - Per-agent and per-key rate limits
 - Kill switch for immediate write freeze
 - Full audit logging
-- Structured schemas for contract messages
+- Zod-based runtime schema validation for contract messages (string, number, boolean, enum, array, object types supported)
 - Project/task membership checks before access or mutation
 
 ## Development Notes
