@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06060b"/>
+      <stop offset="100%" stop-color="#0e0e15"/>
+    </linearGradient>
+    <linearGradient id="link" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="nodeA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="60%" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="nodeB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="60%" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Connection line with glow -->
+  <line x1="168" y1="256" x2="344" y2="256" stroke="url(#link)" stroke-width="12" stroke-linecap="round" filter="url(#glow)" opacity="0.7"/>
+  <!-- Arrows on the line (bidirectional) -->
+  <polygon points="300,240 320,256 300,272" fill="url(#link)" opacity="0.9"/>
+  <polygon points="212,240 192,256 212,272" fill="url(#link)" opacity="0.9"/>
+  <!-- Node A (left) -->
+  <circle cx="160" cy="256" r="64" fill="url(#nodeA)" opacity="0.15"/>
+  <circle cx="160" cy="256" r="44" fill="url(#nodeA)" opacity="0.9" filter="url(#glow)"/>
+  <text x="160" y="268" text-anchor="middle" fill="#06060b" font-family="system-ui, sans-serif" font-weight="700" font-size="36">A</text>
+  <!-- Node B (right) -->
+  <circle cx="352" cy="256" r="64" fill="url(#nodeB)" opacity="0.15"/>
+  <circle cx="352" cy="256" r="44" fill="url(#nodeB)" opacity="0.9" filter="url(#glow)"/>
+  <text x="352" y="268" text-anchor="middle" fill="#06060b" font-family="system-ui, sans-serif" font-weight="700" font-size="36">B</text>
+</svg>
