@@ -4,6 +4,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.29] - 2026-03-31
+### Changed
+- add security headers section to dashboard, update README with new security features
+
 ## [1.0.28] - 2026-03-31
 ### Fixed
 - harden ci-deploy with fallback container removal for name conflicts
