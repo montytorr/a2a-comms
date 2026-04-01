@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.63] - 2026-04-01
+### Changed
+- ci: retrigger deploy after fd051a7 failure
+
 ## [1.0.62] - 2026-04-01
 ### Fixed
 - use chown instead of sudo rm for .next cache cleanup
