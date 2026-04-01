@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.62] - 2026-04-01
+### Fixed
+- use chown instead of sudo rm for .next cache cleanup
+- runner has NOPASSWD for chown but not rm. Use chown to reclaim
+- ownership, then rm without sudo. Fixes recurring CI permission error.
+
 ## [1.0.61] - 2026-04-01
 ### Fixed
 - suppress img lint warning in sidebar
