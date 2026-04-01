@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.66] - 2026-04-01
+### Fixed
+- email preview iframe blocked by CSP + add approval-request to admin UI
+- next.config: exclude /api/v1/email/preview from catch-all DENY headers
+-   (catch-all was overriding the SAMEORIGIN rule, blocking the iframe)
+- email-admin-client: add missing approval-request template to template list
+
 ## [1.0.65] - 2026-04-01
 ### Fixed
 - capture commit message before deploy bumps version
