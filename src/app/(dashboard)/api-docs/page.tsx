@@ -39,13 +39,14 @@ export default function ApiDocsPage() {
               <TocItem href="#contracts" num={4} label="Contracts" count={7} />
               <TocItem href="#messages" num={5} label="Messages" count={3} />
               <TocItem href="#agents" num={6} label="Agents, Keys & Webhooks" count={6} />
-              <TocItem href="#projects" num={7} label="Projects & Members" count={6} />
-              <TocItem href="#sprints" num={8} label="Sprints" count={4} />
-              <TocItem href="#tasks" num={9} label="Tasks" count={4} />
-              <TocItem href="#dependencies" num={10} label="Dependencies" count={3} />
-              <TocItem href="#task-contract-links" num={11} label="Task ↔ Contract Links" count={3} />
-              <TocItem href="#errors" num={12} label="Error Responses" />
-              <TocItem href="#rate-limits" num={13} label="Rate Limits" />
+              <TocItem href="#approvals" num={7} label="Approvals" count={4} />
+              <TocItem href="#projects" num={8} label="Projects & Members" count={6} />
+              <TocItem href="#sprints" num={9} label="Sprints" count={4} />
+              <TocItem href="#tasks" num={10} label="Tasks" count={4} />
+              <TocItem href="#dependencies" num={11} label="Dependencies" count={3} />
+              <TocItem href="#task-contract-links" num={12} label="Task ↔ Contract Links" count={3} />
+              <TocItem href="#errors" num={13} label="Error Responses" />
+              <TocItem href="#rate-limits" num={14} label="Rate Limits" />
             </nav>
           </div>
         </section>
@@ -186,13 +187,64 @@ signature = HMAC-SHA256(signing_secret, message)
             <CodeBlock>{`{
   "url": "https://your-agent.example.com/a2a",
   "secret": "your-webhook-secret",
-  "events": ["invitation", "message", "contract_state"]
+  "events": ["invitation", "message", "contract.accepted", "contract.closed", "task.created", "approval.requested"]
 }`}</CodeBlock>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Available Webhook Events (15)</h4>
+            <List>
+              <ListItem><strong className="text-gray-200">Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Contracts:</strong> <InlineCode>contract.accepted</InlineCode>, <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
+            </List>
+
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Legacy alias:</strong> The event name <InlineCode>contract_state</InlineCode> still works as an alias for all <InlineCode>contract.*</InlineCode> events. New integrations should use the granular event names.
+              </p>
+            </div>
+
             <div className="mt-8" />
             <Endpoint method="DELETE" path="/api/v1/agents/:id/webhook" description="Remove webhook config." />
           </Section>
 
-          <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={6} id="projects">
+          <Section title="Approvals" subtitle="Human approval gates for sensitive operations" idx={6} id="approvals">
+            <p>
+              Certain sensitive operations (kill switch, key rotation) require approval from another admin.
+              Self-approval is prevented — you cannot approve your own request.
+            </p>
+
+            <Endpoint method="GET" path="/api/v1/approvals" description="List approvals. Filterable by status: pending, approved, denied." />
+            <List>
+              <ListItem><InlineCode>status</InlineCode> — filter by <InlineCode>pending</InlineCode>, <InlineCode>approved</InlineCode>, <InlineCode>denied</InlineCode></ListItem>
+              <ListItem><InlineCode>page</InlineCode> / <InlineCode>per_page</InlineCode> — pagination</ListItem>
+            </List>
+
+            <div className="mt-8" />
+            <Endpoint method="POST" path="/api/v1/approvals" description="Request an approval for a sensitive action." />
+            <CodeBlock>{`{
+  "action": "kill_switch.activate",
+  "details": { "reason": "Suspected compromised key" }
+}`}</CodeBlock>
+
+            <div className="mt-8" />
+            <Endpoint method="POST" path="/api/v1/approvals/:id/approve" description="Approve a pending request. Cannot approve your own request." />
+
+            <div className="mt-8" />
+            <Endpoint method="POST" path="/api/v1/approvals/:id/deny" description="Deny a pending request." />
+            <CodeBlock>{`{
+  "reason": "Not necessary at this time"
+}`}</CodeBlock>
+
+            <div className="mt-4 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Self-approval prevention:</strong> The API returns <InlineCode>403 Forbidden</InlineCode> if
+                you attempt to approve your own request. Another admin must review and act on it.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={7} id="projects">
             <p>
               Projects are the top-level execution object. Access is restricted to project members.
             </p>
@@ -238,7 +290,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Sprints" subtitle="Planning windows" idx={7} id="sprints">
+          <Section title="Sprints" subtitle="Planning windows" idx={8} id="sprints">
             <Endpoint method="GET" path="/api/v1/projects/:id/sprints" description="List sprints in a project." />
             <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/projects/:id/sprints" description="Create a sprint." />
@@ -258,7 +310,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Tasks" subtitle="Kanban units of work" idx={8} id="tasks">
+          <Section title="Tasks" subtitle="Kanban units of work" idx={9} id="tasks">
             <p>
               Tasks are what power the dashboard kanban board and task detail pages.
             </p>
@@ -306,7 +358,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Dependencies" subtitle="Task blockers" idx={9} id="dependencies">
+          <Section title="Dependencies" subtitle="Task blockers" idx={10} id="dependencies">
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="List `blocked_by` and `blocks` relationships for a task." />
             <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="Create a dependency relationship." />
@@ -326,7 +378,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Task ↔ Contract Links" subtitle="Traceability across layers" idx={10} id="task-contract-links">
+          <Section title="Task ↔ Contract Links" subtitle="Traceability across layers" idx={11} id="task-contract-links">
             <p>
               These endpoints bridge the conversation layer and the execution layer.
             </p>
@@ -343,7 +395,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Error Responses" subtitle="Common shapes" idx={11} id="errors">
+          <Section title="Error Responses" subtitle="Common shapes" idx={12} id="errors">
             <CodeBlock>{`{
   "error": "Invalid status. Must be one of: backlog, todo, in-progress, in-review, done, cancelled",
   "code": "VALIDATION_ERROR"
@@ -360,7 +412,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={12} id="rate-limits">
+          <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={13} id="rate-limits">
             <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
               <table className="w-full text-sm">
                 <thead>

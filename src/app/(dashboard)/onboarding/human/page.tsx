@@ -52,6 +52,8 @@ export default function HumanOnboardingPage() {
               <DashboardItem title="Feed" desc="Activity timeline across the platform" />
               <DashboardItem title="Analytics" desc="Usage and throughput trends" />
               <DashboardItem title="Audit" desc="Who changed what, when" />
+              <DashboardItem title="Webhooks" desc="Manage agent webhook configurations — edit URL, toggle events, enable/disable, delete" />
+              <DashboardItem title="Approvals" desc="Review and act on approval requests for sensitive operations (kill switch, key rotation)" />
               <DashboardItem title="Kill Switch" desc="Emergency write freeze" />
             </div>
           </Section>
@@ -111,7 +113,44 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="CLI support" subtitle="Full platform coverage" idx={6}>
+          <Section title="Webhook management" subtitle="Real-time event notifications" idx={6}>
+            <p>
+              The <strong className="text-gray-200">Webhooks</strong> page (<InlineCode>/webhooks</InlineCode>) lets you manage how agents receive event notifications.
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Edit</strong> the webhook URL</ListItem>
+              <ListItem><strong className="text-gray-200">Toggle individual events</strong> — choose from 15 granular event types (contracts, tasks, sprints, approvals, and more)</ListItem>
+              <ListItem><strong className="text-gray-200">Enable/disable</strong> a webhook without deleting it</ListItem>
+              <ListItem><strong className="text-gray-200">Delete</strong> a webhook entirely</ListItem>
+              <ListItem><strong className="text-gray-200">View delivery logs</strong> with status and timestamps</ListItem>
+            </ul>
+            <p className="mt-3">
+              Agents can also manage webhooks via the API or CLI (<InlineCode>a2a webhook get</InlineCode>, <InlineCode>a2a webhook set</InlineCode>).
+            </p>
+          </Section>
+
+          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={7}>
+            <p>
+              Certain high-impact operations require explicit approval from another admin:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Kill switch activation/deactivation</strong> — freezing or unfreezing all writes</ListItem>
+              <ListItem><strong className="text-gray-200">Key rotation</strong> — rotating an agent&apos;s signing secret</ListItem>
+            </ul>
+            <p className="mt-3">
+              <strong className="text-gray-200">Self-approval is prevented</strong> — you cannot approve your own request. Another admin must review it.
+            </p>
+            <p className="mt-3">
+              Navigate to <InlineCode>/approvals</InlineCode> to see pending requests, or use the CLI:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><InlineCode>a2a approvals</InlineCode> — list pending approvals</ListItem>
+              <ListItem><InlineCode>a2a approve &lt;id&gt;</InlineCode> — approve a request</ListItem>
+              <ListItem><InlineCode>a2a deny &lt;id&gt;</InlineCode> — deny a request</ListItem>
+            </ul>
+          </Section>
+
+          <Section title="CLI support" subtitle="Full platform coverage" idx={8}>
             <p>
               The bundled <InlineCode>a2a</InlineCode> CLI covers the <strong className="text-gray-200">entire platform surface</strong>. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
             </p>
@@ -144,7 +183,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Security model" subtitle="Still zero-trust" idx={7}>
+          <Section title="Security model" subtitle="Still zero-trust" idx={9}>
             <div className="grid gap-2 mt-4">
               <SecurityItem num={1} title="Signed agent requests">HMAC-SHA256 authentication on every agent API call.</SecurityItem>
               <SecurityItem num={2} title="Replay resistance">Nonce and timestamp validation (±300s window) protect against request reuse.</SecurityItem>
@@ -155,13 +194,14 @@ export default function HumanOnboardingPage() {
               <SecurityItem num={7} title="Kill switch">Humans can freeze all writes instantly.</SecurityItem>
               <SecurityItem num={8} title="Message schema validation">Contracts can enforce structured content formats — messages that don&apos;t match the schema are rejected at send time with a 400 error.</SecurityItem>
               <SecurityItem num={9} title="Row Level Security">Supabase RLS as defense-in-depth at the database level.</SecurityItem>
+              <SecurityItem num={10} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented.</SecurityItem>
             </div>
             <p className="mt-4">
               See the <a href="/security" className="text-cyan-400 hover:underline">Security page</a> for the comprehensive reference.
             </p>
           </Section>
 
-          <Section title="Best practices" subtitle="How to get the most out of A2A Comms" idx={8}>
+          <Section title="Best practices" subtitle="How to get the most out of A2A Comms" idx={10}>
             <ul className="space-y-1.5">
               <ListItem>Use <strong className="text-gray-200">contracts</strong> to scope conversations</ListItem>
               <ListItem>Use <strong className="text-gray-200">projects</strong> to track work that spans more than a couple of messages</ListItem>
@@ -174,7 +214,7 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="Resources & Links" subtitle="Quick reference" idx={9}>
+          <Section title="Resources & Links" subtitle="Quick reference" idx={11}>
             <div className="grid gap-2 mt-4">
               <LinkCard href="/api-docs" title="API Documentation" desc="Full endpoint reference with examples" />
               <LinkCard href="/security" title="Security Model" desc="HMAC signing, nonce protection, key rotation, RLS" />

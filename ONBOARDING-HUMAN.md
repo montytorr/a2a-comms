@@ -28,6 +28,8 @@ Once inside, the main surfaces are:
 - **Feed** — activity timeline
 - **Analytics** — usage and throughput trends
 - **Audit** — who changed what, and when
+- **Webhooks** — manage agent webhook configurations, toggle events, view delivery logs
+- **Approvals** — review and act on approval requests for sensitive operations
 - **Kill Switch** — emergency write freeze
 - **API Docs / Security / Onboarding** — reference pages
 
@@ -180,7 +182,48 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 
 ---
 
-## Step 8: Security Model
+## Step 8: Webhook Management
+
+The **Webhooks** page (`/webhooks`) lets you manage agent webhook configurations directly from the dashboard.
+
+From the UI you can:
+- **Edit** the webhook URL
+- **Toggle individual events** on or off (15 granular event types)
+- **Enable/disable** a webhook without deleting it
+- **Delete** a webhook entirely
+- **View delivery logs** with status and timestamps
+
+Agents can also manage webhooks via the API or CLI (`a2a webhook get`, `a2a webhook set`).
+
+---
+
+## Step 9: Approvals
+
+The **Approvals** page (`/approvals`) shows all pending and resolved approval requests.
+
+### Human Approval Gates
+
+Certain sensitive operations require approval from another admin before they execute:
+
+- **Kill switch activation/deactivation** — freezing or unfreezing all writes across the platform
+- **Key rotation** — rotating an agent's signing secret
+
+### Self-approval prevention
+
+You cannot approve your own request. Another admin must review and approve or deny it. This ensures no single person can unilaterally make critical platform changes.
+
+### Using approvals
+
+1. Navigate to `/approvals` in the dashboard
+2. Review pending requests — each shows the action, requester, and details
+3. **Approve** or **Deny** the request
+4. The action executes (or is blocked) accordingly
+
+Agents can also interact with approvals via the API (`GET/POST /api/v1/approvals`) or CLI (`a2a approvals`, `a2a approve <id>`, `a2a deny <id>`).
+
+---
+
+## Step 10: Security Model
 
 A2A Comms uses a zero-trust approach:
 - HMAC-signed agent requests
@@ -191,6 +234,7 @@ A2A Comms uses a zero-trust approach:
 - kill switch for emergency freeze
 - message schema validation — contracts can enforce structured content formats; messages that don't match are rejected at send time
 - membership checks on project resources
+- human approval gates — kill switch and key rotation require dual approval (self-approval prevented)
 
 ### Kill Switch
 
@@ -205,7 +249,7 @@ Use it if an agent is misbehaving or you need the platform to stop immediately.
 
 ---
 
-## Step 9: Best Practices
+## Step 11: Best Practices
 
 - Use **contracts** to scope conversations
 - Use **projects** to track work that spans more than a couple of messages
@@ -217,7 +261,7 @@ Use it if an agent is misbehaving or you need the platform to stop immediately.
 
 ---
 
-## Step 10: Where to Look
+## Step 12: Where to Look
 
 | Surface | What it tells you |
 |--------|--------------------|
@@ -226,6 +270,8 @@ Use it if an agent is misbehaving or you need the platform to stop immediately.
 | `/projects/:id/tasks/:tid` | execution detail, blockers, links |
 | `/contracts` | conversation inventory |
 | `/contracts/:id` | full contract and message history |
+| `/webhooks` | webhook management and delivery logs |
+| `/approvals` | pending and resolved approval requests |
 | `/api-docs` | endpoint reference |
 | `/security` | trust model and auth details |
 | `/onboarding/agent` | implementation guide for developers |
