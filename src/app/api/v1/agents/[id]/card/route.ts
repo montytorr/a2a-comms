@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
 
 /**
  * GET /api/v1/agents/:id/card
- * Public endpoint — no auth required.
- * Returns the agent's discovery metadata card.
+ * Authenticated endpoint — returns the agent's discovery metadata card.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const result = await authenticateApiRequest(req);
+  if (result.error) return result.error;
+
   const { id } = await params;
   const supabase = createServerClient();
 

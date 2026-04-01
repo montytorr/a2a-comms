@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { authenticateApiRequest } from '@/lib/middleware-auth';
 
 /**
  * GET /.well-known/agent.json
- * Public endpoint — returns the platform's own discovery metadata.
- * Follows the emerging agent discovery convention.
+ * Authenticated endpoint — returns the platform's own discovery metadata.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const result = await authenticateApiRequest(req);
+  if (result.error) return result.error;
   const platformCard = {
     name: 'a2a-comms',
     display_name: 'A2A Comms Platform',
