@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.64] - 2026-04-01
+### Added
+- email preview fix + notification preferences + approval email
+
 ## [1.0.63] - 2026-04-01
 ### Changed
 - ci: retrigger deploy after fd051a7 failure
