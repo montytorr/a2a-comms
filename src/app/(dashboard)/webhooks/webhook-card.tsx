@@ -1,7 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { testWebhook, type WebhookTestResult } from './actions';
+import { useState, useTransition } from 'react';
+import { testWebhook, updateWebhook, deleteWebhook, type WebhookTestResult } from './actions';
+
+const ALL_EVENTS = [
+  'invitation',
+  'message',
+  'contract_state',
+  'approval.requested',
+  'approval.approved',
+  'approval.denied',
+] as const;
 
 interface WebhookCardProps {
   webhook: {
@@ -47,6 +56,12 @@ function timeAgo(dateStr: string): string {
 export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCardProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editUrl, setEditUrl] = useState(wh.url);
+  const [editEvents, setEditEvents] = useState<string[]>([...wh.events]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   async function handleTest() {
     setTesting(true);
@@ -56,18 +71,62 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
     setTesting(false);
   }
 
+  function toggleEvent(ev: string) {
+    setEditEvents(prev =>
+      prev.includes(ev) ? prev.filter(e => e !== ev) : [...prev, ev]
+    );
+  }
+
+  function handleSave() {
+    if (editEvents.length === 0) {
+      setError('At least one event required');
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await updateWebhook(wh.id, {
+        url: editUrl !== wh.url ? editUrl : undefined,
+        events: JSON.stringify(editEvents) !== JSON.stringify(wh.events) ? editEvents : undefined,
+      });
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setEditing(false);
+      }
+    });
+  }
+
+  function handleToggleActive() {
+    startTransition(async () => {
+      const result = await updateWebhook(wh.id, { is_active: !wh.is_active });
+      if (result.error) setError(result.error);
+    });
+  }
+
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteWebhook(wh.id);
+      if (result.error) setError(result.error);
+      setConfirmDelete(false);
+    });
+  }
+
   return (
     <div
       className="rounded-2xl glass-card overflow-hidden animate-fade-in"
       style={{ animationDelay }}
     >
-      {/* Top accent line */}
       <div className={`h-px bg-gradient-to-r from-transparent ${wh.is_active ? 'via-cyan-500/30' : 'via-gray-600/20'} to-transparent`} />
 
       <div className="p-5">
+        {error && (
+          <div className="mb-3 p-2 rounded-lg bg-red-500/[0.06] border border-red-500/10 text-[11px] text-red-400">
+            {error}
+          </div>
+        )}
+
         {/* URL + Status row */}
         <div className="flex items-start gap-3 mb-4">
-          {/* Status indicator */}
           <div className="mt-1.5 shrink-0 relative">
             <div className={`w-2 h-2 rounded-full ${wh.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
             {wh.is_active && (
@@ -76,9 +135,18 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-mono text-gray-300 truncate" title={wh.url}>
-              {truncateUrl(wh.url, 60)}
-            </p>
+            {editing ? (
+              <input
+                type="url"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                className="w-full bg-[#0a0a10] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[13px] text-gray-200 font-mono focus:outline-none focus:border-cyan-500/30"
+              />
+            ) : (
+              <p className="text-[13px] font-mono text-gray-300 truncate" title={wh.url}>
+                {truncateUrl(wh.url, 60)}
+              </p>
+            )}
             <p className="text-[10px] text-gray-700 mt-0.5">
               {wh.is_active ? 'Active' : 'Inactive'}
               {wh.failure_count > 0 && (
@@ -89,28 +157,112 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
             </p>
           </div>
 
-          {/* Test button */}
-          <button
-            onClick={handleTest}
-            disabled={testing}
-            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-white/[0.08] text-gray-400 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-500/[0.06] transition-all duration-200 disabled:opacity-50 flex items-center gap-1.5"
-          >
-            {testing ? (
+          {/* Action buttons */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!editing && (
               <>
-                <span className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-                Testing…
-              </>
-            ) : (
-              <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 2L11 13" />
-                  <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                </svg>
-                Test
+                <button
+                  onClick={handleTest}
+                  disabled={testing || isPending}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-white/[0.08] text-gray-400 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-500/[0.06] transition-all duration-200 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {testing ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                      Testing…
+                    </>
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 2L11 13" />
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                      </svg>
+                      Test
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => { setEditing(true); setEditUrl(wh.url); setEditEvents([...wh.events]); }}
+                  className="p-1.5 rounded-lg border border-white/[0.06] text-gray-500 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-500/[0.06] transition-all duration-200"
+                  title="Edit"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleToggleActive}
+                  disabled={isPending}
+                  className={`p-1.5 rounded-lg border transition-all duration-200 ${
+                    wh.is_active
+                      ? 'border-white/[0.06] text-gray-500 hover:text-amber-400 hover:border-amber-500/20 hover:bg-amber-500/[0.06]'
+                      : 'border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/[0.06]'
+                  }`}
+                  title={wh.is_active ? 'Disable' : 'Enable'}
+                >
+                  {wh.is_active ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="p-1.5 rounded-lg border border-white/[0.06] text-gray-500 hover:text-red-400 hover:border-red-500/20 hover:bg-red-500/[0.06] transition-all duration-200"
+                  title="Delete"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
               </>
             )}
-          </button>
+            {editing && (
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={isPending}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                >
+                  {isPending ? '…' : 'Save'}
+                </button>
+                <button
+                  onClick={() => { setEditing(false); setError(null); }}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-gray-500 border border-white/[0.06] hover:text-gray-300 transition-all"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Delete confirmation */}
+        {confirmDelete && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/15 flex items-center justify-between">
+            <span className="text-[12px] text-red-400 font-medium">Delete this webhook?</span>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDelete}
+                disabled={isPending}
+                className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all disabled:opacity-50"
+              >
+                {isPending ? '…' : 'Delete'}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="px-3 py-1 rounded-lg text-[11px] font-semibold text-gray-500 border border-white/[0.06] hover:text-gray-300 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Test result */}
         {testResult && (
@@ -125,8 +277,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
               </svg>
             ) : (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             )}
             <span>
@@ -142,16 +293,33 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           </div>
         )}
 
-        {/* Event badges */}
+        {/* Event badges (editable when editing) */}
         <div className="flex flex-wrap gap-1.5 mb-4">
-          {wh.events.map((event) => (
-            <span
-              key={event}
-              className="text-[10px] font-mono font-medium text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/[0.12] px-2 py-0.5 rounded-full"
-            >
-              {event}
-            </span>
-          ))}
+          {editing ? (
+            ALL_EVENTS.map((ev) => (
+              <button
+                key={ev}
+                type="button"
+                onClick={() => toggleEvent(ev)}
+                className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border transition-all duration-200 ${
+                  editEvents.includes(ev)
+                    ? 'text-cyan-400 bg-cyan-500/[0.08] border-cyan-500/[0.12]'
+                    : 'text-gray-600 bg-white/[0.02] border-white/[0.04] hover:text-gray-400'
+                }`}
+              >
+                {editEvents.includes(ev) && '✓ '}{ev}
+              </button>
+            ))
+          ) : (
+            wh.events.map((event) => (
+              <span
+                key={event}
+                className="text-[10px] font-mono font-medium text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/[0.12] px-2 py-0.5 rounded-full"
+              >
+                {event}
+              </span>
+            ))
+          )}
         </div>
 
         {/* Stats row */}

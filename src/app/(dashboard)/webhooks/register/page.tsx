@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerWebhook, getAgents } from './actions';
 
-const ALL_EVENTS = ['invitation', 'message', 'contract_state'] as const;
+const ALL_EVENTS = [
+  'invitation',
+  'message',
+  'contract_state',
+  'approval.requested',
+  'approval.approved',
+  'approval.denied',
+] as const;
 
 export default function RegisterWebhookPage() {
   const router = useRouter();
