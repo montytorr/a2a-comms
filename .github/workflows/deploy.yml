@@ -23,7 +23,7 @@ jobs:
       - name: Clean .next cache
         run: |
           cd /root/projects/a2a-comms
-          sudo rm -rf .next
+          sudo rm -rf .next node_modules/.cache
 
       - name: Lint
         run: |
@@ -47,6 +47,12 @@ jobs:
         run: |
           VERSION=$(sudo /root/projects/a2a-comms/scripts/ci-deploy.sh | tail -1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Clean .next after deploy
+        if: always()
+        run: |
+          cd /root/projects/a2a-comms
+          sudo rm -rf .next node_modules/.cache
 
       - name: Notify Discord (success)
         if: success()
