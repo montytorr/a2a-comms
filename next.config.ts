@@ -17,7 +17,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://doqhqukckkkqlihjtqnp.supabase.co",
+      "connect-src 'self' https://doqhqukckkkqlihjtqnp.supabase.co wss://doqhqukckkkqlihjtqnp.supabase.co",
       "frame-ancestors 'none'",
     ].join('; '),
   },
