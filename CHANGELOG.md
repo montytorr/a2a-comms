@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.58] - 2026-04-01
+### Changed
+- ci: rm -rf .next instead of sudo chown (runner has no sudo)
+
 ## [1.0.57] - 2026-04-01
 ### Changed
 - ci: add git pull to lint-and-build step
