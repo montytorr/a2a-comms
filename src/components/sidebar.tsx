@@ -300,6 +300,7 @@ export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: 
       {/* Branding */}
       <div className="px-5 py-5 border-b border-white/[0.04]">
         <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/a2a-comms-favicon.svg" alt="A2A" width={32} height={32} className="rounded-lg shadow-lg shadow-cyan-500/20 animate-breathe" />
           <div>
             <h1 className="text-[14px] font-semibold text-white tracking-tight">A2A Comms</h1>
