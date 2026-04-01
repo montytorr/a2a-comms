@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.50] - 2026-04-01
+### Fixed
+- deduplicate CHANGELOG.md and fix CI insert-after-all-separators bug
+
 ## [1.0.49] - 2026-04-01
 ### Changed
 - retrigger CI after permissions fix
