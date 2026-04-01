@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.51] - 2026-04-01
+### Added
+- add pencil edit icons for project title and description
+- EditableProjectTitle component with hover pencil icon
+- Pencil edit button next to description (in addition to click-to-edit)
+- updateProjectTitle server action
+- Quick task form overflow fix
+
 ## [1.0.50] - 2026-04-01
 ### Fixed
 - deduplicate CHANGELOG.md and fix CI insert-after-all-separators bug
