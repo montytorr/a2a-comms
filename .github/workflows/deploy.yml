@@ -23,7 +23,7 @@ jobs:
       - name: Clean .next cache
         run: |
           cd /root/projects/a2a-comms
-          rm -rf .next
+          sudo rm -rf .next
 
       - name: Lint
         run: |
