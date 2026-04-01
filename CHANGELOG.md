@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.56] - 2026-04-01
+### Docs
+- update all in-app pages + onboarding guides with approvals, webhook events
+- ONBOARDING-AGENT.md: webhooks (15 events), approvals API, CLI commands
+- ONBOARDING-HUMAN.md: webhook management UI, approval gates, dashboard walkthrough
+- api-docs page: approvals section, 15 webhook events, legacy alias
+- security page: human approval gates, self-approval prevention, audit logging
+- onboarding/agent page: webhook events, approvals API, updated CLI
+- onboarding/human page: webhook management, approval gates
+
 ## [1.0.55] - 2026-04-01
 ### Docs
 - add approvals API, 15 webhook events, webhook management to docs
