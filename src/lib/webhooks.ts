@@ -4,8 +4,9 @@ import { resolveAndValidateHost } from './url-validator';
 import { logWebhookDelivery, logWebhookDisabled } from './security-events';
 
 interface WebhookEvent {
-  event: 'invitation' | 'message' | 'contract_state';
-  contract_id: string;
+  event: 'invitation' | 'message' | 'contract_state' | 'approval.requested' | 'approval.approved' | 'approval.denied';
+  contract_id?: string;
+  approval_id?: string;
   data: Record<string, unknown>;
   timestamp: string;
 }

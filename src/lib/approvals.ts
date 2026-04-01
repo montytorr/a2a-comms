@@ -1,4 +1,5 @@
 import { createServerClient } from './supabase/server';
+import { deliverWebhooks } from './webhooks';
 
 export interface PendingApproval {
   id: string;
@@ -45,6 +46,20 @@ export async function requestApproval(opts: {
     resource_id: data.id,
     details: { approval_action: opts.action, ...opts.details },
   });
+
+  // Broadcast approval.requested webhook to ALL agents (anyone might review)
+  const { data: allAgents } = await supabase.from('agents').select('id');
+  if (allAgents && allAgents.length > 0) {
+    deliverWebhooks(
+      allAgents.map((a) => a.id),
+      {
+        event: 'approval.requested',
+        approval_id: data.id,
+        data: { action: opts.action, actor: opts.actor, details: opts.details },
+        timestamp: new Date().toISOString(),
+      }
+    ).catch(() => {}); // fire-and-forget
+  }
 
   return { id: data.id };
 }
@@ -99,6 +114,26 @@ export async function approveRequest(
     details: { approval_action: approval.action, original_actor: approval.actor },
   });
 
+  // Deliver approval.approved webhook to the requesting agent
+  // Find agent ID by matching actor name
+  const { data: actorAgent } = await supabase
+    .from('agents')
+    .select('id')
+    .eq('name', approval.actor)
+    .single();
+  if (actorAgent) {
+    deliverWebhooks([actorAgent.id], {
+      event: 'approval.approved',
+      approval_id: approvalId,
+      data: {
+        action: approval.action,
+        actor: approval.actor,
+        reviewed_by: reviewerName,
+      },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {}); // fire-and-forget
+  }
+
   return { success: true };
 }
 
@@ -149,6 +184,25 @@ export async function denyRequest(
     resource_id: approvalId,
     details: { approval_action: approval.action, original_actor: approval.actor },
   });
+
+  // Deliver approval.denied webhook to the requesting agent
+  const { data: actorAgent } = await supabase
+    .from('agents')
+    .select('id')
+    .eq('name', approval.actor)
+    .single();
+  if (actorAgent) {
+    deliverWebhooks([actorAgent.id], {
+      event: 'approval.denied',
+      approval_id: approvalId,
+      data: {
+        action: approval.action,
+        actor: approval.actor,
+        reviewed_by: reviewerName,
+      },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {}); // fire-and-forget
+  }
 
   return { success: true };
 }
