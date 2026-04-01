@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import MarkdownPreview from '@/components/markdown-preview';
 import ProjectStatusDropdown from './project-status-dropdown';
-import { addProjectMember, removeProjectMember } from './actions';
+import { addProjectMember, removeProjectMember, updateProject } from './actions';
 
 const avatarGradients = [
   'from-cyan-500 to-blue-600',
@@ -37,6 +37,184 @@ interface ProjectHeaderProps {
   }>;
   availableAgents?: Array<{ id: string; name: string; display_name: string }>;
   isOwner?: boolean;
+}
+
+function EditableProjectTitle({
+  value,
+  projectId,
+  isOwner,
+}: {
+  value: string;
+  projectId: string;
+  isOwner: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+  const [isSaving, startSaveTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function save() {
+    const newVal = text.trim();
+    if (!newVal || newVal === value) {
+      setText(value);
+      setEditing(false);
+      return;
+    }
+    startSaveTransition(async () => {
+      await updateProject(projectId, { title: newVal });
+      setEditing(false);
+    });
+  }
+
+  if (!editing) {
+    return (
+      <div className="group/title flex items-center gap-2">
+        <h1 className="text-[28px] font-bold text-white tracking-tight">{value}</h1>
+        {isOwner && (
+          <button
+            onClick={() => setEditing(true)}
+            className="p-1 rounded-md text-gray-600 opacity-0 group-hover/title:opacity-100 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all"
+            title="Edit title"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={inputRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') { setText(value); setEditing(false); }
+        }}
+        onBlur={save}
+        disabled={isSaving}
+        className="text-[28px] font-bold text-white tracking-tight bg-transparent outline-none ring-1 ring-cyan-500/30 rounded-lg px-2 py-0.5 w-full max-w-lg"
+      />
+    </div>
+  );
+}
+
+function EditableProjectDescription({
+  value,
+  projectId,
+  isOwner,
+}: {
+  value: string | null;
+  projectId: string;
+  isOwner: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value || '');
+  const [isSaving, startSaveTransition] = useTransition();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [editing]);
+
+  function save() {
+    const newVal = text.trim() || null;
+    if (newVal === (value || null)) {
+      setEditing(false);
+      return;
+    }
+    startSaveTransition(async () => {
+      await updateProject(projectId, { description: newVal });
+      setEditing(false);
+    });
+  }
+
+  if (!editing) {
+    return (
+      <div
+        className={`${isOwner ? 'group/desc cursor-pointer hover:bg-white/[0.02]' : ''} rounded-lg p-2 -m-2 transition-colors min-h-[24px] relative`}
+        onClick={isOwner ? () => setEditing(true) : undefined}
+        title={isOwner ? 'Click to edit description' : undefined}
+      >
+        {value ? (
+          <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <MarkdownPreview content={value} />
+            </div>
+            {isOwner && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+                className="shrink-0 mt-0.5 p-1 rounded-md text-gray-600 opacity-0 group-hover/desc:opacity-100 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all"
+                title="Edit description"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="text-[13px] text-gray-600 italic">
+            {isOwner ? 'Click to add project description…' : 'No description'}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <textarea
+        ref={textareaRef}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          e.target.style.height = 'auto';
+          e.target.style.height = e.target.scrollHeight + 'px';
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') { setText(value || ''); setEditing(false); }
+        }}
+        disabled={isSaving}
+        placeholder="Write description (markdown supported)…"
+        className="w-full bg-white/[0.03] text-[13px] text-gray-300 leading-relaxed rounded-lg p-2 outline-none ring-1 ring-cyan-500/30 resize-none placeholder-gray-600 min-h-[80px]"
+      />
+      <div className="flex justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={() => { setText(value || ''); setEditing(false); }}
+          className="px-2 py-1 rounded-md text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={isSaving}
+          className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 transition-all"
+        >
+          {isSaving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function ProjectHeader({ project, members, availableAgents = [], isOwner = false }: ProjectHeaderProps) {
@@ -84,14 +262,12 @@ export default function ProjectHeader({ project, members, availableAgents = [], 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-[28px] font-bold text-white tracking-tight">{project.title}</h1>
+            <EditableProjectTitle value={project.title} projectId={project.id} isOwner={isOwner} />
             <ProjectStatusDropdown projectId={project.id} currentStatus={project.status} />
           </div>
-          {project.description && (
-            <div className="max-w-2xl">
-              <MarkdownPreview content={project.description} />
-            </div>
-          )}
+          <div className="max-w-2xl">
+            <EditableProjectDescription value={project.description} projectId={project.id} isOwner={isOwner} />
+          </div>
         </div>
 
         {/* Member Avatars */}

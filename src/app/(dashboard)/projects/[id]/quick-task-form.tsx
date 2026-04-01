@@ -26,6 +26,7 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [assigneeId, setAssigneeId] = useState<string>('');
   const [labelsInput, setLabelsInput] = useState('');
@@ -36,6 +37,7 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
 
   function resetAndClose() {
     setTitle('');
+    setDescription('');
     setPriority('medium');
     setAssigneeId('');
     setLabelsInput('');
@@ -84,6 +86,7 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
         assigneeId || undefined,
         labels.length > 0 ? labels : undefined,
         dueDate || undefined,
+        description.trim() || undefined,
       );
       resetAndClose();
     });
@@ -110,7 +113,7 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
   }
 
   return (
-    <div ref={formRef} className="mt-2 rounded-xl border border-cyan-500/20 bg-white/[0.02] p-3 animate-fade-in">
+    <div ref={formRef} className="mt-2 rounded-xl border border-cyan-500/20 bg-white/[0.02] p-3 animate-fade-in overflow-hidden">
       <form onSubmit={handleSubmit}>
         <input
           ref={inputRef}
@@ -123,6 +126,17 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
           disabled={isPending}
           className="w-full bg-transparent text-[12px] text-white placeholder-gray-600 outline-none mb-2"
         />
+
+        {expanded && (
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (markdown supported)…"
+            disabled={isPending}
+            rows={2}
+            className="w-full bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1.5 border border-white/[0.06] focus:border-cyan-500/30 outline-none placeholder-gray-600 resize-none mb-2"
+          />
+        )}
 
         {/* Priority row */}
         <div className="flex items-center justify-between gap-2 mb-2">

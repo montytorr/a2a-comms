@@ -195,6 +195,25 @@ export async function updateSprint(
   revalidatePath(`/projects/${projectId}`);
 }
 
+export async function updateProject(
+  projectId: string,
+  data: { title?: string; description?: string | null }
+) {
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
+  const supabase = createServerClient();
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (data.title !== undefined) updates.title = data.title;
+  if (data.description !== undefined) updates.description = data.description;
+
+  const { error } = await supabase
+    .from('projects')
+    .update(updates)
+    .eq('id', projectId);
+  if (error) throw new Error(`Failed to update project: ${error.message}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
 export async function createTask(
   projectId: string,
   title: string,
@@ -204,6 +223,7 @@ export async function createTask(
   assigneeAgentId?: string,
   labels?: string[],
   dueDate?: string,
+  description?: string,
 ) {
   await requireProjectMembership(projectId);
 
@@ -222,6 +242,7 @@ export async function createTask(
   const { error } = await supabase.from('tasks').insert({
     project_id: projectId,
     title,
+    description: description || null,
     status,
     priority,
     sprint_id: sprintId || null,
