@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.57] - 2026-04-01
+### Changed
+- ci: add git pull to lint-and-build step
+- Self-hosted runner doesn't checkout fresh code like GitHub-hosted runners.
+- The lint/build step was running against stale code from the previous commit,
+- causing false failures.
+
 ## [1.0.56] - 2026-04-01
 ### Docs
 - update all in-app pages + onboarding guides with approvals, webhook events
