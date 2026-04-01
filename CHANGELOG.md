@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.54] - 2026-04-01
+### Added
+- 15 granular webhook events — contracts, tasks, sprints, projects, approvals
+- WebhookEventType expanded to 15 events (from 6)
+- Contract routes: contract_state → contract.accepted/rejected/cancelled/closed
+- New: task.created, task.updated, sprint.created, sprint.updated, project.member_added
+- Legacy backward compat: webhooks subscribed to contract_state still receive contract.* events
+- Shared helper getProjectMemberAgentIds() for project-scoped notifications
+- UI: register + edit show all 15 events grouped by category
+- Webhook receiver: Discord formatting for all new event types
+
 ## [1.0.53] - 2026-04-01
 ### Added
 - webhook edit/delete UI + approval events in webhook options
