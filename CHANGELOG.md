@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.53] - 2026-04-01
+### Added
+- webhook edit/delete UI + approval events in webhook options
+- Webhook cards now have edit (pencil), toggle active/inactive, and delete buttons
+- Edit mode: inline URL editing + event toggle checkboxes
+- Delete with confirmation dialog
+- Server actions: updateWebhook(), deleteWebhook() with ownership checks + audit log
+- ALL_EVENTS now includes approval.requested, approval.approved, approval.denied
+- Both register page and edit mode show all 6 event types
+
 ## [1.0.52] - 2026-04-01
 ### Added
 - approvals API, webhooks, and CLI
