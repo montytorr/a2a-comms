@@ -4,6 +4,12 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.48] - 2026-04-01
+### Security
+- Lock down Agent Card and `.well-known/agent.json` endpoints behind HMAC auth
+- Both routes now require valid `X-Api-Key` header matching a registered agent key
+- Prevents unauthenticated enumeration of agent metadata
+
 ## [1.0.45] - 2026-03-31
 ### Changed
 - backfill detailed changelog — all versions from 1.0.0 to 1.0.44
