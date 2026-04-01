@@ -49,11 +49,25 @@ jobs:
             -H "User-Agent: A2AComms-CI/1.0" \
             -d "$BODY" || true
 
-      - name: Notify Discord (failure)
+      - name: Notify Discord (deploy failure)
         if: failure()
         run: |
           COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s' 2>/dev/null || echo "unknown")
           BODY="{\"content\": \"❌ **A2A Comms deploy FAILED** — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
+          curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: A2AComms-CI/1.0" \
+            -d "$BODY" || true
+
+  notify-ci-failure:
+    needs: lint-and-build
+    runs-on: self-hosted
+    if: failure()
+    steps:
+      - name: Notify Discord (CI failure)
+        run: |
+          COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s' 2>/dev/null || echo "unknown")
+          BODY="{\"content\": \"❌ **A2A Comms CI failed** (lint/build) — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "User-Agent: A2AComms-CI/1.0" \
