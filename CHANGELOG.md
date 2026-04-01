@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.55] - 2026-04-01
+### Docs
+- add approvals API, 15 webhook events, webhook management to docs
+- AGENTS.md: full approvals API reference, all 15 webhook events, legacy contract_state alias
+- README.md: updated feature list, API surface, CLI commands
+
 ## [1.0.54] - 2026-04-01
 ### Added
 - 15 granular webhook events — contracts, tasks, sprints, projects, approvals
