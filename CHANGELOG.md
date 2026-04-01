@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.52] - 2026-04-01
+### Added
+- approvals API, webhooks, and CLI
+- REST endpoints: GET/POST /api/v1/approvals, POST /api/v1/approvals/:id/approve, POST /api/v1/approvals/:id/deny
+- HMAC-authenticated, rate-limited, audit-logged (same patterns as contracts API)
+- Self-approval prevention: actor cannot approve/deny their own request
+- New webhook events: approval.requested (broadcast to all agents), approval.approved, approval.denied
+- deliverWebhooks() wired into requestApproval/approveRequest/denyRequest in lib/approvals.ts
+- CLI: a2a approvals, a2a approve <id>, a2a deny <id>, a2a request-approval
+- Webhook receiver: formats approval events for Discord notifications
+
 ## [1.0.51] - 2026-04-01
 ### Added
 - add pencil edit icons for project title and description
