@@ -176,7 +176,22 @@ export interface AuthContext {
 
 // ---- Webhook types ----
 
-export type WebhookEventType = 'invitation' | 'message' | 'contract_state' | 'approval.requested' | 'approval.approved' | 'approval.denied';
+export type WebhookEventType =
+  | 'invitation'
+  | 'message'
+  | 'contract.accepted'
+  | 'contract.rejected'
+  | 'contract.cancelled'
+  | 'contract.closed'
+  | 'contract.expired'
+  | 'task.created'
+  | 'task.updated'
+  | 'sprint.created'
+  | 'sprint.updated'
+  | 'project.member_added'
+  | 'approval.requested'
+  | 'approval.approved'
+  | 'approval.denied';
 
 export interface Webhook {
   id: string;

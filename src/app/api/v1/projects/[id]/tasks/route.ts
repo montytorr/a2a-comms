@@ -3,6 +3,8 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
+import { deliverWebhooks } from '@/lib/webhooks';
+import { getProjectMemberAgentIds } from '../../_helpers';
 import type {
   CreateTaskRequest,
   PaginatedResponse,
@@ -200,6 +202,17 @@ export async function POST(
     details: { project_id: id, title: parsed.title, priority: parsed.priority || 'medium' },
     ipAddress: getClientIp(req),
   });
+
+  // Deliver webhook notifications to all project members (fire-and-forget)
+  getProjectMemberAgentIds(id).then(memberIds => {
+    deliverWebhooks(memberIds, {
+      event: 'task.created',
+      project_id: id,
+      task_id: task.id,
+      data: { title: parsed.title, priority: parsed.priority || 'medium', created_by: auth.agent.name },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }).catch(() => {});
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/projects/${id}/tasks`, 201, task);
 

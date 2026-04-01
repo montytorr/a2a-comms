@@ -92,7 +92,7 @@ export async function POST(
     .single();
   if (contractData) {
     deliverWebhooks([contractData.proposer_id], {
-      event: 'contract_state',
+      event: 'contract.rejected',
       contract_id: id,
       data: { status: 'rejected', rejected_by: auth.agent.name },
       timestamp: new Date().toISOString(),

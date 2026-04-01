@@ -4,9 +4,12 @@ import { resolveAndValidateHost } from './url-validator';
 import { logWebhookDelivery, logWebhookDisabled } from './security-events';
 
 interface WebhookEvent {
-  event: 'invitation' | 'message' | 'contract_state' | 'approval.requested' | 'approval.approved' | 'approval.denied';
+  event: string;
   contract_id?: string;
   approval_id?: string;
+  project_id?: string;
+  task_id?: string;
+  sprint_id?: string;
   data: Record<string, unknown>;
   timestamp: string;
 }
@@ -37,10 +40,29 @@ export async function deliverWebhooks(
     .eq('is_active', true)
     .contains('events', [event.event]);
 
-  if (!webhooks || webhooks.length === 0) return;
+  // Legacy compatibility: if this is a contract.* event, also match webhooks
+  // subscribed to the legacy 'contract_state' event type
+  let legacyWebhooks: typeof webhooks = [];
+  if (event.event.startsWith('contract.')) {
+    const { data: legacy } = await supabase
+      .from('webhooks')
+      .select('*')
+      .in('agent_id', targetAgentIds)
+      .eq('is_active', true)
+      .contains('events', ['contract_state']);
+    legacyWebhooks = legacy || [];
+  }
+
+  // Merge and deduplicate by webhook ID
+  const webhookMap = new Map<string, (typeof webhooks extends (infer T)[] | null ? T : never)>();
+  for (const wh of (webhooks || [])) webhookMap.set(wh.id, wh);
+  for (const wh of legacyWebhooks) webhookMap.set(wh.id, wh);
+  const allWebhooks = Array.from(webhookMap.values());
+
+  if (allWebhooks.length === 0) return;
 
   // Deliver to each webhook in parallel
-  const deliveries = webhooks.map(async (wh) => {
+  const deliveries = allWebhooks.map(async (wh) => {
     const deliveryId = crypto.randomUUID();
     const payload = JSON.stringify(event);
     const signature = crypto

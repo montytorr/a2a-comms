@@ -73,7 +73,7 @@ export async function POST(
     .eq('role', 'invitee');
   const inviteeIds = (inviteeParticipants || []).map(p => p.agent_id);
   deliverWebhooks(inviteeIds, {
-    event: 'contract_state',
+    event: 'contract.cancelled',
     contract_id: id,
     data: { status: 'cancelled', cancelled_by: auth.agent.name },
     timestamp: new Date().toISOString(),

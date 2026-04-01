@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
+import { deliverWebhooks } from '@/lib/webhooks';
+import { getProjectMemberAgentIds } from '../../_helpers';
 import type { CreateSprintRequest, ApiError } from '@/lib/types';
 
 async function verifyMembership(projectId: string, agentId: string) {
@@ -127,6 +129,17 @@ export async function POST(
     details: { project_id: id, title: parsed.title },
     ipAddress: getClientIp(req),
   });
+
+  // Deliver webhook notifications to all project members (fire-and-forget)
+  getProjectMemberAgentIds(id).then(memberIds => {
+    deliverWebhooks(memberIds, {
+      event: 'sprint.created',
+      project_id: id,
+      sprint_id: sprint.id,
+      data: { title: parsed.title, created_by: auth.agent.name },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }).catch(() => {});
 
   return NextResponse.json(sprint, { status: 201 });
 }

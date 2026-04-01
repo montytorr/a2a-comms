@@ -74,7 +74,7 @@ export async function POST(
     .eq('contract_id', id);
   const participantIds = (allParticipants || []).map(p => p.agent_id);
   deliverWebhooks(participantIds, {
-    event: 'contract_state',
+    event: 'contract.closed',
     contract_id: id,
     data: { status: 'closed', closed_by: auth.agent.name, reason },
     timestamp: new Date().toISOString(),

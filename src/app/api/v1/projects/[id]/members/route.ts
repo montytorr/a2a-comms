@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
+import { deliverWebhooks } from '@/lib/webhooks';
+import { getProjectMemberAgentIds } from '../../_helpers';
 import type { ApiError } from '@/lib/types';
 
 async function verifyMembership(projectId: string, agentId: string) {
@@ -141,6 +143,17 @@ export async function POST(
     details: { agent_id: parsed.agent_id, role },
     ipAddress: getClientIp(req),
   });
+
+  // Deliver webhook notifications to existing project members (fire-and-forget)
+  // Note: getProjectMemberAgentIds now includes the newly added member
+  getProjectMemberAgentIds(id).then(memberIds => {
+    deliverWebhooks(memberIds, {
+      event: 'project.member_added',
+      project_id: id,
+      data: { agent_id: parsed.agent_id, agent_name: agent.name, added_by: auth.agent.name, role },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }).catch(() => {});
 
   return NextResponse.json(member, { status: 201 });
 }

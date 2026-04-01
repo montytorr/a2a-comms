@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
+import { deliverWebhooks } from '@/lib/webhooks';
+import { getProjectMemberAgentIds } from '../../../_helpers';
 import type { UpdateSprintRequest, ApiError } from '@/lib/types';
 
 async function verifyMembership(projectId: string, agentId: string) {
@@ -142,6 +144,17 @@ export async function PATCH(
     details: { project_id: id, ...updates },
     ipAddress: getClientIp(req),
   });
+
+  // Deliver webhook notifications to all project members (fire-and-forget)
+  getProjectMemberAgentIds(id).then(memberIds => {
+    deliverWebhooks(memberIds, {
+      event: 'sprint.updated',
+      project_id: id,
+      sprint_id: sid,
+      data: { title: sprint.title, updated_by: auth.agent.name, changes: updates },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }).catch(() => {});
 
   return NextResponse.json(sprint);
 }
