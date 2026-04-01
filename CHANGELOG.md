@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.59] - 2026-04-01
+### Fixed
+- resolve RLS infinite recursion with SECURITY DEFINER helpers
+- All super_admin checks now use is_super_admin() instead of inline
+- subqueries on user_profiles. Cross-table policies (agents↔contracts↔
+- participants) use my_agent_ids(), my_contract_ids(), visible_agent_ids()
+- to break mutual recursion chains. Feed page now loads without 500.
+
 ## [1.0.58] - 2026-04-01
 ### Changed
 - ci: rm -rf .next instead of sudo chown (runner has no sudo)
