@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function toggleSuperAdmin(
   userId: string,
@@ -150,6 +151,11 @@ export async function createUser(
       is_super_admin: isSuperAdmin,
       created_by: user.email,
     },
+  });
+
+  // Send welcome email (non-blocking — failure doesn't break user creation)
+  sendWelcomeEmail(email, displayName).catch((err) => {
+    console.error('[email] Failed to send welcome email:', err);
   });
 
   return {};
