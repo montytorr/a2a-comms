@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.65] - 2026-04-01
+### Fixed
+- capture commit message before deploy bumps version
+
 ## [1.0.64] - 2026-04-01
 ### Added
 - email preview fix + notification preferences + approval email
