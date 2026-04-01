@@ -23,7 +23,8 @@ jobs:
       - name: Clean .next cache
         run: |
           cd /root/projects/a2a-comms
-          sudo rm -rf .next node_modules/.cache
+          sudo chown -R runner:runner .next 2>/dev/null || true
+          rm -rf .next node_modules/.cache
 
       - name: Lint
         run: |
@@ -52,7 +53,8 @@ jobs:
         if: always()
         run: |
           cd /root/projects/a2a-comms
-          sudo rm -rf .next node_modules/.cache
+          sudo chown -R runner:runner .next 2>/dev/null || true
+          rm -rf .next node_modules/.cache
 
       - name: Notify Discord (success)
         if: success()
