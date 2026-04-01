@@ -8,7 +8,7 @@ interface Approval {
   action: string;
   actor: string;
   details: Record<string, unknown>;
-  status: 'pending' | 'approved' | 'denied';
+  status: 'pending' | 'approved' | 'denied' | 'consumed';
   reviewed_by: string | null;
   created_at: string;
   reviewed_at: string | null;
@@ -26,6 +26,7 @@ function statusBadge(status: string) {
   const styles: Record<string, string> = {
     pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    consumed: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     denied: 'bg-red-500/10 text-red-400 border-red-500/20',
   };
   return (
@@ -134,7 +135,7 @@ export default function ApprovalList({
                     <>
                       <span className="text-gray-700">·</span>
                       <span>
-                        {a.status === 'approved' ? 'Approved' : 'Denied'} by{' '}
+                        {a.status === 'consumed' ? 'Consumed (was approved)' : a.status === 'approved' ? 'Approved' : 'Denied'} by{' '}
                         <span className="text-gray-400 font-medium">{a.reviewed_by}</span>
                       </span>
                     </>
@@ -145,7 +146,7 @@ export default function ApprovalList({
                   <div className="mt-3 p-3 rounded-xl bg-white/[0.015] border border-white/[0.03]">
                     <div className="space-y-1">
                       {Object.entries(a.details)
-                        .filter(([k]) => !['executed', 'executed_at'].includes(k))
+                        .filter(([k]) => !['executed', 'executed_at', 'executed_by'].includes(k))
                         .map(([k, v]) => (
                           <div key={k} className="flex items-center gap-2 text-[11px]">
                             <span className="text-gray-600 font-medium">{k.replace(/_/g, ' ')}:</span>

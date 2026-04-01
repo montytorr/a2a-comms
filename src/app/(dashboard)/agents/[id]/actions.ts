@@ -3,7 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { randomBytes, createHash } from 'crypto';
-import { requestApproval } from '@/lib/approvals';
+import { requestApproval, consumeApproval } from '@/lib/approvals';
 
 export interface RotateKeyResult {
   success: boolean;
@@ -64,20 +64,18 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
   const user = await getAuthUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const supabase = createServerClient();
-
-  // Verify approval exists and is approved
-  const { data: approval } = await supabase
-    .from('pending_approvals')
-    .select('*')
-    .eq('id', approvalId)
-    .eq('action', 'key.rotate')
-    .eq('status', 'approved')
-    .single();
-
+  // Atomically consume the approval (one-time use, prevents replay)
+  const approval = await consumeApproval(approvalId, user.displayName);
   if (!approval) {
-    return { success: false, error: 'No approved key rotation request found' };
+    return { success: false, error: 'No approved key rotation request found (may have been already used)' };
   }
+
+  // Verify the approval is actually for key rotation
+  if (approval.action !== 'key.rotate') {
+    return { success: false, error: 'Approval is not for key rotation' };
+  }
+
+  const supabase = createServerClient();
 
   // Verify agent exists
   const { data: agent, error: agentError } = await supabase
@@ -148,15 +146,6 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
       approval_id: approvalId,
     },
   });
-
-  // Mark approval as consumed
-  const now = new Date().toISOString();
-  await supabase
-    .from('pending_approvals')
-    .update({
-      details: { ...((approval.details as Record<string, unknown>) || {}), executed: true, executed_at: now },
-    })
-    .eq('id', approvalId);
 
   return {
     success: true,

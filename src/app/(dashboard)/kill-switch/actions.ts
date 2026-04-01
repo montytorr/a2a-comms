@@ -3,7 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { logKillSwitchChange } from '@/lib/security-events';
-import { requestApproval } from '@/lib/approvals';
+import { requestApproval, consumeApprovalByAction } from '@/lib/approvals';
 
 export async function getKillSwitchStatus(): Promise<{
   enabled: boolean;
@@ -76,22 +76,13 @@ export async function executeKillSwitchActivation() {
   if (!user) throw new Error('Not authenticated');
   if (!user.isSuperAdmin) throw new Error('Admin access required');
 
-  const supabase = createServerClient();
-
-  // Verify there's an approved request (or the user is executing their own approved request)
-  const { data: approved } = await supabase
-    .from('pending_approvals')
-    .select('*')
-    .eq('action', 'killswitch.activate')
-    .eq('status', 'approved')
-    .order('reviewed_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
+  // Atomically consume the most recent approved kill switch request (one-time use)
+  const approved = await consumeApprovalByAction('killswitch.activate', user.displayName);
   if (!approved) {
     throw new Error('No approved kill switch activation request found. Request approval first.');
   }
 
+  const supabase = createServerClient();
   const now = new Date().toISOString();
 
   // Update kill switch
@@ -137,13 +128,6 @@ export async function executeKillSwitchActivation() {
   // Security event
   logKillSwitchChange(true, user.displayName).catch(() => {});
 
-  // Mark approval as consumed (update details)
-  await supabase
-    .from('pending_approvals')
-    .update({
-      details: { ...((approved.details as Record<string, unknown>) || {}), executed: true, executed_at: now },
-    })
-    .eq('id', approved.id);
 }
 
 export async function deactivateKillSwitch() {

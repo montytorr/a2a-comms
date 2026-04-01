@@ -37,7 +37,7 @@ export default async function ApprovalsPage({
     action: string;
     actor: string;
     details: Record<string, unknown>;
-    status: 'pending' | 'approved' | 'denied';
+    status: 'pending' | 'approved' | 'denied' | 'consumed';
     reviewed_by: string | null;
     created_at: string;
     reviewed_at: string | null;
@@ -78,7 +78,7 @@ export default async function ApprovalsPage({
 
         {/* Filter tabs */}
         <div className="flex items-center gap-1 mb-6 p-1 rounded-xl bg-white/[0.02] border border-white/[0.04] w-fit">
-          {(['pending', 'approved', 'denied', 'all'] as const).map((f) => (
+          {(['pending', 'approved', 'consumed', 'denied', 'all'] as const).map((f) => (
             <a
               key={f}
               href={`/approvals${f === 'pending' ? '' : `?filter=${f}`}`}

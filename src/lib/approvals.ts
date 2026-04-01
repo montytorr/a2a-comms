@@ -6,7 +6,7 @@ export interface PendingApproval {
   action: string;
   actor: string;
   details: Record<string, unknown>;
-  status: 'pending' | 'approved' | 'denied';
+  status: 'pending' | 'approved' | 'denied' | 'consumed';
   reviewed_by: string | null;
   created_at: string;
   reviewed_at: string | null;
@@ -135,6 +135,87 @@ export async function approveRequest(
   }
 
   return { success: true };
+}
+
+/**
+ * Atomically consume an approved request so it cannot be replayed.
+ * Returns the approval row if consumption succeeded, or null if already consumed / not approved.
+ * Uses a conditional update (status must still be 'approved') to prevent races.
+ */
+export async function consumeApproval(
+  approvalId: string,
+  executorName: string
+): Promise<PendingApproval | null> {
+  const supabase = createServerClient();
+  const now = new Date().toISOString();
+
+  // Step 1: Read the current approval to capture original details
+  const { data: current } = await supabase
+    .from('pending_approvals')
+    .select('*')
+    .eq('id', approvalId)
+    .eq('status', 'approved')
+    .maybeSingle();
+
+  if (!current) return null;
+
+  const originalDetails = (current.details as Record<string, unknown>) || {};
+
+  // Step 2: Atomic conditional update — only succeeds if still 'approved'
+  const { data, error } = await supabase
+    .from('pending_approvals')
+    .update({
+      status: 'consumed',
+      details: {
+        ...originalDetails,
+        executed: true,
+        executed_at: now,
+        executed_by: executorName,
+      },
+    })
+    .eq('id', approvalId)
+    .eq('status', 'approved') // CAS guard: fails if another thread consumed it first
+    .select('*')
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  // Audit log
+  await supabase.from('audit_log').insert({
+    actor: executorName,
+    action: 'approval.consumed',
+    resource_type: 'approval',
+    resource_id: approvalId,
+    details: { approval_action: data.action, original_actor: data.actor },
+  });
+
+  return data as unknown as PendingApproval;
+}
+
+/**
+ * Find and atomically consume the most recent approved request for a given action.
+ * Useful when the caller doesn't have a specific approval ID (e.g. kill switch).
+ */
+export async function consumeApprovalByAction(
+  action: string,
+  executorName: string
+): Promise<PendingApproval | null> {
+  const supabase = createServerClient();
+
+  // Find the most recent approved (not yet consumed) approval for this action
+  const { data: approval } = await supabase
+    .from('pending_approvals')
+    .select('id')
+    .eq('action', action)
+    .eq('status', 'approved')
+    .order('reviewed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!approval) return null;
+
+  // Atomically consume it (handles race if someone else grabs it first)
+  return consumeApproval(approval.id, executorName);
 }
 
 /**
