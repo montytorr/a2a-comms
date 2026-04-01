@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.61] - 2026-04-01
+### Fixed
+- suppress img lint warning in sidebar
+
 ## [1.0.60] - 2026-04-01
 ### Fixed
 - add wss:// to CSP connect-src for Supabase Realtime WebSocket
