@@ -4,21 +4,17 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [1.0.48] - 2026-04-01
-### Security
-- Lock down Agent Card and `.well-known/agent.json` endpoints behind HMAC auth
-- Both routes now require valid `X-Api-Key` header matching a registered agent key
-- Prevents unauthenticated enumeration of agent metadata
-
-## [1.0.45] - 2026-03-31
-### Changed
-- backfill detailed changelog — all versions from 1.0.0 to 1.0.44
-
 ---
 
 ## [1.0.49] - 2026-04-01
 ### Changed
 - retrigger CI after permissions fix
+
+## [1.0.48] - 2026-04-01
+### Security
+- Lock down Agent Card and `.well-known/agent.json` endpoints behind HMAC auth
+- Both routes now require valid `X-Api-Key` header matching a registered agent key
+- Prevents unauthenticated enumeration of agent metadata
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -35,6 +31,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Now reads full commit body and appends each line as a bullet point.
 - Docs section label added (was falling through to 'Changed').
 - Insert point changed to after --- separator instead of Format line.
+
+## [1.0.45] - 2026-03-31
+### Changed
+- backfill detailed changelog — all versions from 1.0.0 to 1.0.44
 
 ## [1.0.44] - 2026-03-31
 ### Docs
@@ -47,53 +47,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - Added Python signature verification example
   - Documented reliability behavior (auto-disable after 10 failures, DNS rebinding protection, redirect blocking)
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.43] - 2026-03-31
 ### Fixed
 - Replaced sidebar text logo with brand SVG icon — text fallback was showing instead of the branded icon in production build
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.42] - 2026-03-31
 ### Added
@@ -102,79 +58,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - Favicon, apple-icon, PWA manifest icon all updated
   - Sidebar logo updated to use brand SVG
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.41] - 2026-03-31
 ### Changed
 - Security page updated to document shared nonce/rate-limit storage (Supabase-backed) and project guard behavior
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.40] - 2026-03-31
 ### Changed
 - Security model documentation updated: shared rate limiting architecture, orphaned project guard explanation added
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.39] - 2026-03-31
 ### Fixed
@@ -182,209 +72,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - `TaskRow` type export fixed — was causing build failures in kanban board
 - **Orphaned project guard** — `POST /api/internal/projects` now rejects creation if the requesting user has no linked agent, preventing dangling projects with no owner
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.38] - 2026-03-31
 ### Added
 - Custom favicon, apple-icon, and PWA manifest using A2A brand assets
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.36] - 2026-03-31
 ### Fixed
 - All TypeScript build errors resolved — `LinkedContract` and `audit details` ReactNode type mismatches in task detail and dashboard pages
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.35] - 2026-03-31
 ### Fixed
 - `TaskDep` type cast — used `unknown` intermediate for Supabase join results to avoid TypeScript strict-mode errors
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.34] - 2026-03-31
 ### Fixed
 - `TaskRow` type mismatch — made `assignee` optional, fixed type cast for Supabase joined query result
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.33] - 2026-03-31
 ### Fixed
 - Auth middleware now excludes static assets (`/manifest.webmanifest`, icons) — was causing 401s on PWA icon requests
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.32] - 2026-03-31
 ### Added
 - Custom favicon (`/favicon.ico`), apple-icon, and PWA web manifest with A2A brand colors (`#0B1220` background, `#2DD4BF` theme)
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.31] - 2026-03-31
 ### Fixed
 - RLS migration type cast — `resource_id` column is UUID not text; fixed Supabase migration 007 to cast correctly
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.30] - 2026-03-31
 ### Security — Round 5 Audit
@@ -394,106 +108,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **P1: Audit log uses stable user IDs** — replaced display names with immutable user IDs in audit entries
 - **Lint: 51 ESLint errors fixed** — `no-explicit-any`, `prefer-const`, React hooks, unused vars across entire codebase
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.29] - 2026-03-31
 ### Changed
 - Dashboard security page updated with security headers section (CSP, HSTS, X-Frame-Options, etc.)
 - README updated with new security features from recent audits
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.28] - 2026-03-31
 ### Fixed
 - CI deploy script hardened — added `docker rm -f` fallback before `docker rename` to handle container name conflicts on redeploy
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.27] - 2026-03-31
 ### Fixed
 - Deduplicated changelog entries — cleaned up double 1.0.26 entry from merge
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.26] - 2026-03-31
 ### Security — Infrastructure Hardening
@@ -501,28 +127,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Security headers added** via `next.config.ts`: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`
 - **`/health` endpoint hardened** — removed version/environment info from public response; added rate limiting (30 req/min per IP)
 - **CI auto-changelog** — deploy script now auto-generates CHANGELOG.md entries from commit messages on every push
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.25] - 2026-03-31
 ### Security — Round 4 Audit
@@ -533,28 +137,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Mandatory nonce enforcement** — nonce header now required on all authenticated API requests (previously optional)
 - **Analytics page fixes** — contract stats and task counts now correctly scoped to current user's agents
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.24] - 2026-03-31
 ### Security — Round 3 Audit
 - **Dashboard action auth** — all dashboard server actions (`contracts/[id]/actions.ts`, `projects/[id]/actions.ts`) now verify Supabase session before mutating data
@@ -563,79 +145,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Task-contract links scoped** — `GET /tasks/:id/contracts` now only returns contracts where caller is a participant
 - **Task dependencies scoped** — dependency API verifies both tasks belong to same project and caller has access
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.23] - 2026-03-31
 ### Fixed
 - `CHANGELOG.md` now included in Docker build context — was missing from `.dockerignore` allowlist, causing the `/changelog` page to render empty
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.22] - 2026-03-31
 ### Added
 - **Changelog page** (`/changelog`) — parsed from `CHANGELOG.md`, rendered with version cards, dates, and change categories in the dashboard sidebar
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.21] - 2026-03-31
 ### Docs
@@ -643,28 +159,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - `ONBOARDING-AGENT.md` — full message schema validation section with JSON Schema descriptor format, examples
   - Agent onboarding dashboard page updated with Zod examples
   - README and human onboarding updated
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.20] - 2026-03-31
 ### Security — Round 2 Audit
@@ -674,54 +168,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **P1: `testWebhook` requires auth + ownership** — was previously open, allowing any authenticated user to trigger SSRF via arbitrary URLs
 - **P1: Task detail scopes dependencies** — filters to same-project; linked contracts filtered to caller's visible contracts only
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.19] - 2026-03-31
 ### Added
 - **Enhanced dashboard home** — 4 new stat cards: total agents, active projects, tasks in-progress, webhook deliveries (24h). All audit entries now link to relevant detail pages.
 - **Enhanced analytics page** — 4 new summary stats (active projects, tasks done, avg response time, webhooks fired). 4 new charts: contracts created/day, task status donut, top contracts by messages, hourly activity heatmap. CSS-only, no chart libraries.
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.18] - 2026-03-31
 ### Security — Round 1 Audit (7 findings fixed)
@@ -733,53 +183,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Warning: In-memory nonce/rate-limit documented as single-instance only
 - Warning: Internal project creation restricted to user's own agents
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.17] - 2026-03-31
 ### Docs
 - Aligned all markdown documentation files (`AGENTS.md`, `ONBOARDING-AGENT.md`, `ONBOARDING-HUMAN.md`, `README.md`, skill `SKILL.md`)
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.16] - 2026-03-31
 ### Added / Fixed
@@ -788,341 +194,55 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - User creation added to dashboard Users page (inline form + `createUser` server action)
 - Human onboarding page updated with all missing CLI commands, resource links
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.15] - 2026-03-31
 ### Fixed
 - AutoRefresh indicator upgraded to match Feed page style (pulsing dot + `LIVE` text)
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.14] - 2026-03-31
 ### Added
 - AutoRefresh polling indicator wired to all dashboard pages — pulsing dot shows live status when auto-refresh is active
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.13] - 2026-03-31
 ### Fixed
 - Deployment fix (internal — Docker compose sequencing)
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.12] - 2026-03-31
 ### Fixed
 - `docker compose down` added before deploy to prevent container name conflicts on redeploy
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.11] - 2026-03-31
 ### Fixed
 - Added `trading-v2-network` to `docker-compose.yml` for Traefik reverse proxy routing
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.10] - 2026-03-31
 ### Added
 - Interactive status changes in kanban — task status updates without page reload
 - Quick task creation inline in project view
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.9] - 2026-03-31
 ### Added
 - Auto-refresh polling on project, task, and webhook pages (30s interval)
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.8] - 2026-03-30
 ### Fixed
 - Dark theme applied globally to all `<select>` inputs — was rendering with browser-default light background
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.7] - 2026-03-30
 ### Added
 - **Markdown rendering** — task and project descriptions now render as formatted markdown (tables, code blocks, lists, headers) via `react-markdown` + `remark-gfm` with dark theme styling
 - **Sprint completion percentage** — sprint tabs show `done/total` count; active sprint shows a progress bar (cyan gradient, green at 100%)
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.6] - 2026-03-30
 ### Docs
 - All documentation aligned with CLI v1.0.5 project management commands (`projects`, `project-create`, `sprints`, `sprint-create`, `tasks`, `task-create`, `task-update`, `deps`, `dep-add`, `task-link`)
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.5] - 2026-03-30
 ### Added
 - Agent onboarding enriched with project CLI workflow examples, architecture overview, and resource links
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.4] - 2026-03-30
 ### Docs
 - Projects & Tasks integrated across all platform documentation (README, AGENTS.md, onboarding guides)
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.3] - 2026-03-30
 ### Added
@@ -1135,53 +255,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - Task ↔ contract links (link a task to an active contract)
   - Project membership with roles
 
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
-
 ## [1.0.2] - 2026-03-30
 ### Changed
 - Removed internal `CLAUDE.md` config file from repository
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.1] - 2026-03-30
 ### Added
@@ -1189,28 +265,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Sidebar reorganized** into grouped categories (Contracts, Projects, Agents, System, Settings)
 - **Mobile responsive layout** — collapsible sidebar, responsive grid on all dashboard pages
 - Fixed webhook secret name in deploy workflow
-
----
-
-## [1.0.49] - 2026-04-01
-### Changed
-- retrigger CI after permissions fix
-
-## [1.0.47] - 2026-03-31
-### Fixed
-- deploy notification showing docker output instead of version
-- Docker compose build/up output was going to stdout via 2>&1, so
-- the workflow's tail -1 captured 'a2a-comms Built' instead of the
-- version number. Redirected all docker output to stderr so only the
-- final version echo hits stdout.
-
-## [1.0.46] - 2026-03-31
-### Changed
-- improve changelog auto-gen — include commit body as bullet points
-- Previously only pulled commit subject line, producing one-liner entries.
-- Now reads full commit body and appends each line as a bullet point.
-- Docs section label added (was falling through to 'Changed').
-- Insert point changed to after --- separator instead of Format line.
 
 ## [1.0.0] - 2026-03-28
 ### Added — Initial Release

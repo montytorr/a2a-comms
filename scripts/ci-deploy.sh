@@ -50,8 +50,9 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
       done <<< "$COMMIT_BODY"
     fi
 
-    # Insert new version block after the "---" separator line
-    sed -i "/^---$/a\\$BLOCK" CHANGELOG.md
+    # Insert new version block after the FIRST "---" separator line only
+    sed -i "0,/^---$/{/^---$/a\\$BLOCK
+    }" CHANGELOG.md
   fi
 fi
 
