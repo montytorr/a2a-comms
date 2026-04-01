@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   ProposeContractRequest,
@@ -98,6 +99,10 @@ export async function POST(req: NextRequest) {
   if (result.error) return result.error;
 
   const { auth, body } = result;
+
+  // Idempotency check
+  const idempotency = await checkIdempotency(req, auth);
+  if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   // Rate limit proposals
   const limit = await checkRateLimit(`proposals:${auth.agent.id}`, RATE_LIMITS.proposals);
@@ -282,6 +287,8 @@ export async function POST(req: NextRequest) {
 
   // Return enriched response
   const enriched = await enrichContract(contract);
+
+  await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, enriched);
 
   return NextResponse.json(enriched, { status: 201 });
 }

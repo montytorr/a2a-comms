@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
+import { isAdminAgent } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, UpdateAgentRequest } from '@/lib/types';
 
@@ -41,7 +42,7 @@ export async function PATCH(
   const { id } = await params;
 
   // Authorization: must own this agent record or be admin
-  if (auth.agent.id !== id && auth.agent.name !== (process.env.A2A_ADMIN_AGENT || 'admin')) {
+  if (auth.agent.id !== id && !isAdminAgent(auth.agent.id, auth.agent.name)) {
     return NextResponse.json(
       { error: 'Not authorized to update this agent', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }

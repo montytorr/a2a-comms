@@ -3,15 +3,22 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { randomBytes, createHash } from 'crypto';
+import { requestApproval } from '@/lib/approvals';
 
 export interface RotateKeyResult {
   success: boolean;
   error?: string;
   keyId?: string;
   signingSecret?: string;
+  approvalRequired?: boolean;
+  approvalId?: string;
 }
 
-export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> {
+/**
+ * Request approval to rotate an agent's key.
+ * Key rotation is a sensitive operation that requires approval from another super_admin.
+ */
+export async function requestKeyRotation(agentId: string): Promise<RotateKeyResult> {
   const user = await getAuthUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
@@ -29,6 +36,61 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
   }
 
   // Verify ownership: must be admin or own the agent
+  if (!user.isSuperAdmin && agent.owner_user_id !== user.id) {
+    return { success: false, error: 'You can only rotate keys for your own agents' };
+  }
+
+  const { id } = await requestApproval({
+    action: 'key.rotate',
+    actor: user.displayName,
+    details: {
+      agent_id: agentId,
+      agent_name: agent.name,
+      user_id: user.id,
+    },
+  });
+
+  return {
+    success: true,
+    approvalRequired: true,
+    approvalId: id,
+  };
+}
+
+/**
+ * Execute key rotation after approval.
+ */
+export async function executeKeyRotation(agentId: string, approvalId: string): Promise<RotateKeyResult> {
+  const user = await getAuthUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const supabase = createServerClient();
+
+  // Verify approval exists and is approved
+  const { data: approval } = await supabase
+    .from('pending_approvals')
+    .select('*')
+    .eq('id', approvalId)
+    .eq('action', 'key.rotate')
+    .eq('status', 'approved')
+    .single();
+
+  if (!approval) {
+    return { success: false, error: 'No approved key rotation request found' };
+  }
+
+  // Verify agent exists
+  const { data: agent, error: agentError } = await supabase
+    .from('agents')
+    .select('id, name, display_name, owner_user_id')
+    .eq('id', agentId)
+    .single();
+
+  if (agentError || !agent) {
+    return { success: false, error: 'Agent not found' };
+  }
+
+  // Verify ownership
   if (!user.isSuperAdmin && agent.owner_user_id !== user.id) {
     return { success: false, error: 'You can only rotate keys for your own agents' };
   }
@@ -54,7 +116,7 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
     }
   }
 
-  // Generate new key with unique key_id (avoids UNIQUE constraint conflict with grace-period old key)
+  // Generate new key
   const keyId = `${agent.name}-${Date.now().toString(36)}`;
   const signingSecret = randomBytes(32).toString('hex');
   const keyHash = createHash('sha256').update(signingSecret).digest('hex');
@@ -83,12 +145,30 @@ export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> 
       agent_name: agent.name,
       new_key_id: keyId,
       old_keys_expiring: currentKeys?.map((k) => k.key_id) || [],
+      approval_id: approvalId,
     },
   });
+
+  // Mark approval as consumed
+  const now = new Date().toISOString();
+  await supabase
+    .from('pending_approvals')
+    .update({
+      details: { ...((approval.details as Record<string, unknown>) || {}), executed: true, executed_at: now },
+    })
+    .eq('id', approvalId);
 
   return {
     success: true,
     keyId,
     signingSecret,
   };
+}
+
+/**
+ * Legacy direct rotation — kept for API route compatibility.
+ * Dashboard UI should use requestKeyRotation + executeKeyRotation flow.
+ */
+export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> {
+  return requestKeyRotation(agentId);
 }

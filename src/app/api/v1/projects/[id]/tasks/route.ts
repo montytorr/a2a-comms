@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
+import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   CreateTaskRequest,
@@ -95,6 +96,10 @@ export async function POST(
 
   const { auth, body } = result;
   const { id } = await params;
+
+  // Idempotency check
+  const idempotency = await checkIdempotency(req, auth);
+  if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
@@ -195,6 +200,8 @@ export async function POST(
     details: { project_id: id, title: parsed.title, priority: parsed.priority || 'medium' },
     ipAddress: getClientIp(req),
   });
+
+  await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/projects/${id}/tasks`, 201, task);
 
   return NextResponse.json(task, { status: 201 });
 }

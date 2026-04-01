@@ -14,7 +14,10 @@ export default function KeyActions({ agentId }: { agentId: string }) {
     setLoading(true);
     setError(null);
     const res = await rotateAgentKey(agentId);
-    if (res.success) {
+    if (res.success && res.approvalRequired) {
+      setConfirming(false);
+      alert(`Key rotation requires approval from another admin. Request submitted (ID: ${res.approvalId}). Check the Approvals page.`);
+    } else if (res.success) {
       setResult(res);
       setConfirming(false);
     } else {

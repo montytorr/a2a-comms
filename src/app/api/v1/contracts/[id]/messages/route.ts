@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   SendMessageRequest,
@@ -102,6 +103,10 @@ export async function POST(
 
   const { auth, body } = result;
   const { id } = await params;
+
+  // Idempotency check
+  const idempotency = await checkIdempotency(req, auth);
+  if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   // Rate limit messages
   const limit = await checkRateLimit(`messages:${auth.agent.id}`, RATE_LIMITS.messages);
@@ -268,6 +273,8 @@ export async function POST(
     turn_number: newTurns,
     turns_remaining: Math.max(0, checked.max_turns - newTurns),
   };
+
+  await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/contracts/${id}/messages`, 201, response);
 
   return NextResponse.json(response, { status: 201 });
 }

@@ -68,12 +68,142 @@ export async function updateSprintStatus(projectId: string, sprintId: string, st
   revalidatePath(`/projects/${projectId}`);
 }
 
+export async function addProjectMember(projectId: string, agentId: string) {
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
+  const supabase = createServerClient();
+
+  // Check if already a member
+  const { data: existing } = await supabase
+    .from('project_members')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('agent_id', agentId)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    throw new Error('Agent is already a member of this project');
+  }
+
+  const { error } = await supabase.from('project_members').insert({
+    project_id: projectId,
+    agent_id: agentId,
+    role: 'member',
+  });
+  if (error) throw new Error(`Failed to add member: ${error.message}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function removeProjectMember(projectId: string, memberId: string) {
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
+  const supabase = createServerClient();
+
+  // Prevent removing an owner
+  const { data: member } = await supabase
+    .from('project_members')
+    .select('id, role')
+    .eq('id', memberId)
+    .eq('project_id', projectId)
+    .single();
+
+  if (!member) throw new Error('Member not found');
+  if (member.role === 'owner') throw new Error('Cannot remove the project owner');
+
+  const { error } = await supabase
+    .from('project_members')
+    .delete()
+    .eq('id', memberId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(`Failed to remove member: ${error.message}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function getAvailableAgents(projectId: string) {
+  const supabase = createServerClient();
+
+  // Get all agents
+  const { data: allAgents } = await supabase
+    .from('agents')
+    .select('id, name, display_name')
+    .order('name');
+
+  // Get current members
+  const { data: currentMembers } = await supabase
+    .from('project_members')
+    .select('agent_id')
+    .eq('project_id', projectId);
+
+  const memberIds = new Set((currentMembers || []).map(m => m.agent_id));
+  return (allAgents || []).filter(a => !memberIds.has(a.id));
+}
+
+export async function createSprint(
+  projectId: string,
+  title: string,
+  startDate?: string,
+  endDate?: string,
+  goal?: string,
+) {
+  await requireProjectMembership(projectId);
+
+  const supabase = createServerClient();
+
+  // Get max position
+  const { data: sprints } = await supabase
+    .from('sprints')
+    .select('position')
+    .eq('project_id', projectId)
+    .order('position', { ascending: false })
+    .limit(1);
+
+  const nextPosition = sprints && sprints.length > 0 ? sprints[0].position + 1 : 0;
+
+  const { error } = await supabase.from('sprints').insert({
+    project_id: projectId,
+    title,
+    start_date: startDate || null,
+    end_date: endDate || null,
+    goal: goal || null,
+    status: 'planned',
+    position: nextPosition,
+  });
+  if (error) throw new Error(`Failed to create sprint: ${error.message}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateSprint(
+  projectId: string,
+  sprintId: string,
+  data: { title?: string; startDate?: string; endDate?: string; goal?: string },
+) {
+  await requireProjectMembership(projectId);
+
+  const supabase = createServerClient();
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (data.title !== undefined) updates.title = data.title;
+  if (data.startDate !== undefined) updates.start_date = data.startDate || null;
+  if (data.endDate !== undefined) updates.end_date = data.endDate || null;
+  if (data.goal !== undefined) updates.goal = data.goal || null;
+
+  const { error } = await supabase
+    .from('sprints')
+    .update(updates)
+    .eq('id', sprintId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(`Failed to update sprint: ${error.message}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
 export async function createTask(
   projectId: string,
   title: string,
   status: string,
   priority: string,
   sprintId?: string,
+  assigneeAgentId?: string,
+  labels?: string[],
+  dueDate?: string,
 ) {
   await requireProjectMembership(projectId);
 
@@ -95,7 +225,9 @@ export async function createTask(
     status,
     priority,
     sprint_id: sprintId || null,
-    labels: [],
+    assignee_agent_id: assigneeAgentId || null,
+    labels: labels || [],
+    due_date: dueDate || null,
   });
   if (error) throw new Error(`Failed to create task: ${error.message}`);
   revalidatePath(`/projects/${projectId}`);

@@ -12,6 +12,18 @@ const actionTypes = [
   { value: 'message.send', label: 'Send Message' },
   { value: 'kill_switch.activate', label: 'Kill Switch Activate' },
   { value: 'kill_switch.deactivate', label: 'Kill Switch Deactivate' },
+  // Security events
+  { value: 'security', label: '🔒 Security Events' },
+  { value: 'auth.success', label: 'Auth Success' },
+  { value: 'auth.failure', label: 'Auth Failure' },
+  { value: 'authz.denied', label: 'Authorization Denied' },
+  { value: 'webhook.delivery.success', label: 'Webhook Delivery OK' },
+  { value: 'webhook.delivery.failure', label: 'Webhook Delivery Failed' },
+  { value: 'webhook.disabled', label: 'Webhook Disabled' },
+  { value: 'suspicious.replay_detected', label: 'Replay Detected' },
+  { value: 'suspicious.invalid_signature', label: 'Invalid Signature' },
+  { value: 'policy.kill_switch.activated', label: 'Kill Switch Activated' },
+  { value: 'policy.kill_switch.deactivated', label: 'Kill Switch Deactivated' },
 ];
 
 const dateRanges = [

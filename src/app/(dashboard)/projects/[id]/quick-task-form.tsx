@@ -11,16 +11,42 @@ const priorities: { id: TaskPriority; label: string; color: string }[] = [
   { id: 'urgent', label: 'Urgent', color: 'text-red-400' },
 ];
 
+const avatarGradients = [
+  'from-cyan-500 to-blue-600',
+  'from-violet-500 to-purple-600',
+  'from-emerald-500 to-teal-600',
+  'from-orange-500 to-red-600',
+  'from-pink-500 to-rose-600',
+  'from-amber-500 to-yellow-600',
+];
+
+function getAvatarIndex(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % avatarGradients.length;
+}
+
 interface QuickTaskFormProps {
   projectId: string;
   status: string;
   sprintId?: string;
+  members?: Array<{
+    id: string;
+    role: string;
+    agent: { id: string; name: string; display_name: string } | null;
+  }>;
 }
 
-export default function QuickTaskForm({ projectId, status, sprintId }: QuickTaskFormProps) {
+export default function QuickTaskForm({ projectId, status, sprintId, members = [] }: QuickTaskFormProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
+  const [assigneeId, setAssigneeId] = useState<string>('');
+  const [labelsInput, setLabelsInput] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
@@ -35,7 +61,7 @@ export default function QuickTaskForm({ projectId, status, sprintId }: QuickTask
     function handleClickOutside(e: MouseEvent) {
       if (formRef.current && !formRef.current.contains(e.target as Node)) {
         if (!title.trim()) {
-          setIsOpen(false);
+          resetAndClose();
         }
       }
     }
@@ -45,23 +71,44 @@ export default function QuickTaskForm({ projectId, status, sprintId }: QuickTask
     }
   }, [isOpen, title]);
 
+  function resetAndClose() {
+    setTitle('');
+    setPriority('medium');
+    setAssigneeId('');
+    setLabelsInput('');
+    setDueDate('');
+    setExpanded(false);
+    setIsOpen(false);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
 
+    const labels = labelsInput
+      .split(',')
+      .map(l => l.trim().toLowerCase())
+      .filter(Boolean);
+
     startTransition(async () => {
-      await createTask(projectId, trimmed, status, priority, sprintId);
-      setTitle('');
-      setPriority('medium');
-      setIsOpen(false);
+      await createTask(
+        projectId,
+        trimmed,
+        status,
+        priority,
+        sprintId,
+        assigneeId || undefined,
+        labels.length > 0 ? labels : undefined,
+        dueDate || undefined,
+      );
+      resetAndClose();
     });
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
-      setTitle('');
-      setIsOpen(false);
+      resetAndClose();
     }
   }
 
@@ -88,11 +135,14 @@ export default function QuickTaskForm({ projectId, status, sprintId }: QuickTask
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => setExpanded(true)}
           placeholder="Task title…"
           disabled={isPending}
           className="w-full bg-transparent text-[12px] text-white placeholder-gray-600 outline-none mb-2"
         />
-        <div className="flex items-center justify-between gap-2">
+
+        {/* Priority row */}
+        <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex gap-1">
             {priorities.map((p) => (
               <button
@@ -109,25 +159,89 @@ export default function QuickTaskForm({ projectId, status, sprintId }: QuickTask
               </button>
             ))}
           </div>
-          <div className="flex gap-1.5">
+          {!expanded && (
             <button
               type="button"
-              onClick={() => {
-                setTitle('');
-                setIsOpen(false);
-              }}
-              className="px-2 py-1 rounded-md text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+              onClick={() => setExpanded(true)}
+              className="text-[9px] text-gray-600 hover:text-cyan-400 transition-colors"
+              title="More options"
             >
-              Cancel
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />
+              </svg>
             </button>
-            <button
-              type="submit"
-              disabled={!title.trim() || isPending}
-              className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              {isPending ? 'Adding…' : 'Add'}
-            </button>
+          )}
+        </div>
+
+        {/* Expanded fields */}
+        {expanded && (
+          <div className="space-y-2 mb-2 pt-1 border-t border-white/[0.04] animate-fade-in">
+            {/* Assignee dropdown */}
+            {members.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-16 shrink-0">Assign</label>
+                <select
+                  value={assigneeId}
+                  onChange={(e) => setAssigneeId(e.target.value)}
+                  disabled={isPending}
+                  className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-[#111118]">Unassigned</option>
+                  {members.map((m) => {
+                    if (!m.agent) return null;
+                    return (
+                      <option key={m.agent.id} value={m.agent.id} className="bg-[#111118]">
+                        {m.agent.display_name || m.agent.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+
+            {/* Labels */}
+            <div className="flex items-center gap-2">
+              <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-16 shrink-0">Labels</label>
+              <input
+                type="text"
+                value={labelsInput}
+                onChange={(e) => setLabelsInput(e.target.value)}
+                placeholder="bug, ui, api (comma-separated)"
+                disabled={isPending}
+                className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none placeholder-gray-600"
+              />
+            </div>
+
+            {/* Due date */}
+            <div className="flex items-center gap-2">
+              <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-16 shrink-0">Due</label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                disabled={isPending}
+                className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none [color-scheme:dark]"
+              />
+            </div>
           </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={resetAndClose}
+            className="px-2 py-1 rounded-md text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!title.trim() || isPending}
+            className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            {isPending ? 'Adding…' : 'Add'}
+          </button>
         </div>
       </form>
     </div>

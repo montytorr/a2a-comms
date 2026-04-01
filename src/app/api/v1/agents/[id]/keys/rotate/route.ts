@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
+import { isAdminAgent } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
 
@@ -32,7 +33,7 @@ export async function POST(
   }
 
   // Authorization: must own the key or be admin
-  if (auth.agent.id !== targetAgent.id && auth.agent.name !== (process.env.A2A_ADMIN_AGENT || 'admin')) {
+  if (auth.agent.id !== targetAgent.id && !isAdminAgent(auth.agent.id, auth.agent.name)) {
     return NextResponse.json(
       { error: 'Not authorized to rotate keys for this agent', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }

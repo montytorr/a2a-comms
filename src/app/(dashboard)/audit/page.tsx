@@ -53,7 +53,17 @@ export default async function AuditPage({
   if (actorFilter) {
     countQuery = countQuery.ilike('actor', `%${actorFilter}%`);
   }
-  if (actionFilter !== 'all') {
+  // Security event types for grouped filter
+  const SECURITY_EVENTS = [
+    'auth.success', 'auth.failure', 'authz.denied',
+    'webhook.delivery.success', 'webhook.delivery.failure', 'webhook.disabled',
+    'suspicious.replay_detected', 'suspicious.invalid_signature',
+    'policy.kill_switch.activated', 'policy.kill_switch.deactivated',
+  ];
+
+  if (actionFilter === 'security') {
+    countQuery = countQuery.in('action', SECURITY_EVENTS);
+  } else if (actionFilter !== 'all') {
     countQuery = countQuery.eq('action', actionFilter);
   }
   if (rangeFilter !== 'all') {
@@ -89,7 +99,9 @@ export default async function AuditPage({
   if (actorFilter) {
     dataQuery = dataQuery.ilike('actor', `%${actorFilter}%`);
   }
-  if (actionFilter !== 'all') {
+  if (actionFilter === 'security') {
+    dataQuery = dataQuery.in('action', SECURITY_EVENTS);
+  } else if (actionFilter !== 'all') {
     dataQuery = dataQuery.eq('action', actionFilter);
   }
   if (rangeFilter !== 'all') {

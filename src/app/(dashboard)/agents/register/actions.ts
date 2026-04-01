@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
+import { getReservedNames } from '@/lib/admin';
 import { randomBytes, createHash } from 'crypto';
 
 export interface RegisterAgentResult {
@@ -36,9 +37,7 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
   }
 
   // Reserved names check — prevent impersonation of system identities
-  const RESERVED_NAMES = ['admin', 'system', 'platform'];
-  const adminAgent = process.env.A2A_ADMIN_AGENT || 'admin';
-  if (!RESERVED_NAMES.includes(adminAgent)) RESERVED_NAMES.push(adminAgent);
+  const RESERVED_NAMES = getReservedNames();
 
   if (RESERVED_NAMES.includes(name)) {
     return { success: false, error: `Agent name "${name}" is reserved and cannot be registered.` };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { activateKillSwitch, deactivateKillSwitch, getKillSwitchStatus } from './actions';
+import { requestKillSwitchActivation, executeKillSwitchActivation, deactivateKillSwitch, getKillSwitchStatus } from './actions';
 
 interface KillSwitchClientProps {
   isSuperAdmin: boolean;
@@ -33,9 +33,20 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
   async function handleActivate() {
     setLoading(true);
     try {
-      await activateKillSwitch();
-      setIsActive(true);
+      // First try to execute if there's an approved request
+      try {
+        await executeKillSwitchActivation();
+        setIsActive(true);
+        setConfirming(false);
+        await loadStatus();
+        setLoading(false);
+        return;
+      } catch {
+        // No approved request — submit a new one
+      }
+      await requestKillSwitchActivation();
       setConfirming(false);
+      alert('Kill switch activation requires approval from another admin. A request has been submitted to the Approvals page.');
       await loadStatus();
     } catch (err) {
       console.error('Failed to activate kill switch:', err);

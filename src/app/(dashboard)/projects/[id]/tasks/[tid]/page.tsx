@@ -6,6 +6,16 @@ import { redirect, notFound } from 'next/navigation';
 import MarkdownPreview from '@/components/markdown-preview';
 import AutoRefresh from '@/components/auto-refresh';
 import TaskStatusDropdown from './task-status-dropdown';
+import {
+  EditableTitle,
+  EditableDescription,
+  AssigneePicker,
+  LabelsEditor,
+  DueDatePicker,
+  PriorityPicker,
+  SprintPicker,
+  DeleteTaskButton,
+} from './task-editor';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -24,37 +34,6 @@ const priorityConfig: Record<TaskPriority, { bg: string; text: string; icon: str
   medium: { bg: 'bg-blue-500/[0.08]', text: 'text-blue-400', icon: '🔵' },
   low: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', icon: '⚪' },
 };
-
-const avatarGradients = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarGradients.length;
-}
-
-function AgentBadge({ agent }: { agent: { name: string; display_name: string } | null }) {
-  if (!agent) return <span className="text-[12px] text-gray-600 italic">Unassigned</span>;
-  const name = agent.display_name || agent.name;
-  const idx = getAvatarIndex(name);
-  return (
-    <div className="flex items-center gap-2">
-      <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarGradients[idx]} flex items-center justify-center text-[9px] font-bold text-white`}>
-        {name[0]?.toUpperCase()}
-      </div>
-      <span className="text-[13px] text-gray-300 font-medium">{name}</span>
-    </div>
-  );
-}
 
 export default async function TaskDetailPage({
   params,
@@ -94,6 +73,7 @@ export default async function TaskDetailPage({
   const [
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes, auditRes,
+    membersRes, sprintsRes,
   ] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -124,12 +104,24 @@ export default async function TaskDetailPage({
       .eq('resource_id', tid)
       .order('created_at', { ascending: false })
       .limit(20),
+    supabase
+      .from('project_members')
+      .select('id, role, agent:agents(id, name, display_name)')
+      .eq('project_id', projectId),
+    supabase
+      .from('sprints')
+      .select('id, title, status')
+      .eq('project_id', projectId)
+      .order('position', { ascending: true }),
   ]);
 
   const project = projectRes.data;
   const assignee = assigneeRes.data;
   const reporter = reporterRes.data;
   const sprint = sprintRes.data;
+  const members = membersRes.data || [];
+  const sprints = sprintsRes.data || [];
+
   interface TaskDep {
     id: string;
     blocking_task_id?: string;
@@ -198,12 +190,10 @@ export default async function TaskDetailPage({
           <div className="animate-fade-in">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex-1">
-                <h1 className="text-[24px] font-bold text-white tracking-tight mb-3">{task.title}</h1>
+                <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
                 <div className="flex items-center gap-3 flex-wrap">
                   <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase ${pc.bg} ${pc.text}`}>
-                    {pc.icon} {task.priority}
-                  </span>
+                  <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
                   {isOverdue && (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 bg-red-500/[0.1] border border-red-500/20">
                       ⚠ Overdue
@@ -215,12 +205,10 @@ export default async function TaskDetailPage({
           </div>
 
           {/* Description */}
-          {task.description && (
-            <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">Description</p>
-              <MarkdownPreview content={task.description} />
-            </div>
-          )}
+          <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">Description</p>
+            <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
+          </div>
 
           {/* Dependencies */}
           {(blockedBy.length > 0 || blocks.length > 0) && (
@@ -344,55 +332,63 @@ export default async function TaskDetailPage({
               {/* Assignee */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Assignee</p>
-                <AgentBadge agent={assignee} />
+                <AssigneePicker
+                  currentId={task.assignee_agent_id}
+                  members={members as unknown as Array<{ agent: { id: string; name: string; display_name: string } | null }>}
+                  projectId={projectId}
+                  taskId={tid}
+                />
               </div>
 
               {/* Reporter */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Reporter</p>
-                <AgentBadge agent={reporter} />
+                {reporter ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] text-gray-300 font-medium">{reporter.display_name || reporter.name}</span>
+                  </div>
+                ) : (
+                  <span className="text-[12px] text-gray-600 italic">Unknown</span>
+                )}
               </div>
 
               {/* Sprint */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Sprint</p>
-                {sprint ? (
-                  <span className="text-[12px] text-gray-300 font-medium">{sprint.title}</span>
-                ) : (
-                  <span className="text-[12px] text-gray-600 italic">Backlog</span>
-                )}
+                <SprintPicker
+                  currentSprintId={task.sprint_id}
+                  sprints={sprints}
+                  projectId={projectId}
+                  taskId={tid}
+                />
+              </div>
+
+              {/* Priority */}
+              <div>
+                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Priority</p>
+                <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
               </div>
 
               {/* Due Date */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Due Date</p>
-                {task.due_date ? (
-                  <span className={`text-[12px] font-mono tabular-nums ${isOverdue ? 'text-red-400' : 'text-gray-300'}`}>
-                    {new Date(task.due_date).toLocaleDateString('en-US', {
-                      month: 'long', day: 'numeric', year: 'numeric',
-                    })}
-                  </span>
-                ) : (
-                  <span className="text-[12px] text-gray-600 italic">No due date</span>
-                )}
+                <DueDatePicker
+                  value={task.due_date}
+                  projectId={projectId}
+                  taskId={tid}
+                  isOverdue={!!isOverdue}
+                />
               </div>
 
               {/* Labels */}
-              {task.labels && task.labels.length > 0 && (
-                <div>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-2">Labels</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {task.labels.map((label: string) => (
-                      <span
-                        key={label}
-                        className="text-[10px] font-medium text-violet-400 bg-violet-500/[0.08] px-2 py-0.5 rounded-full border border-violet-500/10"
-                      >
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div>
+                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-2">Labels</p>
+                <LabelsEditor
+                  labels={task.labels || []}
+                  projectId={projectId}
+                  taskId={tid}
+                />
+              </div>
 
               {/* Created */}
               <div>
@@ -414,6 +410,9 @@ export default async function TaskDetailPage({
                 </span>
               </div>
             </div>
+
+            {/* Delete Task */}
+            <DeleteTaskButton projectId={projectId} taskId={tid} />
           </div>
         </div>
       </div>

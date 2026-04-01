@@ -46,8 +46,21 @@ export default async function ProjectDetailPage({
     }
   }
 
-  // Fetch members, sprints, ALL tasks (for completion %), and filtered tasks in parallel
-  const [membersRes, sprintsRes, allTasksRes, tasksRes] = await Promise.all([
+  // Determine if user is project owner
+  let isOwner = user.isSuperAdmin;
+  if (!isOwner) {
+    const { data: ownerCheck } = await supabase
+      .from('project_members')
+      .select('id, role')
+      .eq('project_id', id)
+      .eq('role', 'owner')
+      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+      .limit(1);
+    isOwner = !!(ownerCheck && ownerCheck.length > 0);
+  }
+
+  // Fetch members, sprints, ALL tasks (for completion %), filtered tasks, and available agents in parallel
+  const [membersRes, sprintsRes, allTasksRes, tasksRes, allAgentsRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
@@ -76,12 +89,18 @@ export default async function ProjectDetailPage({
 
       return q.order('position', { ascending: true });
     })(),
+    supabase.from('agents').select('id, name, display_name').order('name'),
   ]);
 
   const members = membersRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
   const tasks = (tasksRes.data || []) as TaskRow[];
+  const allAgents = allAgentsRes.data || [];
+
+  // Available agents = all agents minus current members
+  const memberAgentIds = new Set(members.map((m: { agent_id?: string; agent?: { id: string } | null }) => m.agent?.id).filter(Boolean));
+  const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id));
 
   // Compute completion stats per sprint
   const sprintStats: Record<string, { total: number; done: number }> = {};
@@ -102,7 +121,7 @@ export default async function ProjectDetailPage({
     <AutoRefresh intervalMs={15000}>
       <div className="p-4 sm:p-6 lg:p-10">
         {/* Project Header */}
-        <ProjectHeader project={project} members={members} />
+        <ProjectHeader project={project} members={members} availableAgents={availableAgents} isOwner={isOwner} />
 
         {/* Sprint Selector */}
         <SprintSelector
@@ -117,6 +136,7 @@ export default async function ProjectDetailPage({
           tasks={tasks}
           projectId={id}
           sprintId={sprintFilter && sprintFilter !== 'all' && sprintFilter !== 'backlog' ? sprintFilter : undefined}
+          members={members}
         />
       </div>
     </AutoRefresh>

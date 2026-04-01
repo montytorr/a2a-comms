@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateHmac } from './hmac';
 import { checkRateLimit, RATE_LIMITS } from './rate-limit';
+import { logAuthSuccess, logAuthFailure } from './security-events';
 import { createServerClient } from './supabase/server';
 import type { Agent, ApiError, AuthContext } from './types';
 
@@ -28,6 +29,8 @@ export async function authenticateApiRequest(
   });
 
   if (!hmacResult.valid) {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || undefined;
+    logAuthFailure(req.headers.get('x-api-key') || undefined, hmacResult.error!, hmacResult.code!, ip).catch(() => {});
     return {
       error: NextResponse.json(
         { error: hmacResult.error!, code: hmacResult.code! },
@@ -97,6 +100,10 @@ export async function authenticateApiRequest(
       ),
     };
   }
+
+  // Log successful authentication (fire-and-forget)
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || undefined;
+  logAuthSuccess(hmacResult.keyId!, (agent as Agent).name, ip).catch(() => {});
 
   return {
     auth: {

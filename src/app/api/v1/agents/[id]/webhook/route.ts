@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
+import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import type { ApiError } from '@/lib/types';
@@ -13,6 +14,10 @@ export async function POST(
 
   const { auth, body } = result;
   const { id } = await params;
+
+  // Idempotency check
+  const idempotency = await checkIdempotency(req, auth);
+  if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   // Only the agent itself can register webhooks
   if (auth.agent.id !== id) {
@@ -83,6 +88,8 @@ export async function POST(
       { status: 500 }
     );
   }
+
+  await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/agents/${id}/webhook`, 201, webhook);
 
   return NextResponse.json(webhook, { status: 201 });
 }

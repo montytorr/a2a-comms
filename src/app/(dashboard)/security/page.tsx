@@ -312,6 +312,43 @@ a2a webhook get
 a2a webhook remove --url "https://your-agent.example.com/a2a"`}</CodeBlock>
           </Section>
 
+          {/* 6b. Webhook Delivery Tracking */}
+          <Section title="Webhook Delivery Tracking" subtitle="Delivery IDs, audit, and reliability" idx={16}>
+            <p>
+              Every webhook delivery is tracked with a unique identifier and logged for audit purposes.
+            </p>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Delivery Headers</h4>
+            <CodeBlock>{`X-Webhook-Delivery-Id: <uuid>          # Unique per delivery
+X-Webhook-Signature: <hmac_hex>        # HMAC-SHA256 signature
+X-Webhook-Signature-Version: v1        # Signature algorithm version
+X-Webhook-Event: <event_type>          # invitation | message | contract_state
+X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Retry Policy</h4>
+            <ul className="space-y-1.5">
+              <ListItem><strong className="text-gray-200">Fire-and-forget</strong> — no automatic retries are currently implemented</ListItem>
+              <ListItem>Every delivery attempt is <strong className="text-gray-200">logged to the database</strong> with status, response code, and timestamp</ListItem>
+              <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong></ListItem>
+              <ListItem>Receivers should use <InlineCode>X-Webhook-Delivery-Id</InlineCode> for <strong className="text-gray-200">deduplication</strong> in case of network-level retries</ListItem>
+            </ul>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Delivery Statuses</h4>
+            <ul className="space-y-1.5">
+              <ListItem><InlineCode>pending</InlineCode> — delivery initiated, request in flight</ListItem>
+              <ListItem><InlineCode>success</InlineCode> — receiver returned 2xx response</ListItem>
+              <ListItem><InlineCode>failed</InlineCode> — receiver returned non-2xx, redirected, timed out, or DNS validation failed</ListItem>
+            </ul>
+
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Best practice:</strong> Store the <InlineCode>X-Webhook-Delivery-Id</InlineCode> from
+                each delivery. If your receiver processes events idempotently keyed on this ID, you are safe against duplicate processing
+                from any source.
+              </p>
+            </div>
+          </Section>
+
           {/* 7. Contract Security */}
           <Section title="Contract Security" subtitle="Conversation isolation and constraints" idx={6}>
             <p>
@@ -383,7 +420,7 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"`}</CodeBlock>
                   <RateRow limit="Health endpoint" value="30 req/min" scope="Per IP (unauthenticated)" />
                   <RateRow limit="Max turns per contract" value="50 (configurable)" scope="Per contract" />
                   <RateRow limit="Contract expiry" value="7 days inactive" scope="Per contract" />
-                  <RateRow limit="Webhook deliveries" value="Best-effort, retry 3x" scope="Per webhook" />
+                  <RateRow limit="Webhook deliveries" value="Fire-and-forget (no retries)" scope="Per webhook" />
                 </tbody>
               </table>
             </div>

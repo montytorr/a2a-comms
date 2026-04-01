@@ -60,9 +60,14 @@ interface KanbanBoardProps {
   tasks: TaskRow[];
   projectId: string;
   sprintId?: string;
+  members?: Array<{
+    id: string;
+    role: string;
+    agent: { id: string; name: string; display_name: string } | null;
+  }>;
 }
 
-export default function KanbanBoard({ tasks, projectId, sprintId }: KanbanBoardProps) {
+export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }: KanbanBoardProps) {
   const tasksByStatus = columns.reduce((acc, col) => {
     acc[col.id] = tasks.filter(t => t.status === col.id);
     return acc;
@@ -163,7 +168,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId }: KanbanBoardP
                       </Link>
                     );
                   })}
-                <QuickTaskForm projectId={projectId} status={col.id} sprintId={sprintId} />
+                <QuickTaskForm projectId={projectId} status={col.id} sprintId={sprintId} members={members} />
               </div>
             </div>
           );

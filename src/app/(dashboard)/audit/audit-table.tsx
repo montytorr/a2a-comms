@@ -25,6 +25,17 @@ const actionColors: Record<string, string> = {
   'kill_switch.deactivate': 'text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/10',
   'killswitch.activate': 'text-red-400 bg-red-500/[0.06] border-red-500/10',
   'killswitch.deactivate': 'text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/10',
+  // Security events
+  'auth.success': 'text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/10',
+  'auth.failure': 'text-amber-400 bg-amber-500/[0.06] border-amber-500/10',
+  'authz.denied': 'text-amber-400 bg-amber-500/[0.06] border-amber-500/10',
+  'webhook.delivery.success': 'text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/10',
+  'webhook.delivery.failure': 'text-amber-400 bg-amber-500/[0.06] border-amber-500/10',
+  'webhook.disabled': 'text-red-400 bg-red-500/[0.06] border-red-500/10',
+  'suspicious.replay_detected': 'text-red-400 bg-red-500/[0.06] border-red-500/10',
+  'suspicious.invalid_signature': 'text-red-400 bg-red-500/[0.06] border-red-500/10',
+  'policy.kill_switch.activated': 'text-red-400 bg-red-500/[0.06] border-red-500/10',
+  'policy.kill_switch.deactivated': 'text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/10',
 };
 
 function getActionStyle(action: string): string {
@@ -32,6 +43,15 @@ function getActionStyle(action: string): string {
 }
 
 function getActionIcon(action: string): string {
+  // Security events
+  if (action === 'auth.success') return '🔓';
+  if (action === 'auth.failure') return '🔐';
+  if (action === 'authz.denied') return '🚫';
+  if (action.startsWith('webhook.delivery')) return '📡';
+  if (action === 'webhook.disabled') return '⛔';
+  if (action.startsWith('suspicious.')) return '🚨';
+  if (action.startsWith('policy.')) return '🛡️';
+  // Standard events
   if (action.includes('propose')) return '📋';
   if (action.includes('accept')) return '✅';
   if (action.includes('reject')) return '❌';

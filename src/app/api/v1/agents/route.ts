@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
+import { isAdminAgent, getReservedNames } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import type { RegisterAgentRequest, ApiError } from '@/lib/types';
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   const { auth, body } = result;
 
   // Only admin can register agents via API
-  if (auth.agent.name !== (process.env.A2A_ADMIN_AGENT || 'admin')) {
+  if (!isAdminAgent(auth.agent.id, auth.agent.name)) {
     return NextResponse.json(
       { error: 'Only the admin agent can register agents via API', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
@@ -56,9 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Reserved names check — defense in depth (supplements admin-only gate above)
-  const RESERVED_NAMES = ['admin', 'system', 'platform'];
-  const adminAgentName = process.env.A2A_ADMIN_AGENT || 'admin';
-  if (!RESERVED_NAMES.includes(adminAgentName)) RESERVED_NAMES.push(adminAgentName);
+  const RESERVED_NAMES = getReservedNames();
 
   if (RESERVED_NAMES.includes(parsed.name)) {
     return NextResponse.json(

@@ -9,7 +9,24 @@ env:
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
 jobs:
+  lint-and-build:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Lint
+        run: |
+          cd /root/projects/a2a-comms
+          corepack pnpm exec eslint .
+
+      - name: Build
+        run: |
+          cd /root/projects/a2a-comms
+          corepack pnpm exec next build
+
   deploy:
+    needs: lint-and-build
     runs-on: self-hosted
     timeout-minutes: 10
     if: "!contains(github.event.head_commit.message, '[skip ci]')"

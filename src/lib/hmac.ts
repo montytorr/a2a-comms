@@ -4,6 +4,7 @@
 // Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
 import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
+import { logReplayDetected, logInvalidSignature } from './security-events';
 
 const TIMESTAMP_TOLERANCE_SECONDS = 300; // ±5 minutes
 const MAX_BODY_SIZE = 50 * 1024; // 50KB
@@ -155,6 +156,7 @@ export async function validateHmac(
     const nonceExpiresAt = Date.now() + TIMESTAMP_TOLERANCE_SECONDS * 1000;
     const isDuplicate = await checkAndRecordNonce(nonce, nonceExpiresAt);
     if (isDuplicate) {
+      logReplayDetected(nonce, apiKey).catch(() => {});
       return {
         valid: false,
         error: 'Duplicate nonce — possible replay attack',
@@ -235,6 +237,7 @@ export async function validateHmac(
   const expectedBuffer = Buffer.from(expectedSignature, 'hex');
 
   if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
+    logInvalidSignature(apiKey).catch(() => {});
     return {
       valid: false,
       error: 'Invalid signature',
