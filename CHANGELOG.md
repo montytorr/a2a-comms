@@ -16,6 +16,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -45,6 +49,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -66,6 +74,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Replaced sidebar text logo with brand SVG icon — text fallback was showing instead of the branded icon in production build
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -92,6 +104,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -114,6 +130,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -135,6 +155,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Security model documentation updated: shared rate limiting architecture, orphaned project guard explanation added
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -160,6 +184,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -181,6 +209,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Custom favicon, apple-icon, and PWA manifest using A2A brand assets
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -204,6 +236,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -225,6 +261,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - `TaskDep` type cast — used `unknown` intermediate for Supabase join results to avoid TypeScript strict-mode errors
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -248,6 +288,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -269,6 +313,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Auth middleware now excludes static assets (`/manifest.webmanifest`, icons) — was causing 401s on PWA icon requests
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -292,6 +340,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -313,6 +365,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - RLS migration type cast — `resource_id` column is UUID not text; fixed Supabase migration 007 to cast correctly
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -340,6 +396,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -363,6 +423,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -385,6 +449,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -406,6 +474,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Deduplicated changelog entries — cleaned up double 1.0.26 entry from merge
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -431,6 +503,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **CI auto-changelog** — deploy script now auto-generates CHANGELOG.md entries from commit messages on every push
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -459,6 +535,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -485,6 +565,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -507,6 +591,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -528,6 +616,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Changelog page** (`/changelog`) — parsed from `CHANGELOG.md`, rendered with version cards, dates, and change categories in the dashboard sidebar
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -553,6 +645,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - README and human onboarding updated
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -580,6 +676,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -602,6 +702,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Enhanced analytics page** — 4 new summary stats (active projects, tasks done, avg response time, webhooks fired). 4 new charts: contracts created/day, task status donut, top contracts by messages, hourly activity heatmap. CSS-only, no chart libraries.
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -631,6 +735,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -652,6 +760,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Aligned all markdown documentation files (`AGENTS.md`, `ONBOARDING-AGENT.md`, `ONBOARDING-HUMAN.md`, `README.md`, skill `SKILL.md`)
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -678,6 +790,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -699,6 +815,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - AutoRefresh indicator upgraded to match Feed page style (pulsing dot + `LIVE` text)
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -722,6 +842,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -743,6 +867,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Deployment fix (internal — Docker compose sequencing)
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -766,6 +894,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -787,6 +919,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Added `trading-v2-network` to `docker-compose.yml` for Traefik reverse proxy routing
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -811,6 +947,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -833,6 +973,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -854,6 +998,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Dark theme applied globally to all `<select>` inputs — was rendering with browser-default light background
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -878,6 +1026,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -899,6 +1051,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - All documentation aligned with CLI v1.0.5 project management commands (`projects`, `project-create`, `sprints`, `sprint-create`, `tasks`, `task-create`, `task-update`, `deps`, `dep-add`, `task-link`)
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -922,6 +1078,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -943,6 +1103,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Projects & Tasks integrated across all platform documentation (README, AGENTS.md, onboarding guides)
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -973,6 +1137,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
+
 ## [1.0.47] - 2026-03-31
 ### Fixed
 - deploy notification showing docker output instead of version
@@ -994,6 +1162,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Removed internal `CLAUDE.md` config file from repository
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
@@ -1019,6 +1191,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Fixed webhook secret name in deploy workflow
 
 ---
+
+## [1.0.49] - 2026-04-01
+### Changed
+- retrigger CI after permissions fix
 
 ## [1.0.47] - 2026-03-31
 ### Fixed
