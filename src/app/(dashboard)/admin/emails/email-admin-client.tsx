@@ -27,6 +27,12 @@ const TEMPLATES = [
     description: 'Sent when a task is assigned to a user',
     icon: '✅',
   },
+  {
+    id: 'approval-request',
+    label: 'Approval Request',
+    description: 'Sent when an action requires admin approval',
+    icon: '🔐',
+  },
 ];
 
 interface EmailAdminClientProps {

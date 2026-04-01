@@ -62,7 +62,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/(.*)',
+        // Exclude email preview (it needs SAMEORIGIN for the admin iframe)
+        source: '/((?!api/v1/email/preview).*)',
         headers: securityHeaders,
       },
     ];
