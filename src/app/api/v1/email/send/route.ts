@@ -4,6 +4,8 @@ import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { createServerClient } from '@/lib/supabase/server';
 import { sendEmail, getTemplateNames } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/v1/email/send
  *

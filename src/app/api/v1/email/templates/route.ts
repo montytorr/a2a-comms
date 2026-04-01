@@ -4,13 +4,13 @@ import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { createServerClient } from '@/lib/supabase/server';
 import { getTemplateNames } from '@/lib/email';
 
-async function authenticate(req: NextRequest): Promise<boolean> {
-  const authHeader = req.headers.get('authorization');
-  if (authHeader) {
-    const token = authHeader.replace(/^Bearer\s+/i, '');
-    if (token === process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
-  }
+export const dynamic = 'force-dynamic';
 
+/**
+ * GET /api/v1/email/templates
+ * List available email templates — super admin only.
+ */
+export async function GET(_req: NextRequest) {
   const cookieStore = await cookies();
   const supabaseAuth = createSSRClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +24,9 @@ async function authenticate(req: NextRequest): Promise<boolean> {
   );
 
   const { data: { user } } = await supabaseAuth.auth.getUser();
-  if (!user) return false;
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const supabase = createServerClient();
   const { data: profile } = await supabase
@@ -33,16 +35,8 @@ async function authenticate(req: NextRequest): Promise<boolean> {
     .eq('id', user.id)
     .single();
 
-  return profile?.is_super_admin === true;
-}
-
-/**
- * GET /api/v1/email/templates
- * Returns list of available email template names.
- */
-export async function GET(req: NextRequest) {
-  if (!(await authenticate(req))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!profile?.is_super_admin) {
+    return NextResponse.json({ error: 'Forbidden — admin only' }, { status: 403 });
   }
 
   return NextResponse.json({ templates: getTemplateNames() });

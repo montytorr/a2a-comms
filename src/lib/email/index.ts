@@ -6,9 +6,16 @@ import PasswordResetEmail, { subject as passwordResetSubject } from './templates
 import ContractInvitationEmail, { subject as contractInvitationSubject } from './templates/contract-invitation';
 import TaskAssignedEmail, { subject as taskAssignedSubject } from './templates/task-assigned';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.tech>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+
+function getResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+  return new Resend(apiKey);
+}
 
 export interface SendEmailResult {
   id?: string;
@@ -32,6 +39,7 @@ export async function sendEmail(
   props: Record<string, any> = {}
 ): Promise<SendEmailResult> {
   try {
+    const resend = getResendClient();
     let result: Awaited<ReturnType<typeof resend.emails.send>>;
 
     switch (template) {

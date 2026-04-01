@@ -5,6 +5,8 @@ import { createServerClient } from '@/lib/supabase/server';
 import { createElement } from 'react';
 import { render } from '@react-email/components';
 
+export const dynamic = 'force-dynamic';
+
 import WelcomeEmail from '@/lib/email/templates/welcome';
 import PasswordResetEmail from '@/lib/email/templates/password-reset';
 import ContractInvitationEmail from '@/lib/email/templates/contract-invitation';

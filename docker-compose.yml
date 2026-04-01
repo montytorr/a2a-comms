@@ -7,6 +7,8 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://a2a.playground.montytorr.tech}
+        RESEND_API_KEY: ${RESEND_API_KEY}
+        RESEND_FROM: ${RESEND_FROM}
     container_name: a2a-comms
     ports:
       - "127.0.0.1:3700:3000"
