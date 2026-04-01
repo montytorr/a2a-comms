@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useTransition } from 'react';
 import type { TaskPriority } from '@/lib/types';
+import MarkdownPreview from '@/components/markdown-preview';
 import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
 
@@ -132,7 +133,7 @@ function EditableDescription({
         title="Click to edit description"
       >
         {value ? (
-          <p className="text-[13px] text-gray-300 leading-relaxed whitespace-pre-wrap">{value}</p>
+          <MarkdownPreview content={value} />
         ) : (
           <p className="text-[13px] text-gray-600 italic">Click to add description…</p>
         )}

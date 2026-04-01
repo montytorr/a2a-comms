@@ -11,23 +11,6 @@ const priorities: { id: TaskPriority; label: string; color: string }[] = [
   { id: 'urgent', label: 'Urgent', color: 'text-red-400' },
 ];
 
-const avatarGradients = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarGradients.length;
-}
-
 interface QuickTaskFormProps {
   projectId: string;
   status: string;
@@ -51,6 +34,16 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  function resetAndClose() {
+    setTitle('');
+    setPriority('medium');
+    setAssigneeId('');
+    setLabelsInput('');
+    setDueDate('');
+    setExpanded(false);
+    setIsOpen(false);
+  }
+
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
@@ -70,16 +63,6 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen, title]);
-
-  function resetAndClose() {
-    setTitle('');
-    setPriority('medium');
-    setAssigneeId('');
-    setLabelsInput('');
-    setDueDate('');
-    setExpanded(false);
-    setIsOpen(false);
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -179,12 +162,12 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
             {/* Assignee dropdown */}
             {members.length > 0 && (
               <div className="flex items-center gap-2">
-                <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-16 shrink-0">Assign</label>
+                <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-14 shrink-0">Assign</label>
                 <select
                   value={assigneeId}
                   onChange={(e) => setAssigneeId(e.target.value)}
                   disabled={isPending}
-                  className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none appearance-none cursor-pointer"
+                  className="flex-1 min-w-0 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none appearance-none cursor-pointer"
                 >
                   <option value="" className="bg-[#111118]">Unassigned</option>
                   {members.map((m) => {
@@ -201,26 +184,26 @@ export default function QuickTaskForm({ projectId, status, sprintId, members = [
 
             {/* Labels */}
             <div className="flex items-center gap-2">
-              <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-16 shrink-0">Labels</label>
+              <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-14 shrink-0">Labels</label>
               <input
                 type="text"
                 value={labelsInput}
                 onChange={(e) => setLabelsInput(e.target.value)}
-                placeholder="bug, ui, api (comma-separated)"
+                placeholder="bug, ui, api..."
                 disabled={isPending}
-                className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none placeholder-gray-600"
+                className="flex-1 min-w-0 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none placeholder-gray-600"
               />
             </div>
 
             {/* Due date */}
             <div className="flex items-center gap-2">
-              <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-16 shrink-0">Due</label>
+              <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold w-14 shrink-0">Due</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 disabled={isPending}
-                className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none [color-scheme:dark]"
+                className="flex-1 min-w-0 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none [color-scheme:dark]"
               />
             </div>
           </div>

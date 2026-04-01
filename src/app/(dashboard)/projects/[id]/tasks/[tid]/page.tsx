@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
-import MarkdownPreview from '@/components/markdown-preview';
 import AutoRefresh from '@/components/auto-refresh';
 import TaskStatusDropdown from './task-status-dropdown';
 import {
@@ -116,9 +115,9 @@ export default async function TaskDetailPage({
   ]);
 
   const project = projectRes.data;
-  const assignee = assigneeRes.data;
+  const _assignee = assigneeRes.data;
   const reporter = reporterRes.data;
-  const sprint = sprintRes.data;
+  const _sprint = sprintRes.data;
   const members = membersRes.data || [];
   const sprints = sprintsRes.data || [];
 
@@ -166,7 +165,7 @@ export default async function TaskDetailPage({
   }
   const auditEntries = (auditRes.data || []) as AuditEntry[];
 
-  const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
+  const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
 
   return (
