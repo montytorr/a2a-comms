@@ -20,12 +20,10 @@ jobs:
           cd /root/projects/a2a-comms
           git pull origin main
 
-      - name: Fix .next permissions
+      - name: Clean .next cache
         run: |
           cd /root/projects/a2a-comms
-          if [ -d .next ]; then
-            sudo chown -R runner:runner .next
-          fi
+          rm -rf .next
 
       - name: Lint
         run: |
