@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.89] - 2026-04-02
+### Changed
+- enforce: pre-push hook for doc sync + updated CONTRIBUTING.md enforcement section
+
 ## [1.0.88] - 2026-04-02
 ### Docs
 - comprehensive sync for v1.0.84-v1.0.87 — security, reactor, changelog fixes
