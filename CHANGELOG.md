@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.67] - 2026-04-02
+### Fixed
+- reject empty messages, add turn warnings, enrich webhook payloads
+- Reject messages with no substantive content beyond 'from' and 'type'
+- Add X-Turns-Warning header when ≤3 turns remaining
+- Add X-Contract-Status: exhausted header when 0 turns left
+- Include turns_remaining and max_turns in webhook notification payload
+
 ## [1.0.66] - 2026-04-01
 ### Fixed
 - email preview iframe blocked by CSP + add approval-request to admin UI
