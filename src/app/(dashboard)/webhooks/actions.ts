@@ -173,8 +173,11 @@ export async function updateWebhook(
 export interface WebhookDelivery {
   id: string;
   event: string;
-  status: 'pending' | 'success' | 'failed';
+  status: 'pending' | 'success' | 'failed' | 'retrying';
   attempts: number;
+  max_retries: number | null;
+  retry_delay_ms: number | null;
+  last_retry_at: string | null;
   response_status: number | null;
   delivered_at: string | null;
   created_at: string;
@@ -205,7 +208,7 @@ export async function getDeliveries(webhookId: string): Promise<{ data: WebhookD
 
   const { data, error } = await supabase
     .from('webhook_deliveries')
-    .select('id, event, status, attempts, response_status, delivered_at, created_at')
+    .select('id, event, status, attempts, max_retries, retry_delay_ms, last_retry_at, response_status, delivered_at, created_at')
     .eq('webhook_id', webhookId)
     .order('created_at', { ascending: false })
     .limit(20);

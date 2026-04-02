@@ -409,8 +409,11 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   <span className="text-[10px] text-gray-500">Last {deliveries.length} deliveries:</span>
                   <span className="text-[10px] font-semibold text-emerald-400">{successCount} OK</span>
                   {failedCount > 0 && <span className="text-[10px] font-semibold text-red-400">{failedCount} failed</span>}
-                  {deliveries.length - successCount - failedCount > 0 && (
-                    <span className="text-[10px] font-semibold text-amber-400">{deliveries.length - successCount - failedCount} pending</span>
+                  {deliveries.filter(d => d.status === 'retrying').length > 0 && (
+                    <span className="text-[10px] font-semibold text-amber-400">{deliveries.filter(d => d.status === 'retrying').length} retrying</span>
+                  )}
+                  {deliveries.filter(d => d.status === 'pending').length > 0 && (
+                    <span className="text-[10px] font-semibold text-amber-400">{deliveries.filter(d => d.status === 'pending').length} pending</span>
                   )}
                   <span className="text-[10px] text-gray-600 ml-auto font-mono">
                     {Math.round((successCount / deliveries.length) * 100)}% success rate
@@ -418,17 +421,19 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 </div>
 
                 {/* Header */}
-                <div className="grid grid-cols-[1fr_80px_90px_50px_100px] gap-2 px-3 py-1.5">
+                <div className="grid grid-cols-[1fr_80px_90px_80px_100px] gap-2 px-3 py-1.5">
                   <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Event</span>
                   <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Status</span>
                   <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">HTTP</span>
-                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Tries</span>
+                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Attempts</span>
                   <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider text-right">When</span>
                 </div>
-                {deliveries.map((d) => (
+                {deliveries.map((d) => {
+                  const maxRetries = d.max_retries ?? 1;
+                  return (
                   <div
                     key={d.id}
-                    className={`grid grid-cols-[1fr_80px_90px_50px_100px] gap-2 px-3 py-2 rounded-lg ${
+                    className={`grid grid-cols-[1fr_80px_90px_80px_100px] gap-2 px-3 py-2 rounded-lg ${
                       d.status === 'failed'
                         ? 'bg-red-500/[0.04] border border-red-500/[0.08]'
                         : d.status === 'success'
@@ -438,9 +443,18 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   >
                     <span className="text-[11px] font-mono text-gray-300 truncate">{d.event}</span>
                     <span className={`text-[11px] font-semibold ${
-                      d.status === 'success' ? 'text-emerald-400' : d.status === 'failed' ? 'text-red-400' : 'text-amber-400'
+                      d.status === 'success' ? 'text-emerald-400'
+                        : d.status === 'failed' ? 'text-red-400'
+                        : d.status === 'retrying' ? 'text-amber-400'
+                        : 'text-amber-400'
                     }`}>
-                      {d.status === 'success' ? '✓ OK' : d.status === 'failed' ? '✗ Failed' : '⏳ Pending'}
+                      {d.status === 'success'
+                        ? d.attempts > 1 ? `✅ Attempt ${d.attempts}` : '✓ OK'
+                        : d.status === 'failed'
+                          ? d.attempts > 1 ? `❌ ${d.attempts} tries` : '✗ Failed'
+                          : d.status === 'retrying'
+                            ? `⏳ Retry ${d.attempts}/${maxRetries}`
+                            : '⏳ Pending'}
                     </span>
                     <span className={`text-[11px] font-mono tabular-nums ${
                       d.response_status && d.response_status >= 200 && d.response_status < 300
@@ -451,12 +465,15 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                     }`}>
                       {d.response_status ? d.response_status : d.status === 'failed' ? 'Network' : '—'}
                     </span>
-                    <span className="text-[11px] font-mono text-gray-500 tabular-nums">{d.attempts}</span>
+                    <span className="text-[11px] font-mono text-gray-500 tabular-nums">
+                      {d.attempts}/{maxRetries}
+                    </span>
                     <span className="text-[10px] font-mono text-gray-600 tabular-nums text-right">
                       {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })()}

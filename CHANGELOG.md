@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.92] - 2026-04-02
+### Added
+- Webhook delivery retries — failed deliveries automatically retry up to 5 times
+  with 5-second delays between attempts. Retry progress visible on webhook card
+  delivery history. Only counts as consecutive failure after all retries exhausted.
+
 ## [1.0.91] - 2026-04-02
 ### Fixed
 - email notifications — resend missing from Docker standalone build
