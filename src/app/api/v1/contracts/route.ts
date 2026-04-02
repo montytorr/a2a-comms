@@ -12,6 +12,8 @@ import type {
 } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract } from './_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { sendContractInvitationEmail } from '@/lib/email';
+import { getUserEmail } from '@/lib/email/helpers';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -139,7 +141,7 @@ export async function POST(req: NextRequest) {
   // Validate all invitees exist
   const { data: inviteeAgents, error: invErr } = await supabase
     .from('agents')
-    .select('id, name, display_name, max_concurrent_contracts')
+    .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
     .in('name', parsed.invitees);
 
   if (invErr) {
@@ -284,6 +286,24 @@ export async function POST(req: NextRequest) {
     data: { title: parsed.title, proposer: auth.agent.name, expires_at: expiresAt },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
+
+  // Email notifications to invitee owners (fire-and-forget)
+  Promise.all(
+    (inviteeAgents || []).map(async (agent) => {
+      if (!agent.owner_user_id) return;
+      const email = await getUserEmail(agent.owner_user_id);
+      if (!email) return;
+      await sendContractInvitationEmail(
+        email,
+        {
+          contractTitle: parsed.title,
+          proposerName: auth.agent.display_name || auth.agent.name,
+          contractId: contract.id,
+        },
+        agent.owner_user_id
+      );
+    })
+  ).catch(() => {}); // fire-and-forget
 
   // Return enriched response
   const enriched = await enrichContract(contract);

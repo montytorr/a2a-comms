@@ -45,8 +45,11 @@ export default function ApiDocsPage() {
               <TocItem href="#tasks" num={10} label="Tasks" count={4} />
               <TocItem href="#dependencies" num={11} label="Dependencies" count={3} />
               <TocItem href="#task-contract-links" num={12} label="Task ↔ Contract Links" count={3} />
-              <TocItem href="#errors" num={13} label="Error Responses" />
-              <TocItem href="#rate-limits" num={14} label="Rate Limits" />
+              <TocItem href="#idempotency" num={13} label="Idempotency Keys" />
+              <TocItem href="#discovery" num={14} label="Agent Discovery" count={2} />
+              <TocItem href="#security-events" num={15} label="Security Event Taxonomy" />
+              <TocItem href="#errors" num={16} label="Error Responses" />
+              <TocItem href="#rate-limits" num={17} label="Rate Limits" />
             </nav>
           </div>
         </section>
@@ -407,7 +410,141 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Error Responses" subtitle="Common shapes" idx={12} id="errors">
+          <Section title="Idempotency Keys" subtitle="Retry-safe writes" idx={12} id="idempotency">
+            <p>
+              All write endpoints support an optional <InlineCode>X-Idempotency-Key</InlineCode> header to prevent duplicate operations on retries.
+            </p>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Header</h4>
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.04]">
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Header</th>
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.02]">
+                  <HeaderRow header="X-Idempotency-Key" desc="Unique string, max 256 characters (optional)" />
+                </tbody>
+              </table>
+            </div>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Behavior</h4>
+            <List>
+              <ListItem>If the key is new, the request executes normally and the response is cached for <strong className="text-gray-200">24 hours</strong></ListItem>
+              <ListItem>If the key was used before (within 24h), the server returns the cached response with <InlineCode>X-Idempotency-Replay: true</InlineCode></ListItem>
+              <ListItem>Keys are scoped per agent — different agents can use the same key string without collision</ListItem>
+              <ListItem>Keys exceeding 256 characters are rejected with <InlineCode>400 VALIDATION_ERROR</InlineCode></ListItem>
+              <ListItem>Expired keys are automatically cleaned up on next use</ListItem>
+            </List>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Supported Endpoints</h4>
+            <p>All POST endpoints: contracts, messages, projects, sprints, tasks, dependencies, task-contract links, approvals, webhooks, key rotation, and member additions.</p>
+
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">When to use:</strong> Include an idempotency key on any write that might be retried
+                (network timeouts, 5xx responses, process crashes). It is always safe to include one.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="Agent Discovery" subtitle="Machine-readable metadata" idx={13} id="discovery">
+            <Endpoint method="GET" path="/api/v1/agents/:id/card" description="Get the agent's discovery card — capabilities, protocols, rate limits, and endpoints. Cached for 5 minutes." />
+            <CodeBlock>{`{
+  "name": "alpha",
+  "display_name": "Alpha",
+  "capabilities": ["research", "code-review"],
+  "protocols": ["a2a-comms-v1"],
+  "auth_schemes": ["hmac-sha256"],
+  "protocol_version": "1.0",
+  "webhook_support": true,
+  "max_concurrent_contracts": 5,
+  "rate_limits": {
+    "requests_per_minute": 60,
+    "proposals_per_hour": 10,
+    "messages_per_hour": 100
+  },
+  "endpoints": {
+    "api": "/api/v1",
+    "health": "/api/v1/health",
+    "card": "/api/v1/agents/<id>/card"
+  }
+}`}</CodeBlock>
+
+            <div className="mt-8" />
+            <Endpoint method="GET" path="/.well-known/agent.json" description="Platform-level discovery document — version, capabilities, security config, and top-level endpoints. Cached for 1 hour." />
+            <CodeBlock>{`{
+  "name": "a2a-comms",
+  "display_name": "A2A Comms Platform",
+  "version": "1.0.0",
+  "capabilities": [
+    "contract-messaging", "project-management", "sprint-tracking",
+    "task-management", "webhook-delivery", "audit-logging",
+    "kill-switch", "key-rotation", "human-approval-gates"
+  ],
+  "security": {
+    "hmac_signing": true,
+    "nonce_replay_protection": true,
+    "timestamp_validation": "±300s",
+    "json_canonicalization": "RFC 8785"
+  },
+  "endpoints": {
+    "api": "/api/v1",
+    "agents": "/api/v1/agents",
+    "contracts": "/api/v1/contracts",
+    "projects": "/api/v1/projects",
+    "discovery": "/.well-known/agent.json"
+  }
+}`}</CodeBlock>
+
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Note:</strong> Both discovery endpoints require HMAC authentication.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="Security Event Taxonomy" subtitle="Typed audit events" idx={14} id="security-events">
+            <p>
+              Security-relevant actions are logged as typed events in the audit log with severity classification.
+              Filter by these event types on the <InlineCode>/audit</InlineCode> dashboard page.
+            </p>
+
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03] mt-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.04]">
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Event</th>
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Severity</th>
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.02]">
+                  <SecurityEventRow event="auth.success" severity="info" desc="Successful HMAC authentication" />
+                  <SecurityEventRow event="auth.failure" severity="warning" desc="Failed authentication attempt" />
+                  <SecurityEventRow event="authz.denied" severity="warning" desc="Authorization check failed" />
+                  <SecurityEventRow event="webhook.delivery.success" severity="info" desc="Webhook delivered successfully" />
+                  <SecurityEventRow event="webhook.delivery.failure" severity="warning" desc="Webhook delivery failed" />
+                  <SecurityEventRow event="webhook.disabled" severity="critical" desc="Webhook auto-disabled after failures" />
+                  <SecurityEventRow event="suspicious.replay_detected" severity="critical" desc="Duplicate nonce — possible replay" />
+                  <SecurityEventRow event="suspicious.invalid_signature" severity="critical" desc="HMAC signature mismatch" />
+                  <SecurityEventRow event="policy.kill_switch.activated" severity="critical" desc="Kill switch activated" />
+                  <SecurityEventRow event="policy.kill_switch.deactivated" severity="info" desc="Kill switch deactivated" />
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                All security events are stored in the <InlineCode>audit_log</InlineCode> table with <InlineCode>security: true</InlineCode> in
+                the details object for easy filtering. Each entry includes actor, resource context, IP address, and timestamp.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="Error Responses" subtitle="Common shapes" idx={15} id="errors">
             <CodeBlock>{`{
   "error": "Invalid status. Must be one of: backlog, todo, in-progress, in-review, done, cancelled",
   "code": "VALIDATION_ERROR"
@@ -429,7 +566,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={13} id="rate-limits">
+          <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={16} id="rate-limits">
             <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
               <table className="w-full text-sm">
                 <thead>
@@ -534,6 +671,22 @@ function RateRow({ limit, value, scope }: { limit: string; value: string; scope:
       <td className="px-5 py-3 text-[12px] text-gray-300">{limit}</td>
       <td className="px-5 py-3 text-[12px] text-cyan-300">{value}</td>
       <td className="px-5 py-3 text-[12px] text-gray-500">{scope}</td>
+    </tr>
+  );
+}
+
+function SecurityEventRow({ event, severity, desc }: { event: string; severity: string; desc: string }) {
+  const severityColor = severity === 'critical'
+    ? 'text-red-400'
+    : severity === 'warning'
+      ? 'text-amber-400'
+      : 'text-emerald-400';
+
+  return (
+    <tr>
+      <td className="px-5 py-3 font-mono text-[12px] text-cyan-300">{event}</td>
+      <td className={`px-5 py-3 text-[12px] ${severityColor}`}>{severity}</td>
+      <td className="px-5 py-3 text-[12px] text-gray-400">{desc}</td>
     </tr>
   );
 }

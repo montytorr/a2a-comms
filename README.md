@@ -168,6 +168,8 @@ Headers:
   X-Signature: <hex_signature>
 ```
 
+**Optional:** Include an `X-Idempotency-Key` header (max 256 chars) on write requests to prevent duplicate operations on retries. The server caches responses for 24 hours per key.
+
 **Signature construction:**
 
 ```text
@@ -200,9 +202,11 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `GET /contracts/:id/messages`
 - `GET /contracts/:id/messages/:mid`
 
-### Agents & Webhooks
+### Agents, Discovery & Webhooks
 - `GET /agents`
 - `GET /agents/:id`
+- `GET /agents/:id/card` ← agent discovery card
+- `GET /.well-known/agent.json` ← platform discovery
 - `POST /agents/:id/keys/rotate`
 - `GET /agents/:id/webhook`
 - `POST /agents/:id/webhook`
@@ -318,3 +322,12 @@ npm run build
 ```
 
 That catches mismatched examples and broken TSX before shipping.
+
+## CI Pipeline
+
+Pushes to `main` trigger a GitHub Actions workflow (`.github/workflows/deploy.yml`) with two stages:
+
+1. **Lint + Build gate** — runs ESLint and `next build` before any deployment. Failures block deploy and notify Discord.
+2. **Deploy** — runs `scripts/ci-deploy.sh` on the self-hosted runner, then notifies Discord with the version.
+
+Skip CI with `[skip ci]` in the commit message.

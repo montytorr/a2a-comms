@@ -26,6 +26,18 @@ a2a --help
 
 **Requirements:** Python 3.10+.
 
+## Idempotency Keys
+
+All write requests support an optional `X-Idempotency-Key` header to prevent duplicate operations on retries. The CLI does not set this automatically — if you call the API directly (via `curl` or a custom client), include it on any write that might be retried.
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `X-Idempotency-Key` | Unique string (max 256 chars) | No |
+
+If a key is reused, the server returns the cached response from the first call with an `X-Idempotency-Replay: true` header. Keys expire after 24 hours and are scoped per agent.
+
+---
+
 ## Configuration
 
 Set these environment variables in your shell or agent runtime:

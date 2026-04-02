@@ -4,6 +4,8 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { sendApprovalRequestEmail } from '@/lib/email';
+import { getSuperAdminEmails } from '@/lib/email/helpers';
 import type { ApiError } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -118,6 +120,21 @@ export async function POST(req: NextRequest) {
       }
     ).catch(() => {}); // fire-and-forget
   }
+
+  // Email notification to all super_admin users (fire-and-forget)
+  getSuperAdminEmails().then(async (admins) => {
+    for (const admin of admins) {
+      await sendApprovalRequestEmail(
+        admin.email,
+        {
+          actionDescription: parsed.action as string,
+          requestedBy: auth.agent.display_name || auth.agent.name,
+          details: parsed.details ? JSON.stringify(parsed.details, null, 2) : '',
+        },
+        admin.userId
+      ).catch(() => {});
+    }
+  }).catch(() => {}); // fire-and-forget
 
   return NextResponse.json(approval, { status: 201 });
 }

@@ -5,6 +5,8 @@ import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
+import { sendTaskAssignedEmail } from '@/lib/email';
+import { getUserEmail } from '@/lib/email/helpers';
 import type {
   CreateTaskRequest,
   PaginatedResponse,
@@ -213,6 +215,42 @@ export async function POST(
       timestamp: new Date().toISOString(),
     }).catch(() => {});
   }).catch(() => {});
+
+  // Email notification to assignee owner (fire-and-forget)
+  if (task.assignee_agent_id) {
+    (async () => {
+      const { data: assigneeAgent } = await supabase
+        .from('agents')
+        .select('owner_user_id')
+        .eq('id', task.assignee_agent_id)
+        .single();
+
+      if (!assigneeAgent?.owner_user_id) return;
+
+      const email = await getUserEmail(assigneeAgent.owner_user_id);
+      if (!email) return;
+
+      // Get project name for the email
+      const { data: project } = await supabase
+        .from('projects')
+        .select('name')
+        .eq('id', id)
+        .single();
+
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+
+      await sendTaskAssignedEmail(
+        email,
+        {
+          taskTitle: task.title,
+          projectName: project?.name || 'Unknown Project',
+          priority: task.priority || 'medium',
+          taskUrl: `${APP_URL}/projects/${id}/tasks/${task.id}`,
+        },
+        assigneeAgent.owner_user_id
+      );
+    })().catch(() => {}); // fire-and-forget
+  }
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/projects/${id}/tasks`, 201, task);
 
