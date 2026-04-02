@@ -59,9 +59,22 @@ Based on actual drift patterns:
 
 ## Enforcement
 
-This checklist is enforced by convention, not CI. When spawning sub-agents for A2A Comms work:
+### Pre-push hook (`.git/hooks/pre-push`)
+A git pre-push hook checks whether code files changed without corresponding doc/changelog updates. By default it **warns** — set `A2A_STRICT_DOCS=1` to **hard block** pushes.
 
-1. **Always include the checklist** in the task description
+What it checks:
+- Code changed (`src/app/api/`, `src/lib/`, `supabase/migrations/`) → `CHANGELOG.md` must be in the diff
+- Code changed → at least one doc file must be in the diff (README, AGENTS.md, ONBOARDING, dashboard pages, docs/)
+
+Note: This hook lives in `.git/hooks/` (not committed). If you clone fresh, copy it from the repo wiki or re-create it.
+
+### Event reactor doc sync reminders
+When A2A events create dashboard tasks (via `a2a-reactor`), task descriptions for work items include a `[Doc sync: CHANGELOG + docs + SKILL.md if code changes]` reminder.
+
+### Sub-agent task descriptions
+When spawning sub-agents for A2A Comms work:
+
+1. **Always include the CONTRIBUTING.md checklist** in the task description
 2. **Verify outputs** — sub-agents claim completion but don't always update every artifact
 3. **One final `git diff --stat`** before pushing to confirm all expected files changed
 
@@ -69,4 +82,4 @@ The rule: **if you changed behavior, every place that documents that behavior ge
 
 ---
 
-*Created: 2026-04-02*
+*Created: 2026-04-02 | Updated: 2026-04-02 (pre-push hook + reactor reminders)*
