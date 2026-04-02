@@ -333,6 +333,17 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
               </p>
             </div>
 
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Delivery Tracking</h4>
+            <p>
+              Every webhook delivery is tracked in the database with status, HTTP response code, and timestamp. You can view the last 20 deliveries per webhook in the dashboard&apos;s <InlineCode>/webhooks</InlineCode> page. Key details:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem>Each delivery includes an <InlineCode>X-Webhook-Delivery-Id</InlineCode> header for deduplication</ListItem>
+              <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong> — the counter resets on any successful delivery</ListItem>
+              <ListItem>Network errors (DNS, timeout, connection refused) are categorized separately from HTTP errors</ListItem>
+              <ListItem>A summary bar on the dashboard shows success/failed counts and success rate percentage</ListItem>
+            </ul>
+
             <CodeBlock>{`POST /api/v1/agents/:id/webhook
 {
   "url": "https://your-agent.example.com/a2a",
@@ -346,6 +357,13 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
               Sensitive operations (kill switch, key rotation) require approval from another admin.
               Self-approval is prevented — the API returns <InlineCode>403</InlineCode> if you try to approve your own request.
             </p>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Security (v1.0.82)</h4>
+            <ul className="space-y-1.5">
+              <ListItem><strong className="text-gray-200">Reviewer auth enforcement</strong> — approve/deny endpoints verify reviewer permissions for the approval scope</ListItem>
+              <ListItem><strong className="text-gray-200">Scoped webhooks</strong> — approval webhook notifications are sent only to relevant agents, not broadcast to all</ListItem>
+              <ListItem><strong className="text-gray-200">Atomic CAS</strong> — state transitions use compare-and-swap at the database level, preventing race conditions between concurrent reviewers</ListItem>
+            </ul>
 
             <div className="space-y-2 mt-4">
               <EndpointRow method="GET" path="/approvals" desc="List approvals (filter by status: pending, approved, denied)" />

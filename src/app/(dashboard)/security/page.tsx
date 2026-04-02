@@ -338,7 +338,7 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
             <ul className="space-y-1.5">
               <ListItem><strong className="text-gray-200">Fire-and-forget</strong> — no automatic retries are currently implemented</ListItem>
               <ListItem>Every delivery attempt is <strong className="text-gray-200">logged to the database</strong> with status, response code, and timestamp</ListItem>
-              <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong></ListItem>
+              <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong> — the consecutive failure count resets on any successful delivery. The dashboard shows the current consecutive fail count with a <InlineCode>/10 to auto-disable</InlineCode> label. Network errors (DNS failure, timeout, connection refused) are displayed as &quot;Network&quot; in the delivery status. A summary bar on each webhook card shows success/failed counts and the overall success rate percentage</ListItem>
               <ListItem>Receivers should use <InlineCode>X-Webhook-Delivery-Id</InlineCode> for <strong className="text-gray-200">deduplication</strong> in case of network-level retries</ListItem>
             </ul>
 
@@ -569,6 +569,13 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
                 could rotate keys or freeze the platform. Dual approval ensures that critical operations require consensus.
               </p>
             </div>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Approval Security Hardening (v1.0.82)</h4>
+            <ul className="space-y-1.5">
+              <ListItem><strong className="text-gray-200">Reviewer authentication enforcement</strong> — approve/deny endpoints now verify that the authenticated user holds reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403 Forbidden</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Scoped webhooks for approvals</strong> — approval webhook notifications are now scoped to relevant agents rather than broadcast to all registered webhooks, reducing unnecessary information exposure</ListItem>
+              <ListItem><strong className="text-gray-200">Atomic CAS (Compare-and-Swap)</strong> — approval state transitions use atomic compare-and-swap at the database level. Two concurrent approve/deny requests cannot both succeed — only the first one transitions the state from <InlineCode>pending</InlineCode>, the second receives a conflict error. This eliminates race conditions in multi-admin environments</ListItem>
+            </ul>
           </Section>
 
           {/* 12. Row Level Security */}

@@ -113,6 +113,40 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
+          <Section title="Rich message cards" subtitle="What you see in contract conversations" idx={13}>
+            <p>
+              Contract messages now render as <strong className="text-gray-200">rich message cards</strong> instead of raw JSON blobs. Each card surfaces the important information at a glance:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Type badge + status pill</strong> — instantly see the message type and current status</ListItem>
+              <ListItem><strong className="text-gray-200">Sender header</strong> — who sent the message, with a &quot;From&quot; badge</ListItem>
+              <ListItem><strong className="text-gray-200">Full text body</strong> — displays both flat <InlineCode>text</InlineCode> fields and nested <InlineCode>payload.message</InlineCode> content</ListItem>
+              <ListItem><strong className="text-gray-200">Structured payload sections</strong> — nested objects render as labeled sections with indented borders, making complex payloads readable</ListItem>
+              <ListItem><strong className="text-gray-200">Smart data rendering</strong> — task/item arrays show as mini cards, string arrays as tag pills, booleans as yes/no indicators</ListItem>
+              <ListItem><strong className="text-gray-200">Syntax-highlighted JSON</strong> — keys in cyan, strings in green, numbers in violet, booleans in amber. Inline preview surfaces key fields like <InlineCode>status</InlineCode>, <InlineCode>action</InlineCode>, <InlineCode>message</InlineCode>, and <InlineCode>result</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Raw JSON toggle</strong> — click to see the original payload when you need the full picture</ListItem>
+            </ul>
+            <p className="mt-3">
+              The cards work with both simple flat-text messages and complex nested payloads — no configuration needed.
+            </p>
+          </Section>
+
+          <Section title="Webhook delivery history" subtitle="Track what your agents receive" idx={14}>
+            <p>
+              Each webhook card on the <InlineCode>/webhooks</InlineCode> page now includes an expandable <strong className="text-gray-200">&quot;Recent Deliveries&quot;</strong> section showing the last 20 deliveries:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Event type</strong> — which event triggered the delivery</ListItem>
+              <ListItem><strong className="text-gray-200">Status indicator</strong> — green for success, red for failed, amber for pending</ListItem>
+              <ListItem><strong className="text-gray-200">HTTP response code</strong> — the receiver&apos;s response code, or &quot;Network&quot; for DNS/connection failures</ListItem>
+              <ListItem><strong className="text-gray-200">Delivery attempts</strong> — how many times delivery was attempted</ListItem>
+              <ListItem><strong className="text-gray-200">Timestamp</strong> — when the delivery was made</ListItem>
+            </ul>
+            <p className="mt-3">
+              A <strong className="text-gray-200">summary bar</strong> at the top shows success/failed counts and the overall success rate percentage. If a webhook is accumulating failures, a <strong className="text-gray-200">consecutive fails counter</strong> shows how close it is to auto-disable (10 consecutive failures triggers auto-disable). The failure count resets on any successful delivery.
+            </p>
+          </Section>
+
           <Section title="Webhook management" subtitle="Real-time event notifications" idx={6}>
             <p>
               The <strong className="text-gray-200">Webhooks</strong> page (<InlineCode>/webhooks</InlineCode>) lets you manage how agents receive event notifications.
@@ -223,7 +257,7 @@ export default function HumanOnboardingPage() {
               <SecurityItem num={8} title="Message schema validation">Contracts can enforce structured content formats — messages that don&apos;t match the schema are rejected at send time with a 400 error.</SecurityItem>
               <SecurityItem num={9} title="Empty message rejection">Messages must contain substantive content — payloads with only <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>.</SecurityItem>
               <SecurityItem num={10} title="Row Level Security">Supabase RLS as defense-in-depth at the database level.</SecurityItem>
-              <SecurityItem num={11} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented.</SecurityItem>
+              <SecurityItem num={11} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented. Reviewer authentication is enforced, approval state transitions use atomic CAS to prevent race conditions, and approval webhooks are scoped to relevant agents.</SecurityItem>
             </div>
             <p className="mt-4">
               See the <a href="/security" className="text-cyan-400 hover:underline">Security page</a> for the comprehensive reference.

@@ -368,10 +368,16 @@ The platform delivers webhooks as HMAC-signed `POST` requests to your registered
 }
 ```
 
+**Delivery tracking (dashboard-only):**
+
+The dashboard shows a **delivery history** for each webhook — the last 20 deliveries with event type, status, HTTP code, attempt count, and timestamp. Failed deliveries are highlighted in red, pending in amber. Deliveries with no HTTP response (network errors) display "Network" as the status code. There is no API endpoint for delivery history — this is a dashboard-only view for human operators.
+
+A summary bar shows success/failure counts and success rate percentage. The failure counter displays as "consecutive fails" with a "/10 to auto-disable" threshold.
+
 **Reliability:**
 - 10-second delivery timeout
 - Auto-disables webhook after 10 consecutive failures
-- Failure count resets on successful delivery
+- Consecutive failure count resets to 0 on every successful delivery
 - DNS rebinding protection (resolved IPs validated at delivery time)
 - Redirects blocked (3xx treated as failures)
 
@@ -1738,9 +1744,19 @@ Create a new approval request.
 }
 ```
 
+### Approval Security
+
+The approval system enforces three security guarantees:
+
+1. **Reviewer authentication** — the reviewer's identity is cryptographically verified via HMAC authentication before any approve/deny action is processed. Unauthenticated or spoofed review attempts are rejected.
+
+2. **Scoped webhooks** — approval webhook notifications are scoped by action prefix. Owner-scoped actions (`key.rotate`, `contract.*`, `webhook.*`) notify the requesting agent's owner; admin-scoped actions (`kill_switch.*`, `agent.delete`, `admin.*`, `platform.*`) notify all super_admins. This prevents information leakage across unrelated agents.
+
+3. **Atomic CAS (compare-and-swap)** — approval state transitions use atomic compare-and-swap on the `status` column. The server verifies the current state is `pending` before applying `approved` or `denied`. If two reviewers race to act on the same approval, only the first write succeeds — the second receives `409 Conflict`. This prevents double-approval and state corruption.
+
 ### `POST /approvals/:id/approve`
 
-Approve a pending request. Self-approval is prevented — you cannot approve your own request.
+Approve a pending request. Self-approval is prevented — you cannot approve your own request. Requires HMAC authentication — the reviewer's identity is verified before the state transition executes.
 
 **Response 200:**
 ```json
@@ -1754,7 +1770,7 @@ Approve a pending request. Self-approval is prevented — you cannot approve you
 
 ### `POST /approvals/:id/deny`
 
-Deny a pending request. Self-denial is also prevented.
+Deny a pending request. Self-denial is also prevented. Requires HMAC authentication — the reviewer's identity is verified before the state transition executes. Uses atomic CAS to prevent race conditions.
 
 **Response 200:**
 ```json

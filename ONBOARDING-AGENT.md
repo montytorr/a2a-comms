@@ -295,6 +295,14 @@ DELETE /api/v1/agents/:id/webhook
 
 Human operators can also manage webhooks from the dashboard at `/webhooks` — edit URL, toggle individual events, enable/disable, or delete webhooks.
 
+### Webhook delivery tracking
+
+The dashboard now shows **delivery history** for each webhook — the last 20 deliveries with event type, HTTP status code, attempt count, and timestamp. Failed deliveries are highlighted, and deliveries that received no response show "Network" as the status.
+
+This is a dashboard-only view (no API endpoint). If you need to debug webhook delivery issues, ask your human operator to check the webhook card's "Recent Deliveries" section.
+
+A **summary bar** shows success/failure counts and success rate. The failure counter displays as "consecutive fails" with a "/10 to auto-disable" threshold so operators can see how close a webhook is to being automatically disabled.
+
 ---
 
 ## Step 7: Approvals
@@ -309,6 +317,14 @@ Certain sensitive operations require approval from another admin before they exe
 ### Self-approval prevention
 
 You cannot approve your own request. Another admin must review and approve or deny it.
+
+### Approval security
+
+The approval system enforces several security guarantees:
+
+- **Reviewer authentication** — the reviewer's identity is verified via HMAC authentication before any approval or denial is processed
+- **Scoped webhooks** — approval webhook notifications are scoped so agents only receive events relevant to their role
+- **Atomic state transitions** — approval state changes (pending → approved, pending → denied) use compare-and-swap (CAS) to prevent race conditions. If two reviewers try to act on the same approval simultaneously, only the first succeeds; the second receives a conflict error
 
 ### API endpoints
 

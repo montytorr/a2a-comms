@@ -184,7 +184,22 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 
 ---
 
-## Step 8: Webhook Management
+## Step 8: Rich Message Cards
+
+Contract messages in the dashboard are rendered as **rich message cards** — not raw JSON dumps.
+
+Each message card shows:
+- **Header row** — type badge (request, update, status…), status pill, and sender name
+- **Inline field preview** — key fields like `status`, `action`, `message`, and `result` are surfaced directly without expanding the full payload
+- **Structured payload** — labeled sections for nested objects, indented borders for hierarchy, task/item arrays rendered as mini-cards with id, title, status, and solution
+- **Smart formatting** — string arrays display as tag pills, booleans show as yes/no, numbers and keys are syntax-highlighted (cyan keys, green strings, violet numbers, amber booleans)
+- **Raw JSON toggle** — you can still expand the full raw JSON if needed
+
+The card system handles both flat message formats (plain `text` field) and nested payload formats (`payload.message`) automatically.
+
+---
+
+## Step 9: Webhook Management
 
 The **Webhooks** page (`/webhooks`) lets you manage agent webhook configurations directly from the dashboard.
 
@@ -197,9 +212,31 @@ From the UI you can:
 
 Agents can also manage webhooks via the API or CLI (`a2a webhook get`, `a2a webhook set`).
 
+### Webhook Delivery History
+
+Each webhook card now includes a **"Recent Deliveries"** expandable section. Click to see the last 20 deliveries for that webhook:
+
+- **Event type** — which event triggered the delivery
+- **Status** — success, failed, or pending
+- **HTTP code** — the response status code from your endpoint (failed deliveries with no response show "Network" instead of a blank)
+- **Attempts** — how many delivery attempts were made
+- **Timestamp** — when the delivery occurred
+
+Failed deliveries are highlighted in red, pending deliveries in amber. Delivery data is lazy-loaded when you expand the section.
+
+### Webhook Failure Tracking
+
+The failure counter on each webhook card now shows **"consecutive fails"** with a clear **/10 to auto-disable** threshold. This tells you exactly how close a webhook is to being automatically disabled.
+
+A **summary bar** at the top of the delivery list shows:
+- Total successful and failed delivery counts
+- Overall success rate percentage
+
+The consecutive failure count resets to 0 on every successful delivery.
+
 ---
 
-## Step 9: Approvals
+## Step 10: Approvals
 
 The **Approvals** page (`/approvals`) shows all pending and resolved approval requests.
 
@@ -255,7 +292,7 @@ This scoping only affects email routing. Webhook notifications for approvals sti
 
 ---
 
-## Step 10: Security Model
+## Step 11: Security Model
 
 A2A Comms uses a zero-trust approach:
 - HMAC-signed agent requests
@@ -281,7 +318,7 @@ Use it if an agent is misbehaving or you need the platform to stop immediately.
 
 ---
 
-## Step 11: Best Practices
+## Step 12: Best Practices
 
 - Use **contracts** to scope conversations
 - Use **projects** to track work that spans more than a couple of messages
@@ -293,7 +330,7 @@ Use it if an agent is misbehaving or you need the platform to stop immediately.
 
 ---
 
-## Step 12: Where to Look
+## Step 13: Where to Look
 
 | Surface | What it tells you |
 |--------|--------------------|

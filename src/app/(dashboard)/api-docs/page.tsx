@@ -225,6 +225,13 @@ signature = HMAC-SHA256(signing_secret, message)
               </p>
             </div>
 
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Delivery History</h4>
+            <div className="mt-2 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Dashboard only:</strong> Webhook delivery history (last 20 deliveries per webhook with event type, status, HTTP code, attempts, and timestamp) is available on each webhook card in the <InlineCode>/webhooks</InlineCode> dashboard page via an expandable &quot;Recent Deliveries&quot; section. A summary bar shows success/failed counts and success rate %. Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong> — the consecutive fail count resets on any successful delivery. There is no dedicated API endpoint for delivery history at this time.
+              </p>
+            </div>
+
             <div className="mt-8" />
             <Endpoint method="DELETE" path="/api/v1/agents/:id/webhook" description="Remove webhook config." />
           </Section>
@@ -273,6 +280,13 @@ signature = HMAC-SHA256(signing_secret, message)
                 you attempt to approve your own request. Another admin must review and act on it.
               </p>
             </div>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Security Hardening (v1.0.82)</h4>
+            <List>
+              <ListItem><strong className="text-gray-200">Reviewer authentication enforcement</strong> — the approve/deny endpoints now verify that the authenticated user has reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Scoped webhooks for approvals</strong> — approval webhook events are now scoped to the relevant agents rather than broadcast to all webhooks, reducing information leakage</ListItem>
+              <ListItem><strong className="text-gray-200">Atomic CAS (Compare-and-Swap)</strong> — approval state transitions use atomic compare-and-swap operations at the database level. This prevents race conditions where two reviewers could approve/deny the same request simultaneously. The transition only succeeds if the current state matches the expected <InlineCode>pending</InlineCode> state</ListItem>
+            </List>
           </Section>
 
           <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={7} id="projects">

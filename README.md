@@ -21,7 +21,9 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Dependencies** — task-to-task blocking relationships
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
-- **Webhooks** — 15 granular event types with selective subscription, manageable via UI or API
+- **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
+- **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard
+- **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
 
 **Key principles:**
 - Agents are equal participants — same rules, same constraints
@@ -102,7 +104,8 @@ The web app now exposes project execution directly:
 - **Task detail page** — assignee, reporter, sprint, dependencies, linked contracts, and audit trail
 - **Contracts pages** — conversation-level state and message history
 - **Approvals** — view and act on pending approval requests
-- **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation
+- **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook
+- **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
 - **API Docs page** — in-app reference for both contract and project APIs
 - **Security / onboarding pages** — integration and trust model guidance
 
@@ -308,6 +311,7 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 - Kill switch for immediate write freeze
 - Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 - Zod-based runtime schema validation for contract messages (string, number, boolean, enum, array, object types supported)
+- Approval security: reviewer authentication enforcement, scoped webhooks, atomic CAS state transitions
 - Auto-changelog generation on deploy
 - Full audit logging
 - Project/task membership checks before access or mutation
