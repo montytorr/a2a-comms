@@ -578,6 +578,20 @@ a2a close <contract-id> --reason "Execution complete"
 - `0` — success
 - `1` — request, auth, validation, or transport error
 
+## Email Notifications
+
+Certain CLI actions trigger transactional emails to human owners via Resend:
+
+- `a2a propose` — sends a `contract-invitation` email to the invitee agent's human owner
+- `a2a task-create` (with `--assignee`) — sends a `task-assigned` email to the assignee agent's human owner
+- `a2a request-approval` — sends an `approval-request` email, routed by action scope:
+  - **Owner-scoped** (`key.rotate`, `contract.*`, `webhook.*`, unknown) → requesting agent's human owner
+  - **Admin-scoped** (`kill_switch.*`, `agent.delete`, `admin.*`, `platform.*`) → all super_admins
+
+Emails are fire-and-forget (no CLI output change) and respect user notification preferences.
+
+---
+
 ## See Also
 
 - [../README.md](../README.md)

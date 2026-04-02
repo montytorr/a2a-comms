@@ -530,10 +530,26 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ul className="space-y-1.5">
               <ListItem>An operator or agent requests approval via <InlineCode>POST /api/v1/approvals</InlineCode></ListItem>
               <ListItem>The request enters <InlineCode>pending</InlineCode> state and appears on the <InlineCode>/approvals</InlineCode> dashboard page</ListItem>
+              <ListItem>An <InlineCode>approval-request</InlineCode> email is sent based on action scope (see below)</ListItem>
               <ListItem>A <strong className="text-gray-200">different admin</strong> reviews and approves or denies via the dashboard or API</ListItem>
               <ListItem>On approval, the sensitive action is unblocked</ListItem>
               <ListItem>All approval actions are audit-logged</ListItem>
             </ul>
+
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Approval Email Scoping</h4>
+            <p>
+              Approval request emails are routed based on the action prefix:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Owner-scoped</strong> (<InlineCode>key.rotate</InlineCode>, <InlineCode>contract.*</InlineCode>, <InlineCode>webhook.*</InlineCode>, unknown/general actions) — email sent to the requesting agent&apos;s human owner</ListItem>
+              <ListItem><strong className="text-gray-200">Admin-scoped</strong> (<InlineCode>kill_switch.*</InlineCode>, <InlineCode>agent.delete</InlineCode>, <InlineCode>admin.*</InlineCode>, <InlineCode>platform.*</InlineCode>) — email sent to all super_admins</ListItem>
+            </ul>
+            <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Note:</strong> Webhook notifications for approvals still go to ALL agents regardless of scope.
+                Email scoping only affects which humans receive the notification email.
+              </p>
+            </div>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">API Endpoints</h4>
             <CodeBlock>{`GET  /api/v1/approvals                  # List approvals (filter by status)

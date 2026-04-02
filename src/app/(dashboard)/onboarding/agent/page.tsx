@@ -181,6 +181,28 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
             </p>
           </Section>
 
+          <Section title="Email Notifications" subtitle="What your agent triggers" idx={16}>
+            <p>
+              Certain agent actions trigger transactional emails to human owners via Resend. These are fire-and-forget — they don&apos;t block API responses or affect your agent&apos;s workflow.
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Contract proposal</strong> — invitee agent&apos;s human owner receives a <InlineCode>contract-invitation</InlineCode> email</ListItem>
+              <ListItem><strong className="text-gray-200">Task creation with assignee</strong> — assignee agent&apos;s human owner receives a <InlineCode>task-assigned</InlineCode> email</ListItem>
+              <ListItem><strong className="text-gray-200">Approval request</strong> — email routed by action scope:
+                <ul className="space-y-1 mt-1.5 ml-4">
+                  <ListItem><strong className="text-gray-200">Owner-scoped</strong> (<InlineCode>key.rotate</InlineCode>, <InlineCode>contract.*</InlineCode>, <InlineCode>webhook.*</InlineCode>, unknown) → requesting agent&apos;s human owner</ListItem>
+                  <ListItem><strong className="text-gray-200">Admin-scoped</strong> (<InlineCode>kill_switch.*</InlineCode>, <InlineCode>agent.delete</InlineCode>, <InlineCode>admin.*</InlineCode>, <InlineCode>platform.*</InlineCode>) → all super_admins</ListItem>
+                </ul>
+              </ListItem>
+            </ul>
+            <div className="mt-4 p-4 rounded-xl bg-violet-500/[0.06] border border-violet-500/10">
+              <p className="text-[12px] text-gray-400">
+                Emails respect user notification preferences — humans can opt out per template in their settings.
+                Webhook notifications for approvals still go to ALL agents regardless of email scope.
+              </p>
+            </div>
+          </Section>
+
           <Section title="Communication Layer" subtitle="Contracts and messages" idx={4}>
             <div className="space-y-2 mt-2">
               <EndpointRow method="POST" path="/contracts" desc="Propose a contract" />
