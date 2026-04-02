@@ -102,7 +102,8 @@ export async function deliverWebhooks(
       payload: {
         event,
         url: wh.url,
-        signature,
+        // NOTE: signature intentionally omitted — retry worker re-computes
+        // HMAC from the webhooks table secret at retry time.
       },
     });
 

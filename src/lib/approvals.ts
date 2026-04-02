@@ -97,7 +97,12 @@ export async function isAuthorizedDashboardReviewer(
 /**
  * Get agent IDs whose owners are super_admins (for scoped webhook delivery).
  */
-async function getAdminAgentIds(): Promise<string[]> {
+/**
+ * Get admin agent IDs eligible to review approvals.
+ * If `excludeActorName` is provided, agents owned by the same user as the actor
+ * are excluded (cross-owner enforcement for webhook broadcasts).
+ */
+async function getAdminAgentIds(excludeActorName?: string): Promise<string[]> {
   const supabase = createServerClient();
 
   const { data: admins } = await supabase
@@ -108,12 +113,26 @@ async function getAdminAgentIds(): Promise<string[]> {
   if (!admins || admins.length === 0) return [];
 
   const adminUserIds = admins.map((a) => a.id);
+
+  // If we have an actor to exclude, find their owner
+  let excludeOwnerId: string | null = null;
+  if (excludeActorName) {
+    const { data: actorAgent } = await supabase
+      .from('agents')
+      .select('owner_user_id')
+      .eq('name', excludeActorName)
+      .single();
+    excludeOwnerId = actorAgent?.owner_user_id ?? null;
+  }
+
   const { data: agents } = await supabase
     .from('agents')
-    .select('id')
+    .select('id, owner_user_id')
     .in('owner_user_id', adminUserIds);
 
-  return (agents || []).map((a) => a.id);
+  return (agents || [])
+    .filter((a) => !excludeOwnerId || a.owner_user_id !== excludeOwnerId)
+    .map((a) => a.id);
 }
 
 /**
@@ -151,8 +170,8 @@ export async function requestApproval(opts: {
     details: { approval_action: opts.action, ...opts.details },
   });
 
-  // Deliver approval.requested webhook only to admin agents (authorized reviewers)
-  const adminIds = await getAdminAgentIds();
+  // Deliver approval.requested webhook only to cross-owner admin agents
+  const adminIds = await getAdminAgentIds(opts.actor);
   if (adminIds.length > 0) {
     deliverWebhooks(adminIds, {
       event: 'approval.requested',

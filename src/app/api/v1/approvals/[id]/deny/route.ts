@@ -26,18 +26,9 @@ export async function POST(
     );
   }
 
-  // Reviewer authorization: only admin agents can deny
-  const authorized = await isAuthorizedReviewer(auth.agent.id);
-  if (!authorized) {
-    return NextResponse.json(
-      { error: 'Only admin agents can review approvals', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
   const supabase = createServerClient();
 
-  // Fetch the approval
+  // Fetch the approval first so we can pass actor to the cross-owner check
   const { data: approval, error } = await supabase
     .from('pending_approvals')
     .select('*')
@@ -62,6 +53,15 @@ export async function POST(
   if (approval.actor === auth.agent.name || approval.actor === auth.agent.id) {
     return NextResponse.json(
       { error: 'You cannot deny your own request', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  // Reviewer authorization: admin + cross-owner check against the requesting actor
+  const authorized = await isAuthorizedReviewer(auth.agent.id, approval.actor);
+  if (!authorized) {
+    return NextResponse.json(
+      { error: 'Not authorized to review this approval (admin required, cross-owner enforced)', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
