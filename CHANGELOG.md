@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.104] - 2026-04-02
+### Security
+- fix webhook secret persistence, approval reviewer scope, dashboard approval path
+- P0: Remove wh.secret from webhook_deliveries payload - retry worker now
+-     looks up secret from webhooks table at retry time and re-computes HMAC
+- P1: isAuthorizedReviewer now checks cross-owner - prevents same-owner
+-     agents from approving each other's requests
+- P2: Add dashboard-aware approval functions that resolve user_profiles
+-     directly instead of going through agents table
+- Findings reported by Clawclaw security review (contract a428c1c3)
+
 ## [1.0.103] - 2026-04-02
 ### Fixed
 - add target: runner to a2a-comms service in docker-compose.yml
