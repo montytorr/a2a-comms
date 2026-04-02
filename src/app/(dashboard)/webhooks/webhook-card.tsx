@@ -167,7 +167,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
               {wh.is_active ? 'Active' : 'Inactive'}
               {wh.failure_count > 0 && (
                 <span className="text-amber-500 ml-2">
-                  · {wh.failure_count} failure{wh.failure_count !== 1 ? 's' : ''}
+                  · {wh.failure_count} consecutive failure{wh.failure_count !== 1 ? 's' : ''}
                 </span>
               )}
             </p>
@@ -360,9 +360,10 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           </div>
           {wh.failure_count > 0 && (
             <div>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Failures</p>
+              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Consecutive Fails</p>
               <span className="text-[12px] text-amber-400 font-mono font-semibold tabular-nums">
                 {wh.failure_count}
+                <span className="text-[10px] text-gray-600 font-normal ml-1">/ 10 to auto-disable</span>
               </span>
             </div>
           )}
@@ -398,50 +399,67 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
             {deliveriesLoading ? 'Loading…' : `Recent Deliveries${deliveries.length > 0 ? ` (${deliveries.length})` : ''}`}
           </button>
 
-          {showDeliveries && deliveries.length > 0 && (
-            <div className="mt-3 space-y-1 animate-fade-in" style={{ animationDuration: '0.15s' }}>
-              {/* Header */}
-              <div className="grid grid-cols-[1fr_80px_60px_50px_100px] gap-2 px-3 py-1.5">
-                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Event</span>
-                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Status</span>
-                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">HTTP</span>
-                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Tries</span>
-                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider text-right">When</span>
-              </div>
-              {deliveries.map((d) => (
-                <div
-                  key={d.id}
-                  className={`grid grid-cols-[1fr_80px_60px_50px_100px] gap-2 px-3 py-2 rounded-lg ${
-                    d.status === 'failed'
-                      ? 'bg-red-500/[0.04] border border-red-500/[0.08]'
-                      : d.status === 'success'
-                        ? 'bg-white/[0.01] border border-white/[0.03]'
-                        : 'bg-amber-500/[0.04] border border-amber-500/[0.08]'
-                  }`}
-                >
-                  <span className="text-[11px] font-mono text-gray-300 truncate">{d.event}</span>
-                  <span className={`text-[11px] font-semibold ${
-                    d.status === 'success' ? 'text-emerald-400' : d.status === 'failed' ? 'text-red-400' : 'text-amber-400'
-                  }`}>
-                    {d.status === 'success' ? '✓ OK' : d.status === 'failed' ? '✗ Failed' : '⏳ Pending'}
-                  </span>
-                  <span className={`text-[11px] font-mono tabular-nums ${
-                    d.response_status && d.response_status >= 200 && d.response_status < 300
-                      ? 'text-emerald-400'
-                      : d.response_status
-                        ? 'text-red-400'
-                        : 'text-gray-600'
-                  }`}>
-                    {d.response_status || '—'}
-                  </span>
-                  <span className="text-[11px] font-mono text-gray-500 tabular-nums">{d.attempts}</span>
-                  <span className="text-[10px] font-mono text-gray-600 tabular-nums text-right">
-                    {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
+          {showDeliveries && deliveries.length > 0 && (() => {
+            const successCount = deliveries.filter(d => d.status === 'success').length;
+            const failedCount = deliveries.filter(d => d.status === 'failed').length;
+            return (
+              <div className="mt-3 space-y-1 animate-fade-in" style={{ animationDuration: '0.15s' }}>
+                {/* Summary bar */}
+                <div className="flex items-center gap-4 px-3 py-2 mb-1 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                  <span className="text-[10px] text-gray-500">Last {deliveries.length} deliveries:</span>
+                  <span className="text-[10px] font-semibold text-emerald-400">{successCount} OK</span>
+                  {failedCount > 0 && <span className="text-[10px] font-semibold text-red-400">{failedCount} failed</span>}
+                  {deliveries.length - successCount - failedCount > 0 && (
+                    <span className="text-[10px] font-semibold text-amber-400">{deliveries.length - successCount - failedCount} pending</span>
+                  )}
+                  <span className="text-[10px] text-gray-600 ml-auto font-mono">
+                    {Math.round((successCount / deliveries.length) * 100)}% success rate
                   </span>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Header */}
+                <div className="grid grid-cols-[1fr_80px_90px_50px_100px] gap-2 px-3 py-1.5">
+                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Event</span>
+                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Status</span>
+                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">HTTP</span>
+                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Tries</span>
+                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider text-right">When</span>
+                </div>
+                {deliveries.map((d) => (
+                  <div
+                    key={d.id}
+                    className={`grid grid-cols-[1fr_80px_90px_50px_100px] gap-2 px-3 py-2 rounded-lg ${
+                      d.status === 'failed'
+                        ? 'bg-red-500/[0.04] border border-red-500/[0.08]'
+                        : d.status === 'success'
+                          ? 'bg-white/[0.01] border border-white/[0.03]'
+                          : 'bg-amber-500/[0.04] border border-amber-500/[0.08]'
+                    }`}
+                  >
+                    <span className="text-[11px] font-mono text-gray-300 truncate">{d.event}</span>
+                    <span className={`text-[11px] font-semibold ${
+                      d.status === 'success' ? 'text-emerald-400' : d.status === 'failed' ? 'text-red-400' : 'text-amber-400'
+                    }`}>
+                      {d.status === 'success' ? '✓ OK' : d.status === 'failed' ? '✗ Failed' : '⏳ Pending'}
+                    </span>
+                    <span className={`text-[11px] font-mono tabular-nums ${
+                      d.response_status && d.response_status >= 200 && d.response_status < 300
+                        ? 'text-emerald-400'
+                        : d.response_status
+                          ? 'text-red-400'
+                          : d.status === 'failed' ? 'text-red-400/60 italic' : 'text-gray-600'
+                    }`}>
+                      {d.response_status ? d.response_status : d.status === 'failed' ? 'Network' : '—'}
+                    </span>
+                    <span className="text-[11px] font-mono text-gray-500 tabular-nums">{d.attempts}</span>
+                    <span className="text-[10px] font-mono text-gray-600 tabular-nums text-right">
+                      {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           {showDeliveries && !deliveriesLoading && deliveries.length === 0 && (
             <p className="mt-2 text-[11px] text-gray-600">No deliveries recorded yet</p>
