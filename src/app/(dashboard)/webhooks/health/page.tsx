@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
+import WebhookFilterCard from './webhook-filter-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,19 +96,6 @@ function truncateUrl(url: string, maxLen = 40) {
   }
 }
 
-function timeAgo(dateStr: string | null) {
-  if (!dateStr) return '—';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 function formatTimestamp(dateStr: string | null) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleString('en-US', {
@@ -120,18 +108,25 @@ function formatTimestamp(dateStr: string | null) {
   });
 }
 
-export default async function WebhookHealthPage() {
+export default async function WebhookHealthPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ webhook?: string }>;
+}) {
   const user = await getAuthUser();
   if (!user) redirect('/login');
   if (!user.isSuperAdmin) redirect('/');
+
+  const params = await searchParams;
+  const filterWebhookId = params.webhook || null;
 
   const supabase = createServerClient();
   noStore();
 
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  // Fetch recent deliveries (last 50)
-  const { data: recentDeliveries } = await supabase
+  // Fetch recent deliveries (last 50), optionally filtered by webhook + failures only
+  let deliveriesQuery = supabase
     .from('webhook_deliveries')
     .select(`
       id,
@@ -149,9 +144,16 @@ export default async function WebhookHealthPage() {
     .order('created_at', { ascending: false })
     .limit(50);
 
+  if (filterWebhookId) {
+    deliveriesQuery = deliveriesQuery
+      .eq('webhook_id', filterWebhookId)
+      .eq('status', 'failed');
+  }
+
+  const { data: recentDeliveries } = await deliveriesQuery;
   const deliveries = (recentDeliveries || []) as unknown as WebhookDelivery[];
 
-  // Fetch deliveries in last 24h for summary stats
+  // Fetch deliveries in last 24h for summary stats (always unfiltered)
   const { data: last24hDeliveries } = await supabase
     .from('webhook_deliveries')
     .select(`
@@ -212,6 +214,11 @@ export default async function WebhookHealthPage() {
   const totalPending = stats24h.filter(d => d.status === 'pending').length;
   const successRate = totalDeliveries24h > 0 ? Math.round((totalSuccess / totalDeliveries24h) * 100) : 0;
 
+  // Resolve filtered webhook name for display
+  const filteredWebhookUrl = filterWebhookId
+    ? summaries.find(s => s.webhookId === filterWebhookId)?.url || filterWebhookId
+    : null;
+
   return (
     <AutoRefresh intervalMs={30000}>
       <div className="p-4 sm:p-6 lg:p-10">
@@ -268,7 +275,7 @@ export default async function WebhookHealthPage() {
           </div>
         </div>
 
-        {/* Per-Webhook Summary Cards */}
+        {/* Per-Webhook Summary Cards (clickable for drill-down) */}
         {summaries.length > 0 && (
           <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <h2 className="text-[13px] font-semibold text-white mb-4 flex items-center gap-2">
@@ -277,83 +284,42 @@ export default async function WebhookHealthPage() {
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
               Per-Webhook Summary
-              <span className="text-[10px] text-gray-600 font-normal ml-1">(last 24h)</span>
+              <span className="text-[10px] text-gray-600 font-normal ml-1">(last 24h · click to filter failures)</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {summaries.map((s, idx) => {
-                const rate = s.totalCount24h > 0 ? Math.round((s.successCount24h / s.totalCount24h) * 100) : 0;
-                return (
-                  <div
-                    key={s.webhookId}
-                    className="rounded-2xl glass-card px-5 py-4 animate-fade-in"
-                    style={{ animationDelay: `${0.1 + idx * 0.04}s` }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`w-2 h-2 rounded-full ${s.isActive ? 'bg-emerald-400' : 'bg-gray-600'}`} />
-                          <span className="text-[11px] font-mono text-gray-400 truncate" title={s.url}>
-                            {truncateUrl(s.url, 50)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-600">
-                          <span className="font-mono">{s.agentId.slice(0, 8)}...</span>
-                          {s.failureCount > 0 && (
-                            <span className="text-red-400/70">
-                              {s.failureCount} consecutive failure{s.failureCount !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right ml-4 shrink-0">
-                        <p className={`text-lg font-bold tabular-nums ${rate >= 90 ? 'text-emerald-400' : rate >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
-                          {rate}%
-                        </p>
-                        <p className="text-[9px] text-gray-600 uppercase tracking-wider">success</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-[11px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span className="text-gray-500">{s.successCount24h}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                        <span className="text-gray-500">{s.failedCount24h}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                        <span className="text-gray-500">{s.pendingCount24h}</span>
-                      </div>
-                      <span className="ml-auto text-[10px] text-gray-700 font-mono">
-                        {s.lastDeliveryAt ? timeAgo(s.lastDeliveryAt) : 'never'}
-                      </span>
-                    </div>
-                    {/* Progress bar */}
-                    <div className="mt-3 h-1 rounded-full bg-white/[0.04] overflow-hidden flex">
-                      {s.successCount24h > 0 && (
-                        <div
-                          className="h-full bg-emerald-500/60 rounded-l-full"
-                          style={{ width: `${(s.successCount24h / s.totalCount24h) * 100}%` }}
-                        />
-                      )}
-                      {s.pendingCount24h > 0 && (
-                        <div
-                          className="h-full bg-amber-500/60"
-                          style={{ width: `${(s.pendingCount24h / s.totalCount24h) * 100}%` }}
-                        />
-                      )}
-                      {s.failedCount24h > 0 && (
-                        <div
-                          className="h-full bg-red-500/60 rounded-r-full"
-                          style={{ width: `${(s.failedCount24h / s.totalCount24h) * 100}%` }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {summaries.map((s, idx) => (
+                <WebhookFilterCard
+                  key={s.webhookId}
+                  webhookId={s.webhookId}
+                  isActive={s.isActive}
+                  url={s.url}
+                  agentId={s.agentId}
+                  failureCount={s.failureCount}
+                  lastDeliveryAt={s.lastDeliveryAt}
+                  successCount24h={s.successCount24h}
+                  failedCount24h={s.failedCount24h}
+                  pendingCount24h={s.pendingCount24h}
+                  totalCount24h={s.totalCount24h}
+                  animationDelay={`${0.1 + idx * 0.04}s`}
+                />
+              ))}
             </div>
+          </div>
+        )}
+
+        {/* Filter indicator */}
+        {filterWebhookId && (
+          <div className="mb-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10 px-4 py-3 animate-fade-in flex items-center justify-between">
+            <p className="text-[11px] text-cyan-400/80">
+              <span className="font-semibold">Filtered:</span> Showing failures for{' '}
+              <span className="font-mono text-cyan-300">{truncateUrl(filteredWebhookUrl || '', 60)}</span>
+            </p>
+            <Link
+              href="/webhooks/health"
+              className="text-[10px] font-semibold text-gray-500 hover:text-white transition-colors px-2 py-1 rounded-md hover:bg-white/[0.04]"
+            >
+              Clear filter
+            </Link>
           </div>
         )}
 
@@ -364,8 +330,10 @@ export default async function WebhookHealthPage() {
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            Recent Deliveries
-            <span className="text-[10px] text-gray-600 font-normal ml-1">(last 50)</span>
+            {filterWebhookId ? 'Failed Deliveries' : 'Recent Deliveries'}
+            <span className="text-[10px] text-gray-600 font-normal ml-1">
+              {filterWebhookId ? `(${deliveries.length} failures)` : '(last 50)'}
+            </span>
           </h2>
 
           {deliveries.length === 0 ? (
@@ -375,8 +343,14 @@ export default async function WebhookHealthPage() {
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </div>
-              <p className="text-sm text-gray-600 font-medium">No deliveries recorded</p>
-              <p className="text-[11px] text-gray-700 mt-1">Webhook deliveries will appear here once events are dispatched.</p>
+              <p className="text-sm text-gray-600 font-medium">
+                {filterWebhookId ? 'No failures found' : 'No deliveries recorded'}
+              </p>
+              <p className="text-[11px] text-gray-700 mt-1">
+                {filterWebhookId
+                  ? 'This webhook has no failed deliveries in the last 50 attempts.'
+                  : 'Webhook deliveries will appear here once events are dispatched.'}
+              </p>
             </div>
           ) : (
             <div className="rounded-2xl glass-card overflow-hidden">
@@ -453,7 +427,7 @@ export default async function WebhookHealthPage() {
         </div>
 
         {/* Pending count note */}
-        {totalPending > 0 && (
+        {totalPending > 0 && !filterWebhookId && (
           <div className="mt-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10 px-4 py-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <p className="text-[11px] text-amber-400/80">
               <span className="font-semibold">{totalPending}</span> deliveries pending in the last 24h — these may still be retrying.
