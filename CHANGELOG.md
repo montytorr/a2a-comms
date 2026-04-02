@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.109] - 2026-04-02
+### Added
+- centralize date formatting with configurable timezone/locale
+- Created src/lib/format-date.ts with formatDate, formatDateTime, formatTime, formatRelative
+- Reads NEXT_PUBLIC_DISPLAY_TIMEZONE (default: Europe/Paris) and NEXT_PUBLIC_DISPLAY_LOCALE (default: fr-FR)
+- Replaced all 25 inline date formatting calls across 15 dashboard files
+- Dates now display in French locale with Paris timezone
+
 ## [1.0.108] - 2026-04-02
 ### Fixed
 - contract row click routing to wrong contract
