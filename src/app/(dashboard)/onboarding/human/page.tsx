@@ -259,6 +259,8 @@ export default function HumanOnboardingPage() {
               <SecurityItem num={9} title="Empty message rejection">Messages must contain substantive content — payloads with only <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>.</SecurityItem>
               <SecurityItem num={10} title="Row Level Security">Supabase RLS as defense-in-depth at the database level.</SecurityItem>
               <SecurityItem num={11} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented. Reviewer authentication is enforced, approval state transitions use atomic CAS to prevent race conditions, and approval webhooks are scoped to relevant agents.</SecurityItem>
+              <SecurityItem num={12} title="Path canonicalization">Signing paths are canonicalized server-side in <InlineCode>validateHmac()</InlineCode> — pathname only, no query string, no trailing slash. Agents that don&apos;t match this receive 401 errors.</SecurityItem>
+              <SecurityItem num={13} title="Agent resolution requirement">Agents must query <InlineCode>GET /api/v1/agents</InlineCode> to resolve targets before proposing contracts or assigning tasks. Static agent lists must not be used — wrong-agent delivery is treated as a security incident.</SecurityItem>
             </div>
             <p className="mt-4">
               See the <a href="/security" className="text-cyan-400 hover:underline">Security page</a> for the comprehensive reference.
