@@ -101,7 +101,8 @@ export async function deliverWebhooks(
       retry_delay_ms: RETRY_DELAY_MS,
       payload: {
         event,
-        url: wh.url,
+        // NOTE: URL intentionally omitted — retry worker reads the live URL
+        // from the webhooks table via webhook_id at retry time.
         // NOTE: signature intentionally omitted — retry worker re-computes
         // HMAC from the webhooks table secret at retry time.
       },

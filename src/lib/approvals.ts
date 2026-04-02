@@ -13,8 +13,27 @@ export interface PendingApproval {
 }
 
 /**
+ * Parse the APPROVAL_REVIEWER_AGENTS env var into a Set of allowed agent names.
+ * Returns null if the env var is unset or empty (= fall back to default behavior).
+ */
+function getReviewerAllowlist(): Set<string> | null {
+  const raw = process.env.APPROVAL_REVIEWER_AGENTS;
+  if (!raw || raw.trim() === '') return null;
+  return new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+}
+
+/**
  * Check whether an agent is authorized to review approvals.
  * Only agents whose owner is a super_admin can approve/deny requests.
+ *
+ * If APPROVAL_REVIEWER_AGENTS env var is set, only agents whose name appears
+ * in the comma-separated allowlist may review. If unset, falls back to the
+ * previous behavior (any admin-owned agent).
  *
  * If `actorAgentName` is provided, also enforces cross-owner check:
  * the reviewer's owner must be a different user than the actor's owner,
@@ -28,11 +47,20 @@ export async function isAuthorizedReviewer(
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('owner_user_id')
+    .select('owner_user_id, name')
     .eq('id', agentId)
     .single();
 
   if (!agent?.owner_user_id) return false;
+
+  // Reviewer allowlist check: if env var is set, agent name must be in the list
+  const allowlist = getReviewerAllowlist();
+  if (allowlist && !allowlist.has(agent.name)) {
+    console.log(
+      `[approvals] Agent "${agent.name}" (${agentId}) denied reviewer access: not in APPROVAL_REVIEWER_AGENTS allowlist`
+    );
+    return false;
+  }
 
   const { data: profile } = await supabase
     .from('user_profiles')
@@ -63,6 +91,9 @@ export async function isAuthorizedReviewer(
  * Check whether a dashboard user (by user_profiles id) is authorized to review approvals.
  * Checks is_super_admin directly from user_profiles. If `actorAgentName` is provided,
  * also enforces cross-owner check against the actor's agent owner.
+ *
+ * If APPROVAL_REVIEWER_AGENTS env var is set, the user must own at least one agent
+ * whose name appears in the allowlist. If unset, falls back to previous behavior.
  */
 export async function isAuthorizedDashboardReviewer(
   userId: string,
@@ -77,6 +108,26 @@ export async function isAuthorizedDashboardReviewer(
     .single();
 
   if (profile?.is_super_admin !== true) return false;
+
+  // Reviewer allowlist check: if env var is set, user must own an agent in the list
+  const allowlist = getReviewerAllowlist();
+  if (allowlist) {
+    const { data: userAgents } = await supabase
+      .from('agents')
+      .select('name')
+      .eq('owner_user_id', userId);
+
+    const ownsAllowedAgent = (userAgents || []).some(
+      (a) => a.name && allowlist.has(a.name)
+    );
+
+    if (!ownsAllowedAgent) {
+      console.log(
+        `[approvals] Dashboard user "${userId}" denied reviewer access: none of their agents are in APPROVAL_REVIEWER_AGENTS allowlist`
+      );
+      return false;
+    }
+  }
 
   // Cross-owner check: ensure the dashboard user doesn't own the actor agent
   if (actorAgentName) {
@@ -95,12 +146,10 @@ export async function isAuthorizedDashboardReviewer(
 }
 
 /**
- * Get agent IDs whose owners are super_admins (for scoped webhook delivery).
- */
-/**
  * Get admin agent IDs eligible to review approvals.
  * If `excludeActorName` is provided, agents owned by the same user as the actor
  * are excluded (cross-owner enforcement for webhook broadcasts).
+ * If APPROVAL_REVIEWER_AGENTS is set, only agents in the allowlist are returned.
  */
 async function getAdminAgentIds(excludeActorName?: string): Promise<string[]> {
   const supabase = createServerClient();
@@ -127,11 +176,14 @@ async function getAdminAgentIds(excludeActorName?: string): Promise<string[]> {
 
   const { data: agents } = await supabase
     .from('agents')
-    .select('id, owner_user_id')
+    .select('id, name, owner_user_id')
     .in('owner_user_id', adminUserIds);
+
+  const allowlist = getReviewerAllowlist();
 
   return (agents || [])
     .filter((a) => !excludeOwnerId || a.owner_user_id !== excludeOwnerId)
+    .filter((a) => !allowlist || (a.name && allowlist.has(a.name)))
     .map((a) => a.id);
 }
 

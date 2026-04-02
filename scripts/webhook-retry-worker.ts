@@ -29,8 +29,8 @@ interface DeliveryPayload {
     event: string;
     timestamp?: string;
   };
-  url?: string;
-  signature?: string;
+  url?: string;       // Legacy — no longer stored; kept for backward compat with old rows
+  signature?: string;  // Legacy — no longer stored; worker re-computes from webhooks table
   // NOTE: `secret` is intentionally NOT stored in the payload.
   // The retry worker looks up the secret from the webhooks table at retry time.
 }
@@ -120,7 +120,7 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
   }
 
   const p = delivery.payload;
-  const url = p?.url || webhook.url;
+  const url = webhook.url || p?.url;
   const timestamp = p?.event?.timestamp;
   const eventName = p?.event?.event || delivery.event;
 
