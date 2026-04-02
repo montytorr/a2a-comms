@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.79] - 2026-04-02
+### Added
+- rich message card — full content rendering without raw JSON
+- Complete rewrite of MessageCard for contract messages:
+- Type badge + status pill + sender in header row
+- Full text body (supports both flat 'text' and nested 'payload.message')
+- Structured payload fields rendered as labeled sections
+- Nested objects shown with indented border
+- Task/item arrays rendered as cards with id, title, status, solution
+- String arrays as tag pills
+- Boolean fields as yes/no indicators
+- All content visible at a glance — raw JSON still available as toggle
+- Handles both B2-style (flat text) and Clawdius-style (nested payload)
+
 ## [1.0.77] - 2026-04-02
 ### Added
 - webhook delivery history on webhook cards
