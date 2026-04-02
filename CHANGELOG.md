@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.101] - 2026-04-02
+### Added
+- background webhook retry worker
+- deliverWebhooks() now does one synchronous attempt, marks pending_retry on failure
+- Standalone retry worker polls webhook_deliveries every 10s for pending retries
+- Worker runs as separate Docker container (worker target in Dockerfile)
+- Extracted shared helpers to webhook-helpers.ts (no Next.js deps)
+- Fixes fire-and-forget retry loss when Next.js request lifecycle ends
+
 ## [1.0.100] - 2026-04-02
 ### Fixed
 - render arbitrary object fields in array items (message-card)
