@@ -9,6 +9,15 @@ import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 export const dynamic = 'force-dynamic';
 
+const COL = {
+  title: 'w-[30%]',
+  proposer: 'w-[15%]',
+  participants: 'w-[18%]',
+  status: 'w-[12%]',
+  turns: 'w-[12%]',
+  created: 'w-[13%]',
+} as const;
+
 interface ContractWithRelations extends Contract {
   proposer: { name: string; display_name: string } | null;
   contract_participants: Array<{
@@ -109,15 +118,15 @@ export default async function ContractsPage({
       {/* Table */}
       <div className="rounded-2xl glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px]">
+        <table className="w-full min-w-[700px] table-fixed">
           <thead>
             <tr className="border-b border-white/[0.04]">
-              <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Title</th>
-              <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Proposer</th>
-              <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Participants</th>
-              <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Status</th>
-              <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Turns</th>
-              <th className="text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Created</th>
+              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.title}`}>Title</th>
+              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.proposer}`}>Proposer</th>
+              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.participants}`}>Participants</th>
+              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.status}`}>Status</th>
+              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.turns}`}>Turns</th>
+              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.created}`}>Created</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.03]">
@@ -144,39 +153,36 @@ export default async function ContractsPage({
 
                 return (
                   <tr key={contract.id} className="group hover:bg-white/[0.02] transition-all duration-300 cursor-pointer relative">
-                    <td colSpan={6} className="p-0">
-                      <Link href={`/contracts/${contract.id}`} className="flex items-center w-full">
-                        <span className="px-6 py-4 flex-[2] min-w-0">
-                          <span className="text-[13px] font-medium text-gray-200 group-hover:text-cyan-400 transition-colors duration-200">
-                            {contract.title}
-                          </span>
-                        </span>
-                        <span className="px-6 py-4 flex-[1.5]">
-                          <span className="text-[13px] text-gray-500">{proposerName}</span>
-                        </span>
-                        <span className="px-6 py-4 flex-[1.5]">
-                          <span className="text-[13px] text-gray-500">{participants || '—'}</span>
-                        </span>
-                        <span className="px-6 py-4 flex-1">
-                          <StatusBadge status={contract.status} />
-                        </span>
-                        <span className="px-6 py-4 flex-1">
-                          <span className="text-[13px] text-gray-500 font-mono tabular-nums">
-                            <span className="text-gray-300">{contract.current_turns}</span>
-                            <span className="text-gray-700 mx-0.5">/</span>
-                            <span className="text-gray-600">{contract.max_turns}</span>
-                          </span>
-                        </span>
-                        <span className="px-6 py-4 flex-1">
-                          <span className="text-[11px] text-gray-600 font-mono tabular-nums">
-                            {new Date(contract.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </span>
-                        </span>
-                      </Link>
+                    <td className={`px-6 py-4 ${COL.title}`}>
+                      <Link href={`/contracts/${contract.id}`} className="absolute inset-0" tabIndex={-1} />
+                      <span className="relative text-[13px] font-medium text-gray-200 group-hover:text-cyan-400 transition-colors duration-200 truncate block">
+                        {contract.title}
+                      </span>
+                    </td>
+                    <td className={`px-6 py-4 ${COL.proposer}`}>
+                      <span className="text-[13px] text-gray-500 truncate block">{proposerName}</span>
+                    </td>
+                    <td className={`px-6 py-4 ${COL.participants}`}>
+                      <span className="text-[13px] text-gray-500 truncate block">{participants || '—'}</span>
+                    </td>
+                    <td className={`px-6 py-4 ${COL.status}`}>
+                      <StatusBadge status={contract.status} />
+                    </td>
+                    <td className={`px-6 py-4 ${COL.turns}`}>
+                      <span className="text-[13px] text-gray-500 font-mono tabular-nums">
+                        <span className="text-gray-300">{contract.current_turns}</span>
+                        <span className="text-gray-700 mx-0.5">/</span>
+                        <span className="text-gray-600">{contract.max_turns}</span>
+                      </span>
+                    </td>
+                    <td className={`px-6 py-4 ${COL.created}`}>
+                      <span className="text-[11px] text-gray-600 font-mono tabular-nums">
+                        {new Date(contract.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
                     </td>
                   </tr>
                 );
