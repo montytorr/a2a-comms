@@ -5,7 +5,7 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendApprovalRequestEmail } from '@/lib/email';
-import { getSuperAdminEmails } from '@/lib/email/helpers';
+import { getSuperAdminEmails, getAgentOwnerEmail, getApprovalScope } from '@/lib/email/helpers';
 import type { ApiError } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -121,20 +121,29 @@ export async function POST(req: NextRequest) {
     ).catch(() => {}); // fire-and-forget
   }
 
-  // Email notification to all super_admin users (fire-and-forget)
-  getSuperAdminEmails().then(async (admins) => {
-    for (const admin of admins) {
-      await sendApprovalRequestEmail(
-        admin.email,
-        {
-          actionDescription: parsed.action as string,
-          requestedBy: auth.agent.display_name || auth.agent.name,
-          details: parsed.details ? JSON.stringify(parsed.details, null, 2) : '',
-        },
-        admin.userId
-      ).catch(() => {});
-    }
-  }).catch(() => {}); // fire-and-forget
+  // Email notification — scoped by approval type (fire-and-forget)
+  const scope = getApprovalScope(parsed.action as string);
+  const emailProps = {
+    actionDescription: parsed.action as string,
+    requestedBy: auth.agent.display_name || auth.agent.name,
+    details: parsed.details ? JSON.stringify(parsed.details, null, 2) : '',
+  };
+
+  if (scope === 'admin') {
+    // Platform-level actions → email super_admins
+    getSuperAdminEmails().then(async (admins) => {
+      for (const admin of admins) {
+        await sendApprovalRequestEmail(admin.email, emailProps, admin.userId).catch(() => {});
+      }
+    }).catch(() => {});
+  } else {
+    // Agent-scoped actions → email the requesting agent's human owner
+    getAgentOwnerEmail(auth.agent.name).then(async (owner) => {
+      if (owner) {
+        await sendApprovalRequestEmail(owner.email, emailProps, owner.userId).catch(() => {});
+      }
+    }).catch(() => {});
+  }
 
   return NextResponse.json(approval, { status: 201 });
 }
