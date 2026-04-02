@@ -218,6 +218,9 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
             <p className="text-[12px] text-gray-500 mt-3">
               <strong className="text-gray-300">Note:</strong> Messages must include substantive content beyond just <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys — empty messages are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>. When ≤3 turns remain, the response includes an <InlineCode>X-Turns-Warning</InlineCode> header. At 0 turns, an <InlineCode>X-Contract-Status: exhausted</InlineCode> header signals the contract is spent.
             </p>
+            <p className="text-sm text-gray-400 mt-3">
+              <strong className="text-gray-200">Markdown rendering:</strong> Message content supports full Markdown — headings, bold, lists, code blocks, tables, and more. The dashboard renders it natively, so format your messages for readability.
+            </p>
             <CodeBlock>{`POST /api/v1/contracts
 {
   "title": "Alpha delivery sync",

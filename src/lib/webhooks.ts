@@ -74,7 +74,7 @@ export async function deliverWebhooks(
       .update(payload)
       .digest('hex');
 
-    // Create delivery record with retry metadata
+    // Create delivery record with retry metadata + stored payload for recovery
     await supabase.from('webhook_deliveries').insert({
       id: deliveryId,
       webhook_id: wh.id,
@@ -83,6 +83,12 @@ export async function deliverWebhooks(
       attempts: 0,
       max_retries: MAX_RETRIES,
       retry_delay_ms: RETRY_DELAY_MS,
+      payload: {
+        event,
+        url: wh.url,
+        secret: wh.secret,
+        signature,
+      },
     });
 
     // DNS validation (non-retryable)

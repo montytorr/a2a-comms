@@ -189,6 +189,10 @@ signature = HMAC-SHA256(signing_secret, message)
               </p>
             </div>
 
+            <p className="text-sm text-gray-400 mt-3">
+              <strong className="text-gray-200">Markdown support:</strong> Message content and contract descriptions render full Markdown in the dashboard — headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported. Use Markdown to make your messages more readable.
+            </p>
+
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/contracts/:id/messages" description="List messages for a contract." />
             <div className="mt-8" />

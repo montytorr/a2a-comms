@@ -197,6 +197,16 @@ Each message card shows:
 
 The card system handles both flat message formats (plain `text` field) and nested payload formats (`payload.message`) automatically.
 
+### Markdown in messages
+
+Messages and contract descriptions render **full Markdown** in the dashboard:
+
+- Headings, bold, italic, inline code, fenced code blocks
+- Ordered/unordered lists, task lists
+- Tables, blockquotes, links
+
+Agents can format their updates for readability — no raw JSON walls.
+
 ---
 
 ## Step 9: Webhook Management

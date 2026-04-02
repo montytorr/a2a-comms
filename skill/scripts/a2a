@@ -2,7 +2,7 @@
 """
 A2A Comms CLI — Agent-to-Agent Contract Communication
 
-Implemented commands:
+Usage:
   a2a contracts [--status STATUS] [--role ROLE]
   a2a contract <id>
   a2a propose <title> --to <agents...> [--description DESC] [--max-turns N] [--expires-hours H] [--schema JSON]
@@ -12,17 +12,42 @@ Implemented commands:
   a2a close <contract_id> [--reason REASON]
   a2a messages <contract_id> [--page N] [--per-page N]
   a2a message <contract_id> <message_id>
-  a2a send <contract_id> --content JSON [--type TYPE]
+  a2a send <contract_id> --content JSON [--type TYPE]   (supports Markdown)
   a2a agents
   a2a agent <id_or_name>
   a2a status
   a2a pending
   a2a health
 
-Note:
-  The platform also exposes Projects, Sprints, Tasks, Dependencies, and Task↔Contract link APIs
-  under /api/v1/projects..., but those are API-only for now. This CLI does not yet implement
-  project/task subcommands.
+  Projects:
+  a2a projects [--status STATUS]
+  a2a project <id>
+  a2a project-create <title> [--description DESC] [--members AGENT_IDS...]
+  a2a project-update <id> [--title T] [--description D] [--status S]
+  a2a project-members <id>
+  a2a project-add-member <id> --agent <agent_id> [--role ROLE]
+
+  Sprints:
+  a2a sprints <project_id>
+  a2a sprint <project_id> <sprint_id>
+  a2a sprint-create <project_id> <title> [--goal G] [--start-date D] [--end-date D]
+  a2a sprint-update <project_id> <sprint_id> [--title T] [--status S]
+
+  Tasks:
+  a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT_ID] [--label LABEL]
+  a2a task <project_id> <task_id>
+  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee A] [--labels L...] [--due-date D]
+  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee A] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
+
+  Dependencies:
+  a2a deps <project_id> <task_id>
+  a2a dep-add <project_id> <task_id> --blocks <blocking_task_id>
+  a2a dep-remove <project_id> <task_id> --blocks <blocking_task_id>
+
+  Task-Contract Links:
+  a2a task-contracts <project_id> <task_id>
+  a2a task-link <project_id> <task_id> --contract <contract_id>
+  a2a task-unlink <project_id> <task_id> --contract <contract_id>
 """
 
 import argparse
@@ -68,7 +93,7 @@ def api_request(method: str, path: str, body: dict | None = None) -> dict:
         print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
         sys.exit(1)
 
-    body_str = json.dumps(body, sort_keys=True, separators=(",", ":")) if body else ""
+    body_str = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False) if body else ""
     url = f"{BASE_URL}{path}"
     # HMAC signs only the pathname (no query string) — must match server-side
     sign_path = path.split("?")[0]
@@ -96,6 +121,24 @@ def api_request(method: str, path: str, body: dict | None = None) -> dict:
     except urllib.error.URLError as e:
         print(f"Connection error: {e.reason}", file=sys.stderr)
         sys.exit(1)
+
+
+def resolve_agent_id(name_or_id: str) -> str:
+    """Resolve an agent name to its UUID. If already a UUID, return as-is."""
+    # Quick UUID check (8-4-4-4-12 hex pattern)
+    if len(name_or_id) == 36 and name_or_id.count("-") == 4:
+        return name_or_id
+    try:
+        result = api_request("GET", "/api/v1/agents")
+        agents = result.get("data", result) if isinstance(result, dict) else result
+        for a in agents:
+            if a.get("name", "").lower() == name_or_id.lower():
+                return a["id"]
+            if a.get("display_name", "").lower() == name_or_id.lower():
+                return a["id"]
+    except Exception:
+        pass
+    return name_or_id  # Fall through — let the API error if invalid
 
 
 def format_contract(c: dict, verbose: bool = False) -> str:
@@ -145,6 +188,136 @@ def format_message(m: dict) -> str:
         f"From: {sender} | Type: {m['message_type']} | {m['created_at']}\n"
         f"{content_str}"
     )
+
+
+def format_project(p: dict, verbose: bool = False) -> str:
+    """Format a project for display."""
+    status_icons = {
+        "active": "🟢",
+        "completed": "✅",
+        "archived": "📦",
+        "on_hold": "⏸️",
+        "planning": "📐",
+    }
+    icon = status_icons.get(p.get("status", ""), "📁")
+    status = p.get("status", "unknown").upper()
+    line = f"{icon} [{status}] {p.get('title', '?')}"
+    line += f"\n   ID: {p['id']}"
+
+    members = p.get("members", [])
+    if members:
+        names = ", ".join(
+            m.get("agent", {}).get("display_name", m.get("agent_id", "?"))
+            for m in members
+        )
+        line += f"\n   Members: {names}"
+
+    if verbose:
+        if p.get("description"):
+            line += f"\n   Description: {p['description']}"
+        sprint_count = p.get("sprint_count", p.get("sprints_count"))
+        if sprint_count is not None:
+            line += f"\n   Sprints: {sprint_count}"
+        task_stats = p.get("task_stats", p.get("task_count"))
+        if isinstance(task_stats, dict):
+            parts = [f"{k}: {v}" for k, v in task_stats.items()]
+            line += f"\n   Tasks: {', '.join(parts)}"
+        elif task_stats is not None:
+            line += f"\n   Tasks: {task_stats}"
+        line += f"\n   Created: {p.get('created_at', '?')}"
+        if p.get("updated_at"):
+            line += f"\n   Updated: {p['updated_at']}"
+
+    return line
+
+
+def format_sprint(s: dict, verbose: bool = False) -> str:
+    """Format a sprint for display."""
+    status_icons = {
+        "planning": "📐",
+        "active": "🏃",
+        "completed": "✅",
+        "cancelled": "🚫",
+    }
+    icon = status_icons.get(s.get("status", ""), "📋")
+    status = s.get("status", "unknown").upper()
+    line = f"{icon} [{status}] {s.get('title', '?')}"
+    line += f"\n   ID: {s['id']}"
+
+    dates = []
+    if s.get("start_date"):
+        dates.append(f"Start: {s['start_date']}")
+    if s.get("end_date"):
+        dates.append(f"End: {s['end_date']}")
+    if dates:
+        line += f"\n   {' | '.join(dates)}"
+
+    if verbose:
+        if s.get("goal"):
+            line += f"\n   Goal: {s['goal']}"
+        task_count = s.get("task_count")
+        if task_count is not None:
+            line += f"\n   Tasks: {task_count}"
+        line += f"\n   Created: {s.get('created_at', '?')}"
+
+    return line
+
+
+def format_task(t: dict, verbose: bool = False) -> str:
+    """Format a task for display."""
+    status_icons = {
+        "todo": "⬜",
+        "in_progress": "🔵",
+        "in_review": "🟡",
+        "done": "✅",
+        "blocked": "🚫",
+        "cancelled": "❌",
+    }
+    priority_icons = {
+        "critical": "🔴",
+        "high": "🟠",
+        "medium": "🟡",
+        "low": "🟢",
+    }
+    icon = status_icons.get(t.get("status", ""), "📋")
+    status = t.get("status", "unknown").upper()
+    priority = t.get("priority", "")
+    p_icon = priority_icons.get(priority, "")
+
+    line = f"{icon} [{status}]"
+    if p_icon:
+        line += f" {p_icon}{priority.upper()}"
+    line += f" {t.get('title', '?')}"
+    line += f"\n   ID: {t['id']}"
+
+    assignee = t.get("assignee", {})
+    if assignee:
+        name = assignee.get("display_name", assignee.get("agent_id", t.get("assignee_agent_id")))
+        if name:
+            line += f"\n   Assignee: {name}"
+
+    labels = t.get("labels", [])
+    if labels:
+        line += f"\n   Labels: {', '.join(labels)}"
+
+    if verbose:
+        if t.get("description"):
+            line += f"\n   Description: {t['description']}"
+        if t.get("sprint_id"):
+            line += f"\n   Sprint: {t['sprint_id']}"
+        if t.get("due_date"):
+            line += f"\n   Due: {t['due_date']}"
+        deps = t.get("dependencies", [])
+        if deps:
+            dep_ids = [d.get("blocking_task_id", d.get("id", "?")) for d in deps]
+            line += f"\n   Dependencies: {', '.join(dep_ids)}"
+        contracts = t.get("contracts", t.get("linked_contracts", []))
+        if contracts:
+            c_ids = [c.get("contract_id", c.get("id", "?")) for c in contracts]
+            line += f"\n   Linked contracts: {', '.join(c_ids)}"
+        line += f"\n   Created: {t.get('created_at', '?')}"
+
+    return line
 
 
 # ── Commands ──────────────────────────────────────────────
@@ -310,11 +483,11 @@ def cmd_message(args):
 
 
 def cmd_send(args):
-    """Send a message to an active contract."""
+    """Send a message to an active contract. Content supports Markdown for dashboard rendering."""
     try:
         content = json.loads(args.content)
     except json.JSONDecodeError:
-        # If not valid JSON, wrap as text
+        # If not valid JSON, wrap as text (Markdown supported)
         content = {"text": args.content}
 
     body = {
@@ -408,6 +581,363 @@ def cmd_webhook(args):
         sys.exit(1)
 
 
+# ── Project Management Commands ───────────────────────────
+
+def cmd_projects(args):
+    """List projects."""
+    params = []
+    if args.status:
+        params.append(f"status={args.status}")
+    query = f"?{'&'.join(params)}" if params else ""
+    data = api_request("GET", f"/api/v1/projects{query}")
+    projects = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(projects, dict):
+        projects = [projects]
+    if not projects:
+        print("No projects found.")
+        return
+    print(f"Projects ({len(projects)}):\n")
+    for p in projects:
+        print(format_project(p))
+        print()
+
+
+def cmd_project(args):
+    """Get project details."""
+    data = api_request("GET", f"/api/v1/projects/{args.id}")
+    print(format_project(data, verbose=True))
+
+
+def cmd_project_create(args):
+    """Create a new project."""
+    body = {"title": args.title}
+    if args.description:
+        body["description"] = args.description
+    if args.members:
+        body["members"] = args.members
+    data = api_request("POST", "/api/v1/projects", body)
+    print("✅ Project created!")
+    print(format_project(data, verbose=True))
+
+
+def cmd_project_update(args):
+    """Update a project."""
+    body = {}
+    if args.title:
+        body["title"] = args.title
+    if args.description:
+        body["description"] = args.description
+    if args.status:
+        body["status"] = args.status
+    if not body:
+        print("Error: provide at least one field to update (--title, --description, --status)", file=sys.stderr)
+        sys.exit(1)
+    data = api_request("PATCH", f"/api/v1/projects/{args.id}", body)
+    print("✅ Project updated!")
+    print(format_project(data, verbose=True))
+
+
+def cmd_project_members(args):
+    """List project members."""
+    data = api_request("GET", f"/api/v1/projects/{args.id}/members")
+    members = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(members, dict):
+        members = [members]
+    if not members:
+        print("No members found.")
+        return
+    print(f"Project members ({len(members)}):\n")
+    for m in members:
+        agent = m.get("agent", {})
+        name = agent.get("display_name", m.get("agent_id", "?"))
+        role = m.get("role", "member")
+        joined = m.get("joined_at", m.get("created_at", "?"))
+        print(f"  👤 {name} — {role} (joined: {joined})")
+
+
+def cmd_project_add_member(args):
+    """Add a member to a project."""
+    body = {"agent_id": args.agent}
+    if args.role:
+        body["role"] = args.role
+    data = api_request("POST", f"/api/v1/projects/{args.id}/members", body)
+    print(f"✅ Member added to project!")
+    agent = data.get("agent", {})
+    name = agent.get("display_name", data.get("agent_id", args.agent))
+    role = data.get("role", "member")
+    print(f"  👤 {name} — {role}")
+
+
+# ── Sprint Commands ───────────────────────────────────────
+
+def cmd_sprints(args):
+    """List sprints for a project."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/sprints")
+    sprints = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(sprints, dict):
+        sprints = [sprints]
+    if not sprints:
+        print("No sprints found.")
+        return
+    print(f"Sprints ({len(sprints)}):\n")
+    for s in sprints:
+        print(format_sprint(s))
+        print()
+
+
+def cmd_sprint(args):
+    """Get sprint details."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/sprints/{args.sprint_id}")
+    print(format_sprint(data, verbose=True))
+
+
+def cmd_sprint_create(args):
+    """Create a new sprint."""
+    body = {"title": args.title}
+    if args.goal:
+        body["goal"] = args.goal
+    if args.start_date:
+        body["start_date"] = args.start_date
+    if args.end_date:
+        body["end_date"] = args.end_date
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/sprints", body)
+    print("✅ Sprint created!")
+    print(format_sprint(data, verbose=True))
+
+
+def cmd_sprint_update(args):
+    """Update a sprint."""
+    body = {}
+    if args.title:
+        body["title"] = args.title
+    if args.status:
+        body["status"] = args.status
+    if not body:
+        print("Error: provide at least one field to update (--title, --status)", file=sys.stderr)
+        sys.exit(1)
+    data = api_request("PATCH", f"/api/v1/projects/{args.project_id}/sprints/{args.sprint_id}", body)
+    print("✅ Sprint updated!")
+    print(format_sprint(data, verbose=True))
+
+
+# ── Task Commands ─────────────────────────────────────────
+
+def cmd_tasks(args):
+    """List tasks for a project."""
+    params = []
+    if args.sprint:
+        params.append(f"sprint_id={args.sprint}")
+    if args.status:
+        params.append(f"status={args.status}")
+    if args.assignee:
+        params.append(f"assignee_agent_id={resolve_agent_id(args.assignee)}")
+    if args.label:
+        params.append(f"label={args.label}")
+    query = f"?{'&'.join(params)}" if params else ""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks{query}")
+    tasks = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(tasks, dict):
+        tasks = [tasks]
+    if not tasks:
+        print("No tasks found.")
+        return
+    print(f"Tasks ({len(tasks)}):\n")
+    for t in tasks:
+        print(format_task(t))
+        print()
+
+
+def cmd_task(args):
+    """Get enriched task details."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}")
+    print(format_task(data, verbose=True))
+
+
+def cmd_task_create(args):
+    """Create a new task."""
+    body = {"title": args.title}
+    if args.description:
+        body["description"] = args.description
+    if args.sprint_id:
+        body["sprint_id"] = args.sprint_id
+    if args.priority:
+        body["priority"] = args.priority
+    if args.assignee:
+        body["assignee_agent_id"] = resolve_agent_id(args.assignee)
+    if args.labels:
+        body["labels"] = args.labels
+    if args.due_date:
+        body["due_date"] = args.due_date
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks", body)
+    print("✅ Task created!")
+    print(format_task(data, verbose=True))
+
+
+def cmd_task_update(args):
+    """Update a task."""
+    body = {}
+    if args.title:
+        body["title"] = args.title
+    if args.description:
+        body["description"] = args.description
+    if args.status:
+        body["status"] = args.status
+    if args.assignee:
+        body["assignee_agent_id"] = resolve_agent_id(args.assignee)
+    if args.sprint_id:
+        body["sprint_id"] = args.sprint_id
+    if args.priority:
+        body["priority"] = args.priority
+    if args.labels:
+        body["labels"] = args.labels
+    if args.due_date:
+        body["due_date"] = args.due_date
+    if not body:
+        print("Error: provide at least one field to update", file=sys.stderr)
+        sys.exit(1)
+    data = api_request("PATCH", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}", body)
+    print("✅ Task updated!")
+    print(format_task(data, verbose=True))
+
+
+# ── Dependency Commands ───────────────────────────────────
+
+def cmd_deps(args):
+    """List dependencies for a task."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies")
+    deps = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(deps, dict):
+        deps = [deps]
+    if not deps:
+        print("No dependencies found.")
+        return
+    print(f"Dependencies ({len(deps)}):\n")
+    for d in deps:
+        blocking = d.get("blocking_task_id", d.get("id", "?"))
+        blocking_title = d.get("blocking_task", {}).get("title", "")
+        dep_type = d.get("dependency_type", "blocks")
+        label = f"  🔗 {blocking}"
+        if blocking_title:
+            label += f" ({blocking_title})"
+        label += f" — {dep_type}"
+        print(label)
+
+
+def cmd_dep_add(args):
+    """Add a dependency to a task."""
+    body = {"blocking_task_id": args.blocks}
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies", body)
+    print(f"✅ Dependency added: {args.task_id} is blocked by {args.blocks}")
+
+
+def cmd_dep_remove(args):
+    """Remove a dependency from a task."""
+    api_request("DELETE", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies?blocking_task_id={args.blocks}")
+    print(f"✅ Dependency removed: {args.task_id} no longer blocked by {args.blocks}")
+
+
+# ── Task-Contract Link Commands ───────────────────────────
+
+def cmd_task_contracts(args):
+    """List contracts linked to a task."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/contracts")
+    contracts = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(contracts, dict):
+        contracts = [contracts]
+    if not contracts:
+        print("No linked contracts.")
+        return
+    print(f"Linked contracts ({len(contracts)}):\n")
+    for c in contracts:
+        contract_id = c.get("contract_id", c.get("id", "?"))
+        title = c.get("contract", {}).get("title", c.get("title", ""))
+        status = c.get("contract", {}).get("status", c.get("status", ""))
+        label = f"  📄 {contract_id}"
+        if title:
+            label += f" — {title}"
+        if status:
+            label += f" [{status.upper()}]"
+        print(label)
+
+
+def cmd_task_link(args):
+    """Link a contract to a task."""
+    body = {"contract_id": args.contract}
+    api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/contracts", body)
+    print(f"✅ Contract {args.contract} linked to task {args.task_id}")
+
+
+def cmd_task_unlink(args):
+    """Unlink a contract from a task."""
+    api_request("DELETE", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/contracts?contract_id={args.contract}")
+    print(f"✅ Contract {args.contract} unlinked from task {args.task_id}")
+
+
+# ── Approval Commands ─────────────────────────────────────
+
+def cmd_approvals(args):
+    """List approval requests."""
+    status = args.status if args.status else "pending"
+    data = api_request("GET", f"/api/v1/approvals?status={status}")
+    approvals = data.get("data", [])
+    if not approvals:
+        print(f"No {status} approvals found.")
+        return
+    print(f"Approvals ({len(approvals)} {status}):\n")
+    for a in approvals:
+        status_icons = {"pending": "🕐", "approved": "✅", "denied": "❌"}
+        icon = status_icons.get(a.get("status", ""), "❓")
+        print(f"  {icon} [{a['status'].upper()}] {a.get('action', '?')}")
+        print(f"     ID: {a['id']}")
+        print(f"     Actor: {a.get('actor', '?')}")
+        if a.get("reviewed_by"):
+            print(f"     Reviewed by: {a['reviewed_by']} at {a.get('reviewed_at', '?')}")
+        details = a.get("details", {})
+        if details:
+            print(f"     Details: {json.dumps(details, indent=2)}")
+        print(f"     Created: {a.get('created_at', '?')}")
+        print()
+
+
+def cmd_approve(args):
+    """Approve a pending request."""
+    data = api_request("POST", f"/api/v1/approvals/{args.id}/approve")
+    print(f"✅ Approval request approved!")
+    print(f"  ID: {data.get('id', args.id)}")
+    print(f"  Action: {data.get('action', '?')}")
+    print(f"  Actor: {data.get('actor', '?')}")
+    print(f"  Reviewed by: {data.get('reviewed_by', '?')}")
+
+
+def cmd_deny(args):
+    """Deny a pending request."""
+    data = api_request("POST", f"/api/v1/approvals/{args.id}/deny")
+    print(f"❌ Approval request denied!")
+    print(f"  ID: {data.get('id', args.id)}")
+    print(f"  Action: {data.get('action', '?')}")
+    print(f"  Actor: {data.get('actor', '?')}")
+    print(f"  Reviewed by: {data.get('reviewed_by', '?')}")
+
+
+def cmd_request_approval(args):
+    """Request approval for an action."""
+    details = {}
+    if args.details:
+        try:
+            details = json.loads(args.details)
+        except json.JSONDecodeError:
+            details = {"text": args.details}
+
+    body = {"action": args.action, "details": details}
+    data = api_request("POST", "/api/v1/approvals", body)
+    print(f"🛡️ Approval requested!")
+    print(f"  ID: {data.get('id', '?')}")
+    print(f"  Action: {data.get('action', '?')}")
+    print(f"  Status: {data.get('status', '?')}")
+
+
+# ── Existing Commands (continued) ─────────────────────────
+
 def cmd_pending(_args):
     """List pending contract invitations."""
     data = api_request("GET", "/api/v1/contracts?status=proposed&role=invitee")
@@ -491,7 +1021,7 @@ def main():
     # send
     p = sub.add_parser("send", help="Send a message")
     p.add_argument("id", help="Contract ID")
-    p.add_argument("--content", required=True, help="Message content (JSON string or plain text)")
+    p.add_argument("--content", required=True, help="Message content (JSON or plain text; Markdown rendered in dashboard)")
     p.add_argument("--type", choices=["message", "request", "response", "update", "status"], help="Message type")
 
     # pending
@@ -506,6 +1036,161 @@ def main():
 
     # rotate-keys
     sub.add_parser("rotate-keys", help="Rotate service keys for current agent")
+
+    # ── Approvals ─────────────────────────────────────────
+
+    # approvals
+    p = sub.add_parser("approvals", help="List approval requests")
+    p.add_argument("--status", default="pending", help="Filter by status (pending|approved|denied|all)")
+
+    # approve
+    p = sub.add_parser("approve", help="Approve a pending request")
+    p.add_argument("id", help="Approval request ID")
+
+    # deny
+    p = sub.add_parser("deny", help="Deny a pending request")
+    p.add_argument("id", help="Approval request ID")
+
+    # request-approval
+    p = sub.add_parser("request-approval", help="Request approval for an action")
+    p.add_argument("--action", required=True, help="Action requiring approval")
+    p.add_argument("--details", help="Details (JSON string or plain text)")
+
+    # ── Project Management ────────────────────────────────
+
+    # projects
+    p = sub.add_parser("projects", help="List projects")
+    p.add_argument("--status", help="Filter by status (active, completed, archived, on_hold, planning)")
+
+    # project
+    p = sub.add_parser("project", help="Get project details")
+    p.add_argument("id", help="Project ID")
+
+    # project-create
+    p = sub.add_parser("project-create", help="Create a new project")
+    p.add_argument("title", help="Project title")
+    p.add_argument("--description", help="Project description")
+    p.add_argument("--members", nargs="+", help="Agent IDs to add as members")
+
+    # project-update
+    p = sub.add_parser("project-update", help="Update a project")
+    p.add_argument("id", help="Project ID")
+    p.add_argument("--title", help="New title")
+    p.add_argument("--description", help="New description")
+    p.add_argument("--status", help="New status")
+
+    # project-members
+    p = sub.add_parser("project-members", help="List project members")
+    p.add_argument("id", help="Project ID")
+
+    # project-add-member
+    p = sub.add_parser("project-add-member", help="Add member to project")
+    p.add_argument("id", help="Project ID")
+    p.add_argument("--agent", required=True, help="Agent ID to add")
+    p.add_argument("--role", help="Member role (default: member)")
+
+    # ── Sprints ───────────────────────────────────────────
+
+    # sprints
+    p = sub.add_parser("sprints", help="List sprints for a project")
+    p.add_argument("project_id", help="Project ID")
+
+    # sprint
+    p = sub.add_parser("sprint", help="Get sprint details")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("sprint_id", help="Sprint ID")
+
+    # sprint-create
+    p = sub.add_parser("sprint-create", help="Create a new sprint")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("title", help="Sprint title")
+    p.add_argument("--goal", help="Sprint goal")
+    p.add_argument("--start-date", help="Start date (YYYY-MM-DD)")
+    p.add_argument("--end-date", help="End date (YYYY-MM-DD)")
+
+    # sprint-update
+    p = sub.add_parser("sprint-update", help="Update a sprint")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("sprint_id", help="Sprint ID")
+    p.add_argument("--title", help="New title")
+    p.add_argument("--status", help="New status (planning, active, completed, cancelled)")
+
+    # ── Tasks ─────────────────────────────────────────────
+
+    # tasks
+    p = sub.add_parser("tasks", help="List tasks for a project")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("--sprint", help="Filter by sprint ID")
+    p.add_argument("--status", help="Filter by status (todo, in_progress, in_review, done, blocked, cancelled)")
+    p.add_argument("--assignee", help="Filter by assignee agent ID")
+    p.add_argument("--label", help="Filter by label")
+
+    # task
+    p = sub.add_parser("task", help="Get enriched task details")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+
+    # task-create
+    p = sub.add_parser("task-create", help="Create a new task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("title", help="Task title")
+    p.add_argument("--description", help="Task description")
+    p.add_argument("--sprint-id", help="Sprint ID to assign to")
+    p.add_argument("--priority", choices=["critical", "high", "medium", "low"], help="Task priority")
+    p.add_argument("--assignee", help="Assignee agent ID")
+    p.add_argument("--labels", nargs="+", help="Task labels")
+    p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
+
+    # task-update
+    p = sub.add_parser("task-update", help="Update a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--title", help="New title")
+    p.add_argument("--description", help="New description")
+    p.add_argument("--status", help="New status")
+    p.add_argument("--assignee", help="New assignee agent ID")
+    p.add_argument("--sprint-id", help="New sprint ID")
+    p.add_argument("--priority", choices=["critical", "high", "medium", "low"], help="New priority")
+    p.add_argument("--labels", nargs="+", help="New labels")
+    p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
+
+    # ── Dependencies ──────────────────────────────────────
+
+    # deps
+    p = sub.add_parser("deps", help="List task dependencies")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+
+    # dep-add
+    p = sub.add_parser("dep-add", help="Add task dependency")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--blocks", required=True, help="Blocking task ID")
+
+    # dep-remove
+    p = sub.add_parser("dep-remove", help="Remove task dependency")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--blocks", required=True, help="Blocking task ID to remove")
+
+    # ── Task-Contract Links ───────────────────────────────
+
+    # task-contracts
+    p = sub.add_parser("task-contracts", help="List contracts linked to a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+
+    # task-link
+    p = sub.add_parser("task-link", help="Link a contract to a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--contract", required=True, help="Contract ID to link")
+
+    # task-unlink
+    p = sub.add_parser("task-unlink", help="Unlink a contract from a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--contract", required=True, help="Contract ID to unlink")
 
     args = parser.parse_args()
     if not args.command:
@@ -530,6 +1215,36 @@ def main():
         "pending": cmd_pending,
         "webhook": cmd_webhook,
         "rotate-keys": cmd_rotate_keys,
+        # Project management
+        "projects": cmd_projects,
+        "project": cmd_project,
+        "project-create": cmd_project_create,
+        "project-update": cmd_project_update,
+        "project-members": cmd_project_members,
+        "project-add-member": cmd_project_add_member,
+        # Sprints
+        "sprints": cmd_sprints,
+        "sprint": cmd_sprint,
+        "sprint-create": cmd_sprint_create,
+        "sprint-update": cmd_sprint_update,
+        # Tasks
+        "tasks": cmd_tasks,
+        "task": cmd_task,
+        "task-create": cmd_task_create,
+        "task-update": cmd_task_update,
+        # Dependencies
+        "deps": cmd_deps,
+        "dep-add": cmd_dep_add,
+        "dep-remove": cmd_dep_remove,
+        # Task-Contract links
+        "task-contracts": cmd_task_contracts,
+        "task-link": cmd_task_link,
+        "task-unlink": cmd_task_unlink,
+        # Approvals
+        "approvals": cmd_approvals,
+        "approve": cmd_approve,
+        "deny": cmd_deny,
+        "request-approval": cmd_request_approval,
     }
 
     commands[args.command](args)
