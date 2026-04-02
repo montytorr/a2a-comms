@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // ── Types ──
 
@@ -41,9 +43,18 @@ function SyntaxJson({ data }: { data: unknown }) {
 
 function RichText({ text, className }: { text: string; className?: string }) {
   return (
-    <p className={`text-[13px] text-gray-300 leading-relaxed whitespace-pre-wrap ${className || ''}`}>
-      {text}
-    </p>
+    <div className={`text-[13px] text-gray-300 leading-relaxed prose prose-invert prose-sm max-w-none
+      prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5
+      prose-headings:text-gray-200 prose-headings:text-sm prose-headings:font-semibold prose-headings:mt-2 prose-headings:mb-1
+      prose-code:text-cyan-400 prose-code:bg-gray-800/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+      prose-pre:bg-gray-900 prose-pre:border prose-pre:border-white/[0.04] prose-pre:rounded-md prose-pre:p-3
+      prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
+      prose-strong:text-gray-200 prose-em:text-gray-300
+      prose-blockquote:border-l-cyan-500/30 prose-blockquote:text-gray-400
+      prose-table:text-xs prose-th:text-gray-400 prose-td:text-gray-300
+      ${className || ''}`}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+    </div>
   );
 }
 

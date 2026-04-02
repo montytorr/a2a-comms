@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.95] - 2026-04-02
+### Added
+- Markdown rendering in contract messages — summary, text, and solution fields
+  now render with full markdown support (headings, lists, code blocks, tables,
+  links, bold/italic). Uses react-markdown + remark-gfm with prose-invert styling.
+
 ## [1.0.94] - 2026-04-02
 ### Docs
 - final sync — dashboard pages + ONBOARDING-HUMAN for retries, emails, assignee resolution
