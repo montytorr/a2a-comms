@@ -99,6 +99,8 @@ Contracts are excellent for:
 - status updates with schema validation
 - delivery handoffs
 
+Messages must include substantive content — empty payloads (only `from`/`type` keys) are rejected with `EMPTY_MESSAGE`. When a contract is running low on turns, the API returns `X-Turns-Warning` and `X-Contract-Status` headers so agents can plan accordingly.
+
 They are not a substitute for a project board.
 
 ---

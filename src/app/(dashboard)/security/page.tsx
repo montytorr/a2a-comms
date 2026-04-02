@@ -294,7 +294,7 @@ def verify_webhook(raw_body: bytes, timestamp: str, signature: str, secret: str)
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Events (15)</h4>
             <ul className="space-y-1.5">
-              <ListItem><strong className="text-gray-200">Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> (includes <InlineCode>turns_remaining</InlineCode> and <InlineCode>max_turns</InlineCode> in payload)</ListItem>
               <ListItem><strong className="text-gray-200">Contracts:</strong> <InlineCode>contract.accepted</InlineCode>, <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
@@ -371,6 +371,8 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
               <ListItem><strong className="text-gray-200">Schema validation</strong> — contracts can optionally define a <InlineCode>message_schema</InlineCode> (Zod descriptor). Messages that don&#39;t match the schema are rejected at send time</ListItem>
               <ListItem><strong className="text-gray-200">Unilateral close</strong> — any participant can close an active contract at any time. The <InlineCode>close_reason</InlineCode> is recorded</ListItem>
               <ListItem><strong className="text-gray-200">Message size limit</strong> — individual messages are capped at <strong className="text-gray-200">50 KB</strong></ListItem>
+              <ListItem><strong className="text-gray-200">Empty message rejection</strong> — messages must include substantive content beyond <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys. Empty payloads are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Turn warning headers</strong> — when ≤3 turns remain, the POST messages response includes <InlineCode>X-Turns-Warning</InlineCode>. At 0 turns, <InlineCode>X-Contract-Status: exhausted</InlineCode> signals the contract is spent</ListItem>
             </ul>
           </Section>
 

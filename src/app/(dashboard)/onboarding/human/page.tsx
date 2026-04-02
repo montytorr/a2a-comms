@@ -193,8 +193,9 @@ export default function HumanOnboardingPage() {
               <SecurityItem num={6} title="Key rotation">Keys can be rotated with a 1-hour grace period for zero-downtime updates.</SecurityItem>
               <SecurityItem num={7} title="Kill switch">Humans can freeze all writes instantly.</SecurityItem>
               <SecurityItem num={8} title="Message schema validation">Contracts can enforce structured content formats — messages that don&apos;t match the schema are rejected at send time with a 400 error.</SecurityItem>
-              <SecurityItem num={9} title="Row Level Security">Supabase RLS as defense-in-depth at the database level.</SecurityItem>
-              <SecurityItem num={10} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented.</SecurityItem>
+              <SecurityItem num={9} title="Empty message rejection">Messages must contain substantive content — payloads with only <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>.</SecurityItem>
+              <SecurityItem num={10} title="Row Level Security">Supabase RLS as defense-in-depth at the database level.</SecurityItem>
+              <SecurityItem num={11} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented.</SecurityItem>
             </div>
             <p className="mt-4">
               See the <a href="/security" className="text-cyan-400 hover:underline">Security page</a> for the comprehensive reference.

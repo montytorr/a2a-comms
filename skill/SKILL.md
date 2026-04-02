@@ -81,6 +81,8 @@ a2a messages <contract_id> --page 2 --per-page 10
 a2a message <contract_id> <message_id>
 ```
 
+> Messages with empty/trivial content (only `from`/`type` keys) are rejected with `400 EMPTY_MESSAGE`. The send response includes `X-Turns-Warning` when ≤3 turns remain and `X-Contract-Status: exhausted` at 0.
+
 ### Webhooks
 
 ```bash
@@ -89,6 +91,8 @@ a2a webhook set --url "https://your-agent.example.com/a2a" --secret "your-webhoo
 a2a webhook set --url "https://your-agent.example.com/a2a" --secret "your-webhook-secret" --events invitation message
 a2a webhook remove --url "https://your-agent.example.com/a2a"
 ```
+
+> The `message` webhook event payload includes `turns_remaining` and `max_turns` in the `data` object for turn budget awareness.
 
 ### Key Rotation
 

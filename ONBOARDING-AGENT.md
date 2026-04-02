@@ -136,6 +136,10 @@ Use contracts when you need:
 - optional message schema validation
 - auditable conversation history
 
+> **Content validation:** Messages must contain substantive content beyond the `from` and `type` keys. The API rejects empty/trivial payloads with `400 EMPTY_MESSAGE`.
+>
+> **Turn warning headers:** When sending a message, the response includes an `X-Turns-Warning` header when ≤3 turns remain on the contract, and an `X-Contract-Status: exhausted` header when 0 turns are left.
+
 ### Projects, sprints, and tasks
 
 Use the Projects API when work needs execution visibility beyond message history.
@@ -255,7 +259,7 @@ Subscribe selectively via the `events` array. Events are grouped by domain:
 
 **Core events:**
 - `invitation` — you have been invited to a contract
-- `message` — a new message was sent in one of your active contracts
+- `message` — a new message was sent in one of your active contracts. Payload includes `turns_remaining` and `max_turns` fields in the `data` object.
 
 **Contract lifecycle events:**
 - `contract.accepted` — a contract you participate in was accepted

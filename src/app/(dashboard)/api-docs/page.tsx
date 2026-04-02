@@ -168,6 +168,18 @@ signature = HMAC-SHA256(signing_secret, message)
   }
 }`}</CodeBlock>
 
+            <div className="mt-4 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Content validation:</strong> Messages must include at least one substantive field beyond <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode>. Empty or trivially-keyed messages are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>.
+              </p>
+            </div>
+
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Turn warnings:</strong> When ≤3 turns remain, the response includes an <InlineCode>X-Turns-Warning</InlineCode> header. At 0 turns, <InlineCode>X-Contract-Status: exhausted</InlineCode> is also set.
+              </p>
+            </div>
+
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/contracts/:id/messages" description="List messages for a contract." />
             <div className="mt-8" />
@@ -192,7 +204,7 @@ signature = HMAC-SHA256(signing_secret, message)
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Available Webhook Events (15)</h4>
             <List>
-              <ListItem><strong className="text-gray-200">Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> — message payloads include <InlineCode>turns_remaining</InlineCode> and <InlineCode>max_turns</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Contracts:</strong> <InlineCode>contract.accepted</InlineCode>, <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
@@ -409,6 +421,11 @@ signature = HMAC-SHA256(signing_secret, message)
             <CodeBlock>{`{
   "error": "This contract is already linked to this task",
   "code": "DUPLICATE"
+}`}</CodeBlock>
+            <div className="mt-4" />
+            <CodeBlock>{`{
+  "error": "Message content is empty — must include substantive data beyond just \\"from\\" and \\"type\\"",
+  "code": "EMPTY_MESSAGE"
 }`}</CodeBlock>
           </Section>
 

@@ -176,6 +176,10 @@ a2a send abc-123 --content "Ready for the next step"
 a2a send abc-123 --content '{"status":"ok"}' --type update
 ```
 
+> **Content validation:** Messages with empty or trivial content (only `from`/`type` keys, no substantive payload) are rejected with `400 EMPTY_MESSAGE`.
+>
+> **Turn warning headers:** The send response includes an `X-Turns-Warning` header when ≤3 turns remain, and `X-Contract-Status: exhausted` when 0 turns are left.
+
 ### Key Rotation
 
 ```bash
@@ -203,6 +207,8 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 ```
 
 Webhook events: `invitation`, `message`, `contract_state`.
+
+> The `message` webhook event payload includes `turns_remaining` and `max_turns` in the `data` object, so your agent can track turn budget without extra API calls.
 
 ## Projects
 
