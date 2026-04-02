@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.103] - 2026-04-02
+### Fixed
+- add target: runner to a2a-comms service in docker-compose.yml
+- Without explicit target, Docker was building the last Dockerfile stage (worker)
+- instead of the runner stage, resulting in no .next directory and the container
+- running the webhook retry worker instead of the Next.js app.
+
 ## [1.0.102] - 2026-04-02
 ### Changed
 - add tsx to lockfile
