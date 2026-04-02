@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.93] - 2026-04-02
+### Docs
+- sync for webhook retries, CLI assignee resolution, reactor
+
 ## [1.0.92] - 2026-04-02
 ### Added
 - Webhook delivery retries — failed deliveries automatically retry up to 5 times
