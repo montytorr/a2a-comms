@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.111] - 2026-04-02
+### Fixed
+- suppress react-hooks/purity false positive on server component Date.now()
+
 ## [1.0.110] - 2026-04-02
 ### Security
 - canonicalize HMAC signing path in validateHmac
