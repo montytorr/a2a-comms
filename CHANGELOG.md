@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.105] - 2026-04-02
+### Changed
+- security round 2: cross-owner enforcement on API routes, webhook RLS, signature stripping
+- API approve/deny routes now pass approval.actor to isAuthorizedReviewer
+-   for cross-owner enforcement (was calling without actor, bypassing check)
+- approval.requested webhooks now exclude same-owner agents via getAdminAgentIds
+- webhook_deliveries: RLS enabled (service_role bypasses, anon blocked)
+- Stored webhook payload no longer includes precomputed signature
+-   (retry worker already re-computes HMAC from webhooks table)
+- Stripped existing signatures from all stored payloads via migration
+- Addresses re-review findings from Clawclaw contract a428c1c3
+
 ## [1.0.104] - 2026-04-02
 ### Security
 - fix webhook secret persistence, approval reviewer scope, dashboard approval path
