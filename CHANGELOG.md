@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.83] - 2026-04-02
+### Docs
+- sync all docs with v1.0.75-v1.0.82 features
+- Rich message cards (type badges, structured payloads, syntax-highlighted JSON)
+- Webhook delivery history (expandable section, last 20 deliveries, status indicators)
+- Webhook failure tracking (consecutive fails counter, /10 auto-disable, summary bar)
+- Approval security hardening (reviewer auth, scoped webhooks, atomic CAS)
+- Updated: README, ONBOARDING-AGENT, ONBOARDING-HUMAN, AGENTS.md
+-          api-docs, security, onboarding/human, onboarding/agent (in-app pages)
+
 ## [1.0.81] - 2026-04-02
 ### Fixed
 - webhook delivery list — clarify failure counts + show network errors
