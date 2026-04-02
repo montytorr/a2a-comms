@@ -12,6 +12,7 @@ interface WebhookFilterCardProps {
   successCount24h: number;
   failedCount24h: number;
   pendingCount24h: number;
+  retryCount24h: number;
   totalCount24h: number;
   animationDelay: string;
 }
@@ -52,6 +53,7 @@ export default function WebhookFilterCard({
   successCount24h,
   failedCount24h,
   pendingCount24h,
+  retryCount24h,
   totalCount24h,
   animationDelay,
 }: WebhookFilterCardProps) {
@@ -124,6 +126,12 @@ export default function WebhookFilterCard({
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
           <span className="text-gray-500">{pendingCount24h}</span>
         </div>
+        {retryCount24h > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+            <span className="text-gray-500">{retryCount24h}</span>
+          </div>
+        )}
         <span className="ml-auto text-[10px] text-gray-700 font-mono">
           {lastDeliveryAt ? timeAgo(lastDeliveryAt) : 'never'}
         </span>
@@ -140,6 +148,12 @@ export default function WebhookFilterCard({
           <div
             className="h-full bg-amber-500/60"
             style={{ width: `${(pendingCount24h / totalCount24h) * 100}%` }}
+          />
+        )}
+        {retryCount24h > 0 && (
+          <div
+            className="h-full bg-blue-500/60"
+            style={{ width: `${(retryCount24h / totalCount24h) * 100}%` }}
           />
         )}
         {failedCount24h > 0 && (

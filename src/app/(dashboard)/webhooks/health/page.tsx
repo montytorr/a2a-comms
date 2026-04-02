@@ -12,7 +12,7 @@ type WebhookDelivery = {
   id: string;
   webhook_id: string;
   event: string;
-  status: 'pending' | 'success' | 'failed';
+  status: 'pending' | 'pending_retry' | 'retrying' | 'success' | 'failed';
   attempts: number;
   response_status: number | null;
   delivered_at: string | null;
@@ -39,19 +39,11 @@ type WebhookSummary = {
   successCount24h: number;
   failedCount24h: number;
   pendingCount24h: number;
+  retryCount24h: number;
   totalCount24h: number;
 };
 
-function getStatusBadge(status: string, attempts: number) {
-  const isRetrying = status === 'pending' && attempts > 0;
-  if (isRetrying) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-        Retrying
-      </span>
-    );
-  }
+function getStatusBadge(status: string) {
   switch (status) {
     case 'success':
       return (
@@ -72,6 +64,20 @@ function getStatusBadge(status: string, attempts: number) {
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
           Pending
+        </span>
+      );
+    case 'pending_retry':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+          Pending Retry
+        </span>
+      );
+    case 'retrying':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          Retrying
         </span>
       );
     default:
@@ -195,6 +201,7 @@ export default async function WebhookHealthPage({
         successCount24h: 0,
         failedCount24h: 0,
         pendingCount24h: 0,
+        retryCount24h: 0,
         totalCount24h: 0,
       });
     }
@@ -202,6 +209,7 @@ export default async function WebhookHealthPage({
     s.totalCount24h++;
     if (d.status === 'success') s.successCount24h++;
     else if (d.status === 'failed') s.failedCount24h++;
+    else if (d.status === 'pending_retry' || d.status === 'retrying') s.retryCount24h++;
     else s.pendingCount24h++;
   }
 
@@ -212,6 +220,7 @@ export default async function WebhookHealthPage({
   const totalSuccess = stats24h.filter(d => d.status === 'success').length;
   const totalFailed = stats24h.filter(d => d.status === 'failed').length;
   const totalPending = stats24h.filter(d => d.status === 'pending').length;
+  const totalRetrying = stats24h.filter(d => d.status === 'pending_retry' || d.status === 'retrying').length;
   const successRate = totalDeliveries24h > 0 ? Math.round((totalSuccess / totalDeliveries24h) * 100) : 0;
 
   // Resolve filtered webhook name for display
@@ -252,7 +261,7 @@ export default async function WebhookHealthPage({
         </div>
 
         {/* Overall Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
           <div className="rounded-2xl glass-card px-5 py-4">
             <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1">24h Total</p>
             <p className="text-2xl font-bold text-white tabular-nums">{totalDeliveries24h}</p>
@@ -264,6 +273,10 @@ export default async function WebhookHealthPage({
           <div className="rounded-2xl glass-card px-5 py-4">
             <p className="text-[10px] font-semibold text-red-500/60 uppercase tracking-[0.2em] mb-1">Failed</p>
             <p className="text-2xl font-bold text-red-400 tabular-nums">{totalFailed}</p>
+          </div>
+          <div className="rounded-2xl glass-card px-5 py-4">
+            <p className="text-[10px] font-semibold text-blue-500/60 uppercase tracking-[0.2em] mb-1">Retrying</p>
+            <p className="text-2xl font-bold text-blue-400 tabular-nums">{totalRetrying}</p>
           </div>
           <div className="rounded-2xl glass-card px-5 py-4">
             <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.2em] mb-1">Success Rate</p>
@@ -299,6 +312,7 @@ export default async function WebhookHealthPage({
                   successCount24h={s.successCount24h}
                   failedCount24h={s.failedCount24h}
                   pendingCount24h={s.pendingCount24h}
+                  retryCount24h={s.retryCount24h}
                   totalCount24h={s.totalCount24h}
                   animationDelay={`${0.1 + idx * 0.04}s`}
                 />
@@ -380,7 +394,7 @@ export default async function WebhookHealthPage({
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {getStatusBadge(d.status, d.attempts)}
+                          {getStatusBadge(d.status)}
                         </td>
                         <td className="px-4 py-3">
                           {d.response_status ? (
@@ -427,10 +441,10 @@ export default async function WebhookHealthPage({
         </div>
 
         {/* Pending count note */}
-        {totalPending > 0 && !filterWebhookId && (
+        {(totalPending > 0 || totalRetrying > 0) && !filterWebhookId && (
           <div className="mt-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10 px-4 py-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <p className="text-[11px] text-amber-400/80">
-              <span className="font-semibold">{totalPending}</span> deliveries pending in the last 24h — these may still be retrying.
+              <span className="font-semibold">{totalPending + totalRetrying}</span> deliveries pending or retrying in the last 24h.
             </p>
           </div>
         )}
