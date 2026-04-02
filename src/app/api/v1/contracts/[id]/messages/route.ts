@@ -105,7 +105,8 @@ export async function POST(
   const { id } = await params;
 
   // Idempotency check
-  const idempotency = await checkIdempotency(req, auth);
+  const endpoint = `POST /v1/contracts/${id}/messages`;
+  const idempotency = await checkIdempotency(req, auth, endpoint);
   if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   // Rate limit messages
@@ -211,47 +212,38 @@ export async function POST(
     }
   }
 
-  // Insert message
-  const { data: message, error: insertErr } = await supabase
-    .from('messages')
-    .insert({
-      contract_id: id,
-      sender_id: auth.agent.id,
-      message_type: messageType,
-      content: parsed.content,
-    })
-    .select()
-    .single();
+  // Atomic: insert message + increment turns + auto-close in one transaction (SELECT FOR UPDATE)
+  const { data: rpcResult, error: rpcErr } = await supabase.rpc('insert_message_atomic', {
+    p_contract_id: id,
+    p_sender_id: auth.agent.id,
+    p_message_type: messageType,
+    p_content: parsed.content,
+  });
 
-  if (insertErr || !message) {
+  if (rpcErr) {
     return NextResponse.json(
       { error: 'Failed to send message', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
     );
   }
 
-  // Increment current_turns
-  const newTurns = checked.current_turns + 1;
-  await supabase
-    .from('contracts')
-    .update({
-      current_turns: newTurns,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id);
-
-  // Auto-close if max turns reached
-  if (newTurns >= checked.max_turns) {
-    await supabase
-      .from('contracts')
-      .update({
-        status: 'closed',
-        close_reason: 'Max turns reached',
-        closed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id);
+  // Handle RPC-level errors (contract not found, invalid state, max turns)
+  if (rpcResult.error) {
+    const codeMap: Record<string, number> = {
+      CONTRACT_NOT_FOUND: 404,
+      INVALID_STATE: 409,
+      MAX_TURNS: 409,
+    };
+    return NextResponse.json(
+      { error: rpcResult.message, code: rpcResult.error } satisfies ApiError,
+      { status: codeMap[rpcResult.error] || 500 }
+    );
   }
+
+  const newTurns: number = rpcResult.new_turns;
+  const maxTurnsContract: number = rpcResult.max_turns;
+  const messageId: string = rpcResult.message_id;
+  const messageCreatedAt: string = rpcResult.message_created_at;
 
   // Deliver webhook notifications to all OTHER participants (fire-and-forget)
   const { data: allParticipants } = await supabase
@@ -267,8 +259,8 @@ export async function POST(
       sender: auth.agent.name,
       message_type: messageType,
       turn: newTurns,
-      turns_remaining: Math.max(0, checked.max_turns - newTurns),
-      max_turns: checked.max_turns,
+      turns_remaining: Math.max(0, maxTurnsContract - newTurns),
+      max_turns: maxTurnsContract,
     },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
@@ -277,7 +269,7 @@ export async function POST(
     actor: auth.agent.name,
     action: 'message.send',
     resourceType: 'message',
-    resourceId: message.id,
+    resourceId: messageId,
     details: {
       contract_id: id,
       message_type: messageType,
@@ -287,20 +279,25 @@ export async function POST(
   });
 
   const response: MessageResponse = {
-    ...message,
+    id: messageId,
+    contract_id: id,
+    sender_id: auth.agent.id,
+    message_type: messageType,
+    content: parsed.content,
+    created_at: messageCreatedAt,
     sender: {
       id: auth.agent.id,
       name: auth.agent.name,
       display_name: auth.agent.display_name,
     },
     turn_number: newTurns,
-    turns_remaining: Math.max(0, checked.max_turns - newTurns),
+    turns_remaining: Math.max(0, maxTurnsContract - newTurns),
   };
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/contracts/${id}/messages`, 201, response);
 
   // Warn when turns are running low (≤3 remaining)
-  const turnsRemaining = Math.max(0, checked.max_turns - newTurns);
+  const turnsRemaining = Math.max(0, maxTurnsContract - newTurns);
   const headers: Record<string, string> = {};
   if (turnsRemaining <= 3) {
     headers['X-Turns-Warning'] = `Only ${turnsRemaining} turn(s) remaining on this contract`;
