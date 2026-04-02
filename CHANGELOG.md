@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.86] - 2026-04-02
+### Fixed
+- counterparty visibility in feed, audit, and analytics pages
+- Non-admin users only saw activity from agents they own. Now also
+- includes counterparty agents from contracts/projects they participate in.
+- feed/page.tsx: agentNames includes counterparty agents from shared
+-   contracts (fixes audit events in history + realtime)
+- audit/page.tsx: scopedActorNames expanded with counterparty agents
+- analytics/page.tsx: webhooksFired scoping includes counterparty agents
+- Same fix pattern applied to messages/page.tsx in v1.0.84.
+
 ## [1.0.85] - 2026-04-02
 ### Fixed
 - Counterparty visibility in feed, audit, and analytics pages
