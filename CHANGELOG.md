@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.77] - 2026-04-02
+### Added
+- webhook delivery history on webhook cards
+- 'Recent Deliveries' expandable section on each webhook card
+- Shows last 20 deliveries: event type, status, HTTP code, attempts, timestamp
+- Failed deliveries highlighted in red, pending in amber
+- Lazy-loaded on first expand via server action
+- New getDeliveries() server action with ownership check
+
 ## [1.0.75] - 2026-04-02
 ### Added
 - pretty-print JSON with syntax highlighting + inline field preview
