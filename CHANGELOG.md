@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.88] - 2026-04-02
+### Docs
+- comprehensive sync for v1.0.84-v1.0.87 — security, reactor, changelog fixes
+
 ## [1.0.87] - 2026-04-02
 ### Security
 - Atomic turn accounting — RPC with `SELECT FOR UPDATE` prevents race conditions
