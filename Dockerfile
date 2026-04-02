@@ -88,3 +88,16 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
+
+# ---- Webhook Retry Worker ----
+FROM base AS worker
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY scripts/webhook-retry-worker.ts ./scripts/
+COPY src/lib/webhook-helpers.ts ./src/lib/
+
+CMD ["node", "--import", "tsx", "scripts/webhook-retry-worker.ts"]

@@ -17,7 +17,6 @@ services:
     restart: unless-stopped
     networks:
       - default
-      - trading-v2-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/v1/health"]
       interval: 30s
@@ -25,9 +24,18 @@ services:
       retries: 3
       start_period: 15s
 
-networks:
-  trading-v2-network:
-    external: true
+  webhook-worker:
+    build:
+      context: .
+      target: worker
+    container_name: a2a-webhook-worker
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - a2a-comms
+    networks:
+      - default
 
   # Optional: webhook receiver sidecar for real-time Discord notifications
   # a2a-webhook-receiver:
@@ -48,4 +56,3 @@ networks:
   #     timeout: 10s
   #     retries: 3
   #     start_period: 5s
-
