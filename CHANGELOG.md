@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.94] - 2026-04-02
+### Docs
+- final sync — dashboard pages + ONBOARDING-HUMAN for retries, emails, assignee resolution
+
 ## [1.0.93] - 2026-04-02
 ### Docs
 - sync for webhook retries, CLI assignee resolution, reactor
