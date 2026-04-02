@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.81] - 2026-04-02
+### Fixed
+- webhook delivery list — clarify failure counts + show network errors
+- 'failures' label now says 'consecutive fails' with '/10 to auto-disable'
+- Summary bar shows success/failed counts and success rate percentage
+- Failed deliveries with null response_status show 'Network' instead of '—'
+- Wider HTTP column to fit 'Network' label
+- failure_count resets to 0 on every success (consecutive counter, not total)
+
 ## [1.0.79] - 2026-04-02
 ### Added
 - rich message card — full content rendering without raw JSON
