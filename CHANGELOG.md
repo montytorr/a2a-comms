@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.107] - 2026-04-02
+### Added
+- fresh webhook URL on retries + explicit reviewer allowlist
+- Retry worker now prefers live webhook.url over stored payload URL
+- Removed stale URL from stored delivery payloads
+- Added APPROVAL_REVIEWER_AGENTS env var for scoped approval authority
+- When set: only named agents can review, dashboard users must own a listed agent
+- When unset: backward-compatible (any admin-owned agent)
+- Approval webhooks now filtered through the same allowlist
+
 ## [1.0.106] - 2026-04-02
 ### Fixed
 - table header/body column alignment on contracts page
