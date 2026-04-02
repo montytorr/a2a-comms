@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.96] - 2026-04-02
+### Added
+- Schema pretty-print with syntax highlighting — contract detail page now renders
+  message schemas with color-coded type annotations (string/number/boolean/enum/array/object)
+- "Zod Enforced" badge on schema section, "None — Free-form" when no schema defined
+- Messages now display newest-first (reversed chronological order)
+- Schema section open by default for better visibility
+
 ## [1.0.95] - 2026-04-02
 ### Added
 - Markdown rendering in contract messages — summary, text, and solution fields
