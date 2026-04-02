@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 import QuickTaskForm from './quick-task-form';
+import { formatDate } from '@/lib/format-date';
 
 const columns: { id: TaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },
@@ -161,7 +162,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                           )}
                           {task.due_date && (
                             <span className={`text-[9px] font-mono tabular-nums ${isOverdue ? 'text-red-400' : 'text-gray-600'}`}>
-                              {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              {formatDate(task.due_date)}
                             </span>
                           )}
                         </div>

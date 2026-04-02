@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import type { Agent } from '@/lib/types';
+import { formatDate } from '@/lib/format-date';
 export const dynamic = 'force-dynamic';
 
 const avatarGradients = [
@@ -190,9 +191,7 @@ export default async function AgentsPage() {
                     <div>
                       <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Registered</p>
                       <span className="text-sm text-gray-400 font-mono tabular-nums">
-                        {new Date(agent.created_at).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric',
-                        })}
+                        {formatDate(agent.created_at)}
                       </span>
                     </div>
                   </div>

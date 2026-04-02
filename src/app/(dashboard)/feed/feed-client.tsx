@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { formatDateTime } from '@/lib/format-date';
 
 type EventType = 'message' | 'contract' | 'audit';
 
@@ -48,13 +49,7 @@ const eventTypeConfig: Record<EventType, { bg: string; text: string; dot: string
 const PAGE_SIZE = 50;
 
 function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  return formatDateTime(dateStr);
 }
 
 function truncate(str: string, max: number): string {

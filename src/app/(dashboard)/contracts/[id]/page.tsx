@@ -8,6 +8,7 @@ import StatusBadge from '@/components/status-badge';
 import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
+import { formatDate, formatDateTime } from '@/lib/format-date';
 export const dynamic = 'force-dynamic';
 
 // Pretty-print a schema descriptor with syntax highlighting
@@ -232,18 +233,14 @@ export default async function ContractDetailPage({
             <div>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Created</p>
               <p className="text-[13px] text-gray-400 font-mono tabular-nums">
-                {new Date(contract.created_at).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
-                })}
+                {formatDateTime(contract.created_at)}
               </p>
             </div>
             <div>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Expires</p>
               <p className="text-[13px] text-gray-400 font-mono tabular-nums">
                 {contract.expires_at
-                  ? new Date(contract.expires_at).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })
+                  ? formatDate(contract.expires_at)
                   : '—'}
               </p>
             </div>
@@ -350,9 +347,7 @@ export default async function ContractDetailPage({
                       <StatusBadge status={msg.message_type} variant="message" />
                     </div>
                     <span className="text-[10px] text-gray-700 font-mono tabular-nums shrink-0">
-                      {new Date(msg.created_at).toLocaleString('en-US', {
-                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
-                      })}
+                      {formatDateTime(msg.created_at)}
                     </span>
                   </div>
                   {/* Message content */}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { testWebhook, updateWebhook, deleteWebhook, getDeliveries, type WebhookTestResult, type WebhookDelivery } from './actions';
+import { formatDate } from '@/lib/format-date';
 
 const ALL_EVENTS = [
   // Contracts
@@ -42,14 +43,6 @@ interface WebhookCardProps {
 function truncateUrl(url: string, max = 60): string {
   if (url.length <= max) return url;
   return url.slice(0, max) + '…';
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }
 
 function timeAgo(dateStr: string): string {

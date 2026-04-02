@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
+import { formatDate, formatDateTime } from '@/lib/format-date';
 import TaskStatusDropdown from './task-status-dropdown';
 import {
   EditableTitle,
@@ -309,9 +310,7 @@ export default async function TaskDetailPage({
                         ) : null}
                       </p>
                       <p className="text-[9px] text-gray-700 font-mono tabular-nums mt-0.5">
-                        {new Date(entry.created_at).toLocaleString('en-US', {
-                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatDateTime(entry.created_at)}
                       </p>
                     </div>
                   </div>
@@ -393,9 +392,7 @@ export default async function TaskDetailPage({
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Created</p>
                 <span className="text-[11px] text-gray-500 font-mono tabular-nums">
-                  {new Date(task.created_at).toLocaleDateString('en-US', {
-                    month: 'long', day: 'numeric', year: 'numeric',
-                  })}
+                  {formatDate(task.created_at)}
                 </span>
               </div>
 
@@ -403,9 +400,7 @@ export default async function TaskDetailPage({
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Last Updated</p>
                 <span className="text-[11px] text-gray-500 font-mono tabular-nums">
-                  {new Date(task.updated_at).toLocaleString('en-US', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                  })}
+                  {formatDateTime(task.updated_at)}
                 </span>
               </div>
             </div>

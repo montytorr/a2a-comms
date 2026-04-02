@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import SprintStatusDropdown from './sprint-status-dropdown';
+import { formatDate } from '@/lib/format-date';
 import { createSprint, updateSprint } from './actions';
 
 interface SprintSelectorProps {
@@ -282,9 +283,9 @@ export default function SprintSelector({ sprints, currentSprintId, projectId, sp
               <div className="text-right shrink-0">
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">Duration</p>
                 <p className="text-[11px] text-gray-500 font-mono tabular-nums">
-                  {activeSprint.start_date ? new Date(activeSprint.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                  {activeSprint.start_date ? formatDate(activeSprint.start_date) : '—'}
                   {' → '}
-                  {activeSprint.end_date ? new Date(activeSprint.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                  {activeSprint.end_date ? formatDate(activeSprint.end_date) : '—'}
                 </p>
               </div>
             )}

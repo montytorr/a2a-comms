@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import type { ProjectStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
+import { formatDate } from '@/lib/format-date';
 import ProjectFilters from './filters';
 export const dynamic = 'force-dynamic';
 
@@ -209,7 +210,7 @@ export default async function ProjectsPage({
                       <span className="text-[11px] text-gray-500 font-medium">{stats.total} tasks</span>
                     </div>
                     <span className="text-[10px] text-gray-700 ml-auto font-mono tabular-nums">
-                      {new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {formatDate(project.created_at)}
                     </span>
                   </div>
                 </div>

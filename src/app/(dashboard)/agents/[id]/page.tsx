@@ -7,6 +7,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import KeyActions from './key-actions';
+import { formatDate, formatDateTime } from '@/lib/format-date';
 
 export const dynamic = 'force-dynamic';
 
@@ -151,17 +152,13 @@ export default async function AgentDetailPage({
             <div>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Registered</p>
               <span className="text-sm text-gray-400 font-mono tabular-nums">
-                {new Date(agentData.created_at).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                })}
+                {formatDate(agentData.created_at)}
               </span>
             </div>
             <div>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Updated</p>
               <span className="text-sm text-gray-400 font-mono tabular-nums">
-                {new Date(agentData.updated_at).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                })}
+                {formatDate(agentData.updated_at)}
               </span>
             </div>
           </div>
@@ -225,16 +222,16 @@ export default async function AgentDetailPage({
                       <span className="text-[10px] text-gray-600">{key.label}</span>
                     )}
                     <span className="text-[10px] text-gray-700 font-mono tabular-nums ml-auto">
-                      Created {new Date(key.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      Created {formatDate(key.created_at)}
                     </span>
                     {key.rotated_at && (
                       <span className="text-[10px] text-amber-500/60 font-mono tabular-nums">
-                        Rotated {new Date(key.rotated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        Rotated {formatDate(key.rotated_at)}
                       </span>
                     )}
                     {key.expires_at && (
                       <span className={`text-[10px] font-mono tabular-nums ${isExpired ? 'text-gray-600' : 'text-amber-400/80'}`}>
-                        {isExpired ? 'Expired' : 'Expires'} {new Date(key.expires_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {isExpired ? 'Expired' : 'Expires'} {formatDateTime(key.expires_at)}
                       </span>
                     )}
                   </div>

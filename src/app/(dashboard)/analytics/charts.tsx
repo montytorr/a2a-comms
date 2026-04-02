@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { formatDate } from '@/lib/format-date';
 
 interface AnalyticsChartsProps {
   contractsByStatus: Record<string, number>;
@@ -70,7 +71,7 @@ function buildConicGradient(data: Record<string, number>, colorMap: Record<strin
 
 function formatShortDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return formatDate(d);
 }
 
 export default function AnalyticsCharts({

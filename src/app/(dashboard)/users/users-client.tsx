@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toggleSuperAdmin, linkAgentToUser, unlinkAgent, createUser } from './actions';
+import { formatDate } from '@/lib/format-date';
 
 interface UserProfile {
   id: string;
@@ -450,11 +451,7 @@ export default function UsersClient({
                 <div className="mt-4 pt-4 border-t border-white/[0.04] flex items-center gap-4">
                   <span className="text-[10px] text-gray-700 font-mono tabular-nums">
                     Joined{' '}
-                    {new Date(profile.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                    {formatDate(profile.created_at)}
                   </span>
                 </div>
               </div>

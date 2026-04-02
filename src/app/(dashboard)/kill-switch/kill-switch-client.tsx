@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { requestKillSwitchActivation, executeKillSwitchActivation, deactivateKillSwitch, getKillSwitchStatus } from './actions';
+import { formatDateTime } from '@/lib/format-date';
 
 interface KillSwitchClientProps {
   isSuperAdmin: boolean;
@@ -146,7 +147,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
         </p>
         {lastUpdated && (
           <p className="text-[10px] text-gray-700 mb-10 font-mono tabular-nums">
-            Last updated: {new Date(lastUpdated).toLocaleString()}
+            Last updated: {formatDateTime(lastUpdated)}
             {updatedBy && <span className="text-gray-600"> · {updatedBy}</span>}
           </p>
         )}

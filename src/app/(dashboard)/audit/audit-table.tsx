@@ -2,18 +2,7 @@
 
 import { useState } from 'react';
 import type { AuditLogEntry } from '@/lib/types';
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+import { formatRelative, formatDateTime } from '@/lib/format-date';
 
 const actionColors: Record<string, string> = {
   'contract.propose': 'text-violet-400 bg-violet-500/[0.06] border-violet-500/10',
@@ -122,8 +111,8 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
 
                   {/* Right side */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] text-gray-600 font-mono tabular-nums" title={new Date(entry.created_at).toLocaleString()}>
-                      {timeAgo(entry.created_at)}
+                    <span className="text-[10px] text-gray-600 font-mono tabular-nums" title={formatDateTime(entry.created_at)}>
+                      {formatRelative(entry.created_at)}
                     </span>
                     {hasDetails ? (
                       <svg

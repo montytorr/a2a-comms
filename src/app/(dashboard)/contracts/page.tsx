@@ -7,6 +7,7 @@ import type { Contract, ContractStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 import ContractRow from './contract-row';
+import { formatDate } from '@/lib/format-date';
 export const dynamic = 'force-dynamic';
 
 const COL = {
@@ -176,11 +177,7 @@ export default async function ContractsPage({
                     </td>
                     <td className={`px-6 py-4 ${COL.created}`}>
                       <span className="text-[11px] text-gray-600 font-mono tabular-nums">
-                        {new Date(contract.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {formatDate(contract.created_at)}
                       </span>
                     </td>
                   </ContractRow>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { formatDate } from '@/lib/format-date';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,15 +92,7 @@ function getSectionColor(type: string): { badge: string; dot: string; bg: string
   }
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00Z');
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+
 
 export default function ChangelogPage() {
   const entries = parseChangelog();
