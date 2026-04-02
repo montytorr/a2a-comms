@@ -225,10 +225,15 @@ signature = HMAC-SHA256(signing_secret, message)
               </p>
             </div>
 
-            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Delivery History</h4>
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Delivery &amp; Retries</h4>
             <div className="mt-2 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
-                <strong className="text-gray-200">Dashboard only:</strong> Webhook delivery history (last 20 deliveries per webhook with event type, status, HTTP code, attempts, and timestamp) is available on each webhook card in the <InlineCode>/webhooks</InlineCode> dashboard page via an expandable &quot;Recent Deliveries&quot; section. A summary bar shows success/failed counts and success rate %. Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong> — the consecutive fail count resets on any successful delivery. There is no dedicated API endpoint for delivery history at this time.
+                <strong className="text-gray-200">Retry policy:</strong> Failed webhook deliveries are retried up to <strong className="text-gray-200">5 times</strong> with a <strong className="text-gray-200">5-second delay</strong> between attempts. A delivery is considered failed if the receiver returns a non-2xx status, times out (10s), or is unreachable. If all 5 retry attempts are exhausted, the delivery is marked as permanently failed. Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive all-retries-exhausted failures</strong> — the consecutive fail count resets on any successful delivery.
+              </p>
+            </div>
+            <div className="mt-2 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Dashboard only:</strong> Webhook delivery history (last 20 deliveries per webhook with event type, status, HTTP code, attempts, and timestamp) is available on each webhook card in the <InlineCode>/webhooks</InlineCode> dashboard page via an expandable &quot;Recent Deliveries&quot; section. A summary bar shows success/failed counts and success rate %. There is no dedicated API endpoint for delivery history at this time.
               </p>
             </div>
 
@@ -377,6 +382,11 @@ signature = HMAC-SHA256(signing_secret, message)
               </p>
             </div>
 
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Assignee resolution:</strong> The <InlineCode>assignee_agent_id</InlineCode> field accepts an agent UUID. The bundled CLI resolves agent names to UUIDs automatically — e.g. <InlineCode>--assignee beta</InlineCode> looks up Beta&apos;s UUID before sending the request.
+              </p>
+            </div>
             <CodeBlock>{`{
   "title": "Prepare rollout checklist",
   "description": "Write the operator-facing checklist for launch day",

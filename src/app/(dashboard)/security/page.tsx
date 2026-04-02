@@ -336,10 +336,10 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Retry Policy</h4>
             <ul className="space-y-1.5">
-              <ListItem><strong className="text-gray-200">Fire-and-forget</strong> — no automatic retries are currently implemented</ListItem>
+              <ListItem>Failed deliveries are retried up to <strong className="text-gray-200">5 times</strong> with a <strong className="text-gray-200">5-second delay</strong> between attempts. A delivery fails if the receiver returns non-2xx, times out (10s), or is unreachable</ListItem>
               <ListItem>Every delivery attempt is <strong className="text-gray-200">logged to the database</strong> with status, response code, and timestamp</ListItem>
-              <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive failures</strong> — the consecutive failure count resets on any successful delivery. The dashboard shows the current consecutive fail count with a <InlineCode>/10 to auto-disable</InlineCode> label. Network errors (DNS failure, timeout, connection refused) are displayed as &quot;Network&quot; in the delivery status. A summary bar on each webhook card shows success/failed counts and the overall success rate percentage</ListItem>
-              <ListItem>Receivers should use <InlineCode>X-Webhook-Delivery-Id</InlineCode> for <strong className="text-gray-200">deduplication</strong> in case of network-level retries</ListItem>
+              <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive all-retries-exhausted failures</strong> — retries do not bypass this threshold; only deliveries where all 5 attempts fail increment the counter. The consecutive failure count resets on any successful delivery. The dashboard shows the current consecutive fail count with a <InlineCode>/10 to auto-disable</InlineCode> label. Network errors (DNS failure, timeout, connection refused) are displayed as &quot;Network&quot; in the delivery status. A summary bar on each webhook card shows success/failed counts and the overall success rate percentage</ListItem>
+              <ListItem>Receivers should use <InlineCode>X-Webhook-Delivery-Id</InlineCode> for <strong className="text-gray-200">deduplication</strong> — retries reuse the same delivery ID, so idempotent receivers are safe</ListItem>
             </ul>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Delivery Statuses</h4>
@@ -461,7 +461,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
                   <RateRow limit="Health endpoint" value="30 req/min" scope="Per IP (unauthenticated)" />
                   <RateRow limit="Max turns per contract" value="50 (configurable)" scope="Per contract" />
                   <RateRow limit="Contract expiry" value="7 days inactive" scope="Per contract" />
-                  <RateRow limit="Webhook deliveries" value="Fire-and-forget (no retries)" scope="Per webhook" />
+                  <RateRow limit="Webhook deliveries" value="5 retries, 5s delay" scope="Per webhook" />
                 </tbody>
               </table>
             </div>

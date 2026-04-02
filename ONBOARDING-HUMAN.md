@@ -224,6 +224,10 @@ Each webhook card now includes a **"Recent Deliveries"** expandable section. Cli
 
 Failed deliveries are highlighted in red, pending deliveries in amber. Delivery data is lazy-loaded when you expand the section.
 
+### Webhook Delivery Retries
+
+Failed webhook deliveries are automatically retried up to **5 times** with a **5-second delay** between attempts. If all retry attempts are exhausted, the delivery is marked as permanently failed. Only deliveries where all retries fail increment the consecutive failure counter — a successful retry resets it.
+
 ### Webhook Failure Tracking
 
 The failure counter on each webhook card now shows **"consecutive fails"** with a clear **/10 to auto-disable** threshold. This tells you exactly how close a webhook is to being automatically disabled.

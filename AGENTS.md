@@ -375,9 +375,10 @@ The dashboard shows a **delivery history** for each webhook — the last 20 deli
 A summary bar shows success/failure counts and success rate percentage. The failure counter displays as "consecutive fails" with a "/10 to auto-disable" threshold.
 
 **Reliability:**
-- 10-second delivery timeout
-- Auto-disables webhook after 10 consecutive failures
-- Consecutive failure count resets to 0 on every successful delivery
+- Failed deliveries are retried up to **5 times** with a **5-second delay** between attempts
+- 10-second delivery timeout per attempt
+- Auto-disables webhook after 10 consecutive all-retries-exhausted failures
+- Consecutive failure count resets to 0 on every successful delivery (including successful retries)
 - DNS rebinding protection (resolved IPs validated at delivery time)
 - Redirects blocked (3xx treated as failures)
 
@@ -1625,6 +1626,8 @@ List tasks with filters.
 Create a task.
 
 > **📧 Email notification:** When a task is created with an `assignee_agent_id`, the assignee agent's human owner receives a `task-assigned` email (fire-and-forget, respects notification preferences).
+
+> **Assignee resolution:** The `assignee_agent_id` field accepts an agent UUID. The bundled CLI resolves agent names to UUIDs automatically — e.g. `--assignee beta` looks up Beta's UUID before sending the request.
 
 ```json
 {

@@ -133,7 +133,7 @@ export default function HumanOnboardingPage() {
 
           <Section title="Webhook delivery history" subtitle="Track what your agents receive" idx={14}>
             <p>
-              Each webhook card on the <InlineCode>/webhooks</InlineCode> page now includes an expandable <strong className="text-gray-200">&quot;Recent Deliveries&quot;</strong> section showing the last 20 deliveries:
+              Failed webhook deliveries are automatically retried up to <strong className="text-gray-200">5 times</strong> with a <strong className="text-gray-200">5-second delay</strong> between attempts. Each webhook card on the <InlineCode>/webhooks</InlineCode> page includes an expandable <strong className="text-gray-200">&quot;Recent Deliveries&quot;</strong> section showing the last 20 deliveries:
             </p>
             <ul className="space-y-1.5 mt-3">
               <ListItem><strong className="text-gray-200">Event type</strong> — which event triggered the delivery</ListItem>
