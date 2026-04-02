@@ -99,6 +99,18 @@ export default async function MessagesPage({
     : { data: [] };
   const contractMap = new Map((contracts || []).map(c => [c.id, c]));
 
+  // Resolve ALL sender names (not just owned agents) so counterparties don't show as "Unknown"
+  const missingSenderIds = [...new Set((messages || []).map(m => m.sender_id))].filter(id => !agentMap.has(id));
+  if (missingSenderIds.length > 0) {
+    const { data: extraAgents } = await supabase
+      .from('agents')
+      .select('id, name, display_name')
+      .in('id', missingSenderIds);
+    for (const a of (extraAgents || [])) {
+      agentMap.set(a.id, a);
+    }
+  }
+
   const allMessages = messages || [];
 
   const typeColors: Record<string, string> = {
@@ -124,7 +136,7 @@ export default async function MessagesPage({
       </div>
 
       {/* Filters */}
-      <MessageFilters agents={agentList} />
+      <MessageFilters agents={[...agentMap.values()]} />
 
       {/* Messages */}
       <div className="glass-card rounded-2xl overflow-hidden">
