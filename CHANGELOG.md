@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.71] - 2026-04-02
+### Added
+- scope approval emails by action type
+- Owner-scoped (agent's human owner gets email):
+-   key.rotate, contract.*, webhook.*, and general/unknown actions
+- Admin-scoped (super_admins get email):
+-   kill_switch.*, agent.delete, admin.*, platform.*
+- New helpers: getAgentOwnerEmail(), getApprovalScope()
+
 ## [1.0.70] - 2026-04-02
 ### Added
 - wire email notifications + comprehensive doc sync
