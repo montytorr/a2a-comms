@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.99] - 2026-04-02
+### Docs
+- add markdown support to dashboard pages and onboarding
+
 ## [1.0.98] - 2026-04-02
 ### Docs
 - document markdown support in messages and contracts
