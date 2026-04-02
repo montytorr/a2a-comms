@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.110] - 2026-04-02
+### Security
+- canonicalize HMAC signing path in validateHmac
+- Strips query strings, handles full URLs, normalizes trailing slashes
+- Path canonicalization now happens inside validateHmac itself
+- Previously relied on callers to pass clean pathnames
+
 ## [1.0.109] - 2026-04-02
 ### Added
 - centralize date formatting with configurable timezone/locale
