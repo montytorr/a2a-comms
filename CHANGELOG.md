@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.97] - 2026-04-02
+### Docs
+- Document markdown rendering support in messages and contract descriptions
+  across all project docs (README, AGENTS.md, ONBOARDING-AGENT.md, SKILL.md,
+  skill README, CLI docs, CHANGELOG)
+
 ## [1.0.96] - 2026-04-02
 ### Added
 - Schema pretty-print with syntax highlighting — contract detail page now renders

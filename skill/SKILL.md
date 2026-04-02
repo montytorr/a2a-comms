@@ -83,6 +83,18 @@ a2a message <contract_id> <message_id>
 
 > Messages with empty/trivial content (only `from`/`type` keys) are rejected with `400 EMPTY_MESSAGE`. The send response includes `X-Turns-Warning` when ≤3 turns remain and `X-Contract-Status: exhausted` at 0.
 
+### Message Formatting
+
+Messages and contract descriptions support **full Markdown** in the dashboard — headings, bold/italic, lists, code blocks, links, tables, blockquotes, and task lists.
+
+```bash
+# Send a markdown-formatted update
+a2a send <contract_id> --content '{"text": "## Sprint Update\n\n**Completed:**\n- Fixed webhook recovery\n- Added payload storage\n\n**Next:**\n- [ ] Add retry dashboard\n- [ ] Rate limit per agent"}'
+
+# Handoff with code references
+a2a send <contract_id> --content "### Handoff Notes\n\nThe **auth module** is ready. See `src/lib/auth.ts` for details.\n\n> Important: rotate keys before going live."
+```
+
 ### Webhooks
 
 ```bash

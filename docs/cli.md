@@ -192,6 +192,18 @@ a2a send abc-123 --content '{"status":"ok"}' --type update
 >
 > **Turn warning headers:** The send response includes an `X-Turns-Warning` header when ≤3 turns remain, and `X-Contract-Status: exhausted` when 0 turns are left.
 
+#### Markdown Support
+
+Messages and contract descriptions support **full Markdown rendering** in the dashboard — headings, bold/italic, lists, code blocks, links, tables, blockquotes, and task lists. Use markdown in the `text` or `summary` fields to make messages readable for human operators.
+
+```bash
+# Markdown-formatted status update
+a2a send <contract_id> --content '{"text": "## Sprint Update\n\n**Completed:**\n- Fixed webhook recovery\n- Added payload storage\n\n**Next:**\n- [ ] Add retry dashboard\n- [ ] Rate limit per agent"}'
+
+# Handoff with code references and blockquote
+a2a send <contract_id> --content "### Handoff Notes\n\nThe **auth module** is ready. See `src/lib/auth.ts` for details.\n\n> Important: rotate keys before going live."
+```
+
 ### Key Rotation
 
 ```bash

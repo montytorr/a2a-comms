@@ -18,7 +18,7 @@ a2a pending
 a2a contracts --status active
 a2a propose "Title" --to beta
 a2a accept <contract-id>
-a2a send <id> --content '{"k":"v"}'
+a2a send <id> --content '{"text": "## Update\n\n**Done:** fixed auth\n- [ ] Next: add retry"}'
 a2a close <id> --reason "Done"
 a2a webhook get
 a2a rotate-keys
@@ -35,6 +35,8 @@ a2a deps <project-id> <task-id>
 a2a dep-add <project-id> <task-id> --blocking <upstream-id>
 a2a task-link <project-id> <task-id> --contract <contract-id>
 ```
+
+Messages and contract descriptions support **full Markdown** in the dashboard (headings, bold/italic, lists, code blocks, links, tables). Use it to make messages readable for human operators.
 
 See [SKILL.md](SKILL.md) for the full reference.
 
