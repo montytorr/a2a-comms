@@ -10,6 +10,85 @@ import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
 export const dynamic = 'force-dynamic';
 
+// Pretty-print a schema descriptor with syntax highlighting
+function SchemaDisplay({ schema, depth = 0 }: { schema: Record<string, unknown>; depth?: number }) {
+  const indent = '  '.repeat(depth);
+  const type = schema.type as string;
+
+  if (type === 'object' && schema.properties) {
+    const props = schema.properties as Record<string, Record<string, unknown>>;
+    const entries = Object.entries(props);
+    return (
+      <pre className="text-[11px] font-mono leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
+        {indent}<span className="text-purple-400">{'{'}</span>{'\n'}
+        {entries.map(([key, val], i) => {
+          const isOptional = val.optional === true;
+          return (
+            <span key={key}>
+              {indent}  <span className="text-cyan-400">{key}</span>
+              {isOptional && <span className="text-gray-600">?</span>}
+              <span className="text-gray-600">: </span>
+              <SchemaTypeLabel schema={val} />
+              {i < entries.length - 1 && <span className="text-gray-600">,</span>}
+              {'\n'}
+            </span>
+          );
+        })}
+        {indent}<span className="text-purple-400">{'}'}</span>
+      </pre>
+    );
+  }
+
+  // Simple type display
+  return (
+    <pre className="text-[11px] font-mono leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
+      {JSON.stringify(schema, null, 2).split('\n').map((line, i) => (
+        <span key={i} className="text-gray-400">{line}{'\n'}</span>
+      ))}
+    </pre>
+  );
+}
+
+function SchemaTypeLabel({ schema }: { schema: Record<string, unknown> }) {
+  const type = schema.type as string;
+  switch (type) {
+    case 'string':
+      return <span className="text-emerald-400">string</span>;
+    case 'number':
+      return <span className="text-amber-400">number</span>;
+    case 'boolean':
+      return <span className="text-blue-400">boolean</span>;
+    case 'enum':
+      return (
+        <span>
+          <span className="text-orange-400">enum</span>
+          <span className="text-gray-600">(</span>
+          {(schema.values as string[]).map((v, i) => (
+            <span key={v}>
+              <span className="text-yellow-300">&quot;{v}&quot;</span>
+              {i < (schema.values as string[]).length - 1 && <span className="text-gray-600"> | </span>}
+            </span>
+          ))}
+          <span className="text-gray-600">)</span>
+        </span>
+      );
+    case 'array':
+      return (
+        <span>
+          <SchemaTypeLabel schema={schema.items as Record<string, unknown>} />
+          <span className="text-gray-600">[]</span>
+        </span>
+      );
+    case 'object':
+      if (schema.properties) {
+        return <span className="text-purple-400">{'{ ... }'}</span>;
+      }
+      return <span className="text-purple-400">object</span>;
+    default:
+      return <span className="text-gray-400">{type}</span>;
+  }
+}
+
 const avatarColors = [
   'from-cyan-500 to-blue-600',
   'from-violet-500 to-purple-600',
@@ -101,7 +180,7 @@ export default async function ContractDetailPage({
     .eq('contract_id', id)
     .order('created_at', { ascending: true });
 
-  const messageList = (messages || []) as ContractMessage[];
+  const messageList = ((messages || []) as ContractMessage[]).slice().reverse();
   const participants = (contract.contract_participants || []) as ContractParticipant[];
 
   return (
@@ -205,14 +284,31 @@ export default async function ContractDetailPage({
           {/* Message Schema */}
           {contract.message_schema && Object.keys(contract.message_schema).length > 0 && (
             <div className="mt-6 pt-6 border-t border-white/[0.04]">
-              <details>
-                <summary className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] cursor-pointer hover:text-gray-400 transition-colors duration-200 select-none">
+              <details open>
+                <summary className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] cursor-pointer hover:text-gray-400 transition-colors duration-200 select-none flex items-center gap-2">
                   Message Schema
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Zod Enforced
+                  </span>
                 </summary>
-                <pre className="mt-3 text-[11px] text-gray-400 bg-[#06060b]/80 border border-white/[0.03] rounded-xl p-4 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed selection:bg-cyan-500/20">
-                  {JSON.stringify(contract.message_schema, null, 2)}
-                </pre>
+                <div className="mt-3 bg-[#06060b]/80 border border-white/[0.03] rounded-xl p-4 overflow-x-auto">
+                  <SchemaDisplay schema={contract.message_schema} />
+                </div>
               </details>
+            </div>
+          )}
+          {/* No schema = no enforcement */}
+          {(!contract.message_schema || Object.keys(contract.message_schema).length === 0) && (
+            <div className="mt-6 pt-6 border-t border-white/[0.04]">
+              <div className="flex items-center gap-2">
+                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Message Schema</p>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest bg-gray-500/10 text-gray-500 border border-gray-500/20">
+                  None — Free-form
+                </span>
+              </div>
             </div>
           )}
         </div>
