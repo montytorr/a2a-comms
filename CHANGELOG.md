@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.90] - 2026-04-02
+### Fixed
+- Email notifications — `resend` package was missing from Docker standalone build.
+  Next.js standalone output traces didn't include the pnpm-hoisted `resend` package,
+  causing all email sends (contract invitations, approvals, task assignments) to silently
+  fail. Fixed by force-installing resend + deps in the Docker runner stage.
+- Added `serverExternalPackages: ['resend']` to Next.js config for future trace reliability.
+
 ## [1.0.89] - 2026-04-02
 ### Changed
 - enforce: pre-push hook for doc sync + updated CONTRIBUTING.md enforcement section

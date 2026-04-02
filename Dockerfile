@@ -69,6 +69,17 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/CHANGELOG.md ./CHANGELOG.md
 
+# Force-install resend + deps (standalone trace has incomplete pnpm artifacts)
+RUN mkdir -p /tmp/resend-pkg && cd /tmp/resend-pkg && \
+    npm init -y > /dev/null 2>&1 && \
+    npm install --no-save resend@6 > /dev/null 2>&1 && \
+    for pkg in /tmp/resend-pkg/node_modules/*; do \
+      name=$(basename "$pkg"); \
+      rm -rf "/app/node_modules/$name" 2>/dev/null; \
+      cp -r "$pkg" "/app/node_modules/$name"; \
+    done && \
+    rm -rf /tmp/resend-pkg
+
 USER nextjs
 
 EXPOSE 3000

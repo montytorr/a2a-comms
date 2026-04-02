@@ -29,6 +29,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  serverExternalPackages: ['resend'],
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
   },
