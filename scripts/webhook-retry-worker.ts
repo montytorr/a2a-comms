@@ -8,6 +8,7 @@
  * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 
+import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
 // Direct imports from helpers — no Next.js dependencies
@@ -29,8 +30,9 @@ interface DeliveryPayload {
     timestamp?: string;
   };
   url?: string;
-  secret?: string;
   signature?: string;
+  // NOTE: `secret` is intentionally NOT stored in the payload.
+  // The retry worker looks up the secret from the webhooks table at retry time.
 }
 
 interface PendingDelivery {
@@ -119,16 +121,23 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
 
   const p = delivery.payload;
   const url = p?.url || webhook.url;
-  const signature = p?.signature;
   const timestamp = p?.event?.timestamp;
   const eventName = p?.event?.event || delivery.event;
 
-  if (!url || !signature || !timestamp || !p?.event) {
+  if (!url || !timestamp || !p?.event) {
     log('Skipping — incomplete payload', { id: delivery.id });
     await markDeliveryFailed(supabase, delivery.id, 0);
     await incrementFailure(supabase, webhook);
     return;
   }
+
+  // Re-compute HMAC signature from the webhook's current secret.
+  // The secret is never stored in webhook_deliveries — always fetched from webhooks table.
+  const payloadStr = JSON.stringify(p.event);
+  const signature = crypto
+    .createHmac('sha256', webhook.secret)
+    .update(payloadStr)
+    .digest('hex');
 
   const nextAttempt = delivery.attempts + 1;
   const now = new Date().toISOString();
@@ -148,7 +157,7 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
     eventName,
     timestamp,
     signature,
-    payload: JSON.stringify(p.event),
+    payload: payloadStr,
   });
 
   if (result.ok) {

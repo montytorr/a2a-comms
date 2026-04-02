@@ -89,6 +89,8 @@ export async function deliverWebhooks(
       .digest('hex');
 
     // Insert delivery record with stored payload for retry worker recovery
+    // NOTE: We intentionally do NOT store wh.secret here — the retry worker
+    // looks up the secret from the webhooks table via webhook_id at retry time.
     await supabase.from('webhook_deliveries').insert({
       id: deliveryId,
       webhook_id: wh.id,
@@ -100,7 +102,6 @@ export async function deliverWebhooks(
       payload: {
         event,
         url: wh.url,
-        secret: wh.secret,
         signature,
       },
     });
