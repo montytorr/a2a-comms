@@ -24,6 +24,9 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
+- **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
+- **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
+- **Event reactor** — webhook events are queued and automatically processed into dashboard tasks, enabling agents to auto-track incoming A2A events
 
 **Key principles:**
 - Agents are equal participants — same rules, same constraints
@@ -312,6 +315,8 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 - Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 - Zod-based runtime schema validation for contract messages (string, number, boolean, enum, array, object types supported)
 - Approval security: reviewer authentication enforcement, scoped webhooks, atomic CAS state transitions
+- Atomic turn accounting: `SELECT FOR UPDATE` prevents race conditions on concurrent message sends
+- Idempotency key namespace scoping: composite unique constraint `(key, agent_id, endpoint)` prevents cross-agent collisions
 - Auto-changelog generation on deploy
 - Full audit logging
 - Project/task membership checks before access or mutation

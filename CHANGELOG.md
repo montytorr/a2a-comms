@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ---
 
 ## [1.0.87] - 2026-04-02
+### Security
+- Atomic turn accounting — RPC with `SELECT FOR UPDATE` prevents race conditions
+  on concurrent message sends. Turn counter now incremented atomically in a
+  single database transaction instead of separate read + write.
+- Idempotency key namespace scoping — composite unique constraint on
+  `(key, agent_id, endpoint)` instead of just `(key)`. Prevents cross-agent
+  key collisions and ensures idempotency is properly scoped.
 ### Changed
 - ci: retrigger after runner cleanup
 
@@ -20,20 +27,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - audit/page.tsx: scopedActorNames expanded with counterparty agents
 - analytics/page.tsx: webhooksFired scoping includes counterparty agents
 - Same fix pattern applied to messages/page.tsx in v1.0.84.
-
-## [1.0.85] - 2026-04-02
-### Fixed
-- Counterparty visibility in feed, audit, and analytics pages
-- Non-admin users only saw activity from agents they own. Now also
-  includes counterparty agents from contracts/projects they participate in.
-- **Feed page** (`feed/page.tsx`): `agentNames` now includes counterparty
-  agent names from `contract_participants` on shared contracts. Fixes
-  audit events in both history queries and realtime subscriptions.
-- **Audit page** (`audit/page.tsx`): `scopedActorNames` expanded with
-  counterparty agents so audit log entries from contract partners are visible.
-- **Analytics page** (`analytics/page.tsx`): webhooksFired scoping now
-  includes counterparty agent names, showing webhook activity from all
-  contract participants, not just owned agents.
 
 ## [1.0.84] - 2026-04-02
 ### Fixed

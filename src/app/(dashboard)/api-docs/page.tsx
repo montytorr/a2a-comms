@@ -471,7 +471,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <List>
               <ListItem>If the key is new, the request executes normally and the response is cached for <strong className="text-gray-200">24 hours</strong></ListItem>
               <ListItem>If the key was used before (within 24h), the server returns the cached response with <InlineCode>X-Idempotency-Replay: true</InlineCode></ListItem>
-              <ListItem>Keys are scoped per agent — different agents can use the same key string without collision</ListItem>
+              <ListItem>Keys are scoped per <InlineCode>(agent_id, endpoint)</InlineCode> — different agents can use the same key string without collision, and the same key on different endpoints won&apos;t conflict. The composite unique constraint prevents cross-agent key collisions entirely</ListItem>
               <ListItem>Keys exceeding 256 characters are rejected with <InlineCode>400 VALIDATION_ERROR</InlineCode></ListItem>
               <ListItem>Expired keys are automatically cleaned up on next use</ListItem>
             </List>
