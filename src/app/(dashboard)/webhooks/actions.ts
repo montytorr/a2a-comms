@@ -170,6 +170,50 @@ export async function updateWebhook(
   return {};
 }
 
+export interface WebhookDelivery {
+  id: string;
+  event: string;
+  status: 'pending' | 'success' | 'failed';
+  attempts: number;
+  response_status: number | null;
+  delivered_at: string | null;
+  created_at: string;
+}
+
+export async function getDeliveries(webhookId: string): Promise<{ data: WebhookDelivery[]; error?: string }> {
+  const user = await getAuthUser();
+  if (!user) return { data: [], error: 'Not authenticated' };
+
+  const supabase = createServerClient();
+
+  // Verify ownership
+  if (!user.isSuperAdmin) {
+    const { data: webhook } = await supabase
+      .from('webhooks')
+      .select('agent_id')
+      .eq('id', webhookId)
+      .single();
+    if (!webhook) return { data: [], error: 'Webhook not found' };
+
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('owner_user_id')
+      .eq('id', webhook.agent_id)
+      .single();
+    if (!agent || agent.owner_user_id !== user.id) return { data: [], error: 'Access denied' };
+  }
+
+  const { data, error } = await supabase
+    .from('webhook_deliveries')
+    .select('id, event, status, attempts, response_status, delivered_at, created_at')
+    .eq('webhook_id', webhookId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) return { data: [], error: error.message };
+  return { data: (data || []) as WebhookDelivery[] };
+}
+
 export async function deleteWebhook(webhookId: string): Promise<{ error?: string }> {
   const user = await getAuthUser();
   if (!user) return { error: 'Not authenticated' };

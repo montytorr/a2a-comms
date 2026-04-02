@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { testWebhook, updateWebhook, deleteWebhook, type WebhookTestResult } from './actions';
+import { testWebhook, updateWebhook, deleteWebhook, getDeliveries, type WebhookTestResult, type WebhookDelivery } from './actions';
 
 const ALL_EVENTS = [
   // Contracts
@@ -75,6 +75,9 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showDeliveries, setShowDeliveries] = useState(false);
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
+  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
 
   async function handleTest() {
     setTesting(true);
@@ -362,6 +365,86 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 {wh.failure_count}
               </span>
             </div>
+          )}
+        </div>
+
+        {/* Recent Deliveries */}
+        <div className="mt-4 pt-3 border-t border-white/[0.04]">
+          <button
+            onClick={async () => {
+              if (!showDeliveries && deliveries.length === 0) {
+                setDeliveriesLoading(true);
+                const result = await getDeliveries(wh.id);
+                setDeliveries(result.data);
+                setDeliveriesLoading(false);
+              }
+              setShowDeliveries(!showDeliveries);
+            }}
+            className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-gray-600 hover:text-gray-400 transition-colors duration-200 uppercase tracking-wider"
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`transition-transform duration-200 ${showDeliveries ? 'rotate-90' : ''}`}
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            {deliveriesLoading ? 'Loading…' : `Recent Deliveries${deliveries.length > 0 ? ` (${deliveries.length})` : ''}`}
+          </button>
+
+          {showDeliveries && deliveries.length > 0 && (
+            <div className="mt-3 space-y-1 animate-fade-in" style={{ animationDuration: '0.15s' }}>
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_80px_60px_50px_100px] gap-2 px-3 py-1.5">
+                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Event</span>
+                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Status</span>
+                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">HTTP</span>
+                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Tries</span>
+                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider text-right">When</span>
+              </div>
+              {deliveries.map((d) => (
+                <div
+                  key={d.id}
+                  className={`grid grid-cols-[1fr_80px_60px_50px_100px] gap-2 px-3 py-2 rounded-lg ${
+                    d.status === 'failed'
+                      ? 'bg-red-500/[0.04] border border-red-500/[0.08]'
+                      : d.status === 'success'
+                        ? 'bg-white/[0.01] border border-white/[0.03]'
+                        : 'bg-amber-500/[0.04] border border-amber-500/[0.08]'
+                  }`}
+                >
+                  <span className="text-[11px] font-mono text-gray-300 truncate">{d.event}</span>
+                  <span className={`text-[11px] font-semibold ${
+                    d.status === 'success' ? 'text-emerald-400' : d.status === 'failed' ? 'text-red-400' : 'text-amber-400'
+                  }`}>
+                    {d.status === 'success' ? '✓ OK' : d.status === 'failed' ? '✗ Failed' : '⏳ Pending'}
+                  </span>
+                  <span className={`text-[11px] font-mono tabular-nums ${
+                    d.response_status && d.response_status >= 200 && d.response_status < 300
+                      ? 'text-emerald-400'
+                      : d.response_status
+                        ? 'text-red-400'
+                        : 'text-gray-600'
+                  }`}>
+                    {d.response_status || '—'}
+                  </span>
+                  <span className="text-[11px] font-mono text-gray-500 tabular-nums">{d.attempts}</span>
+                  <span className="text-[10px] font-mono text-gray-600 tabular-nums text-right">
+                    {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showDeliveries && !deliveriesLoading && deliveries.length === 0 && (
+            <p className="mt-2 text-[11px] text-gray-600">No deliveries recorded yet</p>
           )}
         </div>
       </div>
