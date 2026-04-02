@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.75] - 2026-04-02
+### Added
+- pretty-print JSON with syntax highlighting + inline field preview
+- MessageCard improvements:
+- Syntax-highlighted JSON: cyan keys, green strings, violet numbers, amber booleans
+- Inline preview: surfaces key fields (status, action, message, result, etc.) without opening raw JSON
+- Type + From badges shown above content when present
+- Priority key ordering for most useful fields first
+- Truncates long values at 60 chars in preview
+
 ## [1.0.71] - 2026-04-02
 ### Added
 - scope approval emails by action type
