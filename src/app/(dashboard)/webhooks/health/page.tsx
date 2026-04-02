@@ -1,0 +1,466 @@
+import { unstable_noStore as noStore } from 'next/cache';
+import Link from 'next/link';
+import { createServerClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/auth-context';
+import { redirect } from 'next/navigation';
+import AutoRefresh from '@/components/auto-refresh';
+
+export const dynamic = 'force-dynamic';
+
+type WebhookDelivery = {
+  id: string;
+  webhook_id: string;
+  event: string;
+  status: 'pending' | 'success' | 'failed';
+  attempts: number;
+  response_status: number | null;
+  delivered_at: string | null;
+  created_at: string;
+  max_retries: number;
+  last_retry_at: string | null;
+  webhooks: {
+    id: string;
+    url: string;
+    agent_id: string;
+    is_active: boolean;
+    failure_count: number;
+    last_delivery_at: string | null;
+  };
+};
+
+type WebhookSummary = {
+  webhookId: string;
+  url: string;
+  agentId: string;
+  isActive: boolean;
+  failureCount: number;
+  lastDeliveryAt: string | null;
+  successCount24h: number;
+  failedCount24h: number;
+  pendingCount24h: number;
+  totalCount24h: number;
+};
+
+function getStatusBadge(status: string, attempts: number) {
+  const isRetrying = status === 'pending' && attempts > 0;
+  if (isRetrying) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+        Retrying
+      </span>
+    );
+  }
+  switch (status) {
+    case 'success':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          Success
+        </span>
+      );
+    case 'failed':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          Failed
+        </span>
+      );
+    case 'pending':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          Pending
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-500/10 text-gray-400 border border-gray-500/20">
+          {status}
+        </span>
+      );
+  }
+}
+
+function truncateUrl(url: string, maxLen = 40) {
+  if (url.length <= maxLen) return url;
+  try {
+    const u = new URL(url);
+    const host = u.hostname;
+    const path = u.pathname;
+    const truncated = host + (path.length > 20 ? path.slice(0, 17) + '...' : path);
+    return truncated.length > maxLen ? truncated.slice(0, maxLen - 3) + '...' : truncated;
+  } catch {
+    return url.slice(0, maxLen - 3) + '...';
+  }
+}
+
+function timeAgo(dateStr: string | null) {
+  if (!dateStr) return '—';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function formatTimestamp(dateStr: string | null) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+}
+
+export default async function WebhookHealthPage() {
+  const user = await getAuthUser();
+  if (!user) redirect('/login');
+  if (!user.isSuperAdmin) redirect('/');
+
+  const supabase = createServerClient();
+  noStore();
+
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  // Fetch recent deliveries (last 50)
+  const { data: recentDeliveries } = await supabase
+    .from('webhook_deliveries')
+    .select(`
+      id,
+      webhook_id,
+      event,
+      status,
+      attempts,
+      response_status,
+      delivered_at,
+      created_at,
+      max_retries,
+      last_retry_at,
+      webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  const deliveries = (recentDeliveries || []) as unknown as WebhookDelivery[];
+
+  // Fetch deliveries in last 24h for summary stats
+  const { data: last24hDeliveries } = await supabase
+    .from('webhook_deliveries')
+    .select(`
+      id,
+      webhook_id,
+      status,
+      attempts,
+      webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at)
+    `)
+    .gte('created_at', twentyFourHoursAgo);
+
+  const stats24h = (last24hDeliveries || []) as unknown as Array<{
+    id: string;
+    webhook_id: string;
+    status: string;
+    attempts: number;
+    webhooks: {
+      id: string;
+      url: string;
+      agent_id: string;
+      is_active: boolean;
+      failure_count: number;
+      last_delivery_at: string | null;
+    };
+  }>;
+
+  // Build per-webhook summaries
+  const summaryMap = new Map<string, WebhookSummary>();
+  for (const d of stats24h) {
+    const wid = d.webhook_id;
+    if (!summaryMap.has(wid)) {
+      summaryMap.set(wid, {
+        webhookId: wid,
+        url: d.webhooks.url,
+        agentId: d.webhooks.agent_id,
+        isActive: d.webhooks.is_active,
+        failureCount: d.webhooks.failure_count,
+        lastDeliveryAt: d.webhooks.last_delivery_at,
+        successCount24h: 0,
+        failedCount24h: 0,
+        pendingCount24h: 0,
+        totalCount24h: 0,
+      });
+    }
+    const s = summaryMap.get(wid)!;
+    s.totalCount24h++;
+    if (d.status === 'success') s.successCount24h++;
+    else if (d.status === 'failed') s.failedCount24h++;
+    else s.pendingCount24h++;
+  }
+
+  const summaries = Array.from(summaryMap.values()).sort((a, b) => b.totalCount24h - a.totalCount24h);
+
+  // Overall stats
+  const totalDeliveries24h = stats24h.length;
+  const totalSuccess = stats24h.filter(d => d.status === 'success').length;
+  const totalFailed = stats24h.filter(d => d.status === 'failed').length;
+  const totalPending = stats24h.filter(d => d.status === 'pending').length;
+  const successRate = totalDeliveries24h > 0 ? Math.round((totalSuccess / totalDeliveries24h) * 100) : 0;
+
+  return (
+    <AutoRefresh intervalMs={30000}>
+      <div className="p-4 sm:p-6 lg:p-10">
+        {/* Header */}
+        <div className="flex items-end justify-between mb-8 animate-fade-in">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Link
+                href="/webhooks"
+                className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] hover:text-cyan-400 transition-colors"
+              >
+                Webhooks
+              </Link>
+              <span className="text-gray-700">/</span>
+              <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em]">
+                Delivery Health
+              </p>
+            </div>
+            <h1 className="text-[32px] font-bold text-white tracking-tight">Webhook Health</h1>
+            <p className="text-sm text-gray-600 mt-1">Delivery status monitoring &amp; diagnostics</p>
+          </div>
+          <Link
+            href="/webhooks"
+            className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-gray-400 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:text-white transition-all duration-200 flex items-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+            </svg>
+            Webhooks
+          </Link>
+        </div>
+
+        {/* Overall Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+          <div className="rounded-2xl glass-card px-5 py-4">
+            <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1">24h Total</p>
+            <p className="text-2xl font-bold text-white tabular-nums">{totalDeliveries24h}</p>
+          </div>
+          <div className="rounded-2xl glass-card px-5 py-4">
+            <p className="text-[10px] font-semibold text-emerald-500/60 uppercase tracking-[0.2em] mb-1">Success</p>
+            <p className="text-2xl font-bold text-emerald-400 tabular-nums">{totalSuccess}</p>
+          </div>
+          <div className="rounded-2xl glass-card px-5 py-4">
+            <p className="text-[10px] font-semibold text-red-500/60 uppercase tracking-[0.2em] mb-1">Failed</p>
+            <p className="text-2xl font-bold text-red-400 tabular-nums">{totalFailed}</p>
+          </div>
+          <div className="rounded-2xl glass-card px-5 py-4">
+            <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.2em] mb-1">Success Rate</p>
+            <p className="text-2xl font-bold tabular-nums">
+              <span className={successRate >= 90 ? 'text-emerald-400' : successRate >= 70 ? 'text-amber-400' : 'text-red-400'}>
+                {successRate}%
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Per-Webhook Summary Cards */}
+        {summaries.length > 0 && (
+          <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <h2 className="text-[13px] font-semibold text-white mb-4 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-500/60">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              Per-Webhook Summary
+              <span className="text-[10px] text-gray-600 font-normal ml-1">(last 24h)</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {summaries.map((s, idx) => {
+                const rate = s.totalCount24h > 0 ? Math.round((s.successCount24h / s.totalCount24h) * 100) : 0;
+                return (
+                  <div
+                    key={s.webhookId}
+                    className="rounded-2xl glass-card px-5 py-4 animate-fade-in"
+                    style={{ animationDelay: `${0.1 + idx * 0.04}s` }}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`w-2 h-2 rounded-full ${s.isActive ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                          <span className="text-[11px] font-mono text-gray-400 truncate" title={s.url}>
+                            {truncateUrl(s.url, 50)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-gray-600">
+                          <span className="font-mono">{s.agentId.slice(0, 8)}...</span>
+                          {s.failureCount > 0 && (
+                            <span className="text-red-400/70">
+                              {s.failureCount} consecutive failure{s.failureCount !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right ml-4 shrink-0">
+                        <p className={`text-lg font-bold tabular-nums ${rate >= 90 ? 'text-emerald-400' : rate >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                          {rate}%
+                        </p>
+                        <p className="text-[9px] text-gray-600 uppercase tracking-wider">success</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="text-gray-500">{s.successCount24h}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                        <span className="text-gray-500">{s.failedCount24h}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                        <span className="text-gray-500">{s.pendingCount24h}</span>
+                      </div>
+                      <span className="ml-auto text-[10px] text-gray-700 font-mono">
+                        {s.lastDeliveryAt ? timeAgo(s.lastDeliveryAt) : 'never'}
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="mt-3 h-1 rounded-full bg-white/[0.04] overflow-hidden flex">
+                      {s.successCount24h > 0 && (
+                        <div
+                          className="h-full bg-emerald-500/60 rounded-l-full"
+                          style={{ width: `${(s.successCount24h / s.totalCount24h) * 100}%` }}
+                        />
+                      )}
+                      {s.pendingCount24h > 0 && (
+                        <div
+                          className="h-full bg-amber-500/60"
+                          style={{ width: `${(s.pendingCount24h / s.totalCount24h) * 100}%` }}
+                        />
+                      )}
+                      {s.failedCount24h > 0 && (
+                        <div
+                          className="h-full bg-red-500/60 rounded-r-full"
+                          style={{ width: `${(s.failedCount24h / s.totalCount24h) * 100}%` }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Deliveries Table */}
+        <div className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
+          <h2 className="text-[13px] font-semibold text-white mb-4 flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-500/60">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Recent Deliveries
+            <span className="text-[10px] text-gray-600 font-normal ml-1">(last 50)</span>
+          </h2>
+
+          {deliveries.length === 0 ? (
+            <div className="rounded-2xl glass-card px-6 py-16 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600 font-medium">No deliveries recorded</p>
+              <p className="text-[11px] text-gray-700 mt-1">Webhook deliveries will appear here once events are dispatched.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl glass-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Event</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Status</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">HTTP</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Attempts</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Webhook</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Created</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Delivered</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deliveries.map((d, idx) => (
+                      <tr
+                        key={d.id}
+                        className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors duration-150 animate-fade-in"
+                        style={{ animationDelay: `${0.15 + idx * 0.02}s` }}
+                      >
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-mono text-cyan-400/80 bg-cyan-500/[0.06] px-1.5 py-0.5 rounded">
+                            {d.event}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {getStatusBadge(d.status, d.attempts)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {d.response_status ? (
+                            <span className={`text-[11px] font-mono tabular-nums ${
+                              d.response_status >= 200 && d.response_status < 300
+                                ? 'text-emerald-400'
+                                : d.response_status >= 400
+                                  ? 'text-red-400'
+                                  : 'text-amber-400'
+                            }`}>
+                              {d.response_status}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-gray-700">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[11px] font-mono tabular-nums ${d.attempts > 1 ? 'text-amber-400' : 'text-gray-500'}`}>
+                            {d.attempts}/{d.max_retries}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-mono text-gray-500" title={d.webhooks.url}>
+                            {truncateUrl(d.webhooks.url)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] text-gray-500 tabular-nums" title={d.created_at}>
+                            {formatTimestamp(d.created_at)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] text-gray-500 tabular-nums" title={d.delivered_at || undefined}>
+                            {d.delivered_at ? formatTimestamp(d.delivered_at) : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Pending count note */}
+        {totalPending > 0 && (
+          <div className="mt-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10 px-4 py-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <p className="text-[11px] text-amber-400/80">
+              <span className="font-semibold">{totalPending}</span> deliveries pending in the last 24h — these may still be retrying.
+            </p>
+          </div>
+        )}
+      </div>
+    </AutoRefresh>
+  );
+}

@@ -184,10 +184,12 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 ```
 
 - `METHOD` — uppercase HTTP method (`GET`, `POST`, `PATCH`, `DELETE`)
-- `path` — request path starting with `/api/v1/...`
+- `path` — **pathname only**, starting with `/api/v1/...` — strip query strings, fragments, and trailing slashes before signing
 - `timestamp` — same value as `X-Timestamp`
 - `nonce` — unique request ID (recommended)
 - `body` — canonicalized raw JSON body, or empty string if there is no body
+
+**Path canonicalization (enforced server-side):** `/api/v1/contracts/?status=active` → `/api/v1/contracts` for signing.
 
 ## API Surface Summary
 
@@ -307,6 +309,8 @@ See [CLI Documentation](docs/cli.md) for the full command reference.
 ## Security Model
 
 - HMAC-SHA256 on every authenticated request
+- **Path canonicalization** enforced in `validateHmac()` — pathname only, no query string, no trailing slash
+- **Agent resolution requirement** — agents must query `GET /api/v1/agents` to resolve targets before proposing contracts or assigning tasks; static/cached agent lists must not be used (wrong-agent delivery is a security incident)
 - Nonce replay protection (Supabase-backed, multi-instance safe)
 - JSON canonicalization (RFC 8785) before signature verification
 - Row Level Security in Supabase

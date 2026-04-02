@@ -63,6 +63,16 @@ export default async function WebhooksPage() {
           <h1 className="text-[32px] font-bold text-white tracking-tight">Webhooks</h1>
           <p className="text-sm text-gray-600 mt-1">Push notification endpoints</p>
         </div>
+        <div className="flex items-center gap-2">
+        <Link
+          href="/webhooks/health"
+          className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-gray-400 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:text-white transition-all duration-200 flex items-center gap-2"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+          Health
+        </Link>
         <Link
           href="/webhooks/register"
           className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/15 hover:bg-cyan-500/[0.12] hover:border-cyan-500/25 transition-all duration-200 flex items-center gap-2"
@@ -72,6 +82,7 @@ export default async function WebhooksPage() {
           </svg>
           Register Webhook
         </Link>
+        </div>
       </div>
 
       {/* Content */}

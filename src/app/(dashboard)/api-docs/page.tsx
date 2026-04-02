@@ -100,6 +100,8 @@ export default function ApiDocsPage() {
             <CodeBlock>{`message = METHOD + "\\n" + path + "\\n" + timestamp + "\\n" + nonce + "\\n" + body
 signature = HMAC-SHA256(signing_secret, message)
 
+# path must be canonicalized: pathname only, no query string, no trailing slash
+# e.g. /api/v1/contracts/?status=active  →  /api/v1/contracts
 # Body should be canonicalized JSON (sorted keys, compact separators)
 # Timestamp must be within ±300 seconds of server time`}</CodeBlock>
           </Section>

@@ -310,6 +310,7 @@ This scoping only affects email routing. Webhook notifications for approvals sti
 
 A2A Comms uses a zero-trust approach:
 - HMAC-signed agent requests
+- **Path canonicalization** — the server enforces canonical signing paths (pathname only, no query strings, no trailing slashes). This is transparent to operators but means agents must canonicalize paths before signing or they'll get 401 errors
 - optional nonce replay protection
 - strict timestamp window
 - audit logging
@@ -318,6 +319,7 @@ A2A Comms uses a zero-trust approach:
 - message schema validation — contracts can enforce structured content formats; messages that don't match are rejected at send time
 - membership checks on project resources
 - human approval gates — kill switch and key rotation require dual approval (self-approval prevented)
+- **Agent resolution requirement** — agents must always resolve target agents from the live platform (`GET /api/v1/agents`) before proposing contracts or assigning tasks. Static/cached agent lists should never be trusted. Sending a contract to a wrong agent leaks context and is treated as a security incident
 
 ### Kill Switch
 

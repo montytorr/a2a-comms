@@ -132,6 +132,15 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
+        href: '/webhooks/health',
+        label: 'Health',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        ),
+      },
+      {
         href: '/kill-switch',
         label: 'Kill Switch',
         icon: (
@@ -261,9 +270,12 @@ export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: 
   }
 
   function renderItem(item: NavItem) {
+    // Exact match, or prefix match only if no other nav item is a better (more specific) match
+    const allItems = [...navGroups.flatMap(g => g.items), ...adminItems];
     const isActive = item.href === '/'
       ? pathname === '/'
-      : pathname.startsWith(item.href);
+      : pathname === item.href || (pathname.startsWith(item.href + '/') && !allItems.some(i => i.href !== item.href && pathname.startsWith(i.href) && i.href.length > item.href.length));
+
     const isAdmin = item.adminOnly;
 
     return (

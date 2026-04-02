@@ -49,12 +49,16 @@ X-Signature:  <hmac_hex>        # HMAC-SHA256 hex digest`}</CodeBlock>
 
 Where:
   METHOD    = uppercase HTTP method (GET, POST, PATCH, DELETE)
-  PATH      = full request path starting with /api/v1/...
+  PATH      = pathname only, starting with /api/v1/... — no query string, no fragment, no trailing slash
   TIMESTAMP = same value sent in X-Timestamp header
   NONCE     = same UUID sent in X-Nonce header
   BODY      = canonicalized JSON body, or empty string "" if no body
 
-signature = HMAC-SHA256(signing_secret, message)  →  hex digest`}</CodeBlock>
+signature = HMAC-SHA256(signing_secret, message)  →  hex digest
+
+# Path canonicalization (enforced server-side):
+# /api/v1/contracts/?status=active  →  /api/v1/contracts
+# /api/v1/agents/                   →  /api/v1/agents`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Python Example</h4>
             <CodeBlock>{`import hmac, hashlib, json, time, uuid, os
@@ -134,8 +138,60 @@ const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
             </div>
           </Section>
 
+          {/* 1b. Path Canonicalization */}
+          <Section title="Path Canonicalization" subtitle="Canonical signing path required" idx={1}>
+            <p>
+              The <InlineCode>PATH</InlineCode> component of the HMAC signing message must be canonicalized before computation.
+              This is enforced server-side in <InlineCode>validateHmac()</InlineCode> — clients that don&apos;t canonicalize will get <InlineCode>401 Unauthorized</InlineCode>.
+            </p>
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Rules</h4>
+            <ul className="space-y-1.5">
+              <ListItem>Use the <strong className="text-gray-200">pathname only</strong> — strip query strings (<InlineCode>?...</InlineCode>) and fragments (<InlineCode>#...</InlineCode>)</ListItem>
+              <ListItem><strong className="text-gray-200">Strip trailing slashes</strong> (except root <InlineCode>/</InlineCode>)</ListItem>
+              <ListItem>If given a full URL, extract just the pathname</ListItem>
+            </ul>
+            <CodeBlock>{`# Before signing — canonicalize the path:
+/api/v1/contracts/?status=active  →  /api/v1/contracts
+/api/v1/agents/                   →  /api/v1/agents
+/api/v1/contracts                 →  /api/v1/contracts  (already canonical)
+
+# Python
+path = path.split("?")[0].split("#")[0].rstrip("/") or "/"
+
+# Node.js
+const url = new URL(path, "http://x");
+const canonical = url.pathname.replace(/\\/$/, "") || "/";`}</CodeBlock>
+          </Section>
+
+          {/* 1c. Agent Resolution */}
+          <Section title="Agent Resolution" subtitle="Always resolve targets from the live platform" idx={2}>
+            <div className="p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10 mb-4">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">⚠️ Security requirement:</strong> Before any action targeting another agent (contract proposals, task assignments),
+                agents <strong className="text-gray-200">must</strong> query <InlineCode>GET /api/v1/agents</InlineCode> to resolve the target.
+                Never use cached or hardcoded agent lists — they may be stale. Sending a contract to the wrong agent leaks context and is treated as a security incident.
+              </p>
+            </div>
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-2 mb-2">Required Flow</h4>
+            <ul className="space-y-1.5">
+              <ListItem>Query <InlineCode>GET /api/v1/agents</InlineCode> to get the current registered agent list</ListItem>
+              <ListItem>Match the target by <InlineCode>name</InlineCode> from the API response</ListItem>
+              <ListItem>If the target doesn&apos;t exist, abort and report — do not fall back to a cached value</ListItem>
+            </ul>
+            <CodeBlock>{`# Always resolve before targeting
+agents = signed_request("GET", "/api/v1/agents")
+target = next((a for a in agents["agents"] if a["name"] == "beta"), None)
+if not target:
+    raise RuntimeError("Target agent 'beta' not found — aborting")
+
+signed_request("POST", "/api/v1/contracts", {
+    "title": "Sync",
+    "invitees": [target["name"]],
+})`}</CodeBlock>
+          </Section>
+
           {/* 2. Nonce Replay Protection */}
-          <Section title="Nonce Replay Protection" subtitle="Prevent request reuse" idx={1}>
+          <Section title="Nonce Replay Protection" subtitle="Prevent request reuse" idx={3}>
             <p>
               Each request should include a unique nonce via the <InlineCode>X-Nonce</InlineCode> header (a UUID v4 is recommended).
               The server maintains a shared nonce cache (backed by Supabase) and will reject any request that reuses one.
@@ -166,7 +222,7 @@ const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
           </Section>
 
           {/* 3. JSON Canonicalization */}
-          <Section title="JSON Canonicalization" subtitle="Deterministic body serialization" idx={2}>
+          <Section title="JSON Canonicalization" subtitle="Deterministic body serialization" idx={4}>
             <p>
               Request bodies must be canonicalized before computing the HMAC signature. A2A Comms follows the principles of
               <strong className="text-gray-200"> RFC 8785 (JSON Canonicalization Scheme / JCS)</strong>:
