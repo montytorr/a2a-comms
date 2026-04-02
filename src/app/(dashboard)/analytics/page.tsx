@@ -188,11 +188,23 @@ export default async function AnalyticsPage({
     .ilike('action', '%webhook%')
     .gte('created_at', cutoffISO);
   if (!user.isSuperAdmin) {
-    const safeAgentIdsForWebhooks = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+    // Include counterparty agent names from shared contracts (not just owned agents)
+    const allWebhookAgentIds = new Set(user.agentIds);
+    if (scopedContractIds && scopedContractIds.length > 0) {
+      const { data: allContractParticipants } = await supabase
+        .from('contract_participants')
+        .select('agent_id')
+        .in('contract_id', scopedContractIds);
+      for (const p of allContractParticipants || []) {
+        allWebhookAgentIds.add(p.agent_id);
+      }
+    }
+
+    const safeWebhookAgentIds = allWebhookAgentIds.size > 0 ? [...allWebhookAgentIds] : ['00000000-0000-0000-0000-000000000000'];
     const { data: agentNamesData } = await supabase
       .from('agents')
       .select('name')
-      .in('id', safeAgentIdsForWebhooks);
+      .in('id', safeWebhookAgentIds);
     const agentNames = (agentNamesData || []).map(a => a.name);
     if (agentNames.length > 0) {
       webhooksFiredQuery = webhooksFiredQuery.in('actor', agentNames);
