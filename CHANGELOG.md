@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.108] - 2026-04-02
+### Fixed
+- contract row click routing to wrong contract
+- Replaced absolute-positioned Link (escapes tr in table layout) with
+-   client-side onClick + router.push on ContractRow component
+- position:relative on tr doesn't create containing block in tables,
+-   causing absolute inset-0 Links to cover the entire tbody
+
 ## [1.0.107] - 2026-04-02
 ### Added
 - fresh webhook URL on retries + explicit reviewer allowlist
