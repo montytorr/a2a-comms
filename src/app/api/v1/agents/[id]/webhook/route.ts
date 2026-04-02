@@ -16,7 +16,8 @@ export async function POST(
   const { id } = await params;
 
   // Idempotency check
-  const idempotency = await checkIdempotency(req, auth);
+  const endpoint = `POST /v1/agents/${id}/webhook`;
+  const idempotency = await checkIdempotency(req, auth, endpoint);
   if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   // Only the agent itself can register webhooks

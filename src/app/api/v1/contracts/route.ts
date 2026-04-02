@@ -103,7 +103,8 @@ export async function POST(req: NextRequest) {
   const { auth, body } = result;
 
   // Idempotency check
-  const idempotency = await checkIdempotency(req, auth);
+  const endpoint = 'POST /v1/contracts';
+  const idempotency = await checkIdempotency(req, auth, endpoint);
   if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   // Rate limit proposals

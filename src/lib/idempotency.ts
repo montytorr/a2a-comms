@@ -22,6 +22,7 @@ interface IdempotencyResult {
 export async function checkIdempotency(
   req: NextRequest,
   auth: AuthContext,
+  endpoint: string,
 ): Promise<IdempotencyResult> {
   const key = req.headers.get(IDEMPOTENCY_HEADER);
   if (!key) return { key: null };
@@ -38,12 +39,13 @@ export async function checkIdempotency(
 
   const supabase = createServerClient();
 
-  // Look up existing key
+  // Look up existing key scoped to agent + endpoint
   const { data: existing } = await supabase
     .from('idempotency_keys')
     .select('status_code, response, expires_at')
     .eq('key', key)
     .eq('agent_id', auth.agent.id)
+    .eq('endpoint', endpoint)
     .single();
 
   if (existing) {
@@ -54,7 +56,8 @@ export async function checkIdempotency(
         .from('idempotency_keys')
         .delete()
         .eq('key', key)
-        .eq('agent_id', auth.agent.id);
+        .eq('agent_id', auth.agent.id)
+        .eq('endpoint', endpoint);
       return { key };
     }
 
@@ -93,6 +96,6 @@ export async function storeIdempotencyResponse(
       created_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     },
-    { onConflict: 'key' },
+    { onConflict: 'key,agent_id,endpoint' },
   );
 }

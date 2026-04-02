@@ -102,7 +102,8 @@ export async function POST(
   const { id } = await params;
 
   // Idempotency check
-  const idempotency = await checkIdempotency(req, auth);
+  const endpoint = `POST /v1/projects/${id}/tasks`;
+  const idempotency = await checkIdempotency(req, auth, endpoint);
   if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   const member = await verifyMembership(id, auth.agent.id);
