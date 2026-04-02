@@ -13,6 +13,52 @@ export interface PendingApproval {
 }
 
 /**
+ * Check whether an agent is authorized to review approvals.
+ * Only agents whose owner is a super_admin can approve/deny requests.
+ */
+export async function isAuthorizedReviewer(agentId: string): Promise<boolean> {
+  const supabase = createServerClient();
+
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('owner_user_id')
+    .eq('id', agentId)
+    .single();
+
+  if (!agent?.owner_user_id) return false;
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('is_super_admin')
+    .eq('id', agent.owner_user_id)
+    .single();
+
+  return profile?.is_super_admin === true;
+}
+
+/**
+ * Get agent IDs whose owners are super_admins (for scoped webhook delivery).
+ */
+async function getAdminAgentIds(): Promise<string[]> {
+  const supabase = createServerClient();
+
+  const { data: admins } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('is_super_admin', true);
+
+  if (!admins || admins.length === 0) return [];
+
+  const adminUserIds = admins.map((a) => a.id);
+  const { data: agents } = await supabase
+    .from('agents')
+    .select('id')
+    .in('owner_user_id', adminUserIds);
+
+  return (agents || []).map((a) => a.id);
+}
+
+/**
  * Request approval for a sensitive operation.
  * Returns the approval ID. The action is not executed until approved.
  */
@@ -47,32 +93,36 @@ export async function requestApproval(opts: {
     details: { approval_action: opts.action, ...opts.details },
   });
 
-  // Broadcast approval.requested webhook to ALL agents (anyone might review)
-  const { data: allAgents } = await supabase.from('agents').select('id');
-  if (allAgents && allAgents.length > 0) {
-    deliverWebhooks(
-      allAgents.map((a) => a.id),
-      {
-        event: 'approval.requested',
-        approval_id: data.id,
-        data: { action: opts.action, actor: opts.actor, details: opts.details },
-        timestamp: new Date().toISOString(),
-      }
-    ).catch(() => {}); // fire-and-forget
+  // Deliver approval.requested webhook only to admin agents (authorized reviewers)
+  const adminIds = await getAdminAgentIds();
+  if (adminIds.length > 0) {
+    deliverWebhooks(adminIds, {
+      event: 'approval.requested',
+      approval_id: data.id,
+      data: { action: opts.action, actor: opts.actor },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {}); // fire-and-forget
   }
 
   return { id: data.id };
 }
 
 /**
- * Approve a pending request. The reviewer must not be the original actor.
+ * Approve a pending request.
+ * The reviewer must: (1) not be the original actor, (2) be an authorized reviewer (admin).
  */
 export async function approveRequest(
   approvalId: string,
-  reviewerId: string,
+  reviewerAgentId: string,
   reviewerName: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createServerClient();
+
+  // Reviewer authorization: only admin agents can approve
+  const authorized = await isAuthorizedReviewer(reviewerAgentId);
+  if (!authorized) {
+    return { success: false, error: 'Only admin agents can review approvals' };
+  }
 
   // Fetch the approval
   const { data: approval, error } = await supabase
@@ -90,20 +140,28 @@ export async function approveRequest(
   }
 
   // Self-approval prevention: actor cannot approve their own request
-  if (approval.actor === reviewerName || approval.actor === reviewerId) {
+  if (approval.actor === reviewerName || approval.actor === reviewerAgentId) {
     return { success: false, error: 'You cannot approve your own request' };
   }
 
   const now = new Date().toISOString();
 
-  await supabase
+  // Atomic CAS update — only succeeds if status is still 'pending'
+  const { data: updated, error: updateErr } = await supabase
     .from('pending_approvals')
     .update({
       status: 'approved',
       reviewed_by: reviewerName,
       reviewed_at: now,
     })
-    .eq('id', approvalId);
+    .eq('id', approvalId)
+    .eq('status', 'pending') // CAS guard: prevents race conditions
+    .select('*')
+    .maybeSingle();
+
+  if (updateErr || !updated) {
+    return { success: false, error: 'Approval already decided by another reviewer' };
+  }
 
   // Audit log
   await supabase.from('audit_log').insert({
@@ -220,13 +278,20 @@ export async function consumeApprovalByAction(
 
 /**
  * Deny a pending request.
+ * The reviewer must: (1) not be the original actor, (2) be an authorized reviewer (admin).
  */
 export async function denyRequest(
   approvalId: string,
-  reviewerId: string,
+  reviewerAgentId: string,
   reviewerName: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createServerClient();
+
+  // Reviewer authorization: only admin agents can deny
+  const authorized = await isAuthorizedReviewer(reviewerAgentId);
+  if (!authorized) {
+    return { success: false, error: 'Only admin agents can review approvals' };
+  }
 
   const { data: approval, error } = await supabase
     .from('pending_approvals')
@@ -242,20 +307,28 @@ export async function denyRequest(
     return { success: false, error: `Request already ${approval.status}` };
   }
 
-  if (approval.actor === reviewerName || approval.actor === reviewerId) {
+  if (approval.actor === reviewerName || approval.actor === reviewerAgentId) {
     return { success: false, error: 'You cannot deny your own request' };
   }
 
   const now = new Date().toISOString();
 
-  await supabase
+  // Atomic CAS update — only succeeds if status is still 'pending'
+  const { data: updated, error: updateErr } = await supabase
     .from('pending_approvals')
     .update({
       status: 'denied',
       reviewed_by: reviewerName,
       reviewed_at: now,
     })
-    .eq('id', approvalId);
+    .eq('id', approvalId)
+    .eq('status', 'pending') // CAS guard: prevents race conditions
+    .select('*')
+    .maybeSingle();
+
+  if (updateErr || !updated) {
+    return { success: false, error: 'Approval already decided by another reviewer' };
+  }
 
   // Audit log
   await supabase.from('audit_log').insert({

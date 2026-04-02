@@ -103,22 +103,31 @@ export async function POST(req: NextRequest) {
     ipAddress: getClientIp(req),
   });
 
-  // Broadcast approval.requested webhook to ALL agents
-  const { data: allAgents } = await supabase.from('agents').select('id');
-  if (allAgents && allAgents.length > 0) {
-    deliverWebhooks(
-      allAgents.map((a) => a.id),
-      {
-        event: 'approval.requested',
-        approval_id: approval.id,
-        data: {
-          action: parsed.action,
-          actor: auth.agent.name,
-          details: parsed.details || {},
-        },
-        timestamp: new Date().toISOString(),
-      }
-    ).catch(() => {}); // fire-and-forget
+  // Deliver approval.requested webhook only to admin agents (authorized reviewers)
+  const { data: adminProfiles } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('is_super_admin', true);
+  const adminUserIds = (adminProfiles || []).map((p) => p.id);
+  if (adminUserIds.length > 0) {
+    const { data: adminAgents } = await supabase
+      .from('agents')
+      .select('id')
+      .in('owner_user_id', adminUserIds);
+    if (adminAgents && adminAgents.length > 0) {
+      deliverWebhooks(
+        adminAgents.map((a) => a.id),
+        {
+          event: 'approval.requested',
+          approval_id: approval.id,
+          data: {
+            action: parsed.action,
+            actor: auth.agent.name,
+          },
+          timestamp: new Date().toISOString(),
+        }
+      ).catch(() => {}); // fire-and-forget
+    }
   }
 
   // Email notification — scoped by approval type (fire-and-forget)

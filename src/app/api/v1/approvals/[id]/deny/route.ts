@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { isAuthorizedReviewer } from '@/lib/approvals';
 import type { ApiError } from '@/lib/types';
 
 export async function POST(
@@ -22,6 +23,15 @@ export async function POST(
     return NextResponse.json(
       { error: 'Approval rate limit exceeded', code: 'RATE_LIMITED' } satisfies ApiError,
       { status: 429 }
+    );
+  }
+
+  // Reviewer authorization: only admin agents can deny
+  const authorized = await isAuthorizedReviewer(auth.agent.id);
+  if (!authorized) {
+    return NextResponse.json(
+      { error: 'Only admin agents can review approvals', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
     );
   }
 
@@ -58,19 +68,30 @@ export async function POST(
 
   const now = new Date().toISOString();
 
-  const { error: updateErr } = await supabase
+  // Atomic CAS update — only succeeds if status is still 'pending'
+  const { data: updated, error: updateErr } = await supabase
     .from('pending_approvals')
     .update({
       status: 'denied',
       reviewed_by: auth.agent.name,
       reviewed_at: now,
     })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('status', 'pending') // CAS guard: prevents race conditions
+    .select('*')
+    .maybeSingle();
 
   if (updateErr) {
     return NextResponse.json(
       { error: 'Failed to deny request', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
+    );
+  }
+
+  if (!updated) {
+    return NextResponse.json(
+      { error: 'Approval already decided by another reviewer', code: 'ALREADY_RESPONDED' } satisfies ApiError,
+      { status: 409 }
     );
   }
 
@@ -101,13 +122,6 @@ export async function POST(
       timestamp: new Date().toISOString(),
     }).catch(() => {}); // fire-and-forget
   }
-
-  // Fetch updated approval
-  const { data: updated } = await supabase
-    .from('pending_approvals')
-    .select('*')
-    .eq('id', id)
-    .single();
 
   return NextResponse.json(updated);
 }
