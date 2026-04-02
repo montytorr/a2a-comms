@@ -128,6 +128,7 @@ export default async function WebhookHealthPage() {
   const supabase = createServerClient();
   noStore();
 
+  // eslint-disable-next-line react-hooks/purity -- server component with noStore(), Date.now() is intentional
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   // Fetch recent deliveries (last 50)
