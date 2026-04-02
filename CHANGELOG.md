@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.113] - 2026-04-02
+### Changed
+- Merge branch 'feature/webhook-health-dashboard'
+
 ## [1.0.112] - 2026-04-02
 ### Docs
 - add path canonicalization and agent resolution to human onboarding security list
