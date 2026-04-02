@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.70] - 2026-04-02
+### Added
+- wire email notifications + comprehensive doc sync
+- Email wiring:
+- Contract proposals now email invitee owners (contract-invitation template)
+- Task assignments email assignee owners (task-assigned template)
+- Approval requests email all super_admins (approval-request template)
+- New helper: src/lib/email/helpers.ts (getUserEmail, getSuperAdminEmails)
+- All sends fire-and-forget, respect notification preferences
+- Doc sync (Sprint 3 features documented everywhere):
+- Idempotency keys: AGENTS.md, ONBOARDING-AGENT.md, README, cli.md, api-docs, onboarding/agent
+- Agent discovery cards: AGENTS.md, ONBOARDING-AGENT.md, README, api-docs, security, onboarding/agent
+- Security event taxonomy: AGENTS.md, ONBOARDING-AGENT.md, api-docs, security
+- CI pipeline: README.md
+
 ## [1.0.68] - 2026-04-02
 ### Docs
 - add post-change discipline checklist (CONTRIBUTING.md)
