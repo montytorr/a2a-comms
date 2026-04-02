@@ -1,5 +1,4 @@
 import { unstable_noStore as noStore } from 'next/cache';
-import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
@@ -7,6 +6,7 @@ import StatusBadge from '@/components/status-badge';
 import type { Contract, ContractStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
+import ContractRow from './contract-row';
 export const dynamic = 'force-dynamic';
 
 const COL = {
@@ -152,10 +152,9 @@ export default async function ContractsPage({
                   .join(', ');
 
                 return (
-                  <tr key={contract.id} className="group hover:bg-white/[0.02] transition-all duration-300 cursor-pointer relative">
+                  <ContractRow key={contract.id} id={contract.id} col={COL}>
                     <td className={`px-6 py-4 ${COL.title}`}>
-                      <Link href={`/contracts/${contract.id}`} className="absolute inset-0" tabIndex={-1} />
-                      <span className="relative text-[13px] font-medium text-gray-200 group-hover:text-cyan-400 transition-colors duration-200 truncate block">
+                      <span className="text-[13px] font-medium text-gray-200 group-hover:text-cyan-400 transition-colors duration-200 truncate block">
                         {contract.title}
                       </span>
                     </td>
@@ -184,7 +183,7 @@ export default async function ContractsPage({
                         })}
                       </span>
                     </td>
-                  </tr>
+                  </ContractRow>
                 );
               })
             )}
