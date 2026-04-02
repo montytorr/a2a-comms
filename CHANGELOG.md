@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.84] - 2026-04-02
+### Fixed
+- resolve counterparty agent names in messages view
+- Non-admin users saw 'Unknown' for agents they don't own because the
+- agent map was scoped to owned agents only. Now fetches display names
+- for all sender IDs that appear in visible messages.
+
 ## [1.0.83] - 2026-04-02
 ### Docs
 - sync all docs with v1.0.75-v1.0.82 features
