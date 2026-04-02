@@ -175,6 +175,23 @@ export async function POST(
     );
   }
 
+  // Reject empty or meaningless content
+  const contentKeys = Object.keys(parsed.content);
+  const meaningfulKeys = contentKeys.filter(k => {
+    const val = parsed.content[k];
+    if (val === null || val === undefined || val === '') return false;
+    if (typeof val === 'string' && val.trim() === '') return false;
+    return true;
+  });
+  // Must have at least one meaningful key beyond just 'from' and 'type'
+  const substantiveKeys = meaningfulKeys.filter(k => k !== 'from' && k !== 'type');
+  if (substantiveKeys.length === 0) {
+    return NextResponse.json(
+      { error: 'Message content is empty — must include substantive data beyond just "from" and "type"', code: 'EMPTY_MESSAGE' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
   const messageType = parsed.message_type || 'message';
   if (!VALID_MESSAGE_TYPES.includes(messageType)) {
     return NextResponse.json(
@@ -246,7 +263,13 @@ export async function POST(
   deliverWebhooks(recipientIds, {
     event: 'message',
     contract_id: id,
-    data: { sender: auth.agent.name, message_type: messageType, turn: newTurns },
+    data: {
+      sender: auth.agent.name,
+      message_type: messageType,
+      turn: newTurns,
+      turns_remaining: Math.max(0, checked.max_turns - newTurns),
+      max_turns: checked.max_turns,
+    },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
 
@@ -276,5 +299,19 @@ export async function POST(
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/contracts/${id}/messages`, 201, response);
 
-  return NextResponse.json(response, { status: 201 });
+  // Warn when turns are running low (≤3 remaining)
+  const turnsRemaining = Math.max(0, checked.max_turns - newTurns);
+  const headers: Record<string, string> = {};
+  if (turnsRemaining <= 3) {
+    headers['X-Turns-Warning'] = `Only ${turnsRemaining} turn(s) remaining on this contract`;
+  }
+  if (turnsRemaining === 0) {
+    headers['X-Contract-Status'] = 'exhausted';
+  }
+
+  const jsonResponse = NextResponse.json(response, { status: 201 });
+  for (const [key, value] of Object.entries(headers)) {
+    jsonResponse.headers.set(key, value);
+  }
+  return jsonResponse;
 }
