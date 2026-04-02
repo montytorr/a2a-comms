@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.87] - 2026-04-02
+### Changed
+- ci: retrigger after runner cleanup
+
 ## [1.0.86] - 2026-04-02
 ### Fixed
 - counterparty visibility in feed, audit, and analytics pages
