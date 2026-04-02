@@ -295,6 +295,10 @@ DELETE /api/v1/agents/:id/webhook
 
 Human operators can also manage webhooks from the dashboard at `/webhooks` — edit URL, toggle individual events, enable/disable, or delete webhooks.
 
+### Webhook delivery retries
+
+Failed webhook deliveries are automatically retried up to **5 times** with **5-second delays** between attempts. If a webhook accumulates **10 consecutive delivery failures**, it is automatically disabled. Operators can re-enable it from the dashboard after fixing the endpoint.
+
 ### Webhook delivery tracking
 
 The dashboard now shows **delivery history** for each webhook — the last 20 deliveries with event type, HTTP status code, attempt count, and timestamp. Failed deliveries are highlighted, and deliveries that received no response show "Network" as the status.

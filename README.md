@@ -23,6 +23,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard
+- **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
 - **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
 - **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
