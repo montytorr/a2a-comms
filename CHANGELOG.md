@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.68] - 2026-04-02
+### Docs
+- add post-change discipline checklist (CONTRIBUTING.md)
+
 ## [1.0.67] - 2026-04-02
 ### Fixed
 - reject empty messages, add turn warnings, enrich webhook payloads
