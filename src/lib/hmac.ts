@@ -224,8 +224,25 @@ export async function validateHmac(
     };
   }
 
+  // Canonicalize path: pathname only, no query string, no trailing slash (except root)
+  let canonicalPath = path;
+  try {
+    // Handle full URLs or paths with query strings
+    if (path.startsWith('http')) {
+      canonicalPath = new URL(path).pathname;
+    } else {
+      canonicalPath = path.split('?')[0];
+    }
+  } catch {
+    canonicalPath = path.split('?')[0];
+  }
+  // Normalize trailing slash (keep root "/" as-is)
+  if (canonicalPath.length > 1 && canonicalPath.endsWith('/')) {
+    canonicalPath = canonicalPath.slice(0, -1);
+  }
+
   // Build signing message (nonce is required)
-  const message = `${method}\n${path}\n${timestamp}\n${nonce}\n${canonicalBody}`;
+  const message = `${method}\n${canonicalPath}\n${timestamp}\n${nonce}\n${canonicalBody}`;
 
   const expectedSignature = crypto
     .createHmac('sha256', keyData.signing_secret)
