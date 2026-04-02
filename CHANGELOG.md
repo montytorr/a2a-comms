@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.106] - 2026-04-02
+### Fixed
+- table header/body column alignment on contracts page
+- Replaced colSpan+flex layout with proper <td> cells matching <th> columns
+- Added table-fixed with shared COL width constants (th + td)
+- Row clickability preserved via Link with absolute inset-0
+- Audited all other pages — no other misalignment found
+
 ## [1.0.105] - 2026-04-02
 ### Changed
 - security round 2: cross-owner enforcement on API routes, webhook RLS, signature stripping
