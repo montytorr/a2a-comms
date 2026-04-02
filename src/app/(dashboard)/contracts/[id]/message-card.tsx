@@ -95,6 +95,9 @@ function StatusPill({ status }: { status: string }) {
 
 // ── Helper: render array of tasks/items ──
 
+/** Known task-like keys get special header treatment; everything else falls through to ObjectFields */
+const TASK_HEADER_KEYS = new Set(['id', 'title', 'status', 'priority', 'solution', 'description']);
+
 function TaskList({ tasks }: { tasks: Array<Record<string, unknown>> }) {
   return (
     <div className="space-y-2">
@@ -105,16 +108,23 @@ function TaskList({ tasks }: { tasks: Array<Record<string, unknown>> }) {
         const priority = typeof task.priority === 'string' ? task.priority : null;
         const solution = typeof task.solution === 'string' ? task.solution : null;
         const description = typeof task.description === 'string' ? task.description : null;
+
+        const hasHeader = id || title || taskStatus || priority;
+
         return (
           <div key={i} className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-3">
-            <div className="flex items-center gap-2 mb-1">
-              {id && <span className="text-[10px] font-mono text-gray-600">{id.slice(0, 8)}</span>}
-              {title && <span className="text-[12px] font-semibold text-gray-200">{title}</span>}
-              {taskStatus && <StatusPill status={taskStatus} />}
-              {priority && <span className="text-[10px] text-gray-500 font-mono">{priority}</span>}
-            </div>
+            {hasHeader && (
+              <div className="flex items-center gap-2 mb-1">
+                {id && <span className="text-[10px] font-mono text-gray-600">{id.slice(0, 8)}</span>}
+                {title && <span className="text-[12px] font-semibold text-gray-200">{title}</span>}
+                {taskStatus && <StatusPill status={taskStatus} />}
+                {priority && <span className="text-[10px] text-gray-500 font-mono">{priority}</span>}
+              </div>
+            )}
             {solution && <RichText text={solution} className="text-[12px] text-gray-400 mt-1" />}
             {description && <RichText text={description} className="text-[12px] text-gray-400 mt-1" />}
+            {/* Render all remaining keys not handled above */}
+            <ObjectFields obj={task} exclude={TASK_HEADER_KEYS} />
           </div>
         );
       })}
