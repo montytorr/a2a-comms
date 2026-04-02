@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.91] - 2026-04-02
+### Fixed
+- email notifications — resend missing from Docker standalone build
+
 ## [1.0.90] - 2026-04-02
 ### Fixed
 - Email notifications — `resend` package was missing from Docker standalone build.
