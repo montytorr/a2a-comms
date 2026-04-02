@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.102] - 2026-04-02
+### Changed
+- add tsx to lockfile
+
 ## [1.0.101] - 2026-04-02
 ### Added
 - background webhook retry worker
