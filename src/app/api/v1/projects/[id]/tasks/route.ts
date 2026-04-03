@@ -238,7 +238,10 @@ export async function POST(
         .eq('id', id)
         .single();
 
-      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
+        console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
+        return 'https://a2a.playground.montytorr.tech';
+      })();
 
       await sendTaskAssignedEmail(
         email,

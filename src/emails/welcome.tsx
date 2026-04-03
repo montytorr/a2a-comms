@@ -17,7 +17,10 @@ interface WelcomeEmailProps {
   displayName: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (() => {
+  console.warn('[welcome-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
+  return 'https://a2a.playground.montytorr.tech';
+})();
 
 export function WelcomeEmail({ displayName }: WelcomeEmailProps) {
   return (

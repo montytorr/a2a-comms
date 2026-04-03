@@ -17,7 +17,10 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createBrowserClient();
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || (() => {
+        console.warn('[forgot-password] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
+        return 'https://a2a.playground.montytorr.tech';
+      })();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${appUrl}/reset-password`,
       });
