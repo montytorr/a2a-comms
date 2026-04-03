@@ -22,10 +22,10 @@ Usage:
   Projects:
   a2a projects [--status STATUS]
   a2a project <id>
-  a2a project-create <title> [--description DESC] [--members AGENT_IDS...]
+  a2a project-create <title> [--description DESC] [--members AGENTS...]
   a2a project-update <id> [--title T] [--description D] [--status S]
   a2a project-members <id>
-  a2a project-add-member <id> --agent <agent_id> [--role ROLE]
+  a2a project-add-member <id> --agent <agent> [--role ROLE]
 
   Sprints:
   a2a sprints <project_id>
@@ -34,10 +34,10 @@ Usage:
   a2a sprint-update <project_id> <sprint_id> [--title T] [--status S]
 
   Tasks:
-  a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT_ID] [--label LABEL]
+  a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT] [--label LABEL]
   a2a task <project_id> <task_id>
-  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee A] [--labels L...] [--due-date D]
-  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee A] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
+  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D]
+  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -614,7 +614,7 @@ def cmd_project_create(args):
     if args.description:
         body["description"] = args.description
     if args.members:
-        body["members"] = args.members
+        body["members"] = [resolve_agent_id(member) for member in args.members]
     data = api_request("POST", "/api/v1/projects", body)
     print("✅ Project created!")
     print(format_project(data, verbose=True))
@@ -657,7 +657,7 @@ def cmd_project_members(args):
 
 def cmd_project_add_member(args):
     """Add a member to a project."""
-    body = {"agent_id": args.agent}
+    body = {"agent_id": resolve_agent_id(args.agent)}
     if args.role:
         body["role"] = args.role
     data = api_request("POST", f"/api/v1/projects/{args.id}/members", body)
@@ -1111,7 +1111,7 @@ def main():
     p = sub.add_parser("project-create", help="Create a new project")
     p.add_argument("title", help="Project title")
     p.add_argument("--description", help="Project description")
-    p.add_argument("--members", nargs="+", help="Agent IDs to add as members")
+    p.add_argument("--members", nargs="+", help="Agent names or UUIDs to add as members")
 
     # project-update
     p = sub.add_parser("project-update", help="Update a project")
@@ -1127,7 +1127,7 @@ def main():
     # project-add-member
     p = sub.add_parser("project-add-member", help="Add member to project")
     p.add_argument("id", help="Project ID")
-    p.add_argument("--agent", required=True, help="Agent ID to add")
+    p.add_argument("--agent", required=True, help="Agent name or UUID to add")
     p.add_argument("--role", help="Member role (default: member)")
 
     # ── Sprints ───────────────────────────────────────────
@@ -1163,7 +1163,7 @@ def main():
     p.add_argument("project_id", help="Project ID")
     p.add_argument("--sprint", help="Filter by sprint ID")
     p.add_argument("--status", help="Filter by status (todo, in_progress, in_review, done, blocked, cancelled)")
-    p.add_argument("--assignee", help="Filter by assignee agent ID")
+    p.add_argument("--assignee", help="Filter by assignee agent name or UUID")
     p.add_argument("--label", help="Filter by label")
 
     # task
@@ -1177,8 +1177,8 @@ def main():
     p.add_argument("title", help="Task title")
     p.add_argument("--description", help="Task description")
     p.add_argument("--sprint-id", help="Sprint ID to assign to")
-    p.add_argument("--priority", choices=["critical", "high", "medium", "low"], help="Task priority")
-    p.add_argument("--assignee", help="Assignee agent ID")
+    p.add_argument("--priority", choices=["urgent", "high", "medium", "low"], help="Task priority")
+    p.add_argument("--assignee", help="Assignee agent name or UUID")
     p.add_argument("--labels", nargs="+", help="Task labels")
     p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
 
@@ -1189,9 +1189,9 @@ def main():
     p.add_argument("--title", help="New title")
     p.add_argument("--description", help="New description")
     p.add_argument("--status", help="New status")
-    p.add_argument("--assignee", help="New assignee agent ID")
+    p.add_argument("--assignee", help="New assignee agent name or UUID")
     p.add_argument("--sprint-id", help="New sprint ID")
-    p.add_argument("--priority", choices=["critical", "high", "medium", "low"], help="New priority")
+    p.add_argument("--priority", choices=["urgent", "high", "medium", "low"], help="New priority")
     p.add_argument("--labels", nargs="+", help="New labels")
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
 

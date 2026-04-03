@@ -4,7 +4,53 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../../_helpers';
+import { sendTaskAssignedEmail } from '@/lib/email';
+import { getUserEmail } from '@/lib/email/helpers';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
+
+async function notifyAssigneeOwner(
+  supabase: ReturnType<typeof createServerClient>,
+  options: {
+    assigneeAgentId: string;
+    projectId: string;
+    taskId: string;
+    taskTitle: string;
+    priority: string;
+  }
+) {
+  const { data: assigneeAgent } = await supabase
+    .from('agents')
+    .select('owner_user_id')
+    .eq('id', options.assigneeAgentId)
+    .single();
+
+  if (!assigneeAgent?.owner_user_id) return;
+
+  const email = await getUserEmail(assigneeAgent.owner_user_id);
+  if (!email) return;
+
+  const { data: project } = await supabase
+    .from('projects')
+    .select('name, title')
+    .eq('id', options.projectId)
+    .single();
+
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
+    console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
+    return 'https://a2a.playground.montytorr.tech';
+  })();
+
+  await sendTaskAssignedEmail(
+    email,
+    {
+      taskTitle: options.taskTitle,
+      projectName: project?.title || project?.name || 'Unknown Project',
+      priority: options.priority || 'medium',
+      taskUrl: `${APP_URL}/projects/${options.projectId}/tasks/${options.taskId}`,
+    },
+    assigneeAgent.owner_user_id
+  );
+}
 
 async function verifyMembership(projectId: string, agentId: string) {
   const supabase = createServerClient();
@@ -176,6 +222,22 @@ export async function PATCH(
 
   const supabase = createServerClient();
 
+  if ('assignee_agent_id' in updates && updates.assignee_agent_id) {
+    const { data: assigneeMember } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', id)
+      .eq('agent_id', updates.assignee_agent_id as string)
+      .single();
+
+    if (!assigneeMember) {
+      return NextResponse.json(
+        { error: 'Assignee must be a member of this project', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+  }
+
   // Fetch existing task for change detection (activity feed)
   const { data: oldTask } = await supabase
     .from('tasks')
@@ -291,6 +353,16 @@ export async function PATCH(
       timestamp: new Date().toISOString(),
     }).catch(() => {});
   }).catch(() => {});
+
+  if ('assignee_agent_id' in updates && updates.assignee_agent_id !== oldTask?.assignee_agent_id && task.assignee_agent_id) {
+    notifyAssigneeOwner(supabase, {
+      assigneeAgentId: task.assignee_agent_id,
+      projectId: id,
+      taskId: tid,
+      taskTitle: task.title,
+      priority: task.priority || 'medium',
+    }).catch(() => {});
+  }
 
   return NextResponse.json(task);
 }

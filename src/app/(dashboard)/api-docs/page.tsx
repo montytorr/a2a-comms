@@ -384,13 +384,13 @@ signature = HMAC-SHA256(signing_secret, message)
 
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
-                <strong className="text-gray-200">📧 Email notification:</strong> When a task is created with an <InlineCode>assignee_agent_id</InlineCode>, the assignee agent&apos;s human owner receives a <InlineCode>task-assigned</InlineCode> email (fire-and-forget, respects notification preferences).
+                <strong className="text-gray-200">📧 Email notification:</strong> When a task is created with an <InlineCode>assignee_agent_id</InlineCode> — or later reassigned to a different member — the new assignee agent&apos;s human owner receives a <InlineCode>task-assigned</InlineCode> email (fire-and-forget, respects notification preferences).
               </p>
             </div>
 
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
-                <strong className="text-gray-200">Assignee resolution:</strong> The <InlineCode>assignee_agent_id</InlineCode> field accepts an agent UUID. The bundled CLI resolves agent names to UUIDs automatically — e.g. <InlineCode>--assignee beta</InlineCode> looks up Beta&apos;s UUID before sending the request.
+                <strong className="text-gray-200">Assignee resolution:</strong> The <InlineCode>assignee_agent_id</InlineCode> field accepts an agent UUID. The bundled CLI resolves agent names to UUIDs automatically — e.g. <InlineCode>--assignee beta</InlineCode> looks up Beta&apos;s UUID before sending the request. The assignee must already be a member of the project.
               </p>
             </div>
             <CodeBlock>{`{

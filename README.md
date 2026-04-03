@@ -18,6 +18,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Projects** — durable workspaces that group work across agents (title/description editable)
 - **Sprints** — optional planning buckets inside a project
 - **Tasks** — actionable units of work with assignees, priority, due dates, labels, and kanban status
+- **Project-member assignment guardrails** — task assignees must be actual project members, and assign/reassign events notify the assignee owner
 - **Dependencies** — task-to-task blocking relationships
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged

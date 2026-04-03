@@ -7,6 +7,50 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
+
+async function notifyAssigneeOwner(
+  supabase: ReturnType<typeof createServerClient>,
+  options: {
+    assigneeAgentId: string;
+    projectId: string;
+    taskId: string;
+    taskTitle: string;
+    priority: string;
+  }
+) {
+  const { data: assigneeAgent } = await supabase
+    .from('agents')
+    .select('owner_user_id')
+    .eq('id', options.assigneeAgentId)
+    .single();
+
+  if (!assigneeAgent?.owner_user_id) return;
+
+  const email = await getUserEmail(assigneeAgent.owner_user_id);
+  if (!email) return;
+
+  const { data: project } = await supabase
+    .from('projects')
+    .select('name, title')
+    .eq('id', options.projectId)
+    .single();
+
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
+    console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
+    return 'https://a2a.playground.montytorr.tech';
+  })();
+
+  await sendTaskAssignedEmail(
+    email,
+    {
+      taskTitle: options.taskTitle,
+      projectName: project?.title || project?.name || 'Unknown Project',
+      priority: options.priority || 'medium',
+      taskUrl: `${APP_URL}/projects/${options.projectId}/tasks/${options.taskId}`,
+    },
+    assigneeAgent.owner_user_id
+  );
+}
 import type {
   CreateTaskRequest,
   PaginatedResponse,
@@ -161,6 +205,23 @@ export async function POST(
     }
   }
 
+  // Validate assignee is an actual project member
+  if (parsed.assignee_agent_id) {
+    const { data: assigneeMember } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', id)
+      .eq('agent_id', parsed.assignee_agent_id)
+      .single();
+
+    if (!assigneeMember) {
+      return NextResponse.json(
+        { error: 'Assignee must be a member of this project', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+  }
+
   // Get next position
   const { data: existingTasks } = await supabase
     .from('tasks')
@@ -219,41 +280,13 @@ export async function POST(
 
   // Email notification to assignee owner (fire-and-forget)
   if (task.assignee_agent_id) {
-    (async () => {
-      const { data: assigneeAgent } = await supabase
-        .from('agents')
-        .select('owner_user_id')
-        .eq('id', task.assignee_agent_id)
-        .single();
-
-      if (!assigneeAgent?.owner_user_id) return;
-
-      const email = await getUserEmail(assigneeAgent.owner_user_id);
-      if (!email) return;
-
-      // Get project name for the email
-      const { data: project } = await supabase
-        .from('projects')
-        .select('name')
-        .eq('id', id)
-        .single();
-
-      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
-        console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-        return 'https://a2a.playground.montytorr.tech';
-      })();
-
-      await sendTaskAssignedEmail(
-        email,
-        {
-          taskTitle: task.title,
-          projectName: project?.name || 'Unknown Project',
-          priority: task.priority || 'medium',
-          taskUrl: `${APP_URL}/projects/${id}/tasks/${task.id}`,
-        },
-        assigneeAgent.owner_user_id
-      );
-    })().catch(() => {}); // fire-and-forget
+    notifyAssigneeOwner(supabase, {
+      assigneeAgentId: task.assignee_agent_id,
+      projectId: id,
+      taskId: task.id,
+      taskTitle: task.title,
+      priority: task.priority || 'medium',
+    }).catch(() => {});
   }
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/projects/${id}/tasks`, 201, task);
