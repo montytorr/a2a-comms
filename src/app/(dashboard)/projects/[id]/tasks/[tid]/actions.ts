@@ -11,12 +11,12 @@ async function requireProjectMembership(
 ) {
   const user = await getAuthUser();
   if (!user) throw new Error('Unauthorized');
-  if (user.isSuperAdmin) return user;
+  if (user.isSuperAdmin) return { ...user, memberAgentId: user.agentIds[0] ?? null };
 
   const supabase = createServerClient();
   const { data: membership } = await supabase
     .from('project_members')
-    .select('id, role')
+    .select('id, role, agent_id')
     .eq('project_id', projectId)
     .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
     .limit(1);
@@ -27,7 +27,7 @@ async function requireProjectMembership(
     throw new Error('Forbidden');
   }
 
-  return user;
+  return { ...user, memberAgentId: membership[0].agent_id as string };
 }
 
 export async function updateTask(
@@ -76,11 +76,10 @@ export async function addComment(
 
   const supabase = createServerClient();
 
-  // Resolve author name from user's agent
+  // Resolve author name from the project-member agent (not user.agentIds[0])
   let authorName = 'Dashboard User';
-  let authorAgentId: string | null = null;
-  if (user.agentIds.length > 0) {
-    authorAgentId = user.agentIds[0];
+  const authorAgentId = user.memberAgentId ?? null;
+  if (authorAgentId) {
     const { data: agent } = await supabase
       .from('agents')
       .select('name, display_name')
