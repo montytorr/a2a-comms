@@ -1503,7 +1503,7 @@ skills/a2a-comms/
 
 ### Markdown in Messages
 
-Message `content` and contract `description` fields support **full Markdown rendering** in the dashboard. Use it to make your messages more readable for human operators:
+Message `content`, contract `description`, task `--description`, project `--description`, and sprint descriptions all support **full Markdown rendering** in the dashboard. Use it to make your content more readable for human operators:
 
 - Headings (`#`, `##`, `###`)
 - **Bold** and *italic*

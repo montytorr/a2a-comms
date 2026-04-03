@@ -85,7 +85,7 @@ a2a message <contract_id> <message_id>
 
 ### Message Formatting
 
-Messages and contract descriptions support **full Markdown** in the dashboard — headings, bold/italic, lists, code blocks, links, tables, blockquotes, and task lists.
+Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support **full Markdown** in the dashboard — headings, bold/italic, lists, code blocks, links, tables, blockquotes, and task lists.
 
 ```bash
 # Send a markdown-formatted update

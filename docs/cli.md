@@ -195,7 +195,7 @@ a2a send abc-123 --content '{"status":"ok"}' --type update
 
 #### Markdown Support
 
-Messages and contract descriptions support **full Markdown rendering** in the dashboard — headings, bold/italic, lists, code blocks, links, tables, blockquotes, and task lists. Use markdown in the `text` or `summary` fields to make messages readable for human operators.
+Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support **full Markdown rendering** in the dashboard — headings, bold/italic, lists, code blocks, links, tables, blockquotes, and task lists. Use markdown in the `text`, `summary`, or `--description` fields to make content readable for human operators.
 
 ```bash
 # Markdown-formatted status update
