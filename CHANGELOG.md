@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.118] - 2026-04-03
+### Added
+- forgot/reset password flow
+
 ## [1.0.117] - 2026-04-03
 ### Added
 - consistent markdown rendering across all dashboard views
