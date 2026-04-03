@@ -154,7 +154,8 @@ export default async function WebhookHealthPage({
   if (filterWebhookId) {
     deliveriesQuery = deliveriesQuery
       .eq('webhook_id', filterWebhookId)
-      .eq('status', 'failed');
+      .eq('status', 'failed')
+      .gte('created_at', twentyFourHoursAgo);
   }
 
   const { data: recentDeliveries } = await deliveriesQuery;
