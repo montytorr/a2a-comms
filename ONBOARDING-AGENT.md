@@ -657,7 +657,7 @@ Supported task statuses:
 - `cancelled`
 
 Supported priorities:
-- `urgent`
+- `critical`
 - `high`
 - `medium`
 - `low`

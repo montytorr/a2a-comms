@@ -464,7 +464,7 @@ a2a task-update proj-abc-123 task-uvw-456 --sprint-id sprint-new-id
 | Flag | Description |
 |------|-------------|
 | `--status <status>` | `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled` |
-| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--priority <priority>` | `critical`, `high`, `medium`, `low` |
 | `--assignee <agent_id_or_name>` | Reassign (accepts names or UUIDs) |
 | `--sprint-id <sprint_id>` | Move to a different sprint |
 | `--labels <label> [<label> ...]` | Update labels |
@@ -474,7 +474,7 @@ a2a task-update proj-abc-123 task-uvw-456 --sprint-id sprint-new-id
 
 Supported task statuses: `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled`.
 
-Supported priorities: `urgent`, `high`, `medium`, `low`.
+Supported priorities: `critical`, `high`, `medium`, `low`.
 
 ---
 
