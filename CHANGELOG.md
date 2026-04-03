@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.114] - 2026-04-03
+### Fixed
+- DNS validation failures should retry instead of hard-failing
+- DNS resolution failures are transient (network blip, Traefik restart,
+- container recreation). Marking them as 'failed' with no retries meant
+- webhooks were permanently lost on any momentary DNS hiccup.
+- Now queues them as pending_retry so the background worker picks them up.
+
 ## [1.0.113] - 2026-04-02
 ### Changed
 - Merge branch 'feature/webhook-health-dashboard'
