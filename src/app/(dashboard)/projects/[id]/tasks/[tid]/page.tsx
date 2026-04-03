@@ -16,6 +16,7 @@ import {
   SprintPicker,
   DeleteTaskButton,
 } from './task-editor';
+import TaskComments from './task-comments';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
@@ -72,8 +73,8 @@ export default async function TaskDetailPage({
   // Fetch related data in parallel
   const [
     projectRes, assigneeRes, reporterRes, sprintRes,
-    blockedByRes, blocksRes, contractsRes, auditRes,
-    membersRes, sprintsRes,
+    blockedByRes, blocksRes, contractsRes,
+    membersRes, sprintsRes, commentsRes,
   ] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -98,13 +99,6 @@ export default async function TaskDetailPage({
       .select('id, contract:contracts(id, title, status)')
       .eq('task_id', tid),
     supabase
-      .from('audit_log')
-      .select('*')
-      .eq('resource_type', 'task')
-      .eq('resource_id', tid)
-      .order('created_at', { ascending: false })
-      .limit(20),
-    supabase
       .from('project_members')
       .select('id, role, agent:agents(id, name, display_name)')
       .eq('project_id', projectId),
@@ -113,6 +107,13 @@ export default async function TaskDetailPage({
       .select('id, title, status')
       .eq('project_id', projectId)
       .order('position', { ascending: true }),
+    supabase
+      .from('task_comments')
+      .select('*, author:agents!task_comments_author_agent_id_fkey(id, name, display_name)')
+      .eq('task_id', tid)
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(100),
   ]);
 
   const project = projectRes.data;
@@ -157,14 +158,16 @@ export default async function TaskDetailPage({
     }
   }
 
-  interface AuditEntry {
+  const comments = (commentsRes.data || []) as Array<{
     id: string;
-    actor: string;
-    action: string;
-    details: Record<string, unknown> | null;
+    content: string;
+    comment_type: string;
+    author_name: string | null;
+    author_agent_id: string | null;
+    author?: { id: string; name: string; display_name: string } | null;
+    metadata: Record<string, unknown>;
     created_at: string;
-  }
-  const auditEntries = (auditRes.data || []) as AuditEntry[];
+  }>;
 
   const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
@@ -292,32 +295,7 @@ export default async function TaskDetailPage({
             </div>
           )}
 
-          {/* Activity */}
-          {auditEntries.length > 0 && (
-            <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Activity</p>
-              <div className="space-y-3">
-                {auditEntries.map((entry) => (
-                  <div key={entry.id} className="flex items-start gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-600 mt-1.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-gray-400">
-                        <span className="font-medium text-gray-300">{entry.actor}</span>
-                        {' '}
-                        <span className="text-gray-600">{entry.action.replace('task.', '')}</span>
-                        {entry.details && 'status' in entry.details && entry.details.status ? (
-                          <span className="text-gray-500"> → {String(entry.details.status)}</span>
-                        ) : null}
-                      </p>
-                      <p className="text-[9px] text-gray-700 font-mono tabular-nums mt-0.5">
-                        {formatDateTime(entry.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <TaskComments comments={comments} projectId={projectId} taskId={tid} />
         </div>
 
         {/* Sidebar */}

@@ -67,6 +67,44 @@ export async function updateTask(
   revalidatePath(`/projects/${projectId}`);
 }
 
+export async function addComment(
+  projectId: string,
+  taskId: string,
+  content: string,
+) {
+  const user = await requireProjectMembership(projectId);
+
+  const supabase = createServerClient();
+
+  // Resolve author name from user's agent
+  let authorName = 'Dashboard User';
+  let authorAgentId: string | null = null;
+  if (user.agentIds.length > 0) {
+    authorAgentId = user.agentIds[0];
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('name, display_name')
+      .eq('id', authorAgentId)
+      .single();
+    if (agent) authorName = agent.display_name || agent.name;
+  }
+
+  const { error } = await supabase
+    .from('task_comments')
+    .insert({
+      task_id: taskId,
+      project_id: projectId,
+      author_agent_id: authorAgentId,
+      author_name: authorName,
+      content: content.trim(),
+      comment_type: 'comment',
+      metadata: {},
+    });
+
+  if (error) throw new Error(`Failed to add comment: ${error.message}`);
+  revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
+}
+
 export async function deleteTask(projectId: string, taskId: string) {
   await requireProjectMembership(projectId);
 

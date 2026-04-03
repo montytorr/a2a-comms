@@ -176,6 +176,14 @@ export async function PATCH(
 
   const supabase = createServerClient();
 
+  // Fetch existing task for change detection (activity feed)
+  const { data: oldTask } = await supabase
+    .from('tasks')
+    .select('status, priority, assignee_agent_id')
+    .eq('id', tid)
+    .eq('project_id', id)
+    .single();
+
   // Validate sprint belongs to same project
   if (updates.sprint_id) {
     const { data: sprint } = await supabase
@@ -216,6 +224,62 @@ export async function PATCH(
     details: { project_id: id, ...updates },
     ipAddress: getClientIp(req),
   });
+
+  // Auto-generate activity comments for notable changes
+  if (oldTask) {
+    const actorName = auth.agent.display_name || auth.agent.name;
+    const activityComments: Array<{ content: string; comment_type: string; metadata: Record<string, unknown> }> = [];
+
+    if (updates.status && updates.status !== oldTask.status) {
+      activityComments.push({
+        content: `Status changed from '${oldTask.status}' to '${updates.status}'`,
+        comment_type: 'status_change',
+        metadata: { old_status: oldTask.status, new_status: updates.status },
+      });
+    }
+
+    if ('assignee_agent_id' in updates && updates.assignee_agent_id !== oldTask.assignee_agent_id) {
+      if (updates.assignee_agent_id) {
+        // Look up assignee name
+        const { data: assignee } = await supabase
+          .from('agents')
+          .select('name, display_name')
+          .eq('id', updates.assignee_agent_id as string)
+          .single();
+        const assigneeName = assignee?.display_name || assignee?.name || 'Unknown';
+        activityComments.push({
+          content: `Assigned to ${assigneeName}`,
+          comment_type: 'assignment',
+          metadata: { old_assignee: oldTask.assignee_agent_id, new_assignee: updates.assignee_agent_id },
+        });
+      } else {
+        activityComments.push({
+          content: 'Assignee removed',
+          comment_type: 'assignment',
+          metadata: { old_assignee: oldTask.assignee_agent_id, new_assignee: null },
+        });
+      }
+    }
+
+    if (updates.priority && updates.priority !== oldTask.priority) {
+      activityComments.push({
+        content: `Priority changed to ${updates.priority}`,
+        comment_type: 'system',
+        metadata: { old_priority: oldTask.priority, new_priority: updates.priority },
+      });
+    }
+
+    if (activityComments.length > 0) {
+      const rows = activityComments.map(c => ({
+        task_id: tid,
+        project_id: id,
+        author_agent_id: auth.agent.id,
+        author_name: actorName,
+        ...c,
+      }));
+      await supabase.from('task_comments').insert(rows);
+    }
+  }
 
   // Deliver webhook notifications to all project members (fire-and-forget)
   getProjectMemberAgentIds(id).then(memberIds => {

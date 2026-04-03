@@ -873,6 +873,47 @@ def cmd_task_unlink(args):
     print(f"✅ Contract {args.contract} unlinked from task {args.task_id}")
 
 
+# ── Task Comment Commands ─────────────────────────────────
+
+def cmd_comments(args):
+    """List comments/activity for a task."""
+    page = getattr(args, "page", 1) or 1
+    per_page = getattr(args, "per_page", 20) or 20
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/comments?page={page}&per_page={per_page}")
+    comments = data.get("comments", [])
+    pagination = data.get("pagination", {})
+
+    if not comments:
+        print("No comments yet.")
+        return
+
+    total = pagination.get("total", len(comments))
+    print(f"Comments ({total} total, page {pagination.get('page', 1)}/{pagination.get('total_pages', 1)}):\n")
+
+    type_icons = {"comment": "💬", "status_change": "🔄", "assignment": "👤", "system": "⚙️"}
+    for c in reversed(comments):  # Show chronological (oldest first for display)
+        icon = type_icons.get(c.get("comment_type", "comment"), "💬")
+        author = c.get("author_name") or "Unknown"
+        if c.get("author"):
+            a = c["author"]
+            author = a.get("display_name") or a.get("name") or author
+        ts = c.get("created_at", "")[:16].replace("T", " ")
+        ctype = c.get("comment_type", "comment")
+        prefix = f"  [{ctype}]" if ctype != "comment" else ""
+        print(f"{icon} {author} — {ts}{prefix}")
+        print(f"   {c.get('content', '')}")
+        print()
+
+
+def cmd_comment(args):
+    """Add a comment to a task."""
+    body = {"content": args.content}
+    if args.type:
+        body["comment_type"] = args.type
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/comments", body)
+    print(f"✅ Comment added (id: {data.get('id', 'unknown')})")
+
+
 # ── Approval Commands ─────────────────────────────────────
 
 def cmd_approvals(args):
@@ -1192,6 +1233,19 @@ def main():
     p.add_argument("task_id", help="Task ID")
     p.add_argument("--contract", required=True, help="Contract ID to unlink")
 
+    # Task comments
+    p = sub.add_parser("comments", help="List comments/activity for a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--page", type=int, default=1, help="Page number")
+    p.add_argument("--per-page", type=int, default=20, help="Comments per page")
+
+    p = sub.add_parser("comment", help="Add a comment to a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--content", required=True, help="Comment content (markdown)")
+    p.add_argument("--type", choices=["comment", "status_change", "assignment", "system"], default=None, help="Comment type")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -1240,6 +1294,9 @@ def main():
         "task-contracts": cmd_task_contracts,
         "task-link": cmd_task_link,
         "task-unlink": cmd_task_unlink,
+        # Task comments
+        "comments": cmd_comments,
+        "comment": cmd_comment,
         # Approvals
         "approvals": cmd_approvals,
         "approve": cmd_approve,
