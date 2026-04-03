@@ -95,15 +95,6 @@ export async function POST(req: NextRequest) {
     members.push({ project_id: project.id, agent_id: creatorAgentId, role: 'owner' });
   }
 
-  // Add selected agents as members
-  if (Array.isArray(member_agent_ids)) {
-    for (const agentId of member_agent_ids) {
-      if (agentId !== creatorAgentId) {
-        members.push({ project_id: project.id, agent_id: agentId, role: 'member' });
-      }
-    }
-  }
-
   if (members.length > 0) {
     const { error: memErr } = await supabase
       .from('project_members')
@@ -112,6 +103,27 @@ export async function POST(req: NextRequest) {
     if (memErr) {
       console.error('Failed to add members:', memErr);
       // Project created but members failed — don't fail the whole request
+    }
+  }
+
+  // Selected agents are invited, not inserted directly.
+  const inviteeIds = Array.isArray(member_agent_ids)
+    ? member_agent_ids.filter((agentId: string) => agentId !== creatorAgentId)
+    : [];
+
+  if (inviteeIds.length > 0) {
+    const { error: invitationError } = await supabase
+      .from('project_member_invitations')
+      .insert(inviteeIds.map((agentId: string) => ({
+        project_id: project.id,
+        agent_id: agentId,
+        invited_by_agent_id: creatorAgentId,
+        role: 'member',
+        status: 'pending',
+      })));
+
+    if (invitationError) {
+      console.error('Failed to create invitations:', invitationError);
     }
   }
 

@@ -6,6 +6,7 @@ import KanbanBoard, { type TaskRow } from './kanban-board';
 import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
 import AutoRefresh from '@/components/auto-refresh';
+import type { ProjectInvitationStatus } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -59,13 +60,18 @@ export default async function ProjectDetailPage({
     isOwner = !!(ownerCheck && ownerCheck.length > 0);
   }
 
-  // Fetch members, sprints, ALL tasks (for completion %), filtered tasks, and available agents in parallel
-  const [membersRes, sprintsRes, allTasksRes, tasksRes, allAgentsRes] = await Promise.all([
+  // Fetch members, invitations, sprints, ALL tasks (for completion %), filtered tasks, and available agents in parallel
+  const [membersRes, invitationsRes, sprintsRes, allTasksRes, tasksRes, allAgentsRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
       .eq('project_id', id)
       .order('joined_at', { ascending: true }),
+    supabase
+      .from('project_member_invitations')
+      .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
     supabase
       .from('sprints')
       .select('*')
@@ -93,14 +99,24 @@ export default async function ProjectDetailPage({
   ]);
 
   const members = membersRes.data || [];
+  const invitations = invitationsRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
   const tasks = (tasksRes.data || []) as TaskRow[];
   const allAgents = allAgentsRes.data || [];
 
-  // Available agents = all agents minus current members
+  // Available agents = all agents minus current members and pending invitees
   const memberAgentIds = new Set(members.map((m: { agent_id?: string; agent?: { id: string } | null }) => m.agent?.id).filter(Boolean));
-  const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id));
+  const pendingInviteAgentIds = new Set(
+    invitations
+      .filter((inv: { status: ProjectInvitationStatus }) => inv.status === 'pending')
+      .map((inv: { agent_id: string }) => inv.agent_id)
+  );
+  const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id) && !pendingInviteAgentIds.has(a.id));
+
+  const myPendingInvitations = invitations.filter((inv: { agent_id: string; status: ProjectInvitationStatus }) => (
+    inv.status === 'pending' && user.agentIds.includes(inv.agent_id)
+  ));
 
   // Compute completion stats per sprint (excluding cancelled tasks)
   const sprintStats: Record<string, { total: number; done: number }> = {};
@@ -123,7 +139,14 @@ export default async function ProjectDetailPage({
     <AutoRefresh intervalMs={15000}>
       <div className="p-4 sm:p-6 lg:p-10">
         {/* Project Header */}
-        <ProjectHeader project={project} members={members} availableAgents={availableAgents} isOwner={isOwner} />
+        <ProjectHeader
+          project={project}
+          members={members}
+          invitations={invitations}
+          myPendingInvitations={myPendingInvitations}
+          availableAgents={availableAgents}
+          isOwner={isOwner}
+        />
 
         {/* Sprint Selector */}
         <SprintSelector

@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.129] - 2026-04-03
+### Added
+- project member invitation flow with pending/accept/decline/cancel states across API, CLI, dashboard, email notifications, and settings
+
 ## [1.0.128] - 2026-04-03
 ### Changed
 - Enforce project-member task assignment

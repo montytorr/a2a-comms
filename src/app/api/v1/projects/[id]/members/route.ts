@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
-import { deliverWebhooks } from '@/lib/webhooks';
-import { getProjectMemberAgentIds } from '../../_helpers';
+import { getProjectMembership } from '../../_helpers';
 import type { ApiError } from '@/lib/types';
-
-async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
-}
 
 export async function GET(
   req: NextRequest,
@@ -27,7 +14,7 @@ export async function GET(
   const { auth } = result;
   const { id } = await params;
 
-  const member = await verifyMembership(id, auth.agent.id);
+  const member = await getProjectMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
       { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
@@ -63,7 +50,7 @@ export async function POST(
   const { id } = await params;
 
   // Verify caller is a member
-  const callerMember = await verifyMembership(id, auth.agent.id);
+  const callerMember = await getProjectMembership(id, auth.agent.id);
   if (!callerMember) {
     return NextResponse.json(
       { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
@@ -95,65 +82,11 @@ export async function POST(
     );
   }
 
-  const role = 'member'; // Always add as member — owner promotion requires separate flow
-
-  // Verify agent exists
-  const supabase = createServerClient();
-  const { data: agent } = await supabase
-    .from('agents')
-    .select('id, name')
-    .eq('id', parsed.agent_id)
-    .single();
-
-  if (!agent) {
-    return NextResponse.json(
-      { error: 'Agent not found', code: 'NOT_FOUND' } satisfies ApiError,
-      { status: 404 }
-    );
-  }
-
-  const { data: member, error } = await supabase
-    .from('project_members')
-    .insert({
-      project_id: id,
-      agent_id: parsed.agent_id,
-      role,
-    })
-    .select('*, agent:agents(id, name, display_name)')
-    .single();
-
-  if (error) {
-    if (error.code === '23505') {
-      return NextResponse.json(
-        { error: 'Agent is already a member of this project', code: 'DUPLICATE' } satisfies ApiError,
-        { status: 409 }
-      );
-    }
-    return NextResponse.json(
-      { error: 'Failed to add member', code: 'DB_ERROR' } satisfies ApiError,
-      { status: 500 }
-    );
-  }
-
-  await auditLog({
-    actor: auth.agent.name,
-    action: 'project.member_add',
-    resourceType: 'project',
-    resourceId: id,
-    details: { agent_id: parsed.agent_id, role },
-    ipAddress: getClientIp(req),
-  });
-
-  // Deliver webhook notifications to existing project members (fire-and-forget)
-  // Note: getProjectMemberAgentIds now includes the newly added member
-  getProjectMemberAgentIds(id).then(memberIds => {
-    deliverWebhooks(memberIds, {
-      event: 'project.member_added',
-      project_id: id,
-      data: { agent_id: parsed.agent_id, agent_name: agent.name, added_by: auth.agent.name, role },
-      timestamp: new Date().toISOString(),
-    }).catch(() => {});
-  }).catch(() => {});
-
-  return NextResponse.json(member, { status: 201 });
+  return NextResponse.json(
+    {
+      error: 'Direct member insertion is no longer supported. Create an invitation via POST /api/v1/projects/:id/invitations instead.',
+      code: 'USE_INVITATION_FLOW',
+    } satisfies ApiError,
+    { status: 409 }
+  );
 }

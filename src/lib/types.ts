@@ -8,6 +8,7 @@ export type SprintStatus = 'planned' | 'active' | 'completed';
 export type TaskStatus = 'backlog' | 'todo' | 'in-progress' | 'in-review' | 'done' | 'cancelled';
 export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
 export type ProjectMemberRole = 'owner' | 'member';
+export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
 export type ParticipantRole = 'proposer' | 'invitee';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
 export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
@@ -189,6 +190,10 @@ export type WebhookEventType =
   | 'sprint.created'
   | 'sprint.updated'
   | 'project.member_added'
+  | 'project.member_invited'
+  | 'project.member_accepted'
+  | 'project.member_declined'
+  | 'project.member_cancelled'
   | 'approval.requested'
   | 'approval.approved'
   | 'approval.denied';
@@ -231,6 +236,18 @@ export interface ProjectMember {
   agent_id: string;
   role: ProjectMemberRole;
   joined_at: string;
+}
+
+export interface ProjectMemberInvitation {
+  id: string;
+  project_id: string;
+  agent_id: string;
+  invited_by_agent_id: string;
+  role: ProjectMemberRole;
+  status: ProjectInvitationStatus;
+  responded_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Sprint {

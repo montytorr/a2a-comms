@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
+import { notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 
 async function requireProjectMembership(
   projectId: string,
@@ -68,29 +69,116 @@ export async function updateSprintStatus(projectId: string, sprintId: string, st
   revalidatePath(`/projects/${projectId}`);
 }
 
-export async function addProjectMember(projectId: string, agentId: string) {
-  await requireProjectMembership(projectId, { requireRole: 'owner' });
-
+export async function inviteProjectMember(projectId: string, agentId: string) {
+  const user = await requireProjectMembership(projectId, { requireRole: 'owner' });
   const supabase = createServerClient();
 
-  // Check if already a member
-  const { data: existing } = await supabase
+  const [{ data: project }, { data: existing }, { data: existingInvite }, { data: agent }] = await Promise.all([
+    supabase.from('projects').select('id, title').eq('id', projectId).single(),
+    supabase.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    supabase.from('project_member_invitations').select('id, status').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    supabase.from('agents').select('id, name, display_name').eq('id', agentId).single(),
+  ]);
+
+  if (!project) throw new Error('Project not found');
+  if (!agent) throw new Error('Agent not found');
+  if (existing) throw new Error('Agent is already a member of this project');
+  if (existingInvite?.status === 'pending') throw new Error('Agent already has a pending invitation');
+
+  const inviterAgentId = user.agentIds[0];
+  if (!inviterAgentId) throw new Error('No owned agent available to send invitation');
+
+  const { error } = await supabase.from('project_member_invitations').upsert({
+    project_id: projectId,
+    agent_id: agentId,
+    invited_by_agent_id: inviterAgentId,
+    role: 'member',
+    status: 'pending',
+    responded_at: null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'project_id,agent_id' });
+
+  if (error) throw new Error(`Failed to invite member: ${error.message}`);
+
+  notifyProjectInvitationCreated({
+    projectId,
+    invitedAgentId: agentId,
+    invitedAgentName: agent.display_name || agent.name,
+    invitedByAgentId: inviterAgentId,
+    invitedByName: user.displayName,
+    projectTitle: project.title,
+  }).catch(() => {});
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function respondToProjectInvitation(
+  projectId: string,
+  invitationId: string,
+  action: 'accept' | 'decline' | 'cancel'
+) {
+  const user = await getAuthUser();
+  if (!user) throw new Error('Unauthorized');
+
+  const supabase = createServerClient();
+  const { data: invitation } = await supabase
+    .from('project_member_invitations')
+    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
+    .eq('id', invitationId)
+    .eq('project_id', projectId)
+    .single();
+
+  if (!invitation) throw new Error('Invitation not found');
+  if (invitation.status !== 'pending') throw new Error('Invitation has already been resolved');
+
+  const isInvitee = user.agentIds.includes(invitation.agent_id);
+  const isOwner = user.isSuperAdmin || !!(await supabase
     .from('project_members')
     .select('id')
     .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .limit(1);
+    .eq('role', 'owner')
+    .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+    .limit(1)).data?.length;
 
-  if (existing && existing.length > 0) {
-    throw new Error('Agent is already a member of this project');
+  if (action === 'cancel') {
+    if (!isOwner) throw new Error('Only project owners can cancel invitations');
+  } else if (!isInvitee && !user.isSuperAdmin) {
+    throw new Error('Only the invited agent can respond to this invitation');
   }
 
-  const { error } = await supabase.from('project_members').insert({
-    project_id: projectId,
-    agent_id: agentId,
-    role: 'member',
-  });
-  if (error) throw new Error(`Failed to add member: ${error.message}`);
+  const nextStatus = action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : 'cancelled';
+  const respondedAt = new Date().toISOString();
+
+  const { error: updateError } = await supabase
+    .from('project_member_invitations')
+    .update({ status: nextStatus, responded_at: respondedAt, updated_at: respondedAt })
+    .eq('id', invitationId)
+    .eq('project_id', projectId)
+    .eq('status', 'pending');
+
+  if (updateError) throw new Error(`Failed to update invitation: ${updateError.message}`);
+
+  if (nextStatus === 'accepted') {
+    const { error: addMemberError } = await supabase.from('project_members').insert({
+      project_id: projectId,
+      agent_id: invitation.agent_id,
+      role: invitation.role,
+    });
+    if (addMemberError && addMemberError.code !== '23505') {
+      throw new Error(`Failed to add member: ${addMemberError.message}`);
+    }
+  }
+
+  notifyProjectInvitationResponded({
+    projectId,
+    projectTitle: invitation.project?.title || 'Unknown Project',
+    invitedAgentId: invitation.agent_id,
+    invitedAgentName: invitation.agent?.display_name || invitation.agent?.name || 'Unknown Agent',
+    invitedByAgentId: invitation.invited_by_agent_id,
+    invitedByName: invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown Agent',
+    status: nextStatus,
+  }).catch(() => {});
+
   revalidatePath(`/projects/${projectId}`);
 }
 

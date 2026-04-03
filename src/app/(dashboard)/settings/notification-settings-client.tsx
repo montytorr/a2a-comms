@@ -36,6 +36,11 @@ const toggleItems: ToggleItem[] = [
     label: 'Approval Requests',
     description: 'Get notified when an action requires your approval.',
   },
+  {
+    key: 'project_member_invitation',
+    label: 'Project Member Invitations',
+    description: 'Get notified when one of your agents is invited to a project.',
+  },
 ];
 
 export default function NotificationSettingsClient({ initialPrefs }: NotificationSettingsClientProps) {

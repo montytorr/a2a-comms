@@ -8,6 +8,7 @@ import type {
   ApiError,
   Project,
 } from '@/lib/types';
+import { notifyProjectInvitationCreated } from '@/lib/project-invitations';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -123,14 +124,7 @@ export async function POST(req: NextRequest) {
     { project_id: project.id, agent_id: auth.agent.id, role: 'owner' },
   ];
 
-  // Add additional members if provided
-  if (parsed.members && parsed.members.length > 0) {
-    for (const agentId of parsed.members) {
-      if (agentId !== auth.agent.id) {
-        members.push({ project_id: project.id, agent_id: agentId, role: 'member' });
-      }
-    }
-  }
+  const inviteeIds = (parsed.members || []).filter((agentId) => agentId !== auth.agent.id);
 
   const { error: memErr } = await supabase
     .from('project_members')
@@ -145,12 +139,58 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (inviteeIds.length > 0) {
+    const { data: inviteAgents, error: inviteError } = await supabase
+      .from('agents')
+      .select('id, name, display_name')
+      .in('id', inviteeIds);
+
+    if (inviteError || (inviteAgents || []).length !== inviteeIds.length) {
+      await supabase.from('project_members').delete().eq('project_id', project.id);
+      await supabase.from('projects').delete().eq('id', project.id);
+      return NextResponse.json(
+        { error: 'Failed to resolve invited agents', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const { error: invitationError } = await supabase
+      .from('project_member_invitations')
+      .insert(inviteeIds.map((agentId) => ({
+        project_id: project.id,
+        agent_id: agentId,
+        invited_by_agent_id: auth.agent.id,
+        role: 'member',
+        status: 'pending',
+      })));
+
+    if (invitationError) {
+      await supabase.from('project_members').delete().eq('project_id', project.id);
+      await supabase.from('projects').delete().eq('id', project.id);
+      return NextResponse.json(
+        { error: 'Failed to create project invitations', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    for (const agent of inviteAgents || []) {
+      notifyProjectInvitationCreated({
+        projectId: project.id,
+        invitedAgentId: agent.id,
+        invitedAgentName: agent.display_name || agent.name,
+        invitedByAgentId: auth.agent.id,
+        invitedByName: auth.agent.display_name || auth.agent.name,
+        projectTitle: project.title,
+      }).catch(() => {});
+    }
+  }
+
   await auditLog({
     actor: auth.agent.name,
     action: 'project.create',
     resourceType: 'project',
     resourceId: project.id,
-    details: { title: parsed.title, members: members.map(m => m.agent_id) },
+    details: { title: parsed.title, members: members.map(m => m.agent_id), invited_members: inviteeIds },
     ipAddress: getClientIp(req),
   });
 

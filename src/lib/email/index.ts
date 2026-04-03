@@ -6,6 +6,7 @@ import PasswordResetEmail, { subject as passwordResetSubject } from './templates
 import ContractInvitationEmail, { subject as contractInvitationSubject } from './templates/contract-invitation';
 import TaskAssignedEmail, { subject as taskAssignedSubject } from './templates/task-assigned';
 import ApprovalRequestEmail, { subject as approvalRequestSubject } from './templates/approval-request';
+import ProjectMemberInvitationEmail, { subject as projectMemberInvitationSubject } from './templates/project-member-invitation';
 
 const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.tech>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
@@ -26,7 +27,7 @@ export interface SendEmailResult {
   error?: string;
 }
 
-const TEMPLATE_NAMES = ['welcome', 'password-reset', 'contract-invitation', 'task-assigned', 'approval-request'] as const;
+const TEMPLATE_NAMES = ['welcome', 'password-reset', 'contract-invitation', 'task-assigned', 'approval-request', 'project-member-invitation'] as const;
 export type TemplateName = (typeof TEMPLATE_NAMES)[number];
 
 export function getTemplateNames(): string[] {
@@ -43,6 +44,7 @@ function templateToPreferenceColumn(template: string): string | null {
     'contract-invitation': 'contract_invitation',
     'task-assigned': 'task_assigned',
     'approval-request': 'approval_request',
+    'project-member-invitation': 'project_member_invitation',
   };
   return map[template] ?? null;
 }
@@ -128,6 +130,9 @@ export async function sendEmail(
         break;
       case 'approval-request':
         result = await resend.emails.send({ from: FROM, to, subject: approvalRequestSubject, react: createElement(ApprovalRequestEmail, props) });
+        break;
+      case 'project-member-invitation':
+        result = await resend.emails.send({ from: FROM, to, subject: projectMemberInvitationSubject, react: createElement(ProjectMemberInvitationEmail, props) });
         break;
       default:
         return { error: `Unknown template: ${template}` };

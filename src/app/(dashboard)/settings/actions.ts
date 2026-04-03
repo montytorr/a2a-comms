@@ -9,6 +9,7 @@ export interface NotificationPreferences {
   contract_invitation: boolean;
   task_assigned: boolean;
   approval_request: boolean;
+  project_member_invitation: boolean;
 }
 
 export async function updateNotificationPreferences(
@@ -41,6 +42,7 @@ export async function updateNotificationPreferences(
         contract_invitation: prefs.contract_invitation,
         task_assigned: prefs.task_assigned,
         approval_request: prefs.approval_request,
+        project_member_invitation: prefs.project_member_invitation,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 

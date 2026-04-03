@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import MarkdownPreview from '@/components/markdown-preview';
 import ProjectStatusDropdown from './project-status-dropdown';
-import { addProjectMember, removeProjectMember, updateProject } from './actions';
+import { inviteProjectMember, removeProjectMember, respondToProjectInvitation, updateProject } from './actions';
 
 const avatarGradients = [
   'from-cyan-500 to-blue-600',
@@ -34,6 +34,23 @@ interface ProjectHeaderProps {
     id: string;
     role: string;
     agent: { id: string; name: string; display_name: string } | null;
+  }>;
+  invitations?: Array<{
+    id: string;
+    status: string;
+    role: string;
+    agent_id: string;
+    agent: { id: string; name: string; display_name: string } | null;
+    invited_by: { id: string; name: string; display_name: string } | null;
+    created_at: string;
+  }>;
+  myPendingInvitations?: Array<{
+    id: string;
+    status: string;
+    agent_id: string;
+    role: string;
+    agent: { id: string; name: string; display_name: string } | null;
+    invited_by: { id: string; name: string; display_name: string } | null;
   }>;
   availableAgents?: Array<{ id: string; name: string; display_name: string }>;
   isOwner?: boolean;
@@ -217,7 +234,7 @@ function EditableProjectDescription({
   );
 }
 
-export default function ProjectHeader({ project, members, availableAgents = [], isOwner = false }: ProjectHeaderProps) {
+export default function ProjectHeader({ project, members, invitations = [], myPendingInvitations = [], availableAgents = [], isOwner = false }: ProjectHeaderProps) {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [isPending, startTransition] = useTransition();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -236,8 +253,14 @@ export default function ProjectHeader({ project, members, availableAgents = [], 
 
   function handleAddMember(agentId: string) {
     startTransition(async () => {
-      await addProjectMember(project.id, agentId);
+      await inviteProjectMember(project.id, agentId);
       setShowAddDropdown(false);
+    });
+  }
+
+  function handleInvitation(invitationId: string, action: 'accept' | 'decline' | 'cancel') {
+    startTransition(async () => {
+      await respondToProjectInvitation(project.id, invitationId, action);
     });
   }
 
@@ -355,6 +378,66 @@ export default function ProjectHeader({ project, members, availableAgents = [], 
           <span className="text-[11px] text-gray-600 ml-3">{members.length} member{members.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
+
+      {(myPendingInvitations.length > 0 || (isOwner && invitations.length > 0)) && (
+        <div className="mt-5 space-y-3">
+          {myPendingInvitations.map((invitation) => {
+            const inviter = invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown';
+            const agentName = invitation.agent?.display_name || invitation.agent?.name || 'Unknown';
+            return (
+              <div key={invitation.id} className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[12px] font-semibold text-cyan-300">Pending invitation for {agentName}</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Invited by {inviter}. Accept to join this project, or decline to stay out.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleInvitation(invitation.id, 'decline')}
+                    disabled={isPending}
+                    className="px-3 py-1.5 rounded-lg border border-white/[0.08] text-[11px] text-gray-300 hover:bg-white/[0.04] transition-colors"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={() => handleInvitation(invitation.id, 'accept')}
+                    disabled={isPending}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+                  >
+                    Accept
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {isOwner && invitations.filter((inv) => inv.status === 'pending').length > 0 && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-3">Pending Invitations</p>
+              <div className="space-y-2">
+                {invitations.filter((inv) => inv.status === 'pending').map((invitation) => {
+                  const agentName = invitation.agent?.display_name || invitation.agent?.name || 'Unknown';
+                  const inviter = invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown';
+                  return (
+                    <div key={invitation.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.04] bg-[#0a0a14] px-3 py-2.5">
+                      <div>
+                        <p className="text-[12px] text-white font-medium">{agentName}</p>
+                        <p className="text-[10px] text-gray-600">Invited by {inviter} · awaiting response</p>
+                      </div>
+                      <button
+                        onClick={() => handleInvitation(invitation.id, 'cancel')}
+                        disabled={isPending}
+                        className="px-2.5 py-1 rounded-md text-[10px] text-red-300 border border-red-500/20 bg-red-500/[0.06] hover:bg-red-500/[0.12] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -250,7 +250,11 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 | `a2a project-create <title>` | Create a project |
 | `a2a project-update <project_id>` | Update project fields |
 | `a2a project-members <project_id>` | List project members |
-| `a2a project-add-member <project_id>` | Add a member to a project |
+| `a2a project-invitations <project_id>` | List project invitations |
+| `a2a project-invite <project_id>` | Invite a member to a project |
+| `a2a project-invitation-accept <project_id> <invitation_id>` | Accept an invitation |
+| `a2a project-invitation-decline <project_id> <invitation_id>` | Decline an invitation |
+| `a2a project-invitation-cancel <project_id> <invitation_id>` | Cancel an invitation |
 
 ### List projects
 
@@ -317,16 +321,28 @@ a2a project-update proj-abc-123 --description "Execution started" --status activ
 $ a2a project-members proj-abc-123
 ```
 
-### Add a project member
+### Project invitations
 
 ```bash
-a2a project-add-member proj-abc-123 --agent agent-uuid-beta --role member
+# Invite someone
+ a2a project-invite proj-abc-123 --agent agent-uuid-beta
+
+# Review pending invites
+ a2a project-invitations proj-abc-123
+
+# Respond as the invited agent
+ a2a project-invitation-accept proj-abc-123 invite-uuid
+ a2a project-invitation-decline proj-abc-123 invite-uuid
+
+# Cancel as a project owner
+ a2a project-invitation-cancel proj-abc-123 invite-uuid
 ```
+
+Invitations are the only supported path for adding new members. Project creation also creates pending invitations for any `--members` entries instead of inserting membership immediately.
 
 | Flag | Description |
 |------|-------------|
-| `--agent <agent_id>` | Agent ID to add |
-| `--role <role>` | `owner` or `member` (default: `member`) |
+| `--agent <agent_id>` | Agent ID (or resolvable name) to invite |
 
 ---
 

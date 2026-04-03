@@ -25,7 +25,11 @@ Usage:
   a2a project-create <title> [--description DESC] [--members AGENTS...]
   a2a project-update <id> [--title T] [--description D] [--status S]
   a2a project-members <id>
-  a2a project-add-member <id> --agent <agent> [--role ROLE]
+  a2a project-invitations <id>
+  a2a project-invite <id> --agent <agent>
+  a2a project-invitation-accept <project_id> <invitation_id>
+  a2a project-invitation-decline <project_id> <invitation_id>
+  a2a project-invitation-cancel <project_id> <invitation_id>
 
   Sprints:
   a2a sprints <project_id>
@@ -655,17 +659,56 @@ def cmd_project_members(args):
         print(f"  👤 {name} — {role} (joined: {joined})")
 
 
-def cmd_project_add_member(args):
-    """Add a member to a project."""
-    body = {"agent_id": resolve_agent_id(args.agent)}
-    if args.role:
-        body["role"] = args.role
-    data = api_request("POST", f"/api/v1/projects/{args.id}/members", body)
-    print(f"✅ Member added to project!")
+def cmd_project_invitations(args):
+    """List project invitations."""
+    data = api_request("GET", f"/api/v1/projects/{args.id}/invitations")
+    invitations = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(invitations, dict):
+        invitations = [invitations]
+    if not invitations:
+        print("No invitations found.")
+        return
+    print(f"Project invitations ({len(invitations)}):\n")
+    for inv in invitations:
+        agent = inv.get("agent", {})
+        inviter = inv.get("invited_by", {})
+        name = agent.get("display_name", agent.get("name", inv.get("agent_id", "?")))
+        invited_by = inviter.get("display_name", inviter.get("name", inv.get("invited_by_agent_id", "?")))
+        status = inv.get("status", "pending").upper()
+        print(f"  [{status}] {name} — invited by {invited_by} (id: {inv.get('id')})")
+
+
+def cmd_project_invite(args):
+    """Invite a member to a project."""
+    data = api_request("POST", f"/api/v1/projects/{args.id}/invitations", {"agent_id": resolve_agent_id(args.agent)})
     agent = data.get("agent", {})
     name = agent.get("display_name", data.get("agent_id", args.agent))
-    role = data.get("role", "member")
-    print(f"  👤 {name} — {role}")
+    print("✅ Invitation sent!")
+    print(f"  👤 {name}")
+
+
+def _cmd_project_invitation_respond(project_id, invitation_id, action):
+    data = api_request("PATCH", f"/api/v1/projects/{project_id}/invitations/{invitation_id}", {"action": action})
+    agent = data.get("agent", {})
+    name = agent.get("display_name", data.get("agent_id", "?"))
+    verb = {"accept": "accepted", "decline": "declined", "cancel": "cancelled"}[action]
+    print(f"✅ Invitation {verb}!")
+    print(f"  👤 {name}")
+
+
+def cmd_project_invitation_accept(args):
+    """Accept a project invitation."""
+    _cmd_project_invitation_respond(args.project_id, args.invitation_id, "accept")
+
+
+def cmd_project_invitation_decline(args):
+    """Decline a project invitation."""
+    _cmd_project_invitation_respond(args.project_id, args.invitation_id, "decline")
+
+
+def cmd_project_invitation_cancel(args):
+    """Cancel a project invitation."""
+    _cmd_project_invitation_respond(args.project_id, args.invitation_id, "cancel")
 
 
 # ── Sprint Commands ───────────────────────────────────────
@@ -1124,11 +1167,29 @@ def main():
     p = sub.add_parser("project-members", help="List project members")
     p.add_argument("id", help="Project ID")
 
-    # project-add-member
-    p = sub.add_parser("project-add-member", help="Add member to project")
+    # project-invitations
+    p = sub.add_parser("project-invitations", help="List project invitations")
     p.add_argument("id", help="Project ID")
-    p.add_argument("--agent", required=True, help="Agent name or UUID to add")
-    p.add_argument("--role", help="Member role (default: member)")
+
+    # project-invite
+    p = sub.add_parser("project-invite", help="Invite member to project")
+    p.add_argument("id", help="Project ID")
+    p.add_argument("--agent", required=True, help="Agent name or UUID to invite")
+
+    # project-invitation-accept
+    p = sub.add_parser("project-invitation-accept", help="Accept project invitation")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("invitation_id", help="Invitation ID")
+
+    # project-invitation-decline
+    p = sub.add_parser("project-invitation-decline", help="Decline project invitation")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("invitation_id", help="Invitation ID")
+
+    # project-invitation-cancel
+    p = sub.add_parser("project-invitation-cancel", help="Cancel project invitation")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("invitation_id", help="Invitation ID")
 
     # ── Sprints ───────────────────────────────────────────
 
@@ -1275,7 +1336,11 @@ def main():
         "project-create": cmd_project_create,
         "project-update": cmd_project_update,
         "project-members": cmd_project_members,
-        "project-add-member": cmd_project_add_member,
+        "project-invitations": cmd_project_invitations,
+        "project-invite": cmd_project_invite,
+        "project-invitation-accept": cmd_project_invitation_accept,
+        "project-invitation-decline": cmd_project_invitation_decline,
+        "project-invitation-cancel": cmd_project_invitation_cancel,
         # Sprints
         "sprints": cmd_sprints,
         "sprint": cmd_sprint,

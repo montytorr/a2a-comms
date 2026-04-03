@@ -49,7 +49,7 @@ export async function GET(
   }
 
   // Enrich with members and stats
-  const [membersRes, tasksRes, sprintsRes] = await Promise.all([
+  const [membersRes, tasksRes, sprintsRes, invitationsRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
@@ -63,6 +63,11 @@ export async function GET(
       .select('*')
       .eq('project_id', id)
       .order('position', { ascending: true }),
+    supabase
+      .from('project_member_invitations')
+      .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
   ]);
 
   const tasks = tasksRes.data || [];
@@ -72,6 +77,7 @@ export async function GET(
   return NextResponse.json({
     ...project,
     members: membersRes.data || [],
+    invitations: invitationsRes.data || [],
     sprints: sprintsRes.data || [],
     task_stats: { total: totalTasks, done: doneTasks },
   });

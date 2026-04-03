@@ -159,7 +159,7 @@ export default function NewProjectPage() {
           <label className="block text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">
             Initial Members
           </label>
-          <p className="text-[11px] text-gray-600 mb-4">Select agents to add to this project. You will be added as owner automatically.</p>
+          <p className="text-[11px] text-gray-600 mb-4">Select agents to invite to this project. You will be added as owner automatically; others join after accepting.</p>
 
           {agents.length === 0 ? (
             <p className="text-[12px] text-gray-600 italic py-4">No agents registered yet</p>

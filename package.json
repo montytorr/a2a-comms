@@ -1,13 +1,13 @@
 {
   "name": "a2a-comms",
-  "version": "1.0.128",
+  "version": "1.0.129",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/message-preview.test.tsx"
+    "test": "node --import tsx --test src/lib/message-preview.test.tsx src/lib/project-invitation-flow.test.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.11",

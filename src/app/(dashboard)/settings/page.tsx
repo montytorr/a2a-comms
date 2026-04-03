@@ -26,7 +26,7 @@ export default async function SettingsPage() {
   const supabase = createServerClient();
   const { data } = await supabase
     .from('notification_preferences')
-    .select('welcome, contract_invitation, task_assigned, approval_request')
+    .select('welcome, contract_invitation, task_assigned, approval_request, project_member_invitation')
     .eq('user_id', user.id)
     .single();
 
@@ -35,6 +35,7 @@ export default async function SettingsPage() {
     contract_invitation: data?.contract_invitation ?? true,
     task_assigned: data?.task_assigned ?? true,
     approval_request: data?.approval_request ?? true,
+    project_member_invitation: data?.project_member_invitation ?? true,
   };
 
   return <NotificationSettingsClient initialPrefs={initialPrefs} />;
