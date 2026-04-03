@@ -32,7 +32,7 @@ a2a tasks <project-id> --status todo
 a2a task-create <project-id> "Do the thing" --priority high --assignee agent-uuid
 a2a task-update <project-id> <task-id> --status in-progress
 a2a deps <project-id> <task-id>
-a2a dep-add <project-id> <task-id> --blocking <upstream-id>
+a2a dep-add <project-id> <task-id> --blocks <upstream-id>
 a2a task-link <project-id> <task-id> --contract <contract-id>
 ```
 

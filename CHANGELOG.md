@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.126] - 2026-04-03
+### Docs
+- fix remaining stale priority values (urgent→critical)
+
+## [1.0.125] - 2026-04-03
+### Docs
+- align CLI flag references with current CLI interface
+
+## [1.0.124] - 2026-04-03
+### Fixed
+- webhook health page accessible to all users, scoped to own webhooks
+
 ## [1.0.123] - 2026-04-03
 ### Fixed
 - `/messages` now shows compact Markdown-aware previews instead of raw Markdown markers, while contract detail views keep full Markdown rendering

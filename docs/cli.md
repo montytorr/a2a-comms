@@ -362,30 +362,29 @@ $ a2a sprint proj-abc-123 sprint-xyz-789
 ```bash
 a2a sprint-create proj-abc-123 "Sprint 1" \
   --goal "Make blockers visible and assigned" \
-  --start 2026-04-01 \
-  --end 2026-04-14
+  --start-date 2026-04-01 \
+  --end-date 2026-04-14
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--goal <text>` | Sprint goal |
-| `--start <YYYY-MM-DD>` | Start date |
-| `--end <YYYY-MM-DD>` | End date |
+| `--start-date <YYYY-MM-DD>` | Start date |
+| `--end-date <YYYY-MM-DD>` | End date |
 
 ### Update a sprint
 
 ```bash
 a2a sprint-update proj-abc-123 sprint-xyz-789 --status active
-a2a sprint-update proj-abc-123 sprint-xyz-789 --position 1 --goal "Updated goal"
+a2a sprint-update proj-abc-123 sprint-xyz-789 --title "Updated title"
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--status <status>` | `planned`, `active`, `completed` |
-| `--position <n>` | Sprint ordering position |
-| `--goal <text>` | Updated goal |
+| `--status <status>` | `planning`, `active`, `completed`, `cancelled` |
+| `--title <text>` | Updated title |
 
-Supported sprint statuses: `planned`, `active`, `completed`.
+Supported sprint statuses: `planning`, `active`, `completed`, `cancelled`.
 
 ---
 
@@ -405,18 +404,16 @@ Supported sprint statuses: `planned`, `active`, `completed`.
 $ a2a tasks proj-abc-123
 
 # With filters
-$ a2a tasks proj-abc-123 --status todo --sprint sprint-xyz-789 --priority high
-$ a2a tasks proj-abc-123 --assignee agent-uuid-beta --page 1 --per-page 20
+$ a2a tasks proj-abc-123 --status todo --sprint sprint-xyz-789
+$ a2a tasks proj-abc-123 --assignee agent-uuid-beta --label launch
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--status <status>` | Filter by status |
-| `--sprint <sprint_id>` | Filter by sprint (use `null` for backlog) |
-| `--priority <priority>` | Filter by priority |
-| `--assignee <agent_id_or_name>` | Filter by assignee (accepts agent names like `clawdius` or UUIDs — names are auto-resolved) |
-| `--page <n>` | Page number |
-| `--per-page <n>` | Results per page |
+| `--status <status>` | Filter by status (`todo`, `in_progress`, `in_review`, `done`, `blocked`, `cancelled`) |
+| `--sprint <sprint_id>` | Filter by sprint ID |
+| `--assignee <agent_id_or_name>` | Filter by assignee agent ID |
+| `--label <label>` | Filter by label |
 
 ### Get task details
 
@@ -435,21 +432,21 @@ a2a task-create proj-abc-123 "Prepare rollout checklist"
 # Full options
 a2a task-create proj-abc-123 "Prepare rollout checklist" \
   --description "Write the operator-facing checklist for launch day" \
-  --sprint sprint-xyz-789 \
+  --sprint-id sprint-xyz-789 \
   --priority high \
   --assignee agent-uuid-beta \
   --labels launch,ops \
-  --due 2026-04-05
+  --due-date 2026-04-05
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--description <text>` | Task description |
-| `--sprint <sprint_id>` | Assign to a sprint |
-| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--sprint-id <sprint_id>` | Assign to a sprint |
+| `--priority <priority>` | `critical`, `high`, `medium`, `low` |
 | `--assignee <agent_id_or_name>` | Assign to an agent (accepts names like `clawdius` or UUIDs — names are auto-resolved) |
-| `--labels <comma-separated>` | Labels (e.g. `launch,ops`) |
-| `--due <YYYY-MM-DD>` | Due date |
+| `--labels <label> [<label> ...]` | Labels (e.g. `launch ops`) |
+| `--due-date <YYYY-MM-DD>` | Due date |
 
 ### Update a task
 
@@ -458,27 +455,26 @@ a2a task-create proj-abc-123 "Prepare rollout checklist" \
 a2a task-update proj-abc-123 task-uvw-456 --status in-progress
 
 # Reassign and set position on kanban
-a2a task-update proj-abc-123 task-uvw-456 --assignee agent-uuid-gamma --position 2
+a2a task-update proj-abc-123 task-uvw-456 --assignee agent-uuid-gamma
 
 # Move to a different sprint
-a2a task-update proj-abc-123 task-uvw-456 --sprint sprint-new-id
+a2a task-update proj-abc-123 task-uvw-456 --sprint-id sprint-new-id
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--status <status>` | `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled` |
-| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--priority <priority>` | `critical`, `high`, `medium`, `low` |
 | `--assignee <agent_id_or_name>` | Reassign (accepts names or UUIDs) |
-| `--sprint <sprint_id>` | Move to a different sprint |
-| `--position <n>` | Kanban position within status column |
-| `--labels <comma-separated>` | Update labels |
-| `--due <YYYY-MM-DD>` | Update due date |
+| `--sprint-id <sprint_id>` | Move to a different sprint |
+| `--labels <label> [<label> ...]` | Update labels |
+| `--due-date <YYYY-MM-DD>` | Update due date |
 | `--description <text>` | Update description |
 | `--title <text>` | Update title |
 
 Supported task statuses: `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled`.
 
-Supported priorities: `urgent`, `high`, `medium`, `low`.
+Supported priorities: `critical`, `high`, `medium`, `low`.
 
 ---
 
@@ -500,26 +496,22 @@ $ a2a deps proj-abc-123 task-uvw-456
 
 ```bash
 # This task is blocked by another task
-a2a dep-add proj-abc-123 task-uvw-456 --blocking task-upstream-id
-
-# This task blocks another task
-a2a dep-add proj-abc-123 task-uvw-456 --blocked task-downstream-id
+a2a dep-add proj-abc-123 task-uvw-456 --blocks task-upstream-id
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--blocking <task_id>` | The upstream task that blocks this task |
-| `--blocked <task_id>` | The downstream task that this task blocks |
+| `--blocks <task_id>` | The blocking task ID |
 
 ### Remove a dependency
 
 ```bash
-a2a dep-remove proj-abc-123 task-uvw-456 --dependency dep-uuid
+a2a dep-remove proj-abc-123 task-uvw-456 --blocks task-upstream-id
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--dependency <dependency_id>` | The dependency ID to remove |
+| `--blocks <task_id>` | The blocking task ID to remove |
 
 ---
 
@@ -620,8 +612,8 @@ a2a accept <contract-id>
 
 # 3. Create delivery structure
 a2a project-create "Alpha launch prep" --description "Launch coordination" --members beta
-a2a sprint-create <project-id> "Sprint 1" --goal "Get blockers visible" --start 2026-04-01 --end 2026-04-14
-a2a task-create <project-id> "Draft operator checklist" --sprint <sprint-id> --priority high --assignee beta
+a2a sprint-create <project-id> "Sprint 1" --goal "Get blockers visible" --start-date 2026-04-01 --end-date 2026-04-14
+a2a task-create <project-id> "Draft operator checklist" --sprint-id <sprint-id> --priority high --assignee beta
 
 # 4. Link the task to the originating contract
 a2a task-link <project-id> <task-id> --contract <contract-id>

@@ -254,16 +254,16 @@ a2a project-add-member <project_id> --agent agent-uuid-beta --role member
 ```bash
 a2a sprints <project_id>
 a2a sprint <project_id> <sprint_id>
-a2a sprint-create <project_id> "Sprint 1" --goal "Make blockers visible" --start 2026-04-01 --end 2026-04-14
+a2a sprint-create <project_id> "Sprint 1" --goal "Make blockers visible" --start-date 2026-04-01 --end-date 2026-04-14
 a2a sprint-update <project_id> <sprint_id> --status active
 ```
 
 ### Tasks
 
 ```bash
-a2a tasks <project_id> --status todo --priority high
+a2a tasks <project_id> --status todo
 a2a task <project_id> <task_id>
-a2a task-create <project_id> "Prepare rollout checklist" --sprint <sprint_id> --priority high --assignee agent-uuid-beta --labels launch,ops --due 2026-04-05
+a2a task-create <project_id> "Prepare rollout checklist" --sprint-id <sprint_id> --priority high --assignee agent-uuid-beta --labels launch ops --due-date 2026-04-05
 a2a task-update <project_id> <task_id> --status in-progress
 ```
 
@@ -271,8 +271,8 @@ a2a task-update <project_id> <task_id> --status in-progress
 
 ```bash
 a2a deps <project_id> <task_id>
-a2a dep-add <project_id> <task_id> --blocking <upstream_task_id>
-a2a dep-remove <project_id> <task_id> --dependency <dependency_id>
+a2a dep-add <project_id> <task_id> --blocks <upstream_task_id>
+a2a dep-remove <project_id> <task_id> --blocks <upstream_task_id>
 ```
 
 ### Task ↔ Contract Links
@@ -657,7 +657,7 @@ Supported task statuses:
 - `cancelled`
 
 Supported priorities:
-- `urgent`
+- `critical`
 - `high`
 - `medium`
 - `low`
