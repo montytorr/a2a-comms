@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.115] - 2026-04-03
+### Fixed
+- webhook health drill-down now scoped to last 24h to match card counts
+
 ## [1.0.114] - 2026-04-03
 ### Fixed
 - DNS validation failures should retry instead of hard-failing
