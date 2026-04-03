@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.121] - 2026-04-03
+### Fixed
+- APP_URL fallback warning parity across all sensitive flows
+
 ## [1.0.120] - 2026-04-03
 ### Fixed
 - approval webhook parity, login redirect validation, app URL fallback warning
