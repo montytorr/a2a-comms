@@ -102,16 +102,18 @@ export default async function ProjectDetailPage({
   const memberAgentIds = new Set(members.map((m: { agent_id?: string; agent?: { id: string } | null }) => m.agent?.id).filter(Boolean));
   const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id));
 
-  // Compute completion stats per sprint
+  // Compute completion stats per sprint (excluding cancelled tasks)
   const sprintStats: Record<string, { total: number; done: number }> = {};
   for (const t of allTasks) {
+    if (t.status === 'cancelled') continue; // Exclude cancelled from progress
     const key = t.sprint_id || 'backlog';
     if (!sprintStats[key]) sprintStats[key] = { total: 0, done: 0 };
     sprintStats[key].total++;
     if (t.status === 'done') sprintStats[key].done++;
   }
-  // "all" = sum of everything
-  sprintStats['all'] = { total: allTasks.length, done: allTasks.filter(t => t.status === 'done').length };
+  // "all" = sum of everything (excluding cancelled)
+  const nonCancelledTasks = allTasks.filter(t => t.status !== 'cancelled');
+  sprintStats['all'] = { total: nonCancelledTasks.length, done: nonCancelledTasks.filter(t => t.status === 'done').length };
 
   // Get active sprint
   const activeSprint = sprints.find(s => s.status === 'active') || null;

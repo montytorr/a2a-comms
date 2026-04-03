@@ -78,8 +78,9 @@ export default async function ProjectsPage({
       memberCounts[m.project_id] = (memberCounts[m.project_id] || 0) + 1;
     }
 
-    // Count tasks per project
+    // Count tasks per project (excluding cancelled from progress)
     for (const t of tasksRes.data || []) {
+      if (t.status === 'cancelled') continue; // Exclude cancelled from progress
       if (!taskStats[t.project_id]) taskStats[t.project_id] = { total: 0, done: 0 };
       taskStats[t.project_id].total++;
       if (t.status === 'done') taskStats[t.project_id].done++;

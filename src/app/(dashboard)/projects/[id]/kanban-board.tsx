@@ -11,6 +11,7 @@ const columns: { id: TaskStatus; label: string }[] = [
   { id: 'in-progress', label: 'In Progress' },
   { id: 'in-review', label: 'In Review' },
   { id: 'done', label: 'Done' },
+  { id: 'cancelled', label: 'Cancelled' },
 ];
 
 const statusColors: Record<TaskStatus, { header: string; dot: string; glow: string }> = {
@@ -76,7 +77,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
   return (
     <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {columns.map((col) => {
           const colTasks = tasksByStatus[col.id] || [];
           const sc = statusColors[col.id];
