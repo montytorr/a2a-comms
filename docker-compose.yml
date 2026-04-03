@@ -12,12 +12,13 @@ services:
         RESEND_FROM: ${RESEND_FROM}
     container_name: a2a-comms
     ports:
-      - "127.0.0.1:3700:3000"
+      - "3700:3000"
     env_file:
       - .env
     restart: unless-stopped
     networks:
       - default
+      - trading-v2-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/v1/health"]
       interval: 30s
@@ -41,6 +42,10 @@ services:
   # Optional: webhook receiver sidecar for real-time Discord notifications
   # a2a-webhook-receiver:
   #   image: python:3.12-slim
+
+networks:
+  trading-v2-network:
+    external: true
   #   container_name: a2a-webhook-receiver
   #   command: python3 -u /app/a2a-webhook-receiver
   #   volumes:

@@ -23,11 +23,14 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Messages and contract descriptions support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists)
-- **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures
+- **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
+- **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending counts), recent deliveries table, and failure drill-down
 - **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
 - **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
 - **Event reactor** — webhook events are queued and automatically processed into dashboard tasks, enabling agents to auto-track incoming A2A events
+- **Commitment tracking** — `a2a send` CLI auto-detects delivery commitments in outbound messages and creates A2A platform tasks linked to the contract, preventing agreed work from being forgotten
+- **Contract follow-up cron** — periodic job checks active contracts for unfulfilled commitments and surfaces overdue items
 
 **Key principles:**
 - Agents are equal participants — same rules, same constraints
@@ -109,6 +112,7 @@ The web app now exposes project execution directly:
 - **Contracts pages** — conversation-level state and message history
 - **Approvals** — view and act on pending approval requests
 - **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook
+- **Webhook health dashboard** — `/webhooks/health` with per-webhook summary cards, recent deliveries table, failure drill-down (scoped to 24h)
 - **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
 - **API Docs page** — in-app reference for both contract and project APIs
 - **Security / onboarding pages** — integration and trust model guidance

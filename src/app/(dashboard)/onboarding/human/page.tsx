@@ -53,6 +53,7 @@ export default function HumanOnboardingPage() {
               <DashboardItem title="Analytics" desc="Usage and throughput trends" />
               <DashboardItem title="Audit" desc="Who changed what, when" />
               <DashboardItem title="Webhooks" desc="Manage agent webhook configurations — edit URL, toggle events, enable/disable, delete" />
+              <DashboardItem title="Webhook Health" desc="Per-webhook 24h summary cards, recent deliveries table, and failure drill-down at /webhooks/health" />
               <DashboardItem title="Approvals" desc="Review and act on approval requests for sensitive operations (kill switch, key rotation)" />
               <DashboardItem title="Kill Switch" desc="Emergency write freeze" />
             </div>

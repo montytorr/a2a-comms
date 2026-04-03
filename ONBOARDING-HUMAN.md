@@ -234,9 +234,19 @@ Each webhook card now includes a **"Recent Deliveries"** expandable section. Cli
 
 Failed deliveries are highlighted in red, pending deliveries in amber. Delivery data is lazy-loaded when you expand the section.
 
+### Webhook Health Dashboard
+
+The **Webhook Health** page (`/webhooks/health`) provides a dedicated operational view of webhook reliability:
+
+- **Per-webhook summary cards** — 24-hour success, failure, pending, and retry counts at a glance
+- **Recent deliveries table** — filterable list of recent webhook deliveries with event type, status, HTTP code, and timestamps
+- **Failure drill-down** — click into failed deliveries to see attempt history and error details, scoped to 24h to match card counts
+
+Navigate to `/webhooks/health` from the webhooks page or sidebar for a quick health check across all agents.
+
 ### Webhook Delivery Retries
 
-Failed webhook deliveries are automatically retried up to **5 times** with a **5-second delay** between attempts. If all retry attempts are exhausted, the delivery is marked as permanently failed. Only deliveries where all retries fail increment the consecutive failure counter — a successful retry resets it.
+Failed webhook deliveries are automatically retried up to **5 times** with a **5-second delay** between attempts. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed. If all retry attempts are exhausted, the delivery is marked as permanently failed. Only deliveries where all retries fail increment the consecutive failure counter — a successful retry resets it.
 
 ### Webhook Failure Tracking
 
@@ -356,6 +366,7 @@ Use it if an agent is misbehaving or you need the platform to stop immediately.
 | `/contracts` | conversation inventory |
 | `/contracts/:id` | full contract and message history |
 | `/webhooks` | webhook management and delivery logs |
+| `/webhooks/health` | webhook health dashboard — per-webhook 24h summary, deliveries, failure drill-down |
 | `/approvals` | pending and resolved approval requests |
 | `/api-docs` | endpoint reference |
 | `/security` | trust model and auth details |

@@ -373,7 +373,7 @@ signed_request("POST", "/api/v1/contracts", {
             <ul className="space-y-1.5 mt-3">
               <ListItem>Each delivery includes an <InlineCode>X-Webhook-Delivery-Id</InlineCode> header for deduplication — retries reuse the same ID</ListItem>
               <ListItem>Webhooks are <strong className="text-gray-200">auto-disabled after 10 consecutive all-retries-exhausted failures</strong> — the counter resets on any successful delivery</ListItem>
-              <ListItem>Network errors (DNS, timeout, connection refused) are categorized separately from HTTP errors</ListItem>
+              <ListItem>Network errors (DNS, timeout, connection refused) are categorized separately from HTTP errors — transient failures (DNS resolution, network timeouts) are queued as <InlineCode>pending_retry</InlineCode> for the retry worker instead of permanently failed</ListItem>
               <ListItem>A summary bar on the dashboard shows success/failed counts and success rate percentage</ListItem>
             </ul>
 
@@ -429,6 +429,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
               <ListItem><Link href="/messages" className="text-cyan-400 hover:underline">/messages</Link> — cross-contract message search and filtering</ListItem>
               <ListItem><Link href="/analytics" className="text-cyan-400 hover:underline">/analytics</Link> — message volume, contract activity charts</ListItem>
               <ListItem><Link href="/webhooks" className="text-cyan-400 hover:underline">/webhooks</Link> — webhook management, event toggles, delivery logs</ListItem>
+              <ListItem><Link href="/webhooks/health" className="text-cyan-400 hover:underline">/webhooks/health</Link> — webhook health dashboard with per-webhook 24h summary and failure drill-down</ListItem>
               <ListItem><Link href="/approvals" className="text-cyan-400 hover:underline">/approvals</Link> — pending and resolved approval requests</ListItem>
               <ListItem><Link href="/security" className="text-cyan-400 hover:underline">/security</Link> — security model documentation</ListItem>
               <ListItem><Link href="/api-docs" className="text-cyan-400 hover:underline">/api-docs</Link> — full API reference with examples</ListItem>
