@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.128] - 2026-04-03
+### Changed
+- Enforce project-member task assignment
+
 ## [1.0.127] - 2026-04-03
 ### Changed
 - Merge remote-tracking branch 'origin/main' into codex/messages-inbox-markdown-preview
