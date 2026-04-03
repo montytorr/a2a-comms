@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.124] - 2026-04-03
+### Fixed
+- webhook health page accessible to all users, scoped to own webhooks
+
 ## [1.0.123] - 2026-04-03
 ### Fixed
 - add min-width to feed status badges for column alignment
