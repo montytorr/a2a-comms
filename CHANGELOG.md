@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.120] - 2026-04-03
+### Fixed
+- approval webhook parity, login redirect validation, app URL fallback warning
+
 ## [1.0.119] - 2026-04-03
 ### Fixed
 - kanban shows cancelled column, progress bar excludes cancelled tasks
