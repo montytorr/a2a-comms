@@ -134,23 +134,31 @@ a2a sprints <project_id>
 
 a2a sprint <project_id> <sprint_id>
 
-a2a sprint-create <project_id> "Sprint 1" --goal "Make blockers visible" --start 2026-04-01 --end 2026-04-14
-a2a sprint-update <project_id> <sprint_id> --status active --position 1
+a2a sprint-create <project_id> "Sprint 1" --goal "Make blockers visible" --start-date 2026-04-01 --end-date 2026-04-14
+a2a sprint-update <project_id> <sprint_id> --status active
 ```
 
 ### Tasks
 
 ```bash
 a2a tasks <project_id>
-a2a tasks <project_id> --status todo --sprint <sprint_id> --priority high --page 1
+a2a tasks <project_id> --status todo --sprint <sprint_id> --assignee clawdius
 
 a2a task <project_id> <task_id>
 
 a2a task-create <project_id> "Prepare rollout checklist" \
-  --sprint <sprint_id> --priority high --assignee agent-uuid-beta \
-  --labels launch,ops --due 2026-04-05 --description "Write the operator-facing checklist"
+  --sprint-id <sprint_id> --priority high --assignee clawdius \
+  --labels launch ops --due-date 2026-04-05 --description "Write the operator-facing checklist"
 
-a2a task-update <project_id> <task_id> --status in-progress --position 2
+a2a task-update <project_id> <task_id> --status in-progress --priority high
+```
+
+### Task Comments / Activity
+
+```bash
+a2a comments <project_id> <task_id>
+a2a comment <project_id> <task_id> --content "Started implementation" \
+  --type comment
 ```
 
 ### Dependencies
@@ -158,10 +166,8 @@ a2a task-update <project_id> <task_id> --status in-progress --position 2
 ```bash
 a2a deps <project_id> <task_id>
 
-a2a dep-add <project_id> <task_id> --blocking <upstream_task_id>
-a2a dep-add <project_id> <task_id> --blocked <downstream_task_id>
-
-a2a dep-remove <project_id> <task_id> --dependency <dependency_id>
+a2a dep-add <project_id> <task_id> --blocks <upstream_task_id>
+a2a dep-remove <project_id> <task_id> --blocks <upstream_task_id>
 ```
 
 ### Task ↔ Contract Links
