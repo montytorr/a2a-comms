@@ -108,12 +108,16 @@ export async function deliverWebhooks(
       },
     });
 
-    // DNS validation at enqueue time (non-retryable)
+    // DNS validation — queue for retry on transient failures instead of hard-failing
     const dnsCheck = await resolveAndValidateHost(wh.url);
     if (!dnsCheck.valid) {
-      await markDeliveryFailed(supabase, deliveryId, 0);
-      await incrementFailure(supabase, wh);
-      logWebhookDelivery('failure', wh.id, wh.agent_id, wh.url, { reason: 'DNS validation failed' }).catch(() => {});
+      await supabase.from('webhook_deliveries').update({
+        status: 'pending_retry',
+        attempts: 1,
+        response_status: null,
+        last_retry_at: null,
+      }).eq('id', deliveryId);
+      logWebhookDelivery('failure', wh.id, wh.agent_id, wh.url, { reason: 'DNS validation failed — queued for retry' }).catch(() => {});
       return;
     }
 
