@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase/client';
 
 function LoginForm() {
@@ -10,6 +11,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
+  const message = searchParams.get('message');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +41,12 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {message === 'password-reset' && (
+        <div className="px-4 py-3 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/10 text-emerald-400 text-[13px] font-medium">
+          Password updated — sign in with your new password
+        </div>
+      )}
+
       <div>
         <label htmlFor="email" className="block text-[9px] font-bold text-gray-600 mb-2 uppercase tracking-[0.2em]">
           Email
@@ -70,6 +78,11 @@ function LoginForm() {
           className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white text-sm placeholder-white/15 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/30 transition-all duration-300"
           placeholder="••••••••"
         />
+        <div className="flex justify-end mt-2">
+          <Link href="/forgot-password" className="text-[11px] text-cyan-500/70 hover:text-cyan-400 transition-colors">
+            Forgot password?
+          </Link>
+        </div>
       </div>
 
       {error && (
