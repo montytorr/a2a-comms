@@ -121,7 +121,8 @@ export default async function WebhookHealthPage({
 }) {
   const user = await getAuthUser();
   if (!user) redirect('/login');
-  if (!user.isSuperAdmin) redirect('/');
+
+  const { isSuperAdmin, agentIds } = user;
 
   const params = await searchParams;
   const filterWebhookId = params.webhook || null;
@@ -131,6 +132,23 @@ export default async function WebhookHealthPage({
 
   // eslint-disable-next-line react-hooks/purity -- server component with noStore(), Date.now() is intentional
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  // Resolve webhook IDs owned by this user's agents (for scoping)
+  let userWebhookIds: string[] = [];
+  if (!isSuperAdmin) {
+    if (agentIds.length === 0) {
+      // No agents → no webhooks to show
+      userWebhookIds = [];
+    } else {
+      const { data: userWebhooks } = await supabase
+        .from('webhooks')
+        .select('id')
+        .in('agent_id', agentIds);
+      userWebhookIds = (userWebhooks || []).map(w => w.id);
+    }
+  }
+
+  const hasWebhooks = isSuperAdmin || userWebhookIds.length > 0;
 
   // Fetch recent deliveries (last 50), optionally filtered by webhook + failures only
   let deliveriesQuery = supabase
@@ -151,6 +169,11 @@ export default async function WebhookHealthPage({
     .order('created_at', { ascending: false })
     .limit(50);
 
+  // Scope to user's webhooks unless super admin
+  if (!isSuperAdmin && hasWebhooks) {
+    deliveriesQuery = deliveriesQuery.in('webhook_id', userWebhookIds);
+  }
+
   if (filterWebhookId) {
     deliveriesQuery = deliveriesQuery
       .eq('webhook_id', filterWebhookId)
@@ -158,11 +181,11 @@ export default async function WebhookHealthPage({
       .gte('created_at', twentyFourHoursAgo);
   }
 
-  const { data: recentDeliveries } = await deliveriesQuery;
+  const { data: recentDeliveries } = hasWebhooks ? await deliveriesQuery : { data: [] };
   const deliveries = (recentDeliveries || []) as unknown as WebhookDelivery[];
 
-  // Fetch deliveries in last 24h for summary stats (always unfiltered)
-  const { data: last24hDeliveries } = await supabase
+  // Fetch deliveries in last 24h for summary stats
+  let stats24hQuery = supabase
     .from('webhook_deliveries')
     .select(`
       id,
@@ -172,6 +195,12 @@ export default async function WebhookHealthPage({
       webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at)
     `)
     .gte('created_at', twentyFourHoursAgo);
+
+  if (!isSuperAdmin && hasWebhooks) {
+    stats24hQuery = stats24hQuery.in('webhook_id', userWebhookIds);
+  }
+
+  const { data: last24hDeliveries } = hasWebhooks ? await stats24hQuery : { data: [] };
 
   const stats24h = (last24hDeliveries || []) as unknown as Array<{
     id: string;
@@ -261,6 +290,42 @@ export default async function WebhookHealthPage({
             Webhooks
           </Link>
         </div>
+
+        {/* Scope banner */}
+        {isSuperAdmin ? (
+          <div className="mb-4 rounded-xl bg-amber-500/[0.06] border border-amber-500/15 px-4 py-2.5 flex items-center gap-2 animate-fade-in">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400 shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span className="text-[11px] text-amber-400/80 font-medium">
+              Admin view — showing all platform webhook deliveries.
+            </span>
+          </div>
+        ) : !hasWebhooks ? (
+          <div className="mb-4 rounded-xl bg-gray-500/[0.06] border border-gray-500/15 px-4 py-2.5 flex items-center gap-2 animate-fade-in">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span className="text-[11px] text-gray-400/80 font-medium">
+              No webhooks registered for your agents. Register a webhook to see delivery health here.
+            </span>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10 px-4 py-2.5 flex items-center gap-2 animate-fade-in">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400/60 shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span className="text-[11px] text-cyan-400/60 font-medium">
+              Showing deliveries for your webhooks only.
+            </span>
+          </div>
+        )}
 
         {/* Overall Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
