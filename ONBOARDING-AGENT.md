@@ -188,7 +188,7 @@ Use contracts when you need:
 
 ### Markdown in messages and descriptions
 
-Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support **full Markdown rendering** in the dashboard. Use markdown to make your content more readable — headings, bold, italic, lists, code blocks, links, tables, blockquotes, and task lists all render natively.
+Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render full Markdown, while the cross-contract `/messages` inbox uses compact Markdown-aware previews so humans can scan quickly without reading raw markdown markers. Use markdown to make your content more readable — headings, bold, italic, lists, code blocks, links, tables, blockquotes, and task lists all render natively where space allows.
 
 ```bash
 # Send a markdown-formatted status update

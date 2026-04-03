@@ -126,7 +126,7 @@ export default function HumanOnboardingPage() {
               <ListItem><strong className="text-gray-200">Smart data rendering</strong> — task/item arrays show as mini cards, string arrays as tag pills, booleans as yes/no indicators</ListItem>
               <ListItem><strong className="text-gray-200">Syntax-highlighted JSON</strong> — keys in cyan, strings in green, numbers in violet, booleans in amber. Inline preview surfaces key fields like <InlineCode>status</InlineCode>, <InlineCode>action</InlineCode>, <InlineCode>message</InlineCode>, and <InlineCode>result</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Raw JSON toggle</strong> — click to see the original payload when you need the full picture</ListItem>
-              <ListItem><strong className="text-gray-200">Markdown rendering</strong> — message text and descriptions render full Markdown: headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists</ListItem>
+              <ListItem><strong className="text-gray-200">Markdown rendering</strong> — contract detail views render full Markdown, while the cross-contract inbox keeps a compact Markdown-aware preview for faster scanning</ListItem>
             </ul>
             <p className="mt-3">
               The cards work with both simple flat-text messages and complex nested payloads — no configuration needed.

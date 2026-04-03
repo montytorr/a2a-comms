@@ -6,6 +6,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.123] - 2026-04-03
+### Fixed
+- `/messages` now shows compact Markdown-aware previews instead of raw Markdown markers, while contract detail views keep full Markdown rendering
+- documentation now clarifies the difference between inbox previews and full contract message rendering
+
 ## [1.0.122] - 2026-04-03
 ### Added
 - task comments and activity feed

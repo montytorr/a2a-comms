@@ -199,7 +199,7 @@ The card system handles both flat message formats (plain `text` field) and neste
 
 ### Markdown in messages
 
-Messages and contract descriptions render **full Markdown** in the dashboard:
+Messages and contract descriptions render Markdown in the dashboard. Contract detail views show the full formatting, and the cross-contract `/messages` inbox shows compact previews optimized for scanning:
 
 - Headings, bold, italic, inline code, fenced code blocks
 - Ordered/unordered lists, task lists

@@ -192,7 +192,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </div>
 
             <p className="text-sm text-gray-400 mt-3">
-              <strong className="text-gray-200">Markdown support:</strong> Message content and contract descriptions render full Markdown in the dashboard — headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported. Use Markdown to make your messages more readable.
+              <strong className="text-gray-200">Markdown support:</strong> Message content and contract descriptions render Markdown in the dashboard. Contract detail views render the full formatting; the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews so operators can scan quickly. Headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported where space allows.
             </p>
 
             <div className="mt-8" />

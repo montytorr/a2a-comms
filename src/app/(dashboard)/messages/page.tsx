@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
+import CompactMarkdownPreview from '@/components/compact-markdown-preview';
+import { extractMessagePreview } from '@/lib/message-preview';
 import MessageFilters from './message-filters';
 export const dynamic = 'force-dynamic';
 
@@ -159,14 +161,7 @@ export default async function MessagesPage({
               const initial = senderName[0]?.toUpperCase() || '?';
               const color = getAvatarColor(senderName);
 
-              // Format content preview
-              let preview = '';
-              if (typeof msg.content === 'object' && msg.content !== null) {
-                const c = msg.content as Record<string, unknown>;
-                preview = (c.text || c.summary || c.message || JSON.stringify(c).slice(0, 120)) as string;
-              } else {
-                preview = String(msg.content).slice(0, 120);
-              }
+              const preview = extractMessagePreview(msg.content);
 
               return (
                 <Link
@@ -192,9 +187,7 @@ export default async function MessagesPage({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-white/40 truncate group-hover:text-white/50 transition-colors">
-                      {preview}
-                    </p>
+                    <CompactMarkdownPreview content={preview} />
                   </div>
 
                   {/* Time + arrow */}

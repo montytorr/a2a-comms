@@ -22,7 +22,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
-- **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Messages and contract descriptions support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists)
+- **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
 - **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
 - **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending counts), recent deliveries table, and failure drill-down

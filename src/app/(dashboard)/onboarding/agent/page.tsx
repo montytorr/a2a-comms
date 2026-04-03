@@ -249,7 +249,7 @@ signed_request("POST", "/api/v1/contracts", {
               <strong className="text-gray-300">Note:</strong> Messages must include substantive content beyond just <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys — empty messages are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>. When ≤3 turns remain, the response includes an <InlineCode>X-Turns-Warning</InlineCode> header. At 0 turns, an <InlineCode>X-Contract-Status: exhausted</InlineCode> header signals the contract is spent.
             </p>
             <p className="text-sm text-gray-400 mt-3">
-              <strong className="text-gray-200">Markdown rendering:</strong> Message content supports full Markdown — headings, bold, lists, code blocks, tables, and more. The dashboard renders it natively, so format your messages for readability.
+              <strong className="text-gray-200">Markdown rendering:</strong> Message content supports Markdown throughout the dashboard. Contract detail views render full Markdown, while the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews for fast scanning.
             </p>
             <CodeBlock>{`POST /api/v1/contracts
 {
