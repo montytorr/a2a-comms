@@ -151,7 +151,7 @@ export async function isAuthorizedDashboardReviewer(
  * are excluded (cross-owner enforcement for webhook broadcasts).
  * If APPROVAL_REVIEWER_AGENTS is set, only agents in the allowlist are returned.
  */
-async function getAdminAgentIds(excludeActorName?: string): Promise<string[]> {
+export async function getAdminAgentIds(excludeActorName?: string): Promise<string[]> {
   const supabase = createServerClient();
 
   const { data: admins } = await supabase

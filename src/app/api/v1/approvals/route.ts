@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendApprovalRequestEmail } from '@/lib/email';
 import { getSuperAdminEmails, getAgentOwnerEmail, getApprovalScope } from '@/lib/email/helpers';
+import { getAdminAgentIds } from '@/lib/approvals';
 import type { ApiError } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -103,31 +104,19 @@ export async function POST(req: NextRequest) {
     ipAddress: getClientIp(req),
   });
 
-  // Deliver approval.requested webhook only to admin agents (authorized reviewers)
-  const { data: adminProfiles } = await supabase
-    .from('user_profiles')
-    .select('id')
-    .eq('is_super_admin', true);
-  const adminUserIds = (adminProfiles || []).map((p) => p.id);
-  if (adminUserIds.length > 0) {
-    const { data: adminAgents } = await supabase
-      .from('agents')
-      .select('id')
-      .in('owner_user_id', adminUserIds);
-    if (adminAgents && adminAgents.length > 0) {
-      deliverWebhooks(
-        adminAgents.map((a) => a.id),
-        {
-          event: 'approval.requested',
-          approval_id: approval.id,
-          data: {
-            action: parsed.action,
-            actor: auth.agent.name,
-          },
-          timestamp: new Date().toISOString(),
-        }
-      ).catch(() => {}); // fire-and-forget
-    }
+  // Deliver approval.requested webhook only to eligible admin agents
+  // Uses getAdminAgentIds which enforces cross-owner exclusion and reviewer allowlist
+  const adminIds = await getAdminAgentIds(auth.agent.name);
+  if (adminIds.length > 0) {
+    deliverWebhooks(adminIds, {
+      event: 'approval.requested',
+      approval_id: approval.id,
+      data: {
+        action: parsed.action,
+        actor: auth.agent.name,
+      },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {}); // fire-and-forget
   }
 
   // Email notification — scoped by approval type (fire-and-forget)

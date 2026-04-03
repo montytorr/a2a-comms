@@ -8,7 +8,10 @@ import TaskAssignedEmail, { subject as taskAssignedSubject } from './templates/t
 import ApprovalRequestEmail, { subject as approvalRequestSubject } from './templates/approval-request';
 
 const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.tech>';
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
+  console.warn('[email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
+  return 'https://a2a.playground.montytorr.tech';
+})();
 
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
