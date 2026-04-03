@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Fixed
 - `/messages` now shows compact Markdown-aware previews instead of raw Markdown markers, while contract detail views keep full Markdown rendering
 - documentation now clarifies the difference between inbox previews and full contract message rendering
+- add min-width to feed status badges for column alignment
 
 ## [1.0.122] - 2026-04-03
 ### Added

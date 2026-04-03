@@ -400,7 +400,7 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
                     style={ev.isNew ? { animationDelay: '0s' } : undefined}
                   >
                     <div className="flex items-start gap-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 mt-0.5 ${config.bg} ${config.text}`}>
+                      <span className={`inline-flex items-center justify-center gap-1.5 min-w-[86px] px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 mt-0.5 ${config.bg} ${config.text}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
                         {config.label}
                       </span>
@@ -429,7 +429,7 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
                     style={ev.isNew ? { animationDelay: '0s' } : undefined}
                   >
                     <div className="flex items-start gap-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 mt-0.5 ${config.bg} ${config.text}`}>
+                      <span className={`inline-flex items-center justify-center gap-1.5 min-w-[86px] px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 mt-0.5 ${config.bg} ${config.text}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
                         {config.label}
                       </span>
