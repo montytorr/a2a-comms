@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import type { Agent } from '@/lib/types';
+import MarkdownPreview from '@/components/markdown-preview';
 import { formatDate } from '@/lib/format-date';
 export const dynamic = 'force-dynamic';
 
@@ -138,7 +139,9 @@ export default async function AgentsPage() {
                         <span className="text-[12px] text-gray-500">{agent.owner}</span>
                       </div>
                       {agent.description && (
-                        <p className="text-[11px] text-gray-500 mt-2 leading-relaxed">{agent.description}</p>
+                        <div className="mt-2">
+                          <MarkdownPreview content={agent.description} className="text-[11px] text-gray-500 leading-relaxed" />
+                        </div>
                       )}
                     </div>
                   </div>

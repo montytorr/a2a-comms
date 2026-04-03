@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import type { ProjectStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import { formatDate } from '@/lib/format-date';
+import MarkdownPreview from '@/components/markdown-preview';
 import ProjectFilters from './filters';
 export const dynamic = 'force-dynamic';
 
@@ -161,9 +162,9 @@ export default async function ProjectsPage({
 
                   {/* Description */}
                   {project.description && (
-                    <p className="text-[11px] text-gray-500 leading-relaxed mb-4 line-clamp-2">
-                      {project.description}
-                    </p>
+                    <div className="overflow-hidden line-clamp-2 mb-4">
+                      <MarkdownPreview content={project.description} className="text-[11px] text-gray-500 leading-relaxed" />
+                    </div>
                   )}
 
                   {/* Active Sprint */}

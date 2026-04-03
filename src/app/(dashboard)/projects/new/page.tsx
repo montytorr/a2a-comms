@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase/client';
+import MarkdownPreview from '@/components/markdown-preview';
 
 interface AgentRow {
   id: string;
@@ -145,6 +146,12 @@ export default function NewProjectPage() {
             rows={5}
             className="w-full bg-[#0a0a14] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-300 placeholder:text-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 resize-y min-h-[100px]"
           />
+          {description.trim() && (
+            <div className="mt-3 pt-3 border-t border-white/[0.04]">
+              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">Preview</p>
+              <MarkdownPreview content={description} className="text-[13px] text-gray-400" />
+            </div>
+          )}
         </div>
 
         {/* Members */}

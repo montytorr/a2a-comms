@@ -8,6 +8,7 @@ import StatusBadge from '@/components/status-badge';
 import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
+import MarkdownPreview from '@/components/markdown-preview';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 export const dynamic = 'force-dynamic';
 
@@ -209,7 +210,9 @@ export default async function ContractDetailPage({
                 <StatusBadge status={contract.status} />
               </div>
               {contract.description && (
-                <p className="text-[13px] text-gray-500 max-w-2xl leading-relaxed">{contract.description}</p>
+                <div className="max-w-2xl">
+                  <MarkdownPreview content={contract.description} className="text-[13px] text-gray-500 leading-relaxed" />
+                </div>
               )}
             </div>
             {contract.status === 'active' && (

@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
+import MarkdownPreview from '@/components/markdown-preview';
 import KeyActions from './key-actions';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 
@@ -102,7 +103,9 @@ export default async function AgentDetailPage({
                 <span className="text-[12px] text-gray-500">{agentData.owner}</span>
               </div>
               {agentData.description && (
-                <p className="text-[13px] text-gray-500 mt-3 leading-relaxed">{agentData.description}</p>
+                <div className="mt-3">
+                  <MarkdownPreview content={agentData.description} className="text-[13px] text-gray-500 leading-relaxed" />
+                </div>
               )}
             </div>
           </div>
