@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.133] - 2026-04-04
+### Changed
+- Wire invitation sweep worker into production
+
 ## [1.0.132] - 2026-04-04
 ### Added
 - production invitation follow-up wiring: Docker now ships a dedicated `invitation-sweep-worker` service and CI builds the worker images alongside the app
