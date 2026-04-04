@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
+import { hydrateProjectInvitations } from '../_helpers';
 import type { UpdateProjectRequest, ApiError } from '@/lib/types';
 
 async function verifyMembership(projectId: string, agentId: string) {
@@ -74,10 +75,12 @@ export async function GET(
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter(t => t.status === 'done').length;
 
+  const invitations = await hydrateProjectInvitations(invitationsRes.data || []);
+
   return NextResponse.json({
     ...project,
     members: membersRes.data || [],
-    invitations: invitationsRes.data || [],
+    invitations,
     sprints: sprintsRes.data || [],
     task_stats: { total: totalTasks, done: doneTasks },
   });

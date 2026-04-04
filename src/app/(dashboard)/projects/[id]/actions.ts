@@ -3,7 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
-import { notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
+import { getProjectInvitationExpiry, notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 
 async function requireProjectMembership(
   projectId: string,
@@ -95,6 +95,8 @@ export async function inviteProjectMember(projectId: string, agentId: string) {
     role: 'member',
     status: 'pending',
     responded_at: null,
+    reminder_sent_at: null,
+    expires_at: getProjectInvitationExpiry(new Date()),
     updated_at: new Date().toISOString(),
   }, { onConflict: 'project_id,agent_id' });
 
@@ -129,7 +131,9 @@ export async function respondToProjectInvitation(
     .single();
 
   if (!invitation) throw new Error('Invitation not found');
-  if (invitation.status !== 'pending') throw new Error('Invitation has already been resolved');
+  if (invitation.status !== 'pending') {
+    throw new Error(invitation.status === 'expired' ? 'Invitation has expired' : 'Invitation has already been resolved');
+  }
 
   const isInvitee = user.agentIds.includes(invitation.agent_id);
   const isOwner = user.isSuperAdmin || !!(await supabase

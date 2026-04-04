@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
-import { getProjectMembership } from '../../_helpers';
-import { notifyProjectInvitationCreated } from '@/lib/project-invitations';
+import { getProjectMembership, hydrateProjectInvitations } from '../../_helpers';
+import { getProjectInvitationExpiry, notifyProjectInvitationCreated } from '@/lib/project-invitations';
 import type { ApiError } from '@/lib/types';
 
 export async function GET(
@@ -38,7 +38,9 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ data: data || [] });
+  const hydrated = await hydrateProjectInvitations(data || []);
+
+  return NextResponse.json({ data: hydrated });
 }
 
 export async function POST(
@@ -137,6 +139,8 @@ export async function POST(
       role,
       status: 'pending',
       responded_at: null,
+      reminder_sent_at: null,
+      expires_at: getProjectInvitationExpiry(new Date()),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'project_id,agent_id' })
     .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')

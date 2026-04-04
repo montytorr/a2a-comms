@@ -17,6 +17,7 @@ Usage:
   a2a agent <id_or_name>
   a2a status
   a2a pending
+  a2a inbox [--project <id>]
   a2a health
 
   Projects:
@@ -675,7 +676,15 @@ def cmd_project_invitations(args):
         name = agent.get("display_name", agent.get("name", inv.get("agent_id", "?")))
         invited_by = inviter.get("display_name", inviter.get("name", inv.get("invited_by_agent_id", "?")))
         status = inv.get("status", "pending").upper()
-        print(f"  [{status}] {name} — invited by {invited_by} (id: {inv.get('id')})")
+        expires_at = inv.get("expires_at")
+        reminder_sent = inv.get("reminder_sent_at")
+        extras = []
+        if expires_at and inv.get("status") == "pending":
+            extras.append(f"expires: {expires_at}")
+        if reminder_sent:
+            extras.append(f"reminder: {reminder_sent}")
+        suffix = f" | {' | '.join(extras)}" if extras else ""
+        print(f"  [{status}] {name} — invited by {invited_by} (id: {inv.get('id')}){suffix}")
 
 
 def cmd_project_invite(args):
@@ -1035,6 +1044,46 @@ def cmd_pending(_args):
         print()
 
 
+def cmd_inbox(args):
+    """Show invitation inbox across contracts and optional project invitations."""
+    data = api_request("GET", "/api/v1/contracts?status=proposed&role=invitee")
+    contracts = data.get("data", [])
+
+    print("Invitation inbox\n")
+    print(f"Contract invitations: {len(contracts)}")
+    if contracts:
+        print()
+        for c in contracts:
+            print(format_contract(c, verbose=True))
+            print()
+
+    if not args.project_id:
+        return
+
+    project_data = api_request("GET", f"/api/v1/projects/{args.project_id}/invitations")
+    invitations = project_data.get("data", project_data) if isinstance(project_data, dict) else project_data
+    if isinstance(invitations, dict):
+        invitations = [invitations]
+
+    print(f"Project invitations for {args.project_id}: {len(invitations)}")
+    if invitations:
+        for inv in invitations:
+            agent = inv.get("agent", {})
+            inviter = inv.get("invited_by", {})
+            name = agent.get("display_name", agent.get("name", inv.get("agent_id", "?")))
+            invited_by = inviter.get("display_name", inviter.get("name", inv.get("invited_by_agent_id", "?")))
+            status = inv.get("status", "pending").upper()
+            expires_at = inv.get("expires_at")
+            reminder_sent = inv.get("reminder_sent_at")
+            extras = []
+            if expires_at and inv.get("status") == "pending":
+                extras.append(f"expires: {expires_at}")
+            if reminder_sent:
+                extras.append(f"reminder: {reminder_sent}")
+            suffix = f" | {' | '.join(extras)}" if extras else ""
+            print(f"  [{status}] {name} — invited by {invited_by} (id: {inv.get('id')}){suffix}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="A2A Comms CLI — Agent-to-Agent Contract Communication",
@@ -1110,6 +1159,10 @@ def main():
 
     # pending
     sub.add_parser("pending", help="List pending invitations")
+
+    # inbox
+    p = sub.add_parser("inbox", help="Show invitation inbox across contracts and projects")
+    p.add_argument("--project", dest="project_id", help="Optional project id to include project invitations")
 
     # webhook
     p = sub.add_parser("webhook", help="Manage webhook push notifications")
@@ -1328,6 +1381,7 @@ def main():
         "message": cmd_message,
         "send": cmd_send,
         "pending": cmd_pending,
+        "inbox": cmd_inbox,
         "webhook": cmd_webhook,
         "rotate-keys": cmd_rotate_keys,
         # Project management

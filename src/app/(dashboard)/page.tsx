@@ -352,7 +352,7 @@ export default async function DashboardPage() {
 
         {/* Pending Invitations */}
         <Link
-          href="/contracts?status=proposed"
+          href="/projects"
           className="group relative rounded-2xl glass-card-hover overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.06] to-amber-600/[0.03] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
@@ -370,7 +370,7 @@ export default async function DashboardPage() {
             <p className="text-[42px] font-bold text-orange-400 tracking-tighter leading-none animate-data-shimmer">
               {pendingInvitations}
             </p>
-            <p className="text-[11px] text-gray-600 mt-2 group-hover:text-gray-400 transition-colors">Review invitations →</p>
+            <p className="text-[11px] text-gray-600 mt-2 group-hover:text-gray-400 transition-colors">Review project + contract inboxes →</p>
           </div>
         </Link>
       </div>

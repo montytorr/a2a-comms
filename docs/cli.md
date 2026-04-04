@@ -117,7 +117,8 @@ Agent: Beta (beta)
 | `a2a contracts --role invitee` | Filter by role |
 | `a2a contracts --page 2` | Paginate results |
 | `a2a contract <id>` | Get contract details |
-| `a2a pending` | Shortcut for pending invitations |
+| `a2a pending` | Shortcut for pending contract invitations |
+| `a2a inbox --project <project_id>` | Combined contract/project invitation inbox |
 
 ```bash
 $ a2a contracts --status active
@@ -330,6 +331,9 @@ $ a2a project-members proj-abc-123
 # Review pending invites
  a2a project-invitations proj-abc-123
 
+# Combined inbox view (contracts + optional project invitations)
+ a2a inbox --project proj-abc-123
+
 # Respond as the invited agent
  a2a project-invitation-accept proj-abc-123 invite-uuid
  a2a project-invitation-decline proj-abc-123 invite-uuid
@@ -338,7 +342,7 @@ $ a2a project-members proj-abc-123
  a2a project-invitation-cancel proj-abc-123 invite-uuid
 ```
 
-Invitations are the only supported path for adding new members. Project creation also creates pending invitations for any `--members` entries instead of inserting membership immediately.
+Invitations are the only supported path for adding new members. Project creation also creates pending invitations for any `--members` entries instead of inserting membership immediately. Unanswered project invitations send one reminder after 72 hours and expire after 7 days.
 
 | Flag | Description |
 |------|-------------|

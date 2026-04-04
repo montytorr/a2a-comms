@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import MarkdownPreview from '@/components/markdown-preview';
+import { formatDateTime, formatRelative } from '@/lib/format-date';
 import ProjectStatusDropdown from './project-status-dropdown';
 import { inviteProjectMember, removeProjectMember, respondToProjectInvitation, updateProject } from './actions';
+import { getInvitationStatusLabel, getInvitationStatusTone, type InvitationLike } from '../invitation-utils';
 
 const avatarGradients = [
   'from-cyan-500 to-blue-600',
@@ -35,23 +37,8 @@ interface ProjectHeaderProps {
     role: string;
     agent: { id: string; name: string; display_name: string } | null;
   }>;
-  invitations?: Array<{
-    id: string;
-    status: string;
-    role: string;
-    agent_id: string;
-    agent: { id: string; name: string; display_name: string } | null;
-    invited_by: { id: string; name: string; display_name: string } | null;
-    created_at: string;
-  }>;
-  myPendingInvitations?: Array<{
-    id: string;
-    status: string;
-    agent_id: string;
-    role: string;
-    agent: { id: string; name: string; display_name: string } | null;
-    invited_by: { id: string; name: string; display_name: string } | null;
-  }>;
+  invitations?: InvitationLike[];
+  myPendingInvitations?: InvitationLike[];
   availableAgents?: Array<{ id: string; name: string; display_name: string }>;
   isOwner?: boolean;
 }
@@ -389,6 +376,11 @@ export default function ProjectHeader({ project, members, invitations = [], myPe
                 <div>
                   <p className="text-[12px] font-semibold text-cyan-300">Pending invitation for {agentName}</p>
                   <p className="text-[11px] text-gray-400 mt-1">Invited by {inviter}. Accept to join this project, or decline to stay out.</p>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
+                    {invitation.created_at && <span>Created {formatRelative(invitation.created_at)}</span>}
+                    {invitation.expires_at && <span title={formatDateTime(invitation.expires_at)}>Expires {formatRelative(invitation.expires_at)}</span>}
+                    {invitation.reminder_sent_at && <span title={formatDateTime(invitation.reminder_sent_at)}>Reminder sent {formatRelative(invitation.reminder_sent_at)}</span>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -410,26 +402,40 @@ export default function ProjectHeader({ project, members, invitations = [], myPe
             );
           })}
 
-          {isOwner && invitations.filter((inv) => inv.status === 'pending').length > 0 && (
+          {isOwner && invitations.length > 0 && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-3">Pending Invitations</p>
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-3">Invitation Timeline</p>
               <div className="space-y-2">
-                {invitations.filter((inv) => inv.status === 'pending').map((invitation) => {
+                {invitations.map((invitation) => {
                   const agentName = invitation.agent?.display_name || invitation.agent?.name || 'Unknown';
                   const inviter = invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown';
+                  const tone = getInvitationStatusTone(invitation.status as never);
+                  const label = getInvitationStatusLabel(invitation.status as never);
+                  const canCancel = invitation.status === 'pending';
                   return (
                     <div key={invitation.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.04] bg-[#0a0a14] px-3 py-2.5">
-                      <div>
-                        <p className="text-[12px] text-white font-medium">{agentName}</p>
-                        <p className="text-[10px] text-gray-600">Invited by {inviter} · awaiting response</p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-[12px] text-white font-medium truncate">{agentName}</p>
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}>{label}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-600 mt-1">
+                          Invited by {inviter}
+                          {invitation.expires_at && invitation.status === 'pending' ? ` · expires ${formatRelative(invitation.expires_at)}` : ''}
+                          {invitation.responded_at && invitation.status !== 'pending' ? ` · resolved ${formatRelative(invitation.responded_at)}` : ''}
+                        </p>
                       </div>
-                      <button
-                        onClick={() => handleInvitation(invitation.id, 'cancel')}
-                        disabled={isPending}
-                        className="px-2.5 py-1 rounded-md text-[10px] text-red-300 border border-red-500/20 bg-red-500/[0.06] hover:bg-red-500/[0.12] transition-colors"
-                      >
-                        Cancel
-                      </button>
+                      {canCancel ? (
+                        <button
+                          onClick={() => handleInvitation(invitation.id, 'cancel')}
+                          disabled={isPending}
+                          className="px-2.5 py-1 rounded-md text-[10px] text-red-300 border border-red-500/20 bg-red-500/[0.06] hover:bg-red-500/[0.12] transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-gray-600">No action</span>
+                      )}
                     </div>
                   );
                 })}

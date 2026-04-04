@@ -7,6 +7,7 @@ import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
 import AutoRefresh from '@/components/auto-refresh';
 import type { ProjectInvitationStatus } from '@/lib/types';
+import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -33,16 +34,26 @@ export default async function ProjectDetailPage({
 
   if (error || !project) notFound();
 
-  // Verify access: admin or member
-  if (!user.isSuperAdmin) {
-    const { data: membership } = await supabase
-      .from('project_members')
-      .select('id')
-      .eq('project_id', id)
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
-      .limit(1);
+  const inviteeScopedQuery = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
 
-    if (!membership || membership.length === 0) {
+  // Verify access: admin, member, or invitee with an outstanding/resolved invitation.
+  if (!user.isSuperAdmin) {
+    const [{ data: membership }, { data: invitationAccess }] = await Promise.all([
+      supabase
+        .from('project_members')
+        .select('id')
+        .eq('project_id', id)
+        .in('agent_id', inviteeScopedQuery)
+        .limit(1),
+      supabase
+        .from('project_member_invitations')
+        .select('id')
+        .eq('project_id', id)
+        .in('agent_id', inviteeScopedQuery)
+        .limit(1),
+    ]);
+
+    if ((!membership || membership.length === 0) && (!invitationAccess || invitationAccess.length === 0)) {
       redirect('/projects');
     }
   }
@@ -99,7 +110,7 @@ export default async function ProjectDetailPage({
   ]);
 
   const members = membersRes.data || [];
-  const invitations = invitationsRes.data || [];
+  const invitations = await hydrateProjectInvitations(invitationsRes.data || []);
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
   const tasks = (tasksRes.data || []) as TaskRow[];

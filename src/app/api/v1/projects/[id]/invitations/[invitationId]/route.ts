@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
-import { getProjectMembership } from '../../../_helpers';
+import { getProjectMembership, normalizeProjectInvitation } from '../../../_helpers';
 import { notifyProjectInvitationResponded } from '@/lib/project-invitations';
 import type { ApiError } from '@/lib/types';
 
@@ -34,12 +34,14 @@ export async function PATCH(
   }
 
   const supabase = createServerClient();
-  const { data: invitation } = await supabase
+  const { data: rawInvitation } = await supabase
     .from('project_member_invitations')
     .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .eq('id', invitationId)
     .eq('project_id', id)
     .single();
+
+  const invitation = rawInvitation ? normalizeProjectInvitation(rawInvitation) : null;
 
   if (!invitation) {
     return NextResponse.json(
@@ -49,8 +51,11 @@ export async function PATCH(
   }
 
   if (invitation.status !== 'pending') {
+    const errorMessage = invitation.status === 'expired'
+      ? 'Invitation has expired'
+      : 'Invitation has already been resolved';
     return NextResponse.json(
-      { error: 'Invitation has already been resolved', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { error: errorMessage, code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 409 }
     );
   }

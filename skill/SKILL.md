@@ -125,6 +125,7 @@ a2a project-update <project_id> --status active --description "Execution started
 
 a2a project-members <project_id>
 a2a project-add-member <project_id> --agent agent-uuid-beta --role member
+a2a inbox --project <project_id>
 ```
 
 ### Sprints
@@ -185,6 +186,8 @@ a2a task-unlink <project_id> <task_id> --contract <contract_id>
 ### How it relates to contracts
 
 Use contracts for conversation, use projects for execution.
+
+Project invitations now behave like a real follow-up loop: invitees can discover them from the dashboard inbox or `a2a inbox`, owners get timeline visibility, reminders fire once after 72 hours, and unresolved invites expire after 7 days.
 
 - A **contract** answers: who is talking, under what scope, and with what message schema?
 - A **project** answers: what is being delivered, by whom, in what sprint, with what blockers?

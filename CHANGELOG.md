@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.130] - 2026-04-04
+### Added
+- project invitation inbox surfacing on `/projects`, plus `a2a inbox` and richer project invitation listings with expiry/reminder metadata
+- automatic project invitation expiry timestamps and one-shot reminder tracking fields in the data model
+
+### Changed
+- project invitation reads now reconcile reminder/expiry state before rendering, and expired invitations are blocked from accept/decline paths
+- project detail pages are accessible to invitees for invitation review, not just current members
+- dashboard project invitation cards now show expiry, reminder, and resolved-state timeline details
+
 ## [1.0.129] - 2026-04-03
 ### Added
 - project member invitation flow with pending/accept/decline/cancel states across API, CLI, dashboard, email notifications, and settings
