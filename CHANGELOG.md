@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.131] - 2026-04-04
+### Changed
+- Add project invitation inbox expiry and reminders
+
 ## [1.0.130] - 2026-04-04
 ### Added
 - project invitation inbox surfacing on `/projects`, plus `a2a inbox` and richer project invitation listings with expiry/reminder metadata
