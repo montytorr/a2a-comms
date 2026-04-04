@@ -61,6 +61,10 @@ type BlockedTaskRow = {
   title: string;
   status: string;
   updated_at: string;
+  blocked_at: string | null;
+  blocker_follow_up_at: string | null;
+  blocker_followed_through_at: string | null;
+  blocker_escalated_at: string | null;
   project_id: string;
   project: { id: string; title: string } | { id: string; title: string }[] | null;
   blocked_by: Array<{ blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null }> | null;
@@ -121,6 +125,10 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
         title,
         status,
         updated_at,
+        blocked_at,
+        blocker_follow_up_at,
+        blocker_followed_through_at,
+        blocker_escalated_at,
         project_id,
         project:projects(id, title),
         blocked_by:task_dependencies!task_dependencies_blocked_task_id_fkey(
@@ -192,6 +200,10 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
       .filter((task): task is { id: string; title: string; status: string } => !!task && task.status !== 'done' && task.status !== 'cancelled');
     const blockerState = getBlockedTaskNotificationState({
       updatedAt: row.updated_at,
+      blockedAt: row.blocked_at,
+      blockerFollowUpAt: row.blocker_follow_up_at,
+      blockerFollowedThroughAt: row.blocker_followed_through_at,
+      blockerEscalatedAt: row.blocker_escalated_at,
       blockedByCount: activeBlockers.length,
       blockingTaskTitles: activeBlockers.map((task) => task.title),
     });

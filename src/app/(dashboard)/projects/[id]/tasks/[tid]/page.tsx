@@ -17,6 +17,7 @@ import {
   DeleteTaskButton,
 } from './task-editor';
 import TaskComments from './task-comments';
+import BlockerActions from './blocker-actions';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 export const dynamic = 'force-dynamic';
@@ -52,7 +53,7 @@ export default async function TaskDetailPage({
   // Fetch task
   const { data: task, error } = await supabase
     .from('tasks')
-    .select('*')
+    .select('*, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at')
     .eq('id', tid)
     .eq('project_id', projectId)
     .single();
@@ -175,6 +176,10 @@ export default async function TaskDetailPage({
   const blockerState = blockedBy.length > 0
     ? getBlockedTaskNotificationState({
         updatedAt: task.updated_at,
+        blockedAt: task.blocked_at,
+        blockerFollowUpAt: task.blocker_follow_up_at,
+        blockerFollowedThroughAt: task.blocker_followed_through_at,
+        blockerEscalatedAt: task.blocker_escalated_at,
         blockedByCount: blockedBy.length,
         blockingTaskTitles: blockedBy.map((dep) => dep.tasks?.title || '').filter(Boolean),
       })
@@ -240,6 +245,26 @@ export default async function TaskDetailPage({
                   </span>
                 )}
               </div>
+
+              {blockerState && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-[11px]">
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                      <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Blocked since</p>
+                      <p className="text-gray-300">{formatDateTime(blockerState.blockedSince)}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                      <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Last follow-up</p>
+                      <p className="text-gray-300">{blockerState.blockerFollowedThroughAt ? formatDateTime(blockerState.blockerFollowedThroughAt) : 'None logged'}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                      <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Escalation</p>
+                      <p className="text-gray-300">{blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated'}</p>
+                    </div>
+                  </div>
+                  <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} />
+                </>
+              )}
 
               {blockedBy.length > 0 && (
                 <div className="mb-4">

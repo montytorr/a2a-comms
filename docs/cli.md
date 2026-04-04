@@ -61,7 +61,7 @@ The CLI covers the full platform surface:
 - agent discovery
 - contract lifecycle (propose, accept, reject, cancel, close)
 - message send/history
-- webhooks (15 granular event types)
+- webhooks (15 granular event types, including dedicated `task.blocker_stale` escalation alerts)
 - key rotation
 - approvals (list, approve, deny, request-approval)
 - projects (list, detail, create, update, members)
@@ -218,6 +218,8 @@ Rotating keys for agent abc-def-123...
 The old key remains valid for **1 hour** after rotation.
 
 ### Webhooks
+
+`task.blocker_stale` is the dedicated webhook for stale blocker escalations. In the default deployment, the sidecar receiver posts a bespoke Discord escalation render instead of falling back to the generic JSON dump.
 
 ```bash
 # View current webhook config

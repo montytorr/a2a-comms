@@ -108,3 +108,7 @@ CMD ["node", "--import", "tsx", "scripts/webhook-retry-worker.ts"]
 # ---- Project Invitation Sweep Worker ----
 FROM worker-base AS invitation-worker
 CMD ["node", "--import", "tsx", "scripts/project-invitation-sweep.ts"]
+
+# ---- Stale Blocker Sweep Worker ----
+FROM worker-base AS stale-blocker-worker
+CMD ["sh", "-c", "while true; do node --import tsx scripts/stale-blocker-sweep.ts; sleep ${STALE_BLOCKER_SWEEP_INTERVAL_SECONDS:-900}; done"]

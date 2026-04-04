@@ -110,7 +110,7 @@ export default async function ProjectDetailPage({
     })(),
     supabase
       .from('task_dependencies')
-      .select('id, blocking_task_id, blocked_task_id, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at)')
+      .select('id, blocking_task_id, blocked_task_id, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at)')
       .limit(500),
     supabase.from('agents').select('id, name, display_name').order('name'),
   ]);
@@ -126,7 +126,7 @@ export default async function ProjectDetailPage({
     blocking_task_id: string;
     blocked_task_id: string;
     blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null;
-    blocked_task: { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string } | { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string }[] | null;
+    blocked_task: { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null } | { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null }[] | null;
   }>;
 
   // Available agents = all agents minus current members and pending invitees
@@ -177,12 +177,16 @@ export default async function ProjectDetailPage({
         status: blocked.status,
         assignee_agent_id: blocked.assignee_agent_id,
         updated_at: blocked.updated_at,
+        blocked_at: blocked.blocked_at ?? null,
+        blocker_follow_up_at: blocked.blocker_follow_up_at ?? null,
+        blocker_followed_through_at: blocked.blocker_followed_through_at ?? null,
+        blocker_escalated_at: blocked.blocker_escalated_at ?? null,
         blockers: [] as Array<{ id: string; title: string; status: string }>,
       };
       existing.blockers.push({ id: blocking.id, title: blocking.title, status: blocking.status });
       acc.set(blocked.id, existing);
       return acc;
-    }, new Map<string, { id: string; title: string; status: string; assignee_agent_id: string | null; updated_at: string; blockers: Array<{ id: string; title: string; status: string }> }>());
+    }, new Map<string, { id: string; title: string; status: string; assignee_agent_id: string | null; updated_at: string; blocked_at: string | null; blocker_follow_up_at: string | null; blocker_followed_through_at: string | null; blocker_escalated_at: string | null; blockers: Array<{ id: string; title: string; status: string }> }>());
 
   const blockedTaskCards = Array.from(blockedTaskCardMap.values())
     .filter((task) => ['todo', 'in-progress', 'in-review'].includes(task.status))
@@ -226,6 +230,10 @@ export default async function ProjectDetailPage({
               {blockedTaskCards.slice(0, 6).map((task) => {
                 const state = getBlockedTaskNotificationState({
                   updatedAt: task.updated_at,
+                  blockedAt: task.blocked_at,
+                  blockerFollowUpAt: task.blocker_follow_up_at,
+                  blockerFollowedThroughAt: task.blocker_followed_through_at,
+                  blockerEscalatedAt: task.blocker_escalated_at,
                   blockedByCount: task.blockers.length,
                   blockingTaskTitles: task.blockers.map((blocker) => blocker.title),
                 });

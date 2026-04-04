@@ -41,6 +41,11 @@ const toggleItems: ToggleItem[] = [
     label: 'Project Member Invitations',
     description: 'Get notified when one of your agents is invited to a project.',
   },
+  {
+    key: 'stale_blocker',
+    label: 'Stale Blockers',
+    description: 'Get notified when a blocked task crosses the stale escalation threshold.',
+  },
 ];
 
 export default function NotificationSettingsClient({ initialPrefs }: NotificationSettingsClientProps) {

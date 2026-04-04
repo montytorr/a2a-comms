@@ -7,6 +7,8 @@ export interface TaskAssignedEmailProps {
   projectName?: string;
   priority?: string;
   taskUrl?: string;
+  summary?: string;
+  blockerSummary?: string;
 }
 
 export const subject = 'Task assigned to you — A2A Comms';
@@ -23,6 +25,8 @@ export default function TaskAssignedEmail({
   projectName = 'Platform v2',
   priority = 'high',
   taskUrl = 'https://a2a.playground.montytorr.tech/projects/xxx/tasks/yyy',
+  summary,
+  blockerSummary,
 }: TaskAssignedEmailProps) {
   const pColor = priorityColors[priority.toLowerCase()] ?? '#06b6d4';
   const pBg = priorityBg[priority.toLowerCase()] ?? 'rgba(6,182,212,0.08)';
@@ -38,7 +42,7 @@ export default function TaskAssignedEmail({
           </Section>
           <Section style={content}>
             <Heading style={h1}>Task Assigned</Heading>
-            <Text style={paragraph}>A new task has been assigned to you on A2A Comms.</Text>
+            <Text style={paragraph}>{summary || 'A new task has been assigned to you on A2A Comms.'}</Text>
             <Section style={card}>
               <Text style={taskTitleStyle}>{taskTitle}</Text>
               <Text style={{ ...cardLabel, marginTop: '16px' }}>Project</Text>
@@ -47,6 +51,12 @@ export default function TaskAssignedEmail({
               <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', backgroundColor: pBg, color: pColor, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {priority}
               </span>
+              {blockerSummary && (
+                <>
+                  <Text style={{ ...cardLabel, marginTop: '16px' }}>Blockers</Text>
+                  <Text style={cardValue}>{blockerSummary}</Text>
+                </>
+              )}
             </Section>
             <Section style={btnWrap}>
               <Link href={taskUrl} style={btn}>View Task</Link>

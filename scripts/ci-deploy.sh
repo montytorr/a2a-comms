@@ -68,6 +68,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-or
 docker rm -f a2a-comms 2>/dev/null || true
 docker rm -f a2a-webhook-worker 2>/dev/null || true
 docker rm -f a2a-invitation-sweep-worker 2>/dev/null || true
+docker rm -f a2a-stale-blocker-sweep-worker 2>/dev/null || true
 docker rm -f a2a-webhook-receiver 2>/dev/null || true
 
 # Build and deploy with prod overlay (output to stderr so it doesn't pollute version capture)

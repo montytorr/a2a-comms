@@ -55,6 +55,21 @@ services:
     networks:
       - default
 
+  stale-blocker-sweep-worker:
+    build:
+      context: .
+      target: stale-blocker-worker
+    container_name: a2a-stale-blocker-sweep-worker
+    env_file:
+      - .env
+    environment:
+      STALE_BLOCKER_SWEEP_INTERVAL_SECONDS: ${STALE_BLOCKER_SWEEP_INTERVAL_SECONDS:-900}
+    restart: unless-stopped
+    depends_on:
+      - a2a-comms
+    networks:
+      - default
+
   # Optional: webhook receiver sidecar for real-time Discord notifications
   # a2a-webhook-receiver:
   #   image: python:3.12-slim

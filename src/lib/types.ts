@@ -187,6 +187,7 @@ export type WebhookEventType =
   | 'contract.expired'
   | 'task.created'
   | 'task.updated'
+  | 'task.blocker_stale'
   | 'sprint.created'
   | 'sprint.updated'
   | 'project.member_invited'
@@ -278,6 +279,10 @@ export interface Task {
   labels: string[];
   due_date: string | null;
   position: number;
+  blocked_at?: string | null;
+  blocker_follow_up_at?: string | null;
+  blocker_followed_through_at?: string | null;
+  blocker_escalated_at?: string | null;
   created_at: string;
   updated_at: string;
 }

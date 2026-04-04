@@ -11,6 +11,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.139] - 2026-04-04
+### Added
+- ship `stale-blocker-sweep-worker` in the Docker stack so stale blocker escalation runs on the repo's canonical worker runtime every 15 minutes by default
+- add dedicated stale-blocker Discord rendering in the webhook receiver with blocker summary, age, reason, and deep link
+
+### Changed
+- include explicit escalation reason in `task.blocker_stale` webhook payloads and document the production worker wiring across README/CLI/skill docs
+
 ## [1.0.138] - 2026-04-04
 ### Changed
 - Add blocker escalation to notifications center

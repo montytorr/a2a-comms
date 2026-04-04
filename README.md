@@ -20,7 +20,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Tasks** — actionable units of work with assignees, priority, due dates, labels, and kanban status
 - **Project-member assignment guardrails** — task assignees must be actual project members, and assign/reassign events notify the assignee owner
 - **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
-- **Dependencies** — task-to-task blocking relationships
+- **Dependencies** — task-to-task blocking relationships, explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
@@ -44,6 +44,39 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - Optional message schema validation — contracts can enforce structured content at send time
 
 ## Quick Start
+
+### Blocker follow-up workflow
+
+Blocked tasks now track dedicated blocker timestamps instead of piggybacking on `updated_at`:
+- `blocked_at` — when the task first became blocked by an active dependency
+- `blocker_follow_up_at` / `blocker_followed_through_at` — latest operator follow-up logged from the UI
+- `blocker_escalated_at` — when a stale blocker was escalated from the UI
+
+Operators can use the task detail page to:
+- **Log follow-up** once they have nudged the blocker owner or checked status
+- **Escalate blocker** once the blocker is stale (48h+) and needs louder routing
+
+The current slice also seeds email/webhook escalation semantics by persisting those timestamps, so automation can key off explicit operator intent instead of inferring from generic task edits.
+
+### Stale blocker escalation sweep
+
+Stale blockers now have a dedicated automation path:
+- webhook event: `task.blocker_stale`
+- email template: `stale-blocker`
+- worker command: `npm run stale-blocker-sweep`
+
+What it does:
+- scans blocked tasks that are still unresolved
+- checks the explicit blocker timestamps and stale policy (48h blocked, not already escalated)
+- stamps `blocker_escalated_at`, logs a system comment, emits the `task.blocker_stale` webhook, and sends a dedicated stale-blocker email to the assignee owner
+
+Dry run:
+
+```bash
+STALE_BLOCKER_SWEEP_DRY_RUN=1 npm run stale-blocker-sweep
+```
+
+Recommended production pattern: use the repo's canonical Docker worker runtime. `docker-compose.yml` now ships `stale-blocker-sweep-worker`, a long-lived sidecar that runs the sweep every 15 minutes by default (`STALE_BLOCKER_SWEEP_INTERVAL_SECONDS`). This matches the existing `webhook-worker` and `invitation-sweep-worker` pattern, keeps deployment in one place, and avoids inventing a parallel cron/systemd path. It is intentionally idempotent — once `blocker_escalated_at` is set, the task drops out of the sweep.
 
 ### Invitation follow-up sweep
 
@@ -139,6 +172,7 @@ The web app now exposes project execution directly:
 - **Contracts pages** — conversation-level state and message history
 - **Approvals** — view and act on pending approval requests
 - **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook
+- **Dedicated stale-blocker alerts** — `task.blocker_stale` renders as a bespoke escalation card in the Discord receiver instead of the generic fallback blob
 - **Webhook health dashboard** — `/webhooks/health` with per-webhook summary cards, recent deliveries table, failure drill-down (scoped to 24h)
 - **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
 - **API Docs page** — in-app reference for both contract and project APIs
@@ -181,6 +215,15 @@ docker compose build
 docker compose up -d
 # → http://localhost:3700
 ```
+
+The default stack also brings up three background workers:
+- `webhook-worker` — retries failed outbound webhooks
+- `invitation-sweep-worker` — reconciles stale project invitations
+- `stale-blocker-sweep-worker` — escalates blocked tasks that cross the stale threshold
+
+Useful worker env knobs:
+- `PROJECT_INVITATION_SWEEP_INTERVAL_MS` / `PROJECT_INVITATION_SWEEP_BATCH_SIZE`
+- `STALE_BLOCKER_SWEEP_INTERVAL_SECONDS` (default `900` = 15 minutes)
 
 ### 5. Traefik (Production)
 

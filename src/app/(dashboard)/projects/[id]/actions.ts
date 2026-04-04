@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
+import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
 
 async function requireProjectMembership(
   projectId: string,
@@ -52,6 +53,7 @@ export async function updateTaskStatus(projectId: string, taskId: string, status
     .eq('id', taskId)
     .eq('project_id', projectId);
   if (error) throw new Error(`Failed to update task status: ${error.message}`);
+  await refreshTaskBlockedState(supabase, taskId);
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
   revalidatePath(`/projects/${projectId}`);
 }

@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { notifyBlockerAction } from '@/lib/task-blocker-actions';
 
 async function requireProjectMembership(
   projectId: string,
@@ -102,6 +103,153 @@ export async function addComment(
 
   if (error) throw new Error(`Failed to add comment: ${error.message}`);
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
+}
+
+export async function logBlockerFollowUp(projectId: string, taskId: string) {
+  const user = await requireProjectMembership(projectId);
+  const supabase = createServerClient();
+  const actionAt = new Date().toISOString();
+
+  const [{ data: task }, { data: project }] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select('id, title, project_id, assignee_agent_id')
+      .eq('id', taskId)
+      .eq('project_id', projectId)
+      .single(),
+    supabase
+      .from('projects')
+      .select('title')
+      .eq('id', projectId)
+      .single(),
+  ]);
+
+  if (!task) throw new Error('Task not found');
+
+  const { data: blockedBy } = await supabase
+    .from('task_dependencies')
+    .select('blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+    .eq('blocked_task_id', taskId);
+
+  const activeBlockers = (blockedBy || [])
+    .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
+    .filter((blocker): blocker is { id: string; title: string; status: string } => !!blocker && blocker.status !== 'done' && blocker.status !== 'cancelled');
+
+  const { error: updateError } = await supabase
+    .from('tasks')
+    .update({
+      blocker_follow_up_at: actionAt,
+      blocker_followed_through_at: actionAt,
+      updated_at: actionAt,
+    })
+    .eq('id', taskId)
+    .eq('project_id', projectId);
+
+  if (updateError) throw new Error(`Failed to log blocker follow-up: ${updateError.message}`);
+
+  const actorName = user.displayName || 'Dashboard User';
+  const blockerSummary = activeBlockers.map((blocker) => blocker.title).join(', ') || 'current blockers';
+
+  const { error: commentError } = await supabase.from('task_comments').insert({
+    task_id: taskId,
+    project_id: projectId,
+    author_agent_id: user.memberAgentId ?? null,
+    author_name: actorName,
+    content: `Logged blocker follow-up on ${blockerSummary}`,
+    comment_type: 'system',
+    metadata: { action: 'blocker_follow_up', blocker_titles: activeBlockers.map((blocker) => blocker.title), acted_at: actionAt },
+  });
+
+  if (commentError) throw new Error(`Failed to log blocker comment: ${commentError.message}`);
+
+  await notifyBlockerAction(supabase, {
+    projectId,
+    taskId,
+    taskTitle: task.title,
+    projectTitle: project?.title || 'Unknown Project',
+    assigneeAgentId: task.assignee_agent_id,
+    blockerTitles: activeBlockers.map((blocker) => blocker.title),
+    actorName,
+    action: 'follow-up',
+  }).catch(() => {});
+
+  revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/notifications');
+}
+
+export async function escalateBlockedTask(projectId: string, taskId: string) {
+  const user = await requireProjectMembership(projectId);
+  const supabase = createServerClient();
+  const actionAt = new Date().toISOString();
+
+  const [{ data: task }, { data: project }] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select('id, title, project_id, assignee_agent_id')
+      .eq('id', taskId)
+      .eq('project_id', projectId)
+      .single(),
+    supabase
+      .from('projects')
+      .select('title')
+      .eq('id', projectId)
+      .single(),
+  ]);
+
+  if (!task) throw new Error('Task not found');
+
+  const { data: blockedBy } = await supabase
+    .from('task_dependencies')
+    .select('blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+    .eq('blocked_task_id', taskId);
+
+  const activeBlockers = (blockedBy || [])
+    .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
+    .filter((blocker): blocker is { id: string; title: string; status: string } => !!blocker && blocker.status !== 'done' && blocker.status !== 'cancelled');
+
+  const { error: updateError } = await supabase
+    .from('tasks')
+    .update({
+      blocker_follow_up_at: actionAt,
+      blocker_followed_through_at: actionAt,
+      blocker_escalated_at: actionAt,
+      updated_at: actionAt,
+    })
+    .eq('id', taskId)
+    .eq('project_id', projectId);
+
+  if (updateError) throw new Error(`Failed to escalate blocked task: ${updateError.message}`);
+
+  const actorName = user.displayName || 'Dashboard User';
+  const blockerSummary = activeBlockers.map((blocker) => blocker.title).join(', ') || 'current blockers';
+
+  const { error: commentError } = await supabase.from('task_comments').insert({
+    task_id: taskId,
+    project_id: projectId,
+    author_agent_id: user.memberAgentId ?? null,
+    author_name: actorName,
+    content: `Escalated blocker on ${blockerSummary}`,
+    comment_type: 'system',
+    metadata: { action: 'blocker_escalation', blocker_titles: activeBlockers.map((blocker) => blocker.title), acted_at: actionAt },
+  });
+
+  if (commentError) throw new Error(`Failed to log blocker escalation comment: ${commentError.message}`);
+
+  await notifyBlockerAction(supabase, {
+    projectId,
+    taskId,
+    taskTitle: task.title,
+    projectTitle: project?.title || 'Unknown Project',
+    assigneeAgentId: task.assignee_agent_id,
+    blockerTitles: activeBlockers.map((blocker) => blocker.title),
+    actorName,
+    action: 'escalate',
+  }).catch(() => {});
+
+  revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/notifications');
 }
 
 export async function deleteTask(projectId: string, taskId: string) {

@@ -6,6 +6,7 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
+import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 
 async function notifyAssigneeOwner(
@@ -241,7 +242,7 @@ export async function PATCH(
   // Fetch existing task for change detection (activity feed)
   const { data: oldTask } = await supabase
     .from('tasks')
-    .select('status, priority, assignee_agent_id')
+    .select('status, priority, assignee_agent_id, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at')
     .eq('id', tid)
     .eq('project_id', id)
     .single();
@@ -354,6 +355,8 @@ export async function PATCH(
     }).catch(() => {});
   }).catch(() => {});
 
+  await refreshTaskBlockedState(supabase, tid).catch(() => {});
+
   if ('assignee_agent_id' in updates && updates.assignee_agent_id !== oldTask?.assignee_agent_id && task.assignee_agent_id) {
     notifyAssigneeOwner(supabase, {
       assigneeAgentId: task.assignee_agent_id,
@@ -364,5 +367,12 @@ export async function PATCH(
     }).catch(() => {});
   }
 
-  return NextResponse.json(task);
+  const { data: refreshedTask } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('id', tid)
+    .eq('project_id', id)
+    .single();
+
+  return NextResponse.json(refreshedTask || task);
 }

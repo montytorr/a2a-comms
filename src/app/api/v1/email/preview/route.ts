@@ -12,6 +12,7 @@ import PasswordResetEmail from '@/lib/email/templates/password-reset';
 import ContractInvitationEmail from '@/lib/email/templates/contract-invitation';
 import TaskAssignedEmail from '@/lib/email/templates/task-assigned';
 import ApprovalRequestEmail from '@/lib/email/templates/approval-request';
+import StaleBlockerEmail from '@/lib/email/templates/stale-blocker';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
 
@@ -36,6 +37,14 @@ const sampleData: Record<string, Record<string, unknown>> = {
     approvalUrl: `${APP_URL}/approvals`,
     details: 'Current keys have been active for 90 days. Rotation recommended per security policy.',
   },
+  'stale-blocker': {
+    taskTitle: 'Webhook signature fix',
+    projectName: 'Reliability Sprint',
+    blockerSummary: 'Provider delivery health dashboard',
+    escalationReason: 'Blocked for 52h with follow-through already logged; operator attention required.',
+    actedBy: 'Stale blocker sweep',
+    taskUrl: `${APP_URL}/projects/proj_sample/tasks/task_sample`,
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +56,7 @@ const templateComponents: Record<string, AnyComponent> = {
   'contract-invitation': ContractInvitationEmail,
   'task-assigned': TaskAssignedEmail,
   'approval-request': ApprovalRequestEmail,
+  'stale-blocker': StaleBlockerEmail,
 };
 
 /**

@@ -33,6 +33,12 @@ const TEMPLATES = [
     description: 'Sent when an action requires admin approval',
     icon: '🔐',
   },
+  {
+    id: 'stale-blocker',
+    label: 'Stale Blocker',
+    description: 'Sent when a blocked task is automatically escalated',
+    icon: '🚨',
+  },
 ];
 
 interface EmailAdminClientProps {

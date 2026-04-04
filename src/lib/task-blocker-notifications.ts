@@ -12,6 +12,10 @@ export interface BlockedTaskNotificationContext {
   blockingTaskTitles: string[];
   status: string;
   updatedAt: string;
+  blockedAt?: string | null;
+  blockerFollowUpAt?: string | null;
+  blockerFollowedThroughAt?: string | null;
+  blockerEscalatedAt?: string | null;
 }
 
 export interface BlockedTaskNotificationState {
@@ -20,50 +24,88 @@ export interface BlockedTaskNotificationState {
   hoursBlocked: number;
   followThroughDue: boolean;
   meta: string;
+  blockedSince: string;
+  blockerFollowUpAt: string | null;
+  blockerFollowedThroughAt: string | null;
+  blockerEscalatedAt: string | null;
 }
 
-export function getBlockedTaskAgeHours(updatedAt: string | Date, now = new Date()): number {
-  const updated = typeof updatedAt === 'string' ? new Date(updatedAt) : updatedAt;
+function toIsoString(value?: string | Date | null): string | null {
+  if (!value) return null;
+  return (typeof value === 'string' ? new Date(value) : value).toISOString();
+}
+
+export function resolveBlockedSince(task: Pick<BlockedTaskNotificationContext, 'blockedAt' | 'updatedAt'>): string {
+  return task.blockedAt || task.updatedAt;
+}
+
+export function getBlockedTaskAgeHours(blockedSince: string | Date, now = new Date()): number {
+  const updated = typeof blockedSince === 'string' ? new Date(blockedSince) : blockedSince;
   const diffMs = now.getTime() - updated.getTime();
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
 }
 
 export function getBlockedTaskNotificationState(
-  task: Pick<BlockedTaskNotificationContext, 'updatedAt' | 'blockedByCount' | 'blockingTaskTitles'>,
+  task: Pick<BlockedTaskNotificationContext, 'updatedAt' | 'blockedAt' | 'blockedByCount' | 'blockingTaskTitles' | 'blockerFollowUpAt' | 'blockerFollowedThroughAt' | 'blockerEscalatedAt'>,
   now = new Date()
 ): BlockedTaskNotificationState {
-  const hoursBlocked = getBlockedTaskAgeHours(task.updatedAt, now);
+  const blockedSince = resolveBlockedSince(task);
+  const hoursBlocked = getBlockedTaskAgeHours(blockedSince, now);
   const stale = hoursBlocked >= BLOCKED_TASK_STALE_HOURS;
-  const followThroughDue = hoursBlocked >= BLOCKED_TASK_FOLLOW_THROUGH_HOURS;
-
   const dependencySummary = summarizeBlockingTasks(task.blockingTaskTitles, task.blockedByCount);
+  const blockerFollowUpAt = toIsoString(task.blockerFollowUpAt);
+  const blockerFollowedThroughAt = toIsoString(task.blockerFollowedThroughAt);
+  const blockerEscalatedAt = toIsoString(task.blockerEscalatedAt);
+  const followThroughDue = !blockerFollowedThroughAt && hoursBlocked >= BLOCKED_TASK_FOLLOW_THROUGH_HOURS;
 
   if (stale) {
+    const meta = blockerEscalatedAt
+      ? `Blocked ${hoursBlocked}h · escalated after follow-through on ${dependencySummary}`
+      : `Blocked ${hoursBlocked}h · stale blocker · escalate ${dependencySummary}`;
     return {
       tone: 'stale',
       stale: true,
       hoursBlocked,
-      followThroughDue: true,
-      meta: `Blocked ${hoursBlocked}h · stale blocker · waiting on ${dependencySummary}`,
+      followThroughDue,
+      meta,
+      blockedSince,
+      blockerFollowUpAt,
+      blockerFollowedThroughAt,
+      blockerEscalatedAt,
     };
   }
 
   if (followThroughDue) {
+    const meta = blockerFollowUpAt
+      ? `Blocked ${hoursBlocked}h · follow through again on ${dependencySummary}`
+      : `Blocked ${hoursBlocked}h · follow through on ${dependencySummary}`;
     return {
       tone: 'follow-through',
       stale: false,
       hoursBlocked,
       followThroughDue: true,
-      meta: `Blocked ${hoursBlocked}h · follow through on ${dependencySummary}`,
+      meta,
+      blockedSince,
+      blockerFollowUpAt,
+      blockerFollowedThroughAt,
+      blockerEscalatedAt,
     };
   }
+
+  const meta = blockerFollowedThroughAt
+    ? `Blocked · follow-through logged for ${dependencySummary}`
+    : `Blocked · waiting on ${dependencySummary}`;
 
   return {
     tone: 'blocked',
     stale: false,
     hoursBlocked,
     followThroughDue: false,
-    meta: `Blocked · waiting on ${dependencySummary}`,
+    meta,
+    blockedSince,
+    blockerFollowUpAt,
+    blockerFollowedThroughAt,
+    blockerEscalatedAt,
   };
 }
 

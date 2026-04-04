@@ -7,6 +7,7 @@ import ContractInvitationEmail, { subject as contractInvitationSubject } from '.
 import TaskAssignedEmail, { subject as taskAssignedSubject } from './templates/task-assigned';
 import ApprovalRequestEmail, { subject as approvalRequestSubject } from './templates/approval-request';
 import ProjectMemberInvitationEmail, { subject as projectMemberInvitationSubject } from './templates/project-member-invitation';
+import StaleBlockerEmail, { subject as staleBlockerSubject } from './templates/stale-blocker';
 
 const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.tech>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
@@ -27,7 +28,16 @@ export interface SendEmailResult {
   error?: string;
 }
 
-const TEMPLATE_NAMES = ['welcome', 'password-reset', 'contract-invitation', 'task-assigned', 'approval-request', 'project-member-invitation'] as const;
+const TEMPLATE_NAMES = ['welcome', 'password-reset', 'contract-invitation', 'task-assigned', 'approval-request', 'project-member-invitation', 'stale-blocker'] as const;
+
+export interface TaskAssignedEmailProps {
+  taskTitle: string;
+  projectName: string;
+  priority: string;
+  taskUrl: string;
+  summary?: string;
+  blockerSummary?: string;
+}
 export type TemplateName = (typeof TEMPLATE_NAMES)[number];
 
 export function getTemplateNames(): string[] {
@@ -45,6 +55,7 @@ function templateToPreferenceColumn(template: string): string | null {
     'task-assigned': 'task_assigned',
     'approval-request': 'approval_request',
     'project-member-invitation': 'project_member_invitation',
+    'stale-blocker': 'stale_blocker',
   };
   return map[template] ?? null;
 }
@@ -134,6 +145,9 @@ export async function sendEmail(
       case 'project-member-invitation':
         result = await resend.emails.send({ from: FROM, to, subject: projectMemberInvitationSubject, react: createElement(ProjectMemberInvitationEmail, props) });
         break;
+      case 'stale-blocker':
+        result = await resend.emails.send({ from: FROM, to, subject: staleBlockerSubject, react: createElement(StaleBlockerEmail, props) });
+        break;
       default:
         return { error: `Unknown template: ${template}` };
     }
@@ -170,7 +184,7 @@ export async function sendContractInvitationEmail(
 
 export async function sendTaskAssignedEmail(
   to: string,
-  props: { taskTitle: string; projectName: string; priority: string; taskUrl: string },
+  props: TaskAssignedEmailProps,
   userId?: string
 ): Promise<SendEmailResult> {
   if (userId) return sendEmailWithPrefs(to, userId, 'task-assigned', props);
@@ -188,4 +202,20 @@ export async function sendApprovalRequestEmail(
   };
   if (userId) return sendEmailWithPrefs(to, userId, 'approval-request', emailProps);
   return sendEmail(to, 'approval-request', emailProps);
+}
+
+export async function sendStaleBlockerEmail(
+  to: string,
+  props: {
+    taskTitle: string;
+    projectName: string;
+    blockerSummary?: string;
+    escalationReason?: string;
+    actedBy?: string;
+    taskUrl?: string;
+  },
+  userId?: string
+): Promise<SendEmailResult> {
+  if (userId) return sendEmailWithPrefs(to, userId, 'stale-blocker', props);
+  return sendEmail(to, 'stale-blocker', props);
 }

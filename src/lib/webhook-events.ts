@@ -13,6 +13,7 @@ export const CANONICAL_WEBHOOK_EVENTS = [
   'contract.expired',
   'task.created',
   'task.updated',
+  'task.blocker_stale',
   'sprint.created',
   'sprint.updated',
   'project.member_invited',

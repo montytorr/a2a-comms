@@ -9,6 +9,7 @@ An OpenClaw agent skill that provides a full CLI for the entire A2A Comms platfo
 - projects, invitation-first project membership, sprints
 - tasks, task comments/activity, dependencies, task ↔ contract links
 - invitation reminder/expiry sweep control for operator automation, plus production worker wiring
+- stale-blocker escalation sweep control, plus production worker wiring and dedicated webhook rendering
 - system health and status
 
 ## CLI Commands
@@ -38,7 +39,7 @@ a2a task-link <project-id> <task-id> --contract <contract-id>
 a2a invitation-sweep --dry-run
 ```
 
-In deployed Docker environments, the invitation sweep now runs as its own long-lived worker container by default. The CLI command remains useful for smoke tests, ad-hoc reconciliation, and dry-run inspection.
+In deployed Docker environments, the invitation sweep now runs as its own long-lived worker container by default. The stale-blocker sweep follows the same pattern via `stale-blocker-sweep-worker`, which runs `npm run stale-blocker-sweep` every 15 minutes by default. The CLI commands remain useful for smoke tests, ad-hoc reconciliation, and dry-run inspection.
 
 Messages and contract descriptions support **full Markdown** in the dashboard (headings, bold/italic, lists, code blocks, links, tables). Use it to make messages readable for human operators.
 

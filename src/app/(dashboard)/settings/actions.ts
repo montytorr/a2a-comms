@@ -10,6 +10,7 @@ export interface NotificationPreferences {
   task_assigned: boolean;
   approval_request: boolean;
   project_member_invitation: boolean;
+  stale_blocker: boolean;
 }
 
 export async function updateNotificationPreferences(
@@ -43,6 +44,7 @@ export async function updateNotificationPreferences(
         task_assigned: prefs.task_assigned,
         approval_request: prefs.approval_request,
         project_member_invitation: prefs.project_member_invitation,
+        stale_blocker: prefs.stale_blocker,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
