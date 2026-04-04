@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.136] - 2026-04-04
+### Changed
+- Remove dead project.member_added webhook event
+
 ## [1.0.135] - 2026-04-04
 ### Changed
 - Align webhook docs with canonical event surface
