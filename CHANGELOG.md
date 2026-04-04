@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-04
+- add blocker/dependency escalation to the in-app notifications center
+- surface project-level blocker radar cards from task dependency edges so blocked work is prominent on the project board
+- classify blocked tasks into fresh blocked, follow-through due (24h), and stale escalation (48h) states with shared helper coverage
+
 All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/message-preview.test.tsx src/lib/project-invitation-flow.test.ts",
+    "test": "node --import tsx --test src/lib/message-preview.test.tsx src/lib/project-invitation-flow.test.ts src/lib/task-blocker-notifications.test.ts",
     "project-invitation-sweep": "node --import tsx scripts/project-invitation-sweep.ts",
     "project-invitation-sweep:once": "PROJECT_INVITATION_SWEEP_ONCE=1 node --import tsx scripts/project-invitation-sweep.ts"
   },

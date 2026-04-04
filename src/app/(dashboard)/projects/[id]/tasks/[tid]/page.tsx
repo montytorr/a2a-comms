@@ -18,6 +18,7 @@ import {
 } from './task-editor';
 import TaskComments from './task-comments';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
+import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 export const dynamic = 'force-dynamic';
 
 const statusConfig: Record<TaskStatus, { bg: string; text: string; dot: string }> = {
@@ -171,6 +172,13 @@ export default async function TaskDetailPage({
 
   const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+  const blockerState = blockedBy.length > 0
+    ? getBlockedTaskNotificationState({
+        updatedAt: task.updated_at,
+        blockedByCount: blockedBy.length,
+        blockingTaskTitles: blockedBy.map((dep) => dep.tasks?.title || '').filter(Boolean),
+      })
+    : null;
 
   return (
     <AutoRefresh intervalMs={15000}>
@@ -202,6 +210,11 @@ export default async function TaskDetailPage({
                       ⚠ Overdue
                     </span>
                   )}
+                  {blockerState && (
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                      {blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -216,7 +229,17 @@ export default async function TaskDetailPage({
           {/* Dependencies */}
           {(blockedBy.length > 0 || blocks.length > 0) && (
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Dependencies</p>
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Dependencies</p>
+                  {blockerState && <p className="text-[12px] text-gray-400 mt-2">{blockerState.meta}</p>}
+                </div>
+                {blockerState && (
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                    {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
+                  </span>
+                )}
+              </div>
 
               {blockedBy.length > 0 && (
                 <div className="mb-4">

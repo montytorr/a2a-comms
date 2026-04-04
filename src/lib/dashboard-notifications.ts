@@ -1,9 +1,13 @@
 import { createServerClient } from '@/lib/supabase/server';
 import type { AuthUser } from '@/lib/auth-context';
+import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 
 export type NotificationKind =
   | 'contract-invitation'
   | 'task-assigned'
+  | 'task-blocked'
+  | 'task-blocked-stale'
+  | 'task-blocked-follow-through'
   | 'project-invitation'
   | 'approval-request';
 
@@ -21,6 +25,7 @@ export interface DashboardNotificationCounts {
   total: number;
   contracts: number;
   projects: number;
+  blockers: number;
   approvals: number;
 }
 
@@ -51,6 +56,16 @@ type ProjectInviteRow = {
   project: { id: string; title: string } | { id: string; title: string }[] | null;
 };
 
+type BlockedTaskRow = {
+  id: string;
+  title: string;
+  status: string;
+  updated_at: string;
+  project_id: string;
+  project: { id: string; title: string } | { id: string; title: string }[] | null;
+  blocked_by: Array<{ blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null }> | null;
+};
+
 type ApprovalRow = {
   id: string;
   action: string;
@@ -62,7 +77,7 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
   const supabase = createServerClient();
   const agentScope = user.agentIds.length > 0 ? user.agentIds : [EMPTY_UUID];
 
-  const [contractInvitesRes, assignedTasksRes, projectInvitesRes, approvalsRes] = await Promise.all([
+  const [contractInvitesRes, assignedTasksRes, projectInvitesRes, blockedTasksRes, approvalsRes] = await Promise.all([
     supabase
       .from('contract_participants')
       .select(`
@@ -99,6 +114,23 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(25),
+    supabase
+      .from('tasks')
+      .select(`
+        id,
+        title,
+        status,
+        updated_at,
+        project_id,
+        project:projects(id, title),
+        blocked_by:task_dependencies!task_dependencies_blocked_task_id_fkey(
+          blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)
+        )
+      `)
+      .in('assignee_agent_id', agentScope)
+      .in('status', ['todo', 'in-progress', 'in-review'])
+      .order('updated_at', { ascending: false })
+      .limit(25),
     user.isSuperAdmin
       ? supabase
           .from('pending_approvals')
@@ -121,6 +153,15 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
     ...row,
     project: Array.isArray(row.project) ? row.project[0] ?? null : row.project,
   }));
+  const blockedTasks = ((blockedTasksRes.data || []) as unknown as BlockedTaskRow[])
+    .map((row) => ({
+      ...row,
+      project: Array.isArray(row.project) ? row.project[0] ?? null : row.project,
+      blocked_by: (row.blocked_by || []).map((dep) => ({
+        blocking_task: Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task,
+      })),
+    }))
+    .filter((row) => (row.blocked_by || []).some((dep) => dep.blocking_task && dep.blocking_task.status !== 'done' && dep.blocking_task.status !== 'cancelled'));
   const approvals = (approvalsRes.data || []) as unknown as ApprovalRow[];
 
   const contractItems: DashboardNotificationItem[] = contractInvites
@@ -145,6 +186,39 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
     meta: row.project?.title || row.status,
   }));
 
+  const blockerItems: DashboardNotificationItem[] = blockedTasks.map((row) => {
+    const activeBlockers = (row.blocked_by || [])
+      .map((dep) => dep.blocking_task)
+      .filter((task): task is { id: string; title: string; status: string } => !!task && task.status !== 'done' && task.status !== 'cancelled');
+    const blockerState = getBlockedTaskNotificationState({
+      updatedAt: row.updated_at,
+      blockedByCount: activeBlockers.length,
+      blockingTaskTitles: activeBlockers.map((task) => task.title),
+    });
+
+    const kind = blockerState.tone === 'stale'
+      ? 'task-blocked-stale'
+      : blockerState.tone === 'follow-through'
+        ? 'task-blocked-follow-through'
+        : 'task-blocked';
+
+    const title = blockerState.tone === 'stale'
+      ? 'Stale blocker needs escalation'
+      : blockerState.tone === 'follow-through'
+        ? 'Blocked task needs follow-through'
+        : 'Blocked task';
+
+    return {
+      id: `blocked-${row.id}`,
+      kind,
+      title,
+      body: row.title,
+      href: row.project?.id ? `/projects/${row.project.id}/tasks/${row.id}` : `/projects/${row.project_id}/tasks/${row.id}`,
+      createdAt: row.updated_at,
+      meta: `${row.project?.title || row.status} · ${blockerState.meta}`,
+    };
+  });
+
   const projectItems: DashboardNotificationItem[] = projectInvites.map((row) => ({
     id: `project-${row.id}`,
     kind: 'project-invitation' as const,
@@ -165,15 +239,16 @@ export async function getDashboardNotificationSummary(user: AuthUser): Promise<D
     meta: 'Sensitive action pending review',
   }));
 
-  const items = [...contractItems, ...taskItems, ...projectItems, ...approvalItems]
+  const items = [...blockerItems, ...contractItems, ...taskItems, ...projectItems, ...approvalItems]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 50);
 
   const counts: DashboardNotificationCounts = {
     contracts: contractItems.length,
     projects: taskItems.length + projectItems.length,
+    blockers: blockerItems.length,
     approvals: approvalItems.length,
-    total: contractItems.length + taskItems.length + projectItems.length + approvalItems.length,
+    total: blockerItems.length + contractItems.length + taskItems.length + projectItems.length + approvalItems.length,
   };
 
   return { counts, items };

@@ -11,6 +11,9 @@ export const dynamic = 'force-dynamic';
 const kindStyles = {
   'contract-invitation': 'text-cyan-400 bg-cyan-500/[0.08] border-cyan-500/20',
   'task-assigned': 'text-violet-400 bg-violet-500/[0.08] border-violet-500/20',
+  'task-blocked': 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20',
+  'task-blocked-stale': 'text-red-300 bg-red-500/[0.12] border-red-500/25',
+  'task-blocked-follow-through': 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20',
   'project-invitation': 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/20',
   'approval-request': 'text-amber-400 bg-amber-500/[0.08] border-amber-500/20',
 } as const;
@@ -39,12 +42,13 @@ export default async function NotificationsPage() {
             </div>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed mt-2">
-            Derived in-app attention queue for contract invites, project invites, assigned work, and approval requests.
+            Derived in-app attention queue for blocked work, contract invites, project invites, assigned work, and approval requests.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 animate-fade-in">
           <StatCard label="Total" value={counts.total} tone="cyan" />
+          <StatCard label="Blockers" value={counts.blockers} tone="rose" />
           <StatCard label="Contracts + projects" value={counts.contracts + counts.projects} tone="violet" />
           <StatCard label="Approvals" value={counts.approvals} tone="amber" />
         </div>
@@ -105,11 +109,12 @@ export default async function NotificationsPage() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: number; tone: 'cyan' | 'violet' | 'amber' }) {
+function StatCard({ label, value, tone }: { label: string; value: number; tone: 'cyan' | 'violet' | 'amber' | 'rose' }) {
   const tones = {
     cyan: 'from-cyan-500/[0.08] to-blue-500/[0.08] border-cyan-500/10 text-cyan-400',
     violet: 'from-violet-500/[0.08] to-fuchsia-500/[0.08] border-violet-500/10 text-violet-400',
     amber: 'from-amber-500/[0.08] to-orange-500/[0.08] border-amber-500/10 text-amber-400',
+    rose: 'from-rose-500/[0.08] to-red-500/[0.08] border-rose-500/10 text-rose-300',
   } as const;
 
   return (
