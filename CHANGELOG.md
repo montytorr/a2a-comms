@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.134] - 2026-04-04
+### Docs
+- align A2A skill and CLI with invitation flow
+
 ## [1.0.133] - 2026-04-04
 ### Changed
 - Wire invitation sweep worker into production
