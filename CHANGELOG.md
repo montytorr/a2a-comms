@@ -11,6 +11,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.138] - 2026-04-04
+### Changed
+- Add blocker escalation to notifications center
+
 ## [1.0.137] - 2026-04-04
 ### Added
 - add in-app notifications center
