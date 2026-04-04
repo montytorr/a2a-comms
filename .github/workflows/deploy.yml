@@ -36,6 +36,11 @@ jobs:
           cd /root/projects/a2a-comms
           corepack pnpm exec next build
 
+      - name: Build worker images
+        run: |
+          cd /root/projects/a2a-comms
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml build webhook-worker invitation-sweep-worker
+
   deploy:
     needs: lint-and-build
     runs-on: self-hosted

@@ -25,10 +25,15 @@ import {
   sendProjectMemberInvitationEmail,
 } from '../src/lib/project-invitations';
 import { getUserEmail } from '../src/lib/email/helpers';
+import {
+  getProjectInvitationSweepBatchSize,
+  getProjectInvitationSweepIntervalMs,
+  getProjectInvitationSweepRunMode,
+} from '../src/lib/project-invitation-worker-config';
 
-const POLL_INTERVAL_MS = Number(process.env.PROJECT_INVITATION_SWEEP_INTERVAL_MS || 10 * 60 * 1000);
-const BATCH_SIZE = Number(process.env.PROJECT_INVITATION_SWEEP_BATCH_SIZE || 100);
-const RUN_ONCE = process.env.PROJECT_INVITATION_SWEEP_ONCE === '1';
+const POLL_INTERVAL_MS = getProjectInvitationSweepIntervalMs();
+const BATCH_SIZE = getProjectInvitationSweepBatchSize();
+const RUN_ONCE = getProjectInvitationSweepRunMode() === 'once';
 const DRY_RUN = process.env.PROJECT_INVITATION_SWEEP_DRY_RUN === '1';
 
 type PendingInvitation = {
@@ -43,10 +48,15 @@ type PendingInvitation = {
   expires_at?: string | null;
   reminder_sent_at?: string | null;
   responded_at?: string | null;
-  project?: { id: string; title: string } | null;
-  agent?: { id: string; name: string; display_name: string; owner_user_id?: string | null } | null;
-  invited_by?: { id: string; name: string; display_name: string } | null;
+  project?: { id: string; title: string } | { id: string; title: string }[] | null;
+  agent?: { id: string; name: string; display_name: string; owner_user_id?: string | null } | { id: string; name: string; display_name: string; owner_user_id?: string | null }[] | null;
+  invited_by?: { id: string; name: string; display_name: string } | { id: string; name: string; display_name: string }[] | null;
 };
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -148,13 +158,17 @@ async function markExpired(client: SupabaseClient, invitation: PendingInvitation
     return 'noop';
   }
 
+  const project = firstRelation(updatedInvitation.project);
+  const agent = firstRelation(updatedInvitation.agent);
+  const invitedBy = firstRelation(updatedInvitation.invited_by);
+
   await notifyProjectInvitationResponded({
     projectId: updatedInvitation.project_id,
-    projectTitle: updatedInvitation.project?.title || 'Unknown Project',
+    projectTitle: project?.title || 'Unknown Project',
     invitedAgentId: updatedInvitation.agent_id,
-    invitedAgentName: updatedInvitation.agent?.display_name || updatedInvitation.agent?.name || 'Unknown Agent',
+    invitedAgentName: agent?.display_name || agent?.name || 'Unknown Agent',
     invitedByAgentId: updatedInvitation.invited_by_agent_id,
-    invitedByName: updatedInvitation.invited_by?.display_name || updatedInvitation.invited_by?.name || 'Unknown Agent',
+    invitedByName: invitedBy?.display_name || invitedBy?.name || 'Unknown Agent',
     status: 'expired',
   }).catch((err) => {
     log('Expire notification failed', { invitationId: invitation.id, error: err instanceof Error ? err.message : String(err) });
@@ -207,28 +221,32 @@ async function markReminderSent(client: SupabaseClient, invitation: PendingInvit
     return 'noop';
   }
 
+  const project = firstRelation(updatedInvitation.project);
+  const agent = firstRelation(updatedInvitation.agent);
+  const invitedBy = firstRelation(updatedInvitation.invited_by);
+
   await notifyProjectInvitationReminder({
     projectId: updatedInvitation.project_id,
-    projectTitle: updatedInvitation.project?.title || 'Unknown Project',
+    projectTitle: project?.title || 'Unknown Project',
     invitedAgentId: updatedInvitation.agent_id,
-    invitedAgentName: updatedInvitation.agent?.display_name || updatedInvitation.agent?.name || 'Unknown Agent',
+    invitedAgentName: agent?.display_name || agent?.name || 'Unknown Agent',
     invitedByAgentId: updatedInvitation.invited_by_agent_id,
-    invitedByName: updatedInvitation.invited_by?.display_name || updatedInvitation.invited_by?.name || 'Unknown Agent',
+    invitedByName: invitedBy?.display_name || invitedBy?.name || 'Unknown Agent',
     invitationId: updatedInvitation.id,
     expiresAt,
   }).catch((err) => {
     log('Reminder webhook failed', { invitationId: invitation.id, error: err instanceof Error ? err.message : String(err) });
   });
 
-  const ownerUserId = updatedInvitation.agent?.owner_user_id;
+  const ownerUserId = agent?.owner_user_id;
   if (ownerUserId) {
     const email = await getUserEmail(ownerUserId).catch(() => null);
     if (email) {
       await sendProjectMemberInvitationEmail({
         to: email,
         userId: ownerUserId,
-        projectTitle: updatedInvitation.project?.title || 'Unknown Project',
-        inviterName: updatedInvitation.invited_by?.display_name || updatedInvitation.invited_by?.name || 'Unknown Agent',
+        projectTitle: project?.title || 'Unknown Project',
+        inviterName: invitedBy?.display_name || invitedBy?.name || 'Unknown Agent',
         projectId: updatedInvitation.project_id,
       }).catch((err) => {
         log('Reminder email failed', { invitationId: invitation.id, error: err instanceof Error ? err.message : String(err) });

@@ -268,7 +268,7 @@ $ a2a invitation-sweep
 $ a2a invitation-sweep --dry-run
 ```
 
-This is a thin wrapper around `scripts/project-invitation-sweep.ts`. Use it for cron/systemd hooks, smoke tests, and operator debugging.
+This is a thin wrapper around `scripts/project-invitation-sweep.ts`. In the default Docker deployment, that worker now runs continuously as `invitation-sweep-worker`; use the CLI for smoke tests, cron/systemd hooks in non-Docker installs, and operator debugging.
 
 ### List projects
 

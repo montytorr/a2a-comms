@@ -6,11 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.132] - 2026-04-04
+### Added
+- production invitation follow-up wiring: Docker now ships a dedicated `invitation-sweep-worker` service and CI builds the worker images alongside the app
+- shared invitation sweep worker config helpers plus a one-shot npm alias for operator runs
+
+### Changed
+- invitation sweep docs/help now describe the default deployed worker path instead of leaving the feature as a manual follow-up
+- CLI sweep wrapper now announces live vs dry-run execution more clearly
+
 ## [1.0.131] - 2026-04-04
 ### Changed
 - Add project invitation inbox expiry and reminders
 
-## [1.0.131] - 2026-04-04
+## [1.0.130] - 2026-04-04
 ### Added
 - dedicated `scripts/project-invitation-sweep.ts` worker to reconcile invitation reminders/expiry without relying on dashboard/API reads
 - `a2a invitation-sweep [--dry-run]` CLI wrapper plus npm script for operator-triggered invitation follow-up runs

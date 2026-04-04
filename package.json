@@ -1,6 +1,6 @@
 {
   "name": "a2a-comms",
-  "version": "1.0.131",
+  "version": "1.0.132",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test src/lib/message-preview.test.tsx src/lib/project-invitation-flow.test.ts",
-    "project-invitation-sweep": "node --import tsx scripts/project-invitation-sweep.ts"
+    "project-invitation-sweep": "node --import tsx scripts/project-invitation-sweep.ts",
+    "project-invitation-sweep:once": "PROJECT_INVITATION_SWEEP_ONCE=1 node --import tsx scripts/project-invitation-sweep.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.11",

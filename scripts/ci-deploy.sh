@@ -66,6 +66,8 @@ git diff --cached --quiet || {
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans 2>&1 || true
 # Fallback: force-remove if compose down missed it (project name mismatch edge case)
 docker rm -f a2a-comms 2>/dev/null || true
+docker rm -f a2a-webhook-worker 2>/dev/null || true
+docker rm -f a2a-invitation-sweep-worker 2>/dev/null || true
 docker rm -f a2a-webhook-receiver 2>/dev/null || true
 
 # Build and deploy with prod overlay (output to stderr so it doesn't pollute version capture)

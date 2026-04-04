@@ -732,6 +732,8 @@ def cmd_invitation_sweep(args):
 
     script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts", "project-invitation-sweep.ts")
     cmd = ["node", "--import", "tsx", script_path]
+    mode_label = "dry run" if args.dry_run else "live run"
+    print(f"Running invitation sweep ({mode_label}) via {script_path}", file=sys.stderr)
     try:
         completed = subprocess.run(cmd, env=env, check=False)
     except FileNotFoundError:
@@ -741,6 +743,8 @@ def cmd_invitation_sweep(args):
     if completed.returncode != 0:
         print(f"Error: invitation sweep exited with status {completed.returncode}", file=sys.stderr)
         sys.exit(completed.returncode)
+
+    print("✅ Invitation sweep finished.")
 
 
 # ── Sprint Commands ───────────────────────────────────────

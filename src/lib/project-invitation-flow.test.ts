@@ -8,6 +8,14 @@ import {
   PROJECT_INVITATION_REMINDER_HOURS,
   PROJECT_INVITATION_TTL_DAYS,
 } from './project-invitations';
+import {
+  getProjectInvitationSweepBatchSize,
+  getProjectInvitationSweepIntervalMs,
+  getProjectInvitationSweepRunMode,
+  getProjectInvitationSweepSummary,
+  PROJECT_INVITATION_SWEEP_DEFAULT_BATCH_SIZE,
+  PROJECT_INVITATION_SWEEP_DEFAULT_INTERVAL_MS,
+} from './project-invitation-worker-config';
 
 function filterAvailableAgents(
   allAgents: Array<{ id: string }>,
@@ -83,6 +91,27 @@ test('reminders do not fire before the threshold', () => {
     ),
     false,
   );
+});
+
+test('sweep worker config defaults stay stable for ops wiring', () => {
+  assert.equal(PROJECT_INVITATION_SWEEP_DEFAULT_INTERVAL_MS, 10 * 60 * 1000);
+  assert.equal(PROJECT_INVITATION_SWEEP_DEFAULT_BATCH_SIZE, 100);
+  assert.equal(getProjectInvitationSweepIntervalMs({}), 10 * 60 * 1000);
+  assert.equal(getProjectInvitationSweepBatchSize({}), 100);
+  assert.equal(getProjectInvitationSweepRunMode({}), 'daemon');
+  assert.equal(getProjectInvitationSweepSummary({}), 'mode=daemon, interval=10m, batch=100');
+});
+
+test('sweep worker config reads env overrides predictably', () => {
+  const env = {
+    PROJECT_INVITATION_SWEEP_INTERVAL_MS: '300000',
+    PROJECT_INVITATION_SWEEP_BATCH_SIZE: '25',
+    PROJECT_INVITATION_SWEEP_ONCE: '1',
+  };
+  assert.equal(getProjectInvitationSweepIntervalMs(env), 300000);
+  assert.equal(getProjectInvitationSweepBatchSize(env), 25);
+  assert.equal(getProjectInvitationSweepRunMode(env), 'once');
+  assert.equal(getProjectInvitationSweepSummary(env), 'mode=once, interval=5m, batch=25');
 });
 
 test('reminders send once after the threshold and never for expired invitations', () => {

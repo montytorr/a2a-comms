@@ -51,7 +51,7 @@ Project invitations no longer rely solely on read-time reconciliation. Run the s
 
 ```bash
 # one-shot manual run
-npm run project-invitation-sweep
+npm run project-invitation-sweep:once
 
 # inspect without mutating anything
 PROJECT_INVITATION_SWEEP_ONCE=1 PROJECT_INVITATION_SWEEP_DRY_RUN=1 npm run project-invitation-sweep
@@ -60,7 +60,13 @@ PROJECT_INVITATION_SWEEP_ONCE=1 PROJECT_INVITATION_SWEEP_DRY_RUN=1 npm run proje
 ./skill/scripts/a2a invitation-sweep --dry-run
 ```
 
-Recommended production pattern: run the worker continuously, or invoke the one-shot command from cron/systemd every 5–15 minutes.
+Recommended production pattern: run the worker continuously. The default Docker stack now includes an `invitation-sweep-worker` service for that purpose.
+
+Useful env knobs:
+- `PROJECT_INVITATION_SWEEP_INTERVAL_MS` — poll interval for the daemon worker (default `600000`)
+- `PROJECT_INVITATION_SWEEP_BATCH_SIZE` — pending invitations processed per cycle (default `100`)
+
+If you deploy without Docker, invoke the one-shot command from cron/systemd every 5–15 minutes or run the script as a long-lived worker.
 
 ## Quick Start
 
@@ -366,7 +372,7 @@ That catches mismatched examples and broken TSX before shipping.
 
 Pushes to `main` trigger a GitHub Actions workflow (`.github/workflows/deploy.yml`) with two stages:
 
-1. **Lint + Build gate** — runs ESLint and `next build` before any deployment. Failures block deploy and notify Discord.
+1. **Lint + Build gate** — runs ESLint, `next build`, and worker-image builds before any deployment. Failures block deploy and notify Discord.
 2. **Deploy** — runs `scripts/ci-deploy.sh` on the self-hosted runner, then notifies Discord with the version.
 
 Skip CI with `[skip ci]` in the commit message.

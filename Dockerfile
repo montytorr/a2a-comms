@@ -89,15 +89,22 @@ ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
 
-# ---- Webhook Retry Worker ----
-FROM base AS worker
+# ---- Background Workers ----
+FROM base AS worker-base
 WORKDIR /app
 
 ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
-COPY scripts/webhook-retry-worker.ts ./scripts/
-COPY src/lib/webhook-helpers.ts ./src/lib/
+COPY scripts ./scripts
+COPY src/lib ./src/lib
+COPY src/app/api/v1/projects/_helpers.ts ./src/app/api/v1/projects/_helpers.ts
 
+# ---- Webhook Retry Worker ----
+FROM worker-base AS worker
 CMD ["node", "--import", "tsx", "scripts/webhook-retry-worker.ts"]
+
+# ---- Project Invitation Sweep Worker ----
+FROM worker-base AS invitation-worker
+CMD ["node", "--import", "tsx", "scripts/project-invitation-sweep.ts"]

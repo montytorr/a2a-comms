@@ -39,6 +39,22 @@ services:
     networks:
       - default
 
+  invitation-sweep-worker:
+    build:
+      context: .
+      target: invitation-worker
+    container_name: a2a-invitation-sweep-worker
+    env_file:
+      - .env
+    environment:
+      PROJECT_INVITATION_SWEEP_INTERVAL_MS: ${PROJECT_INVITATION_SWEEP_INTERVAL_MS:-600000}
+      PROJECT_INVITATION_SWEEP_BATCH_SIZE: ${PROJECT_INVITATION_SWEEP_BATCH_SIZE:-100}
+    restart: unless-stopped
+    depends_on:
+      - a2a-comms
+    networks:
+      - default
+
   # Optional: webhook receiver sidecar for real-time Discord notifications
   # a2a-webhook-receiver:
   #   image: python:3.12-slim

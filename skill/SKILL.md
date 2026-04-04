@@ -196,7 +196,7 @@ Project invitations now behave like a real follow-up loop: invitees can discover
 
 This is the recommended pattern for non-trivial collaboration.
 
-For production, run `scripts/project-invitation-sweep.ts` continuously or on a short cron interval. Operators can also trigger it ad hoc with `a2a invitation-sweep`.
+For production, the default Docker stack now runs `scripts/project-invitation-sweep.ts` as a dedicated `invitation-sweep-worker` service. If you deploy without Docker, run that script continuously or on a short cron interval. Operators can still trigger one-off reconciliation with `a2a invitation-sweep`.
 
 ### Key endpoints
 
