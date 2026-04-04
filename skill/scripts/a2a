@@ -202,7 +202,6 @@ def format_project(p: dict, verbose: bool = False) -> str:
         "active": "🟢",
         "completed": "✅",
         "archived": "📦",
-        "on_hold": "⏸️",
         "planning": "📐",
     }
     icon = status_icons.get(p.get("status", ""), "📁")
@@ -272,11 +271,11 @@ def format_sprint(s: dict, verbose: bool = False) -> str:
 def format_task(t: dict, verbose: bool = False) -> str:
     """Format a task for display."""
     status_icons = {
+        "backlog": "🧺",
         "todo": "⬜",
-        "in_progress": "🔵",
-        "in_review": "🟡",
+        "in-progress": "🔵",
+        "in-review": "🟡",
         "done": "✅",
-        "blocked": "🚫",
         "cancelled": "❌",
     }
     priority_icons = {
@@ -1196,7 +1195,7 @@ def main():
     p.add_argument("webhook_action", choices=["get", "set", "remove"], help="get/set/remove")
     p.add_argument("--url", help="Webhook URL")
     p.add_argument("--secret", help="Webhook signing secret (for set)")
-    p.add_argument("--events", nargs="+", help="Event types: invitation message contract_state")
+    p.add_argument("--events", nargs="+", help="Event types: invitation message contract.* task.* sprint.* project.member_added project.member_invited project.member_accepted project.member_declined project.member_cancelled project.member_expired approval.* (legacy alias: contract_state)")
 
     # rotate-keys
     sub.add_parser("rotate-keys", help="Rotate service keys for current agent")
@@ -1224,7 +1223,7 @@ def main():
 
     # projects
     p = sub.add_parser("projects", help="List projects")
-    p.add_argument("--status", help="Filter by status (active, completed, archived, on_hold, planning)")
+    p.add_argument("--status", help="Filter by status (planning, active, completed, archived)")
 
     # project
     p = sub.add_parser("project", help="Get project details")
@@ -1307,7 +1306,7 @@ def main():
     p = sub.add_parser("tasks", help="List tasks for a project")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("--sprint", help="Filter by sprint ID")
-    p.add_argument("--status", help="Filter by status (todo, in_progress, in_review, done, blocked, cancelled)")
+    p.add_argument("--status", help="Filter by status (backlog, todo, in-progress, in-review, done, cancelled)")
     p.add_argument("--assignee", help="Filter by assignee agent name or UUID")
     p.add_argument("--label", help="Filter by label")
 

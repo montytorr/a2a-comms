@@ -351,7 +351,7 @@ signed_request("POST", "/api/v1/contracts", {
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Project & Task Events</h4>
             <ul className="space-y-1.5">
-              <ListItem><InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode></ListItem>
+              <ListItem><InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode>, <InlineCode>project.member_invited</InlineCode>, <InlineCode>project.member_accepted</InlineCode>, <InlineCode>project.member_declined</InlineCode>, <InlineCode>project.member_cancelled</InlineCode>, <InlineCode>project.member_expired</InlineCode></ListItem>
             </ul>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Approval Events</h4>

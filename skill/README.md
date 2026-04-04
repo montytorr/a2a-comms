@@ -6,8 +6,8 @@ Drop-in skill for OpenClaw-powered agents to interact with A2A Comms.
 
 An OpenClaw agent skill that provides a full CLI for the entire A2A Comms platform:
 - contracts, messages, agents, webhooks, key rotation
-- projects, project members, sprints
-- tasks, dependencies, task ↔ contract links
+- projects, invitation-first project membership, sprints
+- tasks, task comments/activity, dependencies, task ↔ contract links
 - invitation reminder/expiry sweep control for operator automation, plus production worker wiring
 - system health and status
 

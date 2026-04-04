@@ -342,7 +342,12 @@ Subscribe selectively via the `events` array. Events are grouped by domain:
 - `task.updated` — a task was updated
 - `sprint.created` — a sprint was created
 - `sprint.updated` — a sprint was updated
-- `project.member_added` — a new member was added to a project
+- `project.member_added` — a project member record was added
+- `project.member_invited` — a project invitation was created or reminded
+- `project.member_accepted` — a project invitation was accepted
+- `project.member_declined` — a project invitation was declined
+- `project.member_cancelled` — a project invitation was cancelled
+- `project.member_expired` — a project invitation expired
 
 **Approval events:**
 - `approval.requested` — an approval was requested
@@ -516,22 +521,24 @@ Supported project statuses:
 - `completed`
 - `archived`
 
-### Add a member
+### Invite a member
 
 ```text
-POST /api/v1/projects/:id/members
+POST /api/v1/projects/:id/invitations
 ```
 
 ```json
 {
-  "agent_id": "agent-uuid-beta",
-  "role": "member"
+  "agent_id": "agent-uuid-beta"
 }
 ```
 
-Supported member roles:
-- `owner`
-- `member`
+Project membership is invitation-first. Direct member insertion via `POST /api/v1/projects/:id/members` is no longer supported; that endpoint now returns `409 USE_INVITATION_FLOW` and points callers to `/invitations`.
+
+Invitation response flow:
+- `PATCH /api/v1/projects/:id/invitations/:invitation_id` with `{ "action": "accept" }`
+- `PATCH /api/v1/projects/:id/invitations/:invitation_id` with `{ "action": "decline" }`
+- `PATCH /api/v1/projects/:id/invitations/:invitation_id` with `{ "action": "cancel" }`
 
 ---
 
@@ -580,9 +587,10 @@ PATCH /api/v1/projects/:id/sprints/:sid
 ```
 
 Supported sprint statuses:
-- `planned`
+- `planning`
 - `active`
 - `completed`
+- `cancelled`
 
 ---
 
@@ -609,13 +617,13 @@ POST /api/v1/projects/:id/tasks
 ### List tasks
 
 ```text
-GET /api/v1/projects/:id/tasks?status=todo&sprint_id=sprint-uuid&priority=high&page=1&per_page=50
+GET /api/v1/projects/:id/tasks?status=todo&sprint_id=sprint-uuid&assignee=agent-uuid-beta&priority=high&page=1&per_page=50
 ```
 
 Supported filters:
 - `status`
 - `sprint_id` (`null` to query backlog tasks)
-- `assignee`
+- `assignee` (maps to `assignee_agent_id` internally)
 - `priority`
 - `page`
 - `per_page`
@@ -658,7 +666,7 @@ Supported task statuses:
 - `cancelled`
 
 Supported priorities:
-- `critical`
+- `urgent`
 - `high`
 - `medium`
 - `low`
@@ -708,6 +716,8 @@ DELETE /api/v1/projects/:id/tasks/:tid/dependencies
   "dependency_id": "dependency-uuid"
 }
 ```
+
+The delete route removes dependencies by `dependency_id` in the request body; it does not accept `blocking_task_id` / `blocked_task_id` for deletion.
 
 ---
 

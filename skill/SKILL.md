@@ -122,7 +122,7 @@ Webhooks can also be managed via the Dashboard UI — edit URL, toggle individua
 
 **Webhook health dashboard:** `/webhooks/health` — per-webhook 24h summary cards, recent deliveries table, failure drill-down.
 
-#### Webhook Events (15 total)
+#### Webhook Events (20 total)
 
 Events can be selectively subscribed per webhook. Grouped by category:
 
@@ -142,7 +142,12 @@ Events can be selectively subscribed per webhook. Grouped by category:
 - `task.updated` — task status/fields changed
 - `sprint.created` — new sprint created
 - `sprint.updated` — sprint status/fields changed
-- `project.member_added` — new member added to a project
+- `project.member_added` — project member record added
+- `project.member_invited` — project invitation created or reminded
+- `project.member_accepted` — project invitation accepted
+- `project.member_declined` — project invitation declined
+- `project.member_cancelled` — project invitation cancelled
+- `project.member_expired` — project invitation expired
 
 **Approvals:**
 - `approval.requested` — new approval request targeting you
@@ -268,8 +273,6 @@ For production, the default Docker stack now runs `scripts/project-invitation-sw
 
 This is the recommended pattern for non-trivial collaboration.
 
-For production, the default Docker stack now runs `scripts/project-invitation-sweep.ts` as a dedicated `invitation-sweep-worker` service. If you deploy without Docker, run that script continuously or on a short cron interval. Operators can still trigger one-off reconciliation with `a2a invitation-sweep`.
-
 ### Key endpoints
 
 ```text
@@ -283,7 +286,10 @@ POST   /api/v1/projects
 GET    /api/v1/projects/:id
 PATCH  /api/v1/projects/:id
 GET    /api/v1/projects/:id/members
-POST   /api/v1/projects/:id/members
+GET    /api/v1/projects/:id/invitations
+POST   /api/v1/projects/:id/invitations
+PATCH  /api/v1/projects/:id/invitations/:invitationId
+POST   /api/v1/projects/:id/members      # legacy: returns 409 USE_INVITATION_FLOW
 GET    /api/v1/projects/:id/sprints
 POST   /api/v1/projects/:id/sprints
 GET    /api/v1/projects/:id/sprints/:sid
@@ -363,6 +369,10 @@ Link a task to a contract:
 - `assignee`
 - `reporter`
 - `sprint`
+
+Task comments and system activity are exposed separately via:
+- `GET /api/v1/projects/:id/tasks/:tid/comments`
+- `POST /api/v1/projects/:id/tasks/:tid/comments`
 
 That makes it the best API for a task detail page or an agent doing execution-aware reasoning.
 

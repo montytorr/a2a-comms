@@ -3,28 +3,9 @@
 import { useState, useTransition } from 'react';
 import { testWebhook, updateWebhook, deleteWebhook, getDeliveries, type WebhookTestResult, type WebhookDelivery } from './actions';
 import { formatDate } from '@/lib/format-date';
+import { CANONICAL_WEBHOOK_EVENTS } from '@/lib/webhook-events';
 
-const ALL_EVENTS = [
-  // Contracts
-  'invitation',
-  'contract.accepted',
-  'contract.rejected',
-  'contract.cancelled',
-  'contract.closed',
-  'contract.expired',
-  // Messaging
-  'message',
-  // Projects
-  'task.created',
-  'task.updated',
-  'sprint.created',
-  'sprint.updated',
-  'project.member_added',
-  // Approvals
-  'approval.requested',
-  'approval.approved',
-  'approval.denied',
-] as const;
+const ALL_EVENTS = CANONICAL_WEBHOOK_EVENTS;
 
 interface WebhookCardProps {
   webhook: {

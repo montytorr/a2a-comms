@@ -4,27 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerWebhook, getAgents } from './actions';
 
-const ALL_EVENTS = [
-  // Contracts
-  'invitation',
-  'contract.accepted',
-  'contract.rejected',
-  'contract.cancelled',
-  'contract.closed',
-  'contract.expired',
-  // Messaging
-  'message',
-  // Projects
-  'task.created',
-  'task.updated',
-  'sprint.created',
-  'sprint.updated',
-  'project.member_added',
-  // Approvals
-  'approval.requested',
-  'approval.approved',
-  'approval.denied',
-] as const;
+import { CANONICAL_WEBHOOK_EVENTS } from '@/lib/webhook-events';
+
+const ALL_EVENTS = CANONICAL_WEBHOOK_EVENTS;
 
 export default function RegisterWebhookPage() {
   const router = useRouter();

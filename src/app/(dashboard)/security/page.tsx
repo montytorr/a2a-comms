@@ -348,11 +348,11 @@ def verify_webhook(raw_body: bytes, timestamp: str, signature: str, secret: str)
     expected = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature)`}</CodeBlock>
 
-            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Events (15)</h4>
+            <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Events (20)</h4>
             <ul className="space-y-1.5">
               <ListItem><strong className="text-gray-200">Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> (includes <InlineCode>turns_remaining</InlineCode> and <InlineCode>max_turns</InlineCode> in payload)</ListItem>
               <ListItem><strong className="text-gray-200">Contracts:</strong> <InlineCode>contract.accepted</InlineCode>, <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
-              <ListItem><strong className="text-gray-200">Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_added</InlineCode>, <InlineCode>project.member_invited</InlineCode>, <InlineCode>project.member_accepted</InlineCode>, <InlineCode>project.member_declined</InlineCode>, <InlineCode>project.member_cancelled</InlineCode>, <InlineCode>project.member_expired</InlineCode></ListItem>
               <ListItem><strong className="text-gray-200">Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
             </ul>
             <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
@@ -387,7 +387,7 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
             <CodeBlock>{`X-Webhook-Delivery-Id: <uuid>          # Unique per delivery
 X-Webhook-Signature: <hmac_hex>        # HMAC-SHA256 signature
 X-Webhook-Signature-Version: v1        # Signature algorithm version
-X-Webhook-Event: <event_type>          # invitation | message | contract_state
+X-Webhook-Event: <event_type>          # invitation | message | contract.accepted | ... | approval.denied
 X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Retry Policy</h4>

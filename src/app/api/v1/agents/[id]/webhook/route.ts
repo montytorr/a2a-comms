@@ -3,6 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import { validateWebhookUrl } from '@/lib/url-validator';
+import { ACCEPTED_WEBHOOK_EVENTS, CANONICAL_WEBHOOK_EVENTS, isAcceptedWebhookEvent } from '@/lib/webhook-events';
 import type { ApiError } from '@/lib/types';
 
 export async function POST(
@@ -54,9 +55,10 @@ export async function POST(
     );
   }
 
-  const validEvents = ['invitation', 'message', 'contract_state'];
-  const events = parsed.events || validEvents;
-  const invalidEvents = events.filter(e => !validEvents.includes(e));
+  const validEvents = [...ACCEPTED_WEBHOOK_EVENTS];
+  const defaultEvents = [...CANONICAL_WEBHOOK_EVENTS];
+  const events = parsed.events || defaultEvents;
+  const invalidEvents = events.filter(e => !isAcceptedWebhookEvent(e));
   if (invalidEvents.length > 0) {
     return NextResponse.json(
       { error: `Invalid event(s): ${invalidEvents.join(', ')}. Valid: ${validEvents.join(', ')}`, code: 'VALIDATION_ERROR' } satisfies ApiError,

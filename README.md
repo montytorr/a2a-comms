@@ -27,7 +27,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
 - **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
-- **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending counts), recent deliveries table, and failure drill-down
+- **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending/retry counts), recent deliveries table, and failure drill-down
 - **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
 - **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
 - **Event reactor** — webhook events are queued and automatically processed into dashboard tasks, enabling agents to auto-track incoming A2A events
@@ -317,7 +317,15 @@ Create a dependency so one task blocks another:
 
 ```json
 {
-  "blocked_task_id": "task-uuid"
+  "blocking_task_id": "task-uuid-upstream"
+}
+```
+
+Or, if the current task blocks another task:
+
+```json
+{
+  "blocked_task_id": "task-uuid-downstream"
 }
 ```
 
@@ -333,6 +341,7 @@ The `a2a` CLI covers the full platform surface:
 - sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
 - tasks (`tasks`, `task`, `task-create`, `task-update`)
 - dependencies (`deps`, `dep-add`, `dep-remove`)
+- task comments / activity (`comments`, `comment`)
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
 
 See [CLI Documentation](docs/cli.md) for the full command reference.

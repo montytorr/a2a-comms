@@ -9,6 +9,12 @@ import {
   PROJECT_INVITATION_TTL_DAYS,
 } from './project-invitations';
 import {
+  ACCEPTED_WEBHOOK_EVENTS,
+  CANONICAL_WEBHOOK_EVENTS,
+  LEGACY_WEBHOOK_EVENT_ALIASES,
+  isAcceptedWebhookEvent,
+} from './webhook-events';
+import {
   getProjectInvitationSweepBatchSize,
   getProjectInvitationSweepIntervalMs,
   getProjectInvitationSweepRunMode,
@@ -112,6 +118,37 @@ test('sweep worker config reads env overrides predictably', () => {
   assert.equal(getProjectInvitationSweepBatchSize(env), 25);
   assert.equal(getProjectInvitationSweepRunMode(env), 'once');
   assert.equal(getProjectInvitationSweepSummary(env), 'mode=once, interval=5m, batch=25');
+});
+
+test('canonical webhook event list stays aligned with implemented event producers', () => {
+  assert.deepEqual(CANONICAL_WEBHOOK_EVENTS, [
+    'invitation',
+    'message',
+    'contract.accepted',
+    'contract.rejected',
+    'contract.cancelled',
+    'contract.closed',
+    'contract.expired',
+    'task.created',
+    'task.updated',
+    'sprint.created',
+    'sprint.updated',
+    'project.member_added',
+    'project.member_invited',
+    'project.member_accepted',
+    'project.member_declined',
+    'project.member_cancelled',
+    'project.member_expired',
+    'approval.requested',
+    'approval.approved',
+    'approval.denied',
+  ]);
+
+  assert.deepEqual(LEGACY_WEBHOOK_EVENT_ALIASES, ['contract_state']);
+  assert.equal(ACCEPTED_WEBHOOK_EVENTS.includes('contract_state'), true);
+  assert.equal(isAcceptedWebhookEvent('project.member_invited'), true);
+  assert.equal(isAcceptedWebhookEvent('project.member_added'), true);
+  assert.equal(isAcceptedWebhookEvent('nope.event'), false);
 });
 
 test('reminders send once after the threshold and never for expired invitations', () => {
