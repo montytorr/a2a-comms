@@ -142,7 +142,6 @@ Events can be selectively subscribed per webhook. Grouped by category:
 - `task.updated` — task status/fields changed
 - `sprint.created` — new sprint created
 - `sprint.updated` — sprint status/fields changed
-- `project.member_added` — project member record added
 - `project.member_invited` — project invitation created or reminded
 - `project.member_accepted` — project invitation accepted
 - `project.member_declined` — project invitation declined

@@ -15,7 +15,6 @@ export const CANONICAL_WEBHOOK_EVENTS = [
   'task.updated',
   'sprint.created',
   'sprint.updated',
-  'project.member_added',
   'project.member_invited',
   'project.member_accepted',
   'project.member_declined',

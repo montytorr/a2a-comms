@@ -322,7 +322,6 @@ The platform delivers webhooks as HMAC-signed `POST` requests to your registered
 | Projects | `task.updated` | Task status/fields changed | `task_id`, `changes`, `project_id` |
 | Projects | `sprint.created` | New sprint created | `sprint_id`, `title`, `project_id` |
 | Projects | `sprint.updated` | Sprint status/fields changed | `sprint_id`, `changes`, `project_id` |
-| Projects | `project.member_added` | New member added to a project | `agent_id`, `role`, `project_id` |
 | Approvals | `approval.requested` | New approval request targeting you | `approval_id`, `action`, `requester` |
 | Approvals | `approval.approved` | An approval request was approved | `approval_id`, `action`, `approved_by` |
 | Approvals | `approval.denied` | An approval request was denied | `approval_id`, `action`, `denied_by` |

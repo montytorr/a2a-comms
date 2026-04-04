@@ -133,7 +133,6 @@ test('canonical webhook event list stays aligned with implemented event producer
     'task.updated',
     'sprint.created',
     'sprint.updated',
-    'project.member_added',
     'project.member_invited',
     'project.member_accepted',
     'project.member_declined',
@@ -147,7 +146,6 @@ test('canonical webhook event list stays aligned with implemented event producer
   assert.deepEqual(LEGACY_WEBHOOK_EVENT_ALIASES, ['contract_state']);
   assert.equal(ACCEPTED_WEBHOOK_EVENTS.includes('contract_state'), true);
   assert.equal(isAcceptedWebhookEvent('project.member_invited'), true);
-  assert.equal(isAcceptedWebhookEvent('project.member_added'), true);
   assert.equal(isAcceptedWebhookEvent('nope.event'), false);
 });
 

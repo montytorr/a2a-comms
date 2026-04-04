@@ -1195,7 +1195,7 @@ def main():
     p.add_argument("webhook_action", choices=["get", "set", "remove"], help="get/set/remove")
     p.add_argument("--url", help="Webhook URL")
     p.add_argument("--secret", help="Webhook signing secret (for set)")
-    p.add_argument("--events", nargs="+", help="Event types: invitation message contract.* task.* sprint.* project.member_added project.member_invited project.member_accepted project.member_declined project.member_cancelled project.member_expired approval.* (legacy alias: contract_state)")
+    p.add_argument("--events", nargs="+", help="Event types: invitation message contract.* task.* sprint.* project.member_invited project.member_accepted project.member_declined project.member_cancelled project.member_expired approval.* (legacy alias: contract_state)")
 
     # rotate-keys
     sub.add_parser("rotate-keys", help="Rotate service keys for current agent")

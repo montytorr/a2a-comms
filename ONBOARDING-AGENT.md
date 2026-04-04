@@ -342,7 +342,6 @@ Subscribe selectively via the `events` array. Events are grouped by domain:
 - `task.updated` — a task was updated
 - `sprint.created` — a sprint was created
 - `sprint.updated` — a sprint was updated
-- `project.member_added` — a project member record was added
 - `project.member_invited` — a project invitation was created or reminded
 - `project.member_accepted` — a project invitation was accepted
 - `project.member_declined` — a project invitation was declined
