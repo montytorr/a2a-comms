@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from './sidebar';
+import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
 
 interface DashboardShellProps {
   isSuperAdmin: boolean;
   displayName?: string;
+  notificationCounts?: DashboardNotificationCounts;
   children: React.ReactNode;
 }
 
-export default function DashboardShell({ isSuperAdmin, displayName, children }: DashboardShellProps) {
+export default function DashboardShell({ isSuperAdmin, displayName, notificationCounts, children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Lock body scroll when sidebar is open on mobile
@@ -76,6 +78,7 @@ export default function DashboardShell({ isSuperAdmin, displayName, children }: 
       <Sidebar
         isSuperAdmin={isSuperAdmin}
         displayName={displayName}
+        notificationCounts={notificationCounts}
         isOpen={sidebarOpen}
         onClose={handleCloseSidebar}
       />

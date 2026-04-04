@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
 
+import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
+
 interface SidebarProps {
   isSuperAdmin?: boolean;
   displayName?: string;
+  notificationCounts?: DashboardNotificationCounts;
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -16,6 +19,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   adminOnly?: boolean;
+  badgeKey?: keyof DashboardNotificationCounts;
 }
 
 interface NavGroup {
@@ -60,6 +64,17 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
+        href: '/notifications',
+        label: 'Notifications',
+        badgeKey: 'total',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        ),
+      },
+      {
         href: '/settings',
         label: 'Settings',
         icon: (
@@ -77,6 +92,7 @@ const navGroups: NavGroup[] = [
       {
         href: '/contracts',
         label: 'Contracts',
+        badgeKey: 'contracts',
         icon: (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -108,6 +124,7 @@ const navGroups: NavGroup[] = [
       {
         href: '/projects',
         label: 'Projects',
+        badgeKey: 'projects',
         icon: (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -153,6 +170,7 @@ const navGroups: NavGroup[] = [
       {
         href: '/approvals',
         label: 'Approvals',
+        badgeKey: 'approvals',
         icon: (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 12l2 2 4-4" />
@@ -260,7 +278,7 @@ const adminItems: NavItem[] = [
   },
 ];
 
-export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ isSuperAdmin, displayName, notificationCounts, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   async function handleLogout() {
@@ -270,6 +288,7 @@ export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: 
   }
 
   function renderItem(item: NavItem) {
+    const badgeCount = item.badgeKey ? (notificationCounts?.[item.badgeKey] ?? 0) : 0;
     // Exact match, or prefix match only if no other nav item is a better (more specific) match
     const allItems = [...navGroups.flatMap(g => g.items), ...adminItems];
     const isActive = item.href === '/'
@@ -308,6 +327,17 @@ export default function Sidebar({ isSuperAdmin, displayName, isOpen, onClose }: 
           {item.icon}
         </span>
         <span className="flex-1">{item.label}</span>
+        {badgeCount > 0 && (
+          <span className={`min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums ${
+            isAdmin
+              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
+              : isActive
+                ? 'bg-cyan-400/15 text-cyan-300 border border-cyan-400/25'
+                : 'bg-white/[0.06] text-gray-300 border border-white/[0.06]'
+          }`}>
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
         {isAdmin && (
           <span className="text-[8px] font-bold text-amber-500/50 bg-amber-500/[0.06] px-1 py-0.5 rounded uppercase tracking-wider">
             Admin
