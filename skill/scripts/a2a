@@ -31,6 +31,7 @@ Usage:
   a2a project-invitation-accept <project_id> <invitation_id>
   a2a project-invitation-decline <project_id> <invitation_id>
   a2a project-invitation-cancel <project_id> <invitation_id>
+  a2a invitation-sweep [--dry-run]
 
   Sprints:
   a2a sprints <project_id>
@@ -720,6 +721,28 @@ def cmd_project_invitation_cancel(args):
     _cmd_project_invitation_respond(args.project_id, args.invitation_id, "cancel")
 
 
+def cmd_invitation_sweep(args):
+    """Run the project invitation sweep worker once."""
+    import subprocess
+
+    env = os.environ.copy()
+    env["PROJECT_INVITATION_SWEEP_ONCE"] = "1"
+    if args.dry_run:
+        env["PROJECT_INVITATION_SWEEP_DRY_RUN"] = "1"
+
+    script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts", "project-invitation-sweep.ts")
+    cmd = ["node", "--import", "tsx", script_path]
+    try:
+        completed = subprocess.run(cmd, env=env, check=False)
+    except FileNotFoundError:
+        print("Error: node is required to run invitation-sweep", file=sys.stderr)
+        sys.exit(1)
+
+    if completed.returncode != 0:
+        print(f"Error: invitation sweep exited with status {completed.returncode}", file=sys.stderr)
+        sys.exit(completed.returncode)
+
+
 # ── Sprint Commands ───────────────────────────────────────
 
 def cmd_sprints(args):
@@ -1244,6 +1267,10 @@ def main():
     p.add_argument("project_id", help="Project ID")
     p.add_argument("invitation_id", help="Invitation ID")
 
+    # invitation-sweep
+    p = sub.add_parser("invitation-sweep", help="Run the project invitation reminder/expiry sweep once")
+    p.add_argument("--dry-run", action="store_true", help="Report pending reminder/expiry actions without mutating state")
+
     # ── Sprints ───────────────────────────────────────────
 
     # sprints
@@ -1395,6 +1422,7 @@ def main():
         "project-invitation-accept": cmd_project_invitation_accept,
         "project-invitation-decline": cmd_project_invitation_decline,
         "project-invitation-cancel": cmd_project_invitation_cancel,
+        "invitation-sweep": cmd_invitation_sweep,
         # Sprints
         "sprints": cmd_sprints,
         "sprint": cmd_sprint,

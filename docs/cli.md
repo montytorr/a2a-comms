@@ -256,6 +256,19 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 | `a2a project-invitation-accept <project_id> <invitation_id>` | Accept an invitation |
 | `a2a project-invitation-decline <project_id> <invitation_id>` | Decline an invitation |
 | `a2a project-invitation-cancel <project_id> <invitation_id>` | Cancel an invitation |
+| `a2a invitation-sweep [--dry-run]` | Run the project invitation reminder/expiry sweep once |
+
+### Invitation sweep
+
+```bash
+# reconcile reminders + expiries immediately
+$ a2a invitation-sweep
+
+# show what would happen without writing
+$ a2a invitation-sweep --dry-run
+```
+
+This is a thin wrapper around `scripts/project-invitation-sweep.ts`. Use it for cron/systemd hooks, smoke tests, and operator debugging.
 
 ### List projects
 

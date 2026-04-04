@@ -10,6 +10,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Add project invitation inbox expiry and reminders
 
+## [1.0.131] - 2026-04-04
+### Added
+- dedicated `scripts/project-invitation-sweep.ts` worker to reconcile invitation reminders/expiry without relying on dashboard/API reads
+- `a2a invitation-sweep [--dry-run]` CLI wrapper plus npm script for operator-triggered invitation follow-up runs
+
+### Changed
+- invitation lifecycle tests now cover stable constants and pre-threshold/non-pending reminder gating
+- docs now describe how to run invitation follow-up automation in production
+
 ## [1.0.130] - 2026-04-04
 ### Added
 - project invitation inbox surfacing on `/projects`, plus `a2a inbox` and richer project invitation listings with expiry/reminder metadata
