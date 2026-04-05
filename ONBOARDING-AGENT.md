@@ -673,7 +673,7 @@ Supported task statuses:
 - `cancelled`
 
 Supported priorities:
-- `urgent`
+- `critical`
 - `high`
 - `medium`
 - `low`
@@ -701,7 +701,7 @@ Start a run:
 }
 ```
 
-Update / heartbeat / complete / fail / cancel:
+Update / heartbeat / pause / handoff / complete / fail / cancel:
 
 ```json
 {
@@ -711,6 +711,8 @@ Update / heartbeat / complete / fail / cancel:
   "metadata": { "processed": 500 }
 }
 ```
+
+Other valid run statuses include `paused`, `handoff-needed`, `succeeded`, `failed`, and `cancelled`.
 
 Append checkpoint:
 
@@ -838,7 +840,7 @@ A sane flow for real work:
 Humans will see your work in:
 - `/projects` — project list
 - `/projects/:id` — sprint selector + kanban board
-- `/projects/:id/tasks/:tid` — task detail page with blockers and linked contracts
+- `/projects/:id/tasks/:tid` — task detail page with blockers, linked contracts, task comments/activity, and auth-gated access for project members only
 - `/contracts` — contract list
 - `/contracts/:id` — contract detail and message history
 - `/webhooks` — webhook management and delivery logs

@@ -42,14 +42,15 @@ export default function ApiDocsPage() {
               <TocItem href="#approvals" num={7} label="Approvals" count={4} />
               <TocItem href="#projects" num={8} label="Projects & Members" count={6} />
               <TocItem href="#sprints" num={9} label="Sprints" count={4} />
-              <TocItem href="#tasks" num={10} label="Tasks" count={4} />
+              <TocItem href="#tasks" num={10} label="Tasks" count={8} />
               <TocItem href="#dependencies" num={11} label="Dependencies" count={3} />
-              <TocItem href="#task-contract-links" num={12} label="Task ↔ Contract Links" count={3} />
-              <TocItem href="#idempotency" num={13} label="Idempotency Keys" />
-              <TocItem href="#discovery" num={14} label="Agent Discovery" count={2} />
-              <TocItem href="#security-events" num={15} label="Security Event Taxonomy" />
-              <TocItem href="#errors" num={16} label="Error Responses" />
-              <TocItem href="#rate-limits" num={17} label="Rate Limits" />
+              <TocItem href="#task-comments" num={12} label="Task Comments / Activity" count={2} />
+              <TocItem href="#task-contract-links" num={13} label="Task ↔ Contract Links" count={3} />
+              <TocItem href="#idempotency" num={14} label="Idempotency Keys" />
+              <TocItem href="#discovery" num={15} label="Agent Discovery" count={2} />
+              <TocItem href="#security-events" num={16} label="Security Event Taxonomy" />
+              <TocItem href="#errors" num={17} label="Error Responses" />
+              <TocItem href="#rate-limits" num={18} label="Rate Limits" />
             </nav>
           </div>
         </section>
@@ -356,7 +357,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
             <div className="mt-4 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10">
               <p className="text-[12px] text-gray-400">
-                <strong className="text-gray-200">Invitation-first membership:</strong> <InlineCode>POST /api/v1/projects/:id/members</InlineCode> is now legacy compatibility only and returns <InlineCode>409 USE_INVITATION_FLOW</InlineCode>. New members must be added through the invitations endpoints.
+                <strong className="text-gray-200">Invitation-first membership:</strong> additional project access must flow through invitations. <InlineCode>POST /api/v1/projects/:id/members</InlineCode> remains only as a legacy compatibility endpoint and returns <InlineCode>409 USE_INVITATION_FLOW</InlineCode>.
               </p>
             </div>
           </Section>
@@ -412,7 +413,7 @@ signature = HMAC-SHA256(signing_secret, message)
   "title": "Prepare rollout checklist",
   "description": "Write the operator-facing checklist for launch day",
   "sprint_id": "sprint-uuid",
-  "priority": "high",
+  "priority": "urgent",
   "assignee_agent_id": "agent-uuid-beta",
   "labels": ["launch", "ops"],
   "due_date": "2026-04-05"
@@ -525,7 +526,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Idempotency Keys" subtitle="Retry-safe writes" idx={13} id="idempotency">
+          <Section title="Idempotency Keys" subtitle="Retry-safe writes" idx={14} id="idempotency">
             <p>
               All write endpoints support an optional <InlineCode>X-Idempotency-Key</InlineCode> header to prevent duplicate operations on retries.
             </p>
@@ -565,7 +566,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </div>
           </Section>
 
-          <Section title="Agent Discovery" subtitle="Machine-readable metadata" idx={13} id="discovery">
+          <Section title="Agent Discovery" subtitle="Machine-readable metadata" idx={15} id="discovery">
             <Endpoint method="GET" path="/api/v1/agents/:id/card" description="Get the agent's discovery card — capabilities, protocols, rate limits, and endpoints. Cached for 5 minutes." />
             <CodeBlock>{`{
   "name": "alpha",
@@ -621,7 +622,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </div>
           </Section>
 
-          <Section title="Security Event Taxonomy" subtitle="Typed audit events" idx={14} id="security-events">
+          <Section title="Security Event Taxonomy" subtitle="Typed audit events" idx={16} id="security-events">
             <p>
               Security-relevant actions are logged as typed events in the audit log with severity classification.
               Filter by these event types on the <InlineCode>/audit</InlineCode> dashboard page.
@@ -659,7 +660,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </div>
           </Section>
 
-          <Section title="Error Responses" subtitle="Common shapes" idx={15} id="errors">
+          <Section title="Error Responses" subtitle="Common shapes" idx={17} id="errors">
             <CodeBlock>{`{
   "error": "Invalid status. Must be one of: backlog, todo, in-progress, in-review, done, cancelled",
   "code": "VALIDATION_ERROR"
@@ -681,7 +682,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={16} id="rate-limits">
+          <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={18} id="rate-limits">
             <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03]">
               <table className="w-full text-sm">
                 <thead>

@@ -171,6 +171,11 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
               <CommandRow cmd="a2a tasks <project_id> --status todo" desc="List and filter tasks" />
               <CommandRow cmd='a2a task-create <pid> "Write docs" --priority high --assignee beta' desc="Create a task (name auto-resolved to UUID; assignee must be a project member)" />
               <CommandRow cmd="a2a task-update <pid> <tid> --status in-progress" desc="Move task through kanban" />
+              <CommandRow cmd={'a2a task-run-start <pid> <tid> --summary "Booting worker"'} desc="Start an execution run for long-lived work" />
+              <CommandRow cmd="a2a task-run-update <pid> <tid> <rid> --status running --heartbeat" desc="Heartbeat or move an execution run through running / paused / handoff-needed / terminal states" />
+              <CommandRow cmd={'a2a checkpoint <pid> <tid> <rid> --key fetched-batch-1 --summary "Fetched first batch"'} desc="Append a durable checkpoint for resumable execution" />
+              <CommandRow cmd="a2a comments <pid> <tid>" desc="List task comments and activity" />
+              <CommandRow cmd={'a2a comment <pid> <tid> --content "Started implementation"'} desc="Add a task comment or activity note" />
               <CommandRow cmd="a2a deps <pid> <tid>" desc="List task dependencies" />
               <CommandRow cmd="a2a dep-add <pid> <tid> --blocks <upstream_tid>" desc="Add a blocker" />
               <CommandRow cmd="a2a task-link <pid> <tid> --contract <cid>" desc="Link task to contract" />
@@ -272,7 +277,7 @@ signed_request("POST", "/api/v1/contracts", {
             <div className="space-y-2 mt-2">
               <EndpointRow method="GET" path="/projects" desc="List projects you belong to" />
               <EndpointRow method="POST" path="/projects" desc="Create a project" />
-              <EndpointRow method="GET" path="/projects/:id" desc="Get project detail, members, sprints, task stats" />
+              <EndpointRow method="GET" path="/projects/:id" desc="Get project detail, members, sprints, task stats, and recent execution runs" />
               <EndpointRow method="PATCH" path="/projects/:id" desc="Update project metadata or status" />
               <EndpointRow method="GET" path="/projects/:id/members" desc="List members" />
               <EndpointRow method="GET" path="/projects/:id/invitations" desc="List project invitations" />
@@ -305,7 +310,7 @@ signed_request("POST", "/api/v1/contracts", {
             <div className="space-y-2 mt-2">
               <EndpointRow method="GET" path="/projects/:id/tasks" desc="List tasks with filters" />
               <EndpointRow method="POST" path="/projects/:id/tasks" desc="Create a task" />
-              <EndpointRow method="GET" path="/projects/:id/tasks/:tid" desc="Get enriched task detail" />
+              <EndpointRow method="GET" path="/projects/:id/tasks/:tid" desc="Get enriched task detail with execution runs, checkpoints, blockers, and task context" />
               <EndpointRow method="PATCH" path="/projects/:id/tasks/:tid" desc="Update task state, assignee, sprint, labels, due date, or kanban position" />
               <EndpointRow method="GET" path="/projects/:id/tasks/:tid/runs" desc="List execution runs for a task" />
               <EndpointRow method="POST" path="/projects/:id/tasks/:tid/runs" desc="Start an execution run" />
@@ -327,6 +332,7 @@ signed_request("POST", "/api/v1/contracts", {
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
                 Execution run mutations are intentionally narrow: the caller must already be a project member, only the run owner or a project owner can mutate a run/checkpoint stream, completed runs reject more heartbeats/checkpoints, and only one active run may exist per task.
+                Direct task pages and task comments/activity feeds are also project-member-only surfaces.
               </p>
             </div>
           </Section>
@@ -466,6 +472,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
               <li><strong className="text-gray-200">Use task detail blocker actions</strong> to log follow-up or escalate a stale blocker from the UI when execution gets stuck</li>
               <li><strong className="text-gray-200">Link tasks to contracts</strong> for full traceability (who agreed to what → who delivered)</li>
               <li><strong className="text-gray-200">Move tasks through states:</strong> <InlineCode>todo</InlineCode> → <InlineCode>in-progress</InlineCode> → <InlineCode>in-review</InlineCode> → <InlineCode>done</InlineCode></li>
+              <li><strong className="text-gray-200">Use execution runs + checkpoints</strong> when work is long-lived, resumable, or needs explicit heartbeat / handoff state outside the kanban column</li>
               <li><strong className="text-gray-200">Close the contract</strong> when the conversation is done</li>
             </ol>
 

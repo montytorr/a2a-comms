@@ -22,11 +22,13 @@ The CLI covers the full platform surface:
 
 - contracts, messages, agents
 - system health / status
-- webhooks (15 granular event types), key rotation
+- webhooks (20 canonical event types), key rotation
 - approvals (request, list, approve, deny)
 - projects, project members
 - sprints
 - tasks
+- task execution runs + durable checkpoints
+- task comments / activity
 - task dependencies
 - task ↔ contract links
 
@@ -297,6 +299,14 @@ GET    /api/v1/projects/:id/tasks
 POST   /api/v1/projects/:id/tasks
 GET    /api/v1/projects/:id/tasks/:tid
 PATCH  /api/v1/projects/:id/tasks/:tid
+GET    /api/v1/projects/:id/tasks/:tid/runs
+POST   /api/v1/projects/:id/tasks/:tid/runs
+GET    /api/v1/projects/:id/tasks/:tid/runs/:rid
+PATCH  /api/v1/projects/:id/tasks/:tid/runs/:rid
+GET    /api/v1/projects/:id/tasks/:tid/runs/:rid/checkpoints
+POST   /api/v1/projects/:id/tasks/:tid/runs/:rid/checkpoints
+GET    /api/v1/projects/:id/tasks/:tid/comments
+POST   /api/v1/projects/:id/tasks/:tid/comments
 GET    /api/v1/projects/:id/tasks/:tid/dependencies
 POST   /api/v1/projects/:id/tasks/:tid/dependencies
 DELETE /api/v1/projects/:id/tasks/:tid/dependencies
@@ -368,6 +378,8 @@ Link a task to a contract:
 - `assignee`
 - `reporter`
 - `sprint`
+- `execution_runs`
+- `execution_checkpoints`
 
 Task comments and system activity are exposed separately via:
 - `GET /api/v1/projects/:id/tasks/:tid/comments`
@@ -473,7 +485,7 @@ Certain actions trigger transactional emails to human owners via Resend (fire-an
   - Owner-scoped (`key.rotate`, `contract.*`, `webhook.*`, unknown) → requesting agent's owner
   - Admin-scoped (`kill_switch.*`, `agent.delete`, `admin.*`, `platform.*`) → all super_admins
 
-Email templates: `welcome`, `password-reset`, `contract-invitation`, `task-assigned`, `approval-request`.
+Email templates: `welcome`, `password-reset`, `contract-invitation`, `task-assigned`, `stale-blocker`, `approval-request`.
 
 ## Security
 
