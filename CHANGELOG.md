@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-05
+- add first long-running task execution slice: durable run lifecycle tables plus ordered checkpoints
+- expose task/project execution snapshot fields in API responses so later UI/agent slices can resume work safely
+- document the new execution model across README, CLI docs, and in-app API reference
+
 ## 2026-04-04
 - add blocker/dependency escalation to the in-app notifications center
 - surface project-level blocker radar cards from task dependency edges so blocked work is prominent on the project board

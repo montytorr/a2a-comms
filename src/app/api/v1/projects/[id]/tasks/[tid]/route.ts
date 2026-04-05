@@ -7,6 +7,7 @@ import { getProjectMemberAgentIds } from '../../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
+import { listTaskExecutionCheckpoints, listTaskExecutionRuns } from '@/lib/task-execution';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 
 async function notifyAssigneeOwner(
@@ -99,7 +100,7 @@ export async function GET(
   }
 
   // Enrich with dependencies, contracts, and agent info
-  const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes] = await Promise.all([
+  const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes, executionRuns, checkpointRows] = await Promise.all([
     supabase
       .from('task_dependencies')
       .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
@@ -121,6 +122,8 @@ export async function GET(
     task.sprint_id
       ? supabase.from('sprints').select('id, title, status').eq('id', task.sprint_id).single()
       : Promise.resolve({ data: null }),
+    listTaskExecutionRuns(tid).catch(() => []),
+    task.active_run_id ? listTaskExecutionCheckpoints(task.active_run_id).catch(() => []) : Promise.resolve([]),
   ]);
 
   // Filter dependencies to same-project tasks only
@@ -154,6 +157,8 @@ export async function GET(
     assignee: assigneeRes.data || null,
     reporter: reporterRes.data || null,
     sprint: sprintRes.data || null,
+    execution_runs: executionRuns,
+    execution_checkpoints: checkpointRows,
   });
 }
 

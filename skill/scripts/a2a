@@ -44,6 +44,12 @@ Usage:
   a2a task <project_id> <task_id>
   a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D]
   a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
+  a2a task-runs <project_id> <task_id>
+  a2a task-run-start <project_id> <task_id> [--status STATUS] [--summary TEXT] [--metadata JSON]
+  a2a task-run <project_id> <task_id> <run_id>
+  a2a task-run-update <project_id> <task_id> <run_id> [--status STATUS] [--summary TEXT] [--error-message TEXT] [--metadata JSON] [--heartbeat]
+  a2a checkpoints <project_id> <task_id> <run_id>
+  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON]
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -268,6 +274,19 @@ def format_sprint(s: dict, verbose: bool = False) -> str:
     return line
 
 
+def parse_json_arg(value: str, flag_name: str) -> dict:
+    """Parse a JSON object flag value."""
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as e:
+        print(f"Error: invalid JSON for {flag_name}: {e}", file=sys.stderr)
+        sys.exit(1)
+    if not isinstance(parsed, dict):
+        print(f"Error: {flag_name} must be a JSON object", file=sys.stderr)
+        sys.exit(1)
+    return parsed
+
+
 def format_task(t: dict, verbose: bool = False) -> str:
     """Format a task for display."""
     status_icons = {
@@ -312,6 +331,19 @@ def format_task(t: dict, verbose: bool = False) -> str:
             line += f"\n   Sprint: {t['sprint_id']}"
         if t.get("due_date"):
             line += f"\n   Due: {t['due_date']}"
+        execution_status = t.get("execution_status")
+        if execution_status:
+            line += f"\n   Execution: {execution_status}"
+            if t.get("active_run_id"):
+                line += f" (active run: {t['active_run_id']})"
+        if t.get("execution_started_at"):
+            line += f"\n   Run started: {t['execution_started_at']}"
+        if t.get("execution_heartbeat_at"):
+            line += f"\n   Last heartbeat: {t['execution_heartbeat_at']}"
+        if t.get("execution_completed_at"):
+            line += f"\n   Run completed: {t['execution_completed_at']}"
+        if t.get("last_checkpoint_summary"):
+            line += f"\n   Last checkpoint: {t['last_checkpoint_summary']}"
         deps = t.get("dependencies", [])
         if deps:
             dep_ids = [d.get("blocking_task_id", d.get("id", "?")) for d in deps]
@@ -878,6 +910,94 @@ def cmd_task_update(args):
     print(format_task(data, verbose=True))
 
 
+def cmd_task_runs(args):
+    """List execution runs for a task."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs")
+    runs = data.get("data", []) if isinstance(data, dict) else data
+    if not runs:
+        print("No execution runs yet.")
+        return
+    print(f"Execution runs ({len(runs)}):\n")
+    for run in runs:
+        print(f"  ▶ {run['id']} [{run.get('status', '?').upper()}] attempt {run.get('attempt', '?')} checkpoints={run.get('checkpoint_count', 0)}")
+        if run.get("summary"):
+            print(f"     Summary: {run['summary']}")
+        if run.get("error_message"):
+            print(f"     Error: {run['error_message']}")
+        if run.get("heartbeat_at"):
+            print(f"     Heartbeat: {run['heartbeat_at']}")
+        print()
+
+
+def cmd_task_run_start(args):
+    """Start a new execution run for a task."""
+    body = {}
+    if args.status:
+        body["status"] = args.status
+    if args.summary:
+        body["summary"] = args.summary
+    if args.metadata:
+        body["metadata"] = parse_json_arg(args.metadata, "--metadata")
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs", body)
+    print("✅ Execution run created!")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_task_run(args):
+    """Get a specific execution run."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_task_run_update(args):
+    """Update a task execution run / heartbeat / complete / fail / cancel."""
+    body = {}
+    if args.status:
+        body["status"] = args.status
+    if args.summary is not None:
+        body["summary"] = args.summary
+    if args.error_message is not None:
+        body["error_message"] = args.error_message
+    if args.metadata:
+        body["metadata"] = parse_json_arg(args.metadata, "--metadata")
+    if args.heartbeat:
+        body["heartbeat"] = True
+    if not body:
+        print("Error: provide at least one field to update", file=sys.stderr)
+        sys.exit(1)
+    data = api_request("PATCH", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}", body)
+    print("✅ Execution run updated!")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_checkpoints(args):
+    """List checkpoints for a run."""
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}/checkpoints")
+    checkpoints = data.get("data", []) if isinstance(data, dict) else data
+    if not checkpoints:
+        print("No checkpoints yet.")
+        return
+    print(f"Checkpoints ({len(checkpoints)}):\n")
+    for checkpoint in checkpoints:
+        print(f"  #{checkpoint.get('sequence', '?')} {checkpoint.get('checkpoint_key', '?')} [{checkpoint.get('status', '?').upper()}]")
+        if checkpoint.get("summary"):
+            print(f"     Summary: {checkpoint['summary']}")
+        print(f"     Created: {checkpoint.get('created_at', '?')}")
+        print()
+
+
+def cmd_checkpoint(args):
+    """Append a checkpoint to a run."""
+    body = {"checkpoint_key": args.key}
+    if args.summary is not None:
+        body["summary"] = args.summary
+    if args.payload:
+        body["payload"] = parse_json_arg(args.payload, "--payload")
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}/checkpoints", body)
+    print("✅ Checkpoint appended!")
+    print(json.dumps(data, indent=2))
+
+
 # ── Dependency Commands ───────────────────────────────────
 
 def cmd_deps(args):
@@ -1339,6 +1459,51 @@ def main():
     p.add_argument("--labels", nargs="+", help="New labels")
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
 
+    # task-runs
+    p = sub.add_parser("task-runs", help="List execution runs for a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+
+    # task-run-start
+    p = sub.add_parser("task-run-start", help="Start a new execution run for a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="Initial execution run status")
+    p.add_argument("--summary", help="Run summary")
+    p.add_argument("--metadata", help="JSON object metadata")
+
+    # task-run
+    p = sub.add_parser("task-run", help="Get a specific execution run")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("run_id", help="Execution run ID")
+
+    # task-run-update
+    p = sub.add_parser("task-run-update", help="Update/heartbeat/complete/fail/cancel an execution run")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("run_id", help="Execution run ID")
+    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="New execution run status")
+    p.add_argument("--summary", help="Run summary")
+    p.add_argument("--error-message", help="Failure/cancellation detail")
+    p.add_argument("--metadata", help="JSON object metadata")
+    p.add_argument("--heartbeat", action="store_true", help="Stamp a heartbeat without changing status")
+
+    # checkpoints
+    p = sub.add_parser("checkpoints", help="List checkpoints for an execution run")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("run_id", help="Execution run ID")
+
+    # checkpoint
+    p = sub.add_parser("checkpoint", help="Append a checkpoint to an execution run")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("run_id", help="Execution run ID")
+    p.add_argument("--key", required=True, help="Checkpoint key")
+    p.add_argument("--summary", help="Checkpoint summary")
+    p.add_argument("--payload", help="JSON object payload")
+
     # ── Dependencies ──────────────────────────────────────
 
     # deps
@@ -1436,6 +1601,12 @@ def main():
         "task": cmd_task,
         "task-create": cmd_task_create,
         "task-update": cmd_task_update,
+        "task-runs": cmd_task_runs,
+        "task-run-start": cmd_task_run_start,
+        "task-run": cmd_task_run,
+        "task-run-update": cmd_task_run_update,
+        "checkpoints": cmd_checkpoints,
+        "checkpoint": cmd_checkpoint,
         # Dependencies
         "deps": cmd_deps,
         "dep-add": cmd_dep_add,

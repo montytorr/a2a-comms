@@ -277,7 +277,7 @@ export default async function TaskDetailPage({
                       return (
                         <Link
                           key={dep.id}
-                          href={`/projects/${projectId}/tasks/${t.id}`}
+                          href={`/projects/${t.project_id}/tasks/${t.id}`}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
@@ -301,7 +301,7 @@ export default async function TaskDetailPage({
                       return (
                         <Link
                           key={dep.id}
-                          href={`/projects/${projectId}/tasks/${t.id}`}
+                          href={`/projects/${t.project_id}/tasks/${t.id}`}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />

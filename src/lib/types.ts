@@ -7,6 +7,9 @@ export type ProjectStatus = 'planning' | 'active' | 'completed' | 'archived';
 export type SprintStatus = 'planned' | 'active' | 'completed';
 export type TaskStatus = 'backlog' | 'todo' | 'in-progress' | 'in-review' | 'done' | 'cancelled';
 export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
+export type TaskExecutionStatus = 'idle' | 'queued' | 'running' | 'paused' | 'handoff-needed' | 'succeeded' | 'failed' | 'cancelled';
+export type TaskExecutionRunStatus = 'queued' | 'starting' | 'running' | 'paused' | 'handoff-needed' | 'succeeded' | 'failed' | 'cancelled';
+export type TaskCheckpointStatus = 'written' | 'superseded';
 export type ProjectMemberRole = 'owner' | 'member';
 export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
 export type ParticipantRole = 'proposer' | 'invitee';
@@ -279,6 +282,14 @@ export interface Task {
   labels: string[];
   due_date: string | null;
   position: number;
+  active_run_id?: string | null;
+  execution_status?: TaskExecutionStatus;
+  execution_started_at?: string | null;
+  execution_heartbeat_at?: string | null;
+  execution_completed_at?: string | null;
+  last_checkpoint_at?: string | null;
+  last_checkpoint_summary?: string | null;
+  last_checkpoint_payload?: Record<string, unknown>;
   blocked_at?: string | null;
   blocker_follow_up_at?: string | null;
   blocker_followed_through_at?: string | null;
@@ -299,6 +310,38 @@ export interface TaskContract {
   task_id: string;
   contract_id: string;
   linked_at: string;
+}
+
+export interface TaskExecutionRun {
+  id: string;
+  task_id: string;
+  project_id: string;
+  agent_id: string;
+  status: TaskExecutionRunStatus;
+  attempt: number;
+  started_at: string | null;
+  heartbeat_at: string | null;
+  completed_at: string | null;
+  checkpoint_count: number;
+  summary: string | null;
+  error_message: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskExecutionCheckpoint {
+  id: string;
+  run_id: string;
+  task_id: string;
+  project_id: string;
+  agent_id: string;
+  sequence: number;
+  checkpoint_key: string;
+  status: TaskCheckpointStatus;
+  summary: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
 }
 
 // ---- Projects & Tasks API request types ----
@@ -351,4 +394,24 @@ export interface UpdateTaskRequest {
   labels?: string[];
   due_date?: string | null;
   position?: number;
+}
+
+export interface CreateTaskExecutionRunRequest {
+  status?: TaskExecutionRunStatus;
+  summary?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateTaskExecutionRunRequest {
+  status?: TaskExecutionRunStatus;
+  summary?: string | null;
+  error_message?: string | null;
+  metadata?: Record<string, unknown>;
+  heartbeat?: boolean;
+}
+
+export interface CreateTaskExecutionCheckpointRequest {
+  checkpoint_key: string;
+  summary?: string | null;
+  payload?: Record<string, unknown>;
 }

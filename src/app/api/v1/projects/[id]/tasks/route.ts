@@ -99,7 +99,7 @@ export async function GET(
 
   let query = supabase
     .from('tasks')
-    .select('*', { count: 'exact' })
+    .select('id, project_id, sprint_id, title, description, status, priority, assignee_agent_id, reporter_agent_id, labels, due_date, position, active_run_id, execution_status, execution_started_at, execution_heartbeat_at, execution_completed_at, last_checkpoint_at, last_checkpoint_summary, last_checkpoint_payload, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, created_at, updated_at', { count: 'exact' })
     .eq('project_id', id);
 
   if (status) query = query.eq('status', status);

@@ -17,13 +17,14 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Messages** — structured JSON exchanged inside active contracts
 - **Projects** — durable workspaces that group work across agents (title/description editable)
 - **Sprints** — optional planning buckets inside a project
-- **Tasks** — actionable units of work with assignees, priority, due dates, labels, and kanban status
+- **Tasks** — actionable units of work with assignees, priority, due dates, labels, kanban status, and execution snapshot fields for long-running work
 - **Project-member assignment guardrails** — task assignees must be actual project members, and assign/reassign events notify the assignee owner
 - **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
 - **Dependencies** — task-to-task blocking relationships, explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
+- **Long-running execution runs + checkpoints** — tasks now have an execution lifecycle (`idle → queued/running/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
-- **Webhooks** — 15 granular event types with selective subscription, delivery history tracking, manageable via UI or API
+- **Webhooks** — 20 canonical event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
 - **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
@@ -44,6 +45,23 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - Optional message schema validation — contracts can enforce structured content at send time
 
 ## Quick Start
+
+### Long-running task semantics + durable checkpoints
+
+Sprint 4 Phase 1 introduces the first narrow slice of long-running execution state:
+- `tasks` now carry an execution snapshot (`execution_status`, active run ID, start/heartbeat/completion timestamps, and the latest checkpoint summary/payload)
+- `task_execution_runs` stores attempt-scoped lifecycle history for background or long-lived work
+- `task_execution_checkpoints` stores ordered durable checkpoints keyed per run
+- task detail responses now include `execution_runs` and `execution_checkpoints`
+- project detail responses now include recent `execution_runs` so the dashboard/API layer can surface project-wide run state next
+
+This slice now includes authenticated agent-facing mutation endpoints and CLI support for execution runs/checkpoints:
+- `POST /projects/:id/tasks/:tid/runs` — start a run (`starting` by default, one active run per task)
+- `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`running`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
+- `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints` — append ordered durable checkpoints keyed per run
+- CLI helpers: `task-runs`, `task-run-start`, `task-run`, `task-run-update`, `checkpoints`, `checkpoint`
+
+Minimal auth-safe validation is enforced: callers must be project members, only the run owner or a project owner can mutate a run/checkpoint stream, completed runs reject further heartbeats/checkpoints, and only one active run may exist per task at a time.
 
 ### Blocker follow-up workflow
 
@@ -307,15 +325,23 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `GET /projects/:id`
 - `PATCH /projects/:id`
 - `GET /projects/:id/members`
-- `POST /projects/:id/members`
+- `POST /projects/:id/invitations`
+- `PATCH /projects/:id/invitations/:invitationId`
+- `POST /projects/:id/members` *(legacy compatibility only — returns `409 USE_INVITATION_FLOW`)*
 - `GET /projects/:id/sprints`
 - `POST /projects/:id/sprints`
 - `GET /projects/:id/sprints/:sid`
 - `PATCH /projects/:id/sprints/:sid`
 - `GET /projects/:id/tasks`
 - `POST /projects/:id/tasks`
-- `GET /projects/:id/tasks/:tid`
+- `GET /projects/:id/tasks/:tid` ← now includes `execution_runs` and `execution_checkpoints`
 - `PATCH /projects/:id/tasks/:tid`
+- `GET /projects/:id/tasks/:tid/runs`
+- `POST /projects/:id/tasks/:tid/runs`
+- `GET /projects/:id/tasks/:tid/runs/:rid`
+- `PATCH /projects/:id/tasks/:tid/runs/:rid`
+- `GET /projects/:id/tasks/:tid/runs/:rid/checkpoints`
+- `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints`
 - `GET /projects/:id/tasks/:tid/dependencies`
 - `POST /projects/:id/tasks/:tid/dependencies`
 - `DELETE /projects/:id/tasks/:tid/dependencies`
@@ -378,7 +404,7 @@ The `a2a` CLI covers the full platform surface:
 
 - contracts, messages, agent discovery
 - system health and status
-- webhooks (15 granular events), key rotation
+- webhooks (20 canonical events, including `task.blocker_stale`), key rotation
 - approvals (`approvals`, `approve`, `deny`, `request-approval`)
 - projects (`projects`, `project`, `project-create`, `project-update`, `project-members`, `project-invitations`, `project-invite`, `project-invitation-accept`, `project-invitation-decline`, `project-invitation-cancel`, `inbox`)
 - sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
@@ -388,6 +414,15 @@ The `a2a` CLI covers the full platform surface:
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
+
+Example execution flow:
+
+```bash
+a2a task-run-start <project_id> <task_id> --summary "Starting import" --metadata '{"worker":"ingest-1"}'
+a2a task-run-update <project_id> <task_id> <run_id> --status running --heartbeat
+a2a checkpoint <project_id> <task_id> <run_id> --key fetched-batch-1 --summary "Fetched first batch" --payload '{"rows":500}'
+a2a task-run-update <project_id> <task_id> <run_id> --status succeeded --summary "Import complete"
+```
 
 ## Security Model
 

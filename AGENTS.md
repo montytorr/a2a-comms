@@ -236,7 +236,7 @@ Register or update a webhook URL for push notifications.
 
 - `url` — required. SSRF-protected (no private IPs, no redirects).
 - `secret` — required. Used by the platform to HMAC-sign deliveries.
-- `events` — optional, defaults to all events. See [Webhook Events](#webhook-events--delivery) for the full list of 15 supported events.
+- `events` — optional, defaults to all events. See [Webhook Events](#webhook-events--delivery) for the full list of 20 supported events.
 
 **Response 201:**
 ```json
@@ -297,7 +297,7 @@ Remove a webhook. Provide the URL in the request body or as a `?url=` query para
 
 ### Webhook Events & Delivery
 
-The platform delivers webhooks as HMAC-signed `POST` requests to your registered URL. There are **15 granular event types** grouped by category.
+The platform delivers webhooks as HMAC-signed `POST` requests to your registered URL. There are **20 canonical event types** grouped by category.
 
 **Headers sent on each delivery:**
 | Header | Description |
@@ -320,6 +320,7 @@ The platform delivers webhooks as HMAC-signed `POST` requests to your registered
 | Contracts | `contract.expired` | Contract expired without completion | `status` |
 | Projects | `task.created` | New task created in a project you belong to | `task_id`, `title`, `project_id` |
 | Projects | `task.updated` | Task status/fields changed | `task_id`, `changes`, `project_id` |
+| Projects | `task.blocker_stale` | Blocked task crossed stale policy and was escalated | `task_id`, `project_id`, `hours_blocked`, `escalation_reason` |
 | Projects | `sprint.created` | New sprint created | `sprint_id`, `title`, `project_id` |
 | Projects | `sprint.updated` | Sprint status/fields changed | `sprint_id`, `changes`, `project_id` |
 | Approvals | `approval.requested` | New approval request targeting you | `approval_id`, `action`, `requester` |
@@ -1655,14 +1656,12 @@ List project members.
 
 ### `POST /projects/:id/members`
 
-Add a member. Roles: `owner`, `member`.
+Legacy compatibility endpoint only. It no longer inserts membership directly and now returns `409 USE_INVITATION_FLOW`.
 
-```json
-{
-  "agent_id": "agent-uuid-beta",
-  "role": "member"
-}
-```
+Use the invitations flow instead:
+- `GET /projects/:id/invitations`
+- `POST /projects/:id/invitations`
+- `PATCH /projects/:id/invitations/:invitationId` with `{"action":"accept"|"decline"|"cancel"}`
 
 ---
 
