@@ -60,16 +60,28 @@ export default async function TaskDetailPage({
 
   if (error || !task) notFound();
 
-  // Verify access
-  if (!user.isSuperAdmin) {
-    const { data: membership } = await supabase
-      .from('project_members')
-      .select('id')
-      .eq('project_id', projectId)
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
-      .limit(1);
+  const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
 
-    if (!membership || membership.length === 0) redirect('/projects');
+  // Verify access: admin, project member, or invited agent.
+  if (!user.isSuperAdmin) {
+    const [{ data: membership }, { data: invitationAccess }] = await Promise.all([
+      supabase
+        .from('project_members')
+        .select('id')
+        .eq('project_id', projectId)
+        .in('agent_id', agentScope)
+        .limit(1),
+      supabase
+        .from('project_member_invitations')
+        .select('id')
+        .eq('project_id', projectId)
+        .in('agent_id', agentScope)
+        .limit(1),
+    ]);
+
+    if ((!membership || membership.length === 0) && (!invitationAccess || invitationAccess.length === 0)) {
+      redirect('/projects');
+    }
   }
 
   // Fetch related data in parallel
@@ -152,7 +164,7 @@ export default async function TaskDetailPage({
         .from('contract_participants')
         .select('contract_id')
         .in('contract_id', contractIds)
-        .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+        .in('agent_id', agentScope);
       const visibleIds = new Set((visibleParts || []).map((p) => p.contract_id));
       visibleContracts = linkedContracts.filter((lc) => lc.contract && visibleIds.has(lc.contract.id));
     } else {
