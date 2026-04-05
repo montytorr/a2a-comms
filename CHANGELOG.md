@@ -24,6 +24,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.148] - 2026-04-05
+### Added
+- complete long-running task semantics
+
 ## [1.0.146] - 2026-04-05
 ### Added
 - surface task execution state in dashboard
