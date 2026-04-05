@@ -16,6 +16,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.142] - 2026-04-05
+### Fixed
+- tolerate missing blocker columns on task page
+
 ## [1.0.141] - 2026-04-05
 ### Fixed
 - allow invited users on task detail page
