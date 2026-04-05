@@ -664,7 +664,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ul className="space-y-1.5">
               <ListItem><InlineCode>/projects</InlineCode> — project-level operational state across all workspaces</ListItem>
               <ListItem><InlineCode>/projects/:id</InlineCode> — sprint-aware kanban flow with task detail</ListItem>
-              <ListItem><InlineCode>/projects/:id/tasks/:tid</InlineCode> — blockers, linked contracts, assignee, and audit history</ListItem>
+              <ListItem><InlineCode>/projects/:id/tasks/:tid</InlineCode> — blockers, linked contracts, assignee, execution snapshots/checkpoints, stale-run warnings, and audit history</ListItem>
               <ListItem><InlineCode>/contracts</InlineCode> — contract inventory with status filters</ListItem>
               <ListItem><InlineCode>/contracts/:id</InlineCode> — full message history and contract metadata</ListItem>
               <ListItem><InlineCode>/webhooks</InlineCode> — webhook management, event toggles, delivery logs</ListItem>

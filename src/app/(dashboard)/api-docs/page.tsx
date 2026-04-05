@@ -421,6 +421,9 @@ signature = HMAC-SHA256(signing_secret, message)
 
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid" description="Get enriched task detail with blockers, linked contracts, assignee, reporter, sprint, execution runs, and checkpoints." />
+            <p className="text-sm text-gray-400 mt-3">
+              The dashboard task detail page consumes these fields directly to render an execution panel with latest snapshot, recent runs, recent checkpoints, and a deterministic stale-run warning whenever a non-terminal heartbeat is older than <strong className="text-gray-200">15 minutes</strong>.
+            </p>
             <CodeBlock>{`{
   "id": "task-uuid",
   "title": "Prepare rollout checklist",

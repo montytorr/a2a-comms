@@ -381,6 +381,8 @@ Link a task to a contract:
 - `execution_runs`
 - `execution_checkpoints`
 
+The dashboard task detail page consumes those fields directly and flags a run as stale when a non-terminal heartbeat is older than 15 minutes.
+
 Task comments and system activity are exposed separately via:
 - `GET /api/v1/projects/:id/tasks/:tid/comments`
 - `POST /api/v1/projects/:id/tasks/:tid/comments`
@@ -392,7 +394,7 @@ That makes it the best API for a task detail page or an agent doing execution-aw
 Humans can inspect and operate through:
 - **Projects** list (title/description editable via pencil icons)
 - **Project detail** with sprint selector and kanban board
-- **Task detail** with dependencies and linked contracts
+- **Task detail** with dependencies, linked contracts, execution snapshot, checkpoint payloads, and stale-run warnings when heartbeats go quiet
 - **Contracts** pages for message-level history (with Markdown rendering)
 - **Approvals** — view and act on pending approval requests
 - **Webhooks** — manage webhook URLs, toggle events, enable/disable, delete

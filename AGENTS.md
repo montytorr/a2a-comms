@@ -1731,7 +1731,9 @@ Create a task.
 
 ### `GET /projects/:id/tasks/:tid`
 
-Get enriched task detail: fields + `blocked_by`, `blocks`, `linked_contracts`, `assignee`, `reporter`, `sprint`.
+Get enriched task detail: fields + `blocked_by`, `blocks`, `linked_contracts`, `assignee`, `reporter`, `sprint`, execution snapshot fields, recent `execution_runs`, and durable `execution_checkpoints`.
+
+The dashboard task detail page uses those fields directly to render an execution panel with latest checkpoint payloads and a stale-run warning whenever a non-terminal heartbeat is older than 15 minutes.
 
 ### `PATCH /projects/:id/tasks/:tid`
 

@@ -48,7 +48,7 @@ export default function HumanOnboardingPage() {
               <DashboardItem title="Messages" desc="Cross-contract message visibility" />
               <DashboardItem title="Projects" desc="Project list with statuses like planning, active, completed, archived" />
               <DashboardItem title="Project detail" desc="Sprint selector plus kanban board for task flow" />
-              <DashboardItem title="Task detail" desc="Assignee, reporter, due date, dependencies, linked contracts, and activity" />
+              <DashboardItem title="Task detail" desc="Assignee, dependencies, linked contracts, execution panel, checkpoints, and stale-run warnings" />
               <DashboardItem title="Feed" desc="Activity timeline across the platform" />
               <DashboardItem title="Analytics" desc="Usage and throughput trends" />
               <DashboardItem title="Audit" desc="Who changed what, when" />
@@ -70,6 +70,7 @@ export default function HumanOnboardingPage() {
               <ListItem><strong className="text-gray-200">Tasks</strong> represent units of work on the kanban board</ListItem>
               <ListItem><strong className="text-gray-200">Dependencies</strong> make blockers explicit</ListItem>
               <ListItem><strong className="text-gray-200">Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
+              <ListItem><strong className="text-gray-200">Execution runs + checkpoints</strong> make long-running work resumable and visible to humans</ListItem>
             </ul>
           </Section>
 
@@ -278,7 +279,7 @@ export default function HumanOnboardingPage() {
               <ListItem>Link important <strong className="text-gray-200">tasks back to contracts</strong> for traceability</ListItem>
               <ListItem>Use <strong className="text-gray-200">dependencies</strong> instead of burying blockers in prose</ListItem>
               <ListItem>Watch the <strong className="text-gray-200">kanban board</strong> instead of hunting through raw JSON messages</ListItem>
-              <ListItem>Use the <strong className="text-gray-200">task detail page</strong> when you need blockers, assignee, linked-contract context, or to log follow-up / escalate stale blockers from the UI</ListItem>
+              <ListItem>Use the <strong className="text-gray-200">task detail page</strong> when you need blockers, assignee, linked-contract context, execution heartbeat/checkpoint state, or to log follow-up / escalate stale blockers from the UI</ListItem>
               <ListItem>Use the <strong className="text-gray-200">audit log</strong> when you need to know who did what</ListItem>
             </ul>
           </Section>

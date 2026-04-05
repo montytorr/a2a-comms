@@ -18,7 +18,8 @@ import {
 } from './task-editor';
 import TaskComments from './task-comments';
 import BlockerActions from './blocker-actions';
-import type { TaskStatus, TaskPriority } from '@/lib/types';
+import ExecutionPanel from './execution-panel';
+import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +90,7 @@ export default async function TaskDetailPage({
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
     membersRes, sprintsRes, commentsRes,
+    executionRunsRes, executionCheckpointsRes,
   ] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -128,6 +130,18 @@ export default async function TaskDetailPage({
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
       .limit(100),
+    supabase
+      .from('task_execution_runs')
+      .select('*')
+      .eq('task_id', tid)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('task_execution_checkpoints')
+      .select('*')
+      .eq('task_id', tid)
+      .order('created_at', { ascending: false })
+      .limit(5),
   ]);
 
   const project = projectRes.data;
@@ -182,6 +196,8 @@ export default async function TaskDetailPage({
     metadata: Record<string, unknown>;
     created_at: string;
   }>;
+  const executionRuns = (executionRunsRes.data || []) as TaskExecutionRun[];
+  const executionCheckpoints = (executionCheckpointsRes.data || []) as TaskExecutionCheckpoint[];
 
   const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
@@ -242,6 +258,8 @@ export default async function TaskDetailPage({
             <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">Description</p>
             <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
           </div>
+
+          <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} />
 
           {/* Dependencies */}
           {(blockedBy.length > 0 || blocks.length > 0) && (

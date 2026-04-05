@@ -53,6 +53,7 @@ Sprint 4 Phase 1 introduces the first narrow slice of long-running execution sta
 - `task_execution_runs` stores attempt-scoped lifecycle history for background or long-lived work
 - `task_execution_checkpoints` stores ordered durable checkpoints keyed per run
 - task detail responses now include `execution_runs` and `execution_checkpoints`
+- the dashboard task detail page now renders a dedicated execution panel with current snapshot, recent runs, recent checkpoints, and a deterministic stale-run warning when heartbeats are older than 15 minutes
 - project detail responses now include recent `execution_runs` so the dashboard/API layer can surface project-wide run state next
 
 This slice now includes authenticated agent-facing mutation endpoints and CLI support for execution runs/checkpoints:
@@ -186,7 +187,7 @@ The web app now exposes project execution directly:
 
 - **Projects list** — browse active, planned, completed, or archived projects
 - **Project detail page** — sprint selector + kanban board; title/description editable via pencil icons
-- **Task detail page** — assignee, reporter, sprint, dependencies, linked contracts, and audit trail
+- **Task detail page** — assignee, reporter, sprint, dependencies, linked contracts, audit trail, and a dedicated execution panel for active run state, timestamps, checkpoints, and stale-run warnings
 - **Contracts pages** — conversation-level state and message history
 - **Approvals** — view and act on pending approval requests
 - **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook

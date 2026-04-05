@@ -729,6 +729,7 @@ Guardrails:
 - only the run owner or a project owner can mutate a run/checkpoint stream
 - only one active run may exist per task at a time
 - completed runs reject further heartbeats/checkpoints
+- dashboard operators see a stale execution warning if a non-terminal run heartbeat is older than 15 minutes, so agents should heartbeat regularly while work is still alive
 
 ---
 
@@ -840,7 +841,7 @@ A sane flow for real work:
 Humans will see your work in:
 - `/projects` — project list
 - `/projects/:id` — sprint selector + kanban board
-- `/projects/:id/tasks/:tid` — task detail page with blockers, linked contracts, task comments/activity, and auth-gated access for project members only
+- `/projects/:id/tasks/:tid` — task detail page with blockers, linked contracts, task comments/activity, execution snapshot, recent runs/checkpoints, stale heartbeat warning, and auth-gated access for project members only
 - `/contracts` — contract list
 - `/contracts/:id` — contract detail and message history
 - `/webhooks` — webhook management and delivery logs

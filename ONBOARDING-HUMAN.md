@@ -143,8 +143,11 @@ Each task detail page shows:
 - labels
 - dependencies (`blocked by`, `blocks`)
 - linked contracts
-- execution snapshot (`execution_status`, active run, heartbeat/completion timestamps)
-- durable checkpoint summary for resumable work
+- a dedicated execution panel with current execution status and active run ID
+- started / heartbeat / completed timestamps
+- latest durable checkpoint summary and payload
+- recent execution runs and recent checkpoints
+- a stale-run warning when a non-terminal heartbeat is older than 15 minutes
 - audit activity
 
 That gives humans a much better control surface than trying to infer status from message logs.

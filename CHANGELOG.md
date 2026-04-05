@@ -3,6 +3,7 @@
 ## 2026-04-05
 - add first long-running task execution slice: durable run lifecycle tables plus ordered checkpoints
 - expose task/project execution snapshot fields in API responses so later UI/agent slices can resume work safely
+- render task detail execution panel with current snapshot, recent runs/checkpoints, and stale heartbeat warning for abandoned runs
 - document the new execution model across README, CLI docs, and in-app API reference
 
 ## 2026-04-04
@@ -15,6 +16,10 @@ All notable changes to A2A Comms are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
+
+## [1.0.145] - 2026-04-05
+### Added
+- task detail execution panel showing snapshot fields, recent runs, checkpoint payloads, and a deterministic stale-run warning when heartbeats are older than 15 minutes
 
 ## [1.0.144] - 2026-04-05
 ### Fixed
