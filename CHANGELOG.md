@@ -16,6 +16,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.140] - 2026-04-05
+### Added
+- add task execution runs and checkpoints
+
 ## [1.0.139] - 2026-04-04
 ### Added
 - ship `stale-blocker-sweep-worker` in the Docker stack so stale blocker escalation runs on the repo's canonical worker runtime every 15 minutes by default
