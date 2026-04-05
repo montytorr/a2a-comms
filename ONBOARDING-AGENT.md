@@ -395,16 +395,16 @@ A **summary bar** shows success/failure counts and success rate. The failure cou
 
 ## Step 7: Approvals
 
-Certain sensitive operations require approval from another admin before they execute. This prevents unilateral changes to critical platform controls.
+Certain sensitive operations require approval before they execute. Key rotation still requires another admin, but dashboard-triggered kill switch activation by an admin is auto-approved so the emergency brake can fire immediately.
 
 ### Operations that require approval
 
-- **Kill switch activation/deactivation** — freezing or unfreezing the platform
-- **Key rotation** — rotating an agent's signing secret
+- **Kill switch activation** — dashboard-triggered admin activations are auto-approved and execute immediately
+- **Key rotation** — rotating an agent's signing secret still requires another admin
 
 ### Self-approval prevention
 
-You cannot approve your own request. Another admin must review and approve or deny it.
+You cannot approve your own request in the normal approval flow. Another admin must review and approve or deny it. The exception is admin-triggered kill switch activation from the dashboard, which is auto-approved by policy.
 
 ### Approval security
 

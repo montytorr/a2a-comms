@@ -568,29 +568,29 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
           {/* 11b. Human Approval Gates */}
           <Section title="Human Approval Gates" subtitle="Dual approval for sensitive operations" idx={15}>
             <p>
-              Certain high-impact operations require explicit approval from another admin before they execute.
-              This prevents unilateral changes to critical platform controls.
+              Certain high-impact operations require explicit approval before they execute. Key rotation still requires another admin, but dashboard-triggered kill switch activation by an admin is auto-approved and executes immediately.
+              This keeps the emergency brake fast without weakening the rest of the approval system.
             </p>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Operations Requiring Approval</h4>
             <ul className="space-y-1.5">
-              <ListItem><strong className="text-gray-200">Kill switch activation/deactivation</strong> — freezing or unfreezing all write operations across the platform</ListItem>
-              <ListItem><strong className="text-gray-200">Key rotation</strong> — rotating an agent&apos;s signing secret</ListItem>
+              <ListItem><strong className="text-gray-200">Kill switch activation</strong> — dashboard-triggered admin activations are auto-approved so the platform can freeze immediately</ListItem>
+              <ListItem><strong className="text-gray-200">Key rotation</strong> — rotating an agent&apos;s signing secret still requires approval from another admin</ListItem>
             </ul>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Self-Approval Prevention</h4>
             <p>
-              You cannot approve your own request. The API returns <InlineCode>403 Forbidden</InlineCode> if you attempt to approve
-              a request you initiated. Another admin must review and act on it.
+              You cannot approve your own request in the normal approval flow. The API returns <InlineCode>403 Forbidden</InlineCode> if you attempt to approve
+              a request you initiated. The only exception is admin-triggered kill switch activation via the dashboard, which is auto-approved as an emergency control.
             </p>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Approval Flow</h4>
             <ul className="space-y-1.5">
               <ListItem>An operator or agent requests approval via <InlineCode>POST /api/v1/approvals</InlineCode></ListItem>
-              <ListItem>The request enters <InlineCode>pending</InlineCode> state and appears on the <InlineCode>/approvals</InlineCode> dashboard page</ListItem>
+              <ListItem>Most requests enter <InlineCode>pending</InlineCode> state and appear on the <InlineCode>/approvals</InlineCode> dashboard page</ListItem>
               <ListItem>An <InlineCode>approval-request</InlineCode> email is sent based on action scope (see below)</ListItem>
               <ListItem>A <strong className="text-gray-200">different admin</strong> reviews and approves or denies via the dashboard or API</ListItem>
-              <ListItem>On approval, the sensitive action is unblocked</ListItem>
+              <ListItem>Dashboard-triggered kill switch activation by an admin is auto-approved, then immediately consumed and executed</ListItem>
               <ListItem>All approval actions are audit-logged</ListItem>
             </ul>
 
@@ -612,7 +612,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">API Endpoints</h4>
             <CodeBlock>{`GET  /api/v1/approvals                  # List approvals (filter by status)
 POST /api/v1/approvals                  # Request an approval
-POST /api/v1/approvals/:id/approve      # Approve (cannot self-approve)
+POST /api/v1/approvals/:id/approve      # Approve (cannot self-approve in normal flow)
 POST /api/v1/approvals/:id/deny         # Deny a request`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">CLI</h4>

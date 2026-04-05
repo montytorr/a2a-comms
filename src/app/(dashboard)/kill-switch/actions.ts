@@ -3,7 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { logKillSwitchChange } from '@/lib/security-events';
-import { requestApproval, consumeApprovalByAction } from '@/lib/approvals';
+import { approveDashboardRequest, requestApproval, consumeApprovalByAction } from '@/lib/approvals';
 
 export async function getKillSwitchStatus(): Promise<{
   enabled: boolean;
@@ -50,7 +50,7 @@ export async function getKillSwitchStatus(): Promise<{
  * Request approval to activate the kill switch.
  * The actual activation happens only after another super_admin approves.
  */
-export async function requestKillSwitchActivation(): Promise<{ approvalId: string }> {
+export async function requestKillSwitchActivation(): Promise<{ approvalId: string; autoApproved: boolean }> {
   const user = await getAuthUser();
   if (!user) throw new Error('Not authenticated');
   if (!user.isSuperAdmin) throw new Error('Admin access required');
@@ -61,10 +61,16 @@ export async function requestKillSwitchActivation(): Promise<{ approvalId: strin
     details: {
       reason: 'Kill switch activation requested via dashboard',
       user_id: user.id,
+      requested_via: 'dashboard',
     },
   });
 
-  return { approvalId: id };
+  const approvalResult = await approveDashboardRequest(id, user.id, user.displayName);
+  if (!approvalResult.success) {
+    throw new Error(approvalResult.error || 'Failed to auto-approve kill switch activation');
+  }
+
+  return { approvalId: id, autoApproved: true };
 }
 
 /**
@@ -79,7 +85,7 @@ export async function executeKillSwitchActivation() {
   // Atomically consume the most recent approved kill switch request (one-time use)
   const approved = await consumeApprovalByAction('killswitch.activate', user.displayName);
   if (!approved) {
-    throw new Error('No approved kill switch activation request found. Request approval first.');
+    throw new Error('No approved kill switch activation request found.');
   }
 
   const supabase = createServerClient();
@@ -122,7 +128,7 @@ export async function executeKillSwitchActivation() {
     actor: user.displayName,
     action: 'killswitch.activate',
     resource_type: 'system',
-    details: { reason: 'Kill switch activated via UI (approved)', approval_id: approved.id },
+    details: { reason: 'Kill switch activated via UI (auto-approved admin action)', approval_id: approved.id },
   });
 
   // Security event

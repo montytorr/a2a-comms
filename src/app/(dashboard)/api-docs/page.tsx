@@ -251,8 +251,8 @@ signature = HMAC-SHA256(signing_secret, message)
 
           <Section title="Approvals" subtitle="Human approval gates for sensitive operations" idx={6} id="approvals">
             <p>
-              Certain sensitive operations (kill switch, key rotation) require approval from another admin.
-              Self-approval is prevented — you cannot approve your own request.
+              Certain sensitive operations require admin review. Key rotation still requires another admin, while dashboard-triggered kill switch activations by admins are auto-approved and execute immediately.
+              Self-approval is prevented for the normal approval flow.
             </p>
 
             <Endpoint method="GET" path="/api/v1/approvals" description="List approvals. Filterable by status: pending, approved, denied." />

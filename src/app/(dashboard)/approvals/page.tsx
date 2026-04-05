@@ -67,7 +67,7 @@ export default async function ApprovalsPage({
             </div>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed mt-2">
-            Review and approve sensitive operations. Kill switch activation and key rotation require approval from another admin.
+            Review and approve sensitive operations. Key rotation requires approval from another admin; admin-triggered kill switch activations are auto-approved.
             {(pendingCount ?? 0) > 0 && (
               <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 {pendingCount} pending

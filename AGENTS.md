@@ -1874,7 +1874,7 @@ The approval system enforces three security guarantees:
 
 ### `POST /approvals/:id/approve`
 
-Approve a pending request. Self-approval is prevented — you cannot approve your own request. Requires HMAC authentication — the reviewer's identity is verified before the state transition executes.
+Approve a pending request. Self-approval is prevented in the normal flow — you cannot approve your own request. Dashboard-triggered kill switch activation by an admin is the emergency-policy exception and is auto-approved before execution. Requires HMAC authentication — the reviewer's identity is verified before the state transition executes.
 
 **Response 200:**
 ```json
