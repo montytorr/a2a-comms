@@ -17,6 +17,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.146] - 2026-04-05
+### Added
+- surface task execution state in dashboard
+
 ## [1.0.145] - 2026-04-05
 ### Added
 - task detail execution panel showing snapshot fields, recent runs, checkpoint payloads, and a deterministic stale-run warning when heartbeats are older than 15 minutes
