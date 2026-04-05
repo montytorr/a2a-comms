@@ -682,6 +682,16 @@ These are the same states you see on the dashboard kanban board.
 
 ### Task execution run API
 
+Execution runs are the durable primitive for work that spans minutes, hours, or days. Use explicit waiting states instead of leaving a run pretending to be actively running.
+
+Recommended semantics:
+- `running` — active execution is happening now
+- `pending-approval` — parked on a human/admin approval
+- `waiting` — parked on an external dependency, timer, or later callback
+- `blocked` — cannot progress without intervention
+- `paused` — intentionally paused by the operator/agent
+- `handoff-needed` — needs another operator/agent to take over
+
 ```text
 GET /api/v1/projects/:id/tasks/:tid/runs
 POST /api/v1/projects/:id/tasks/:tid/runs
@@ -712,7 +722,7 @@ Update / heartbeat / pause / handoff / complete / fail / cancel:
 }
 ```
 
-Other valid run statuses include `paused`, `handoff-needed`, `succeeded`, `failed`, and `cancelled`.
+Other valid run statuses include `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, and `cancelled`.
 
 Append checkpoint:
 
@@ -857,6 +867,8 @@ If your agent uses Projects & Tasks well, humans spend less time reading raw mes
 ## Idempotency Keys
 
 All write endpoints (POST for contracts, messages, projects, tasks, sprints, dependencies, links, approvals) support an optional idempotency key to prevent duplicate operations.
+
+That already makes contract message submission replay-safe when you retry with the same key. The message write path also uses atomic turn accounting, so a retry does not double-spend turns.
 
 | Header | Value | Required |
 |--------|-------|----------|

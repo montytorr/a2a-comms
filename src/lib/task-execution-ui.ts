@@ -20,6 +20,12 @@ export function getExecutionStatusTone(status?: TaskExecutionStatus | string | n
       return 'text-cyan-300 bg-cyan-500/[0.12] border-cyan-500/25';
     case 'queued':
       return 'text-blue-300 bg-blue-500/[0.12] border-blue-500/25';
+    case 'pending-approval':
+      return 'text-amber-200 bg-amber-500/[0.16] border-amber-400/30';
+    case 'waiting':
+      return 'text-indigo-200 bg-indigo-500/[0.16] border-indigo-400/30';
+    case 'blocked':
+      return 'text-rose-200 bg-rose-500/[0.16] border-rose-400/30';
     case 'paused':
       return 'text-amber-300 bg-amber-500/[0.12] border-amber-500/25';
     case 'handoff-needed':
@@ -37,7 +43,7 @@ export function getExecutionStatusTone(status?: TaskExecutionStatus | string | n
 
 export function getExecutionStatusLabel(status?: TaskExecutionStatus | string | null, stale?: boolean) {
   if (!status || status === 'idle') return 'Idle';
-  if (stale && (status === 'running' || status === 'queued' || status === 'paused' || status === 'handoff-needed')) {
+  if (stale && (status === 'running' || status === 'queued' || status === 'pending-approval' || status === 'waiting' || status === 'blocked' || status === 'paused' || status === 'handoff-needed')) {
     return 'Stale';
   }
   return status.replace(/-/g, ' ');
@@ -60,6 +66,9 @@ export function getExecutionSnapshotSummary(task: {
   if (task.execution_status === 'running' && task.last_checkpoint_summary) return task.last_checkpoint_summary;
   if (task.execution_status === 'running' && task.active_run_id) return 'Run is active and heartbeating.';
   if (task.execution_status === 'queued') return 'Run is queued.';
+  if (task.execution_status === 'pending-approval') return 'Run is waiting for approval.';
+  if (task.execution_status === 'waiting') return 'Run is waiting on an external dependency.';
+  if (task.execution_status === 'blocked') return 'Run is blocked and needs intervention.';
   if (task.execution_status === 'paused') return 'Run is paused.';
   if (task.execution_status === 'handoff-needed') return 'Run is waiting on a handoff.';
   if (task.execution_status === 'succeeded') return 'Latest run finished successfully.';

@@ -22,7 +22,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
 - **Dependencies** — task-to-task blocking relationships, explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
-- **Long-running execution runs + checkpoints** — tasks now have an execution lifecycle (`idle → queued/running/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
+- **Long-running execution runs + checkpoints** — tasks now have an execution lifecycle (`idle → queued/running/pending-approval/waiting/blocked/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 20 canonical event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
@@ -57,8 +57,11 @@ Sprint 4 Phase 1 introduces the first narrow slice of long-running execution sta
 - project detail responses now include recent `execution_runs` so the dashboard/API layer can surface project-wide run state next
 
 This slice now includes authenticated agent-facing mutation endpoints and CLI support for execution runs/checkpoints:
+- execution runs can now explicitly park in `pending-approval`, `waiting`, or `blocked` without pretending they are still actively running
+- contract messages already had replay-safe submission via endpoint-scoped idempotency keys and atomic turn accounting; this release keeps that mechanism and documents it rather than rebuilding it
+- webhook receivers now get lightweight async-attention hints on `message` events when the payload clearly declares `status: pending-approval|waiting|blocked|completed`, so hours/days-long workflows can notify peers without polling
 - `POST /projects/:id/tasks/:tid/runs` — start a run (`starting` by default, one active run per task)
-- `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`running`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
+- `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
 - `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints` — append ordered durable checkpoints keyed per run
 - CLI helpers: `task-runs`, `task-run-start`, `task-run`, `task-run-update`, `checkpoints`, `checkpoint`
 

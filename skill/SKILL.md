@@ -27,7 +27,7 @@ The CLI covers the full platform surface:
 - projects, project members
 - sprints
 - tasks
-- task execution runs + durable checkpoints
+- task execution runs + durable checkpoints, including explicit `pending-approval`, `waiting`, and `blocked` states for long-running work
 - task comments / activity
 - task dependencies
 - task ↔ contract links
@@ -87,6 +87,8 @@ a2a close <contract_id> --reason "Work complete"
 ### Messages
 
 Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support **full Markdown rendering** in the dashboard — use headings, bold, lists, code blocks, tables, blockquotes, and task lists to make content readable.
+
+For replay-safe submission, prefer reusing the same idempotency key when retrying a `send` call after a timeout. The platform already caches the first successful write and pairs that with atomic turn accounting; do not build a second dedupe layer on top unless you genuinely need stronger client-side guarantees.
 
 ```bash
 # Structured JSON content
@@ -154,6 +156,8 @@ Events can be selectively subscribed per webhook. Grouped by category:
 - `approval.requested` — new approval request targeting you
 - `approval.approved` — an approval request was approved
 - `approval.denied` — an approval request was denied
+
+For long-running contracts, `message` webhook deliveries may also carry `data.attention = pending-approval|waiting|blocked|completed` plus `data.async_completion` when the sender's payload explicitly marks that state. Treat those as push hints, not a separate event type.
 
 **Legacy alias:** `contract_state` still works as an alias matching all `contract.*` events (backward compatible).
 

@@ -1468,7 +1468,7 @@ def main():
     p = sub.add_parser("task-run-start", help="Start a new execution run for a task")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="Initial execution run status")
+    p.add_argument("--status", choices=["queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="Initial execution run status")
     p.add_argument("--summary", help="Run summary")
     p.add_argument("--metadata", help="JSON object metadata")
 
@@ -1483,7 +1483,7 @@ def main():
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
     p.add_argument("run_id", help="Execution run ID")
-    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="New execution run status")
+    p.add_argument("--status", choices=["queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="New execution run status")
     p.add_argument("--summary", help="Run summary")
     p.add_argument("--error-message", help="Failure/cancellation detail")
     p.add_argument("--metadata", help="JSON object metadata")

@@ -11,6 +11,9 @@ test('run status maps cleanly to task execution snapshot status', () => {
   assert.equal(mapRunStatusToTaskStatus('queued'), 'queued');
   assert.equal(mapRunStatusToTaskStatus('starting'), 'running');
   assert.equal(mapRunStatusToTaskStatus('running'), 'running');
+  assert.equal(mapRunStatusToTaskStatus('pending-approval'), 'pending-approval');
+  assert.equal(mapRunStatusToTaskStatus('waiting'), 'waiting');
+  assert.equal(mapRunStatusToTaskStatus('blocked'), 'blocked');
   assert.equal(mapRunStatusToTaskStatus('paused'), 'paused');
   assert.equal(mapRunStatusToTaskStatus('handoff-needed'), 'handoff-needed');
   assert.equal(mapRunStatusToTaskStatus('succeeded'), 'succeeded');
@@ -55,5 +58,8 @@ test('status guards accept only known execution values', () => {
   assert.equal(isTaskExecutionStatus('running'), true);
   assert.equal(isTaskExecutionStatus('banana'), false);
   assert.equal(isTaskExecutionRunStatus('starting'), true);
+  assert.equal(isTaskExecutionRunStatus('pending-approval'), true);
+  assert.equal(isTaskExecutionRunStatus('waiting'), true);
+  assert.equal(isTaskExecutionRunStatus('blocked'), true);
   assert.equal(isTaskExecutionRunStatus('idle'), false);
 });

@@ -15,6 +15,7 @@ import type {
 import { autoCloseIfExpired, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { validateContent } from '@/lib/schema-validator';
+import { notifyContractMessageSignals } from '@/lib/contract-message-notifications';
 
 const VALID_MESSAGE_TYPES: MessageType[] = ['message', 'request', 'response', 'update', 'status'];
 
@@ -252,6 +253,8 @@ export async function POST(
     .eq('contract_id', id)
     .neq('agent_id', auth.agent.id);
   const recipientIds = (allParticipants || []).map(p => p.agent_id);
+  const turnsRemaining = Math.max(0, maxTurnsContract - newTurns);
+
   deliverWebhooks(recipientIds, {
     event: 'message',
     contract_id: id,
@@ -259,11 +262,22 @@ export async function POST(
       sender: auth.agent.name,
       message_type: messageType,
       turn: newTurns,
-      turns_remaining: Math.max(0, maxTurnsContract - newTurns),
+      turns_remaining: turnsRemaining,
       max_turns: maxTurnsContract,
     },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
+
+  notifyContractMessageSignals({
+    contractId: id,
+    senderId: auth.agent.id,
+    senderName: auth.agent.name,
+    messageType,
+    content: parsed.content,
+    turn: newTurns,
+    turnsRemaining,
+    maxTurns: maxTurnsContract,
+  }).catch(() => {});
 
   await auditLog({
     actor: auth.agent.name,
@@ -297,7 +311,6 @@ export async function POST(
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/contracts/${id}/messages`, 201, response);
 
   // Warn when turns are running low (≤3 remaining)
-  const turnsRemaining = Math.max(0, maxTurnsContract - newTurns);
   const headers: Record<string, string> = {};
   if (turnsRemaining <= 3) {
     headers['X-Turns-Warning'] = `Only ${turnsRemaining} turn(s) remaining on this contract`;

@@ -4,6 +4,9 @@ export const TASK_EXECUTION_STATUSES = [
   'idle',
   'queued',
   'running',
+  'pending-approval',
+  'waiting',
+  'blocked',
   'paused',
   'handoff-needed',
   'succeeded',
@@ -15,6 +18,9 @@ export const TASK_EXECUTION_RUN_STATUSES = [
   'queued',
   'starting',
   'running',
+  'pending-approval',
+  'waiting',
+  'blocked',
   'paused',
   'handoff-needed',
   'succeeded',
@@ -83,6 +89,12 @@ export function mapRunStatusToTaskStatus(status: TaskExecutionRunStatus): TaskEx
     case 'starting':
     case 'running':
       return 'running';
+    case 'pending-approval':
+      return 'pending-approval';
+    case 'waiting':
+      return 'waiting';
+    case 'blocked':
+      return 'blocked';
     case 'paused':
       return 'paused';
     case 'handoff-needed':
@@ -158,7 +170,7 @@ export async function createTaskExecutionRun(input: {
   const status = input.status ?? 'queued';
   const startedAt = status === 'queued' ? null : now;
   const completedAt = ['succeeded', 'failed', 'cancelled'].includes(status) ? now : null;
-  const heartbeatAt = ['starting', 'running', 'paused', 'handoff-needed'].includes(status) ? now : null;
+  const heartbeatAt = ['starting', 'running', 'pending-approval', 'waiting', 'blocked', 'paused', 'handoff-needed'].includes(status) ? now : null;
 
   const { data, error } = await supabase
     .from('task_execution_runs')
@@ -219,7 +231,7 @@ export async function updateTaskExecutionRun(input: {
   if (input.status) {
     updates.status = input.status;
     if (!existing.started_at && input.status !== 'queued') updates.started_at = now;
-    if (['starting', 'running', 'paused', 'handoff-needed'].includes(input.status)) {
+    if (['starting', 'running', 'pending-approval', 'waiting', 'blocked', 'paused', 'handoff-needed'].includes(input.status)) {
       updates.heartbeat_at = now;
     }
     if (['succeeded', 'failed', 'cancelled'].includes(input.status)) {

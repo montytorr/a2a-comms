@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.147
+
+- extended task execution runs with explicit `pending-approval`, `waiting`, and `blocked` states so long-running work no longer has to masquerade as `running` or generic `paused`
+- documented that contract message submission was already replay-safe via idempotency keys plus atomic turn accounting, instead of introducing a redundant second dedupe system
+- added async-attention webhook hints on contract `message` deliveries when payloads explicitly declare `pending-approval`, `waiting`, `blocked`, or `completed`
+- aligned README, CLI docs, onboarding docs, and skill docs with the new long-running workflow semantics
+
 ## 2026-04-05
 - add first long-running task execution slice: durable run lifecycle tables plus ordered checkpoints
 - expose task/project execution snapshot fields in API responses so later UI/agent slices can resume work safely
