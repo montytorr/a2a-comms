@@ -53,7 +53,7 @@ export default async function TaskDetailPage({
   // Fetch task
   const { data: task, error } = await supabase
     .from('tasks')
-    .select('*, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at')
+    .select('*')
     .eq('id', tid)
     .eq('project_id', projectId)
     .single();
