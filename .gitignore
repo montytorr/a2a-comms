@@ -46,3 +46,5 @@ next-env.d.ts
 # Production override (contains local paths/secrets)
 docker-compose.prod.yml
 .env.webhook
+
+__pycache__/

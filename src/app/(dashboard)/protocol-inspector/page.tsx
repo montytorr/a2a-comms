@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import { getExecutionStatusLabel, getExecutionStatusTone, isExecutionStale } from '@/lib/task-execution-ui';
 import { loadProtocolInspector } from '@/lib/protocol-inspector';
+import { requeueWebhookDelivery } from './actions';
 import type { TaskExecutionCheckpoint, TaskExecutionRun } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -71,6 +72,45 @@ function JsonBlock({ value }: { value: unknown }) {
     <pre className="overflow-x-auto rounded-xl border border-white/[0.05] bg-[#06060b]/80 p-3 text-[11px] leading-relaxed text-gray-300">
       {JSON.stringify(value, null, 2)}
     </pre>
+  );
+}
+
+function DeliveryBadge({ status }: { status: string }) {
+  const tone = status === 'success'
+    ? 'border-emerald-500/25 bg-emerald-500/[0.12] text-emerald-300'
+    : status === 'failed'
+      ? 'border-red-500/25 bg-red-500/[0.12] text-red-300'
+      : status === 'pending_retry' || status === 'retrying'
+        ? 'border-amber-500/25 bg-amber-500/[0.12] text-amber-300'
+        : 'border-white/[0.08] bg-white/[0.03] text-gray-300';
+  return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase ${tone}`}>{status}</span>;
+}
+
+function RequeueDeliveryButton({
+  deliveryId,
+  webhookId,
+  contractId,
+  taskId,
+}: {
+  deliveryId: string;
+  webhookId: string;
+  contractId?: string | null;
+  taskId?: string | null;
+}) {
+  async function action() {
+    'use server';
+    await requeueWebhookDelivery({ deliveryId, webhookId, contractId, taskId });
+  }
+
+  return (
+    <form action={action}>
+      <button
+        type="submit"
+        className="inline-flex items-center justify-center rounded-lg border border-amber-400/20 bg-amber-500/[0.12] px-3 py-1.5 text-[11px] font-semibold text-amber-200 transition hover:bg-amber-500/[0.2]"
+      >
+        Requeue for retry
+      </button>
+    </form>
   );
 }
 
@@ -165,12 +205,13 @@ export default async function ProtocolInspectorPage({
         </div>
       ) : (
         <>
-          <div className="mt-6 grid gap-3 md:grid-cols-6">
+          <div className="mt-6 grid gap-3 md:grid-cols-7">
             <StatCard label="Messages" value={data.conformance.messageCount} />
             <StatCard label="Linked Tasks" value={data.conformance.linkedTaskCount} />
             <StatCard label="Runs" value={data.conformance.runCount} />
             <StatCard label="Checkpoints" value={data.conformance.checkpointCount} />
             <StatCard label="Webhook Events" value={data.conformance.webhookEventCount} />
+            <StatCard label="Webhook Failures" value={data.conformance.failedWebhookEventCount + data.conformance.retryingWebhookEventCount} tone={data.conformance.failedWebhookEventCount + data.conformance.retryingWebhookEventCount ? 'text-amber-300' : 'text-emerald-300'} />
             <StatCard label="Drift Flags" value={data.conformance.driftFlags.length} tone={data.conformance.driftFlags.length ? 'text-red-300' : 'text-emerald-300'} />
           </div>
 
@@ -183,7 +224,7 @@ export default async function ProtocolInspectorPage({
                     <h2 className="mt-1 text-[18px] font-semibold text-white">Live sanity checks</h2>
                   </div>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {[
                     {
                       label: 'Contract visible',
@@ -214,6 +255,17 @@ export default async function ProtocolInspectorPage({
                       label: 'Checkpoint evidence exists',
                       ok: data.conformance.hasCheckpointEvidence,
                       detail: data.conformance.hasCheckpointEvidence ? `${data.conformance.checkpointCount} checkpoint(s)` : 'No checkpoint trail found',
+                    },
+                    {
+                      label: 'Successful webhook evidence exists',
+                      ok: data.conformance.hasSuccessfulWebhookEvidence,
+                      detail: data.conformance.webhookEventCount === 0
+                        ? 'No webhook evidence in scope'
+                        : data.conformance.hasSuccessfulWebhookEvidence
+                          ? 'At least one matching delivery succeeded'
+                          : data.conformance.hasRetryableWebhookFailure
+                            ? 'Only retryable deliveries exist so far'
+                            : 'Only terminal webhook failures found',
                     },
                   ].map((item) => (
                     <div key={item.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
@@ -412,15 +464,43 @@ export default async function ProtocolInspectorPage({
                             <p className="text-[12px] font-semibold text-gray-100">{delivery.event}</p>
                             <p className="mt-1 text-[11px] text-gray-500">{formatDateTime(delivery.created_at)} ({formatRelative(delivery.created_at)})</p>
                           </div>
-                          <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase ${delivery.status === 'success' ? 'border-emerald-500/25 bg-emerald-500/[0.12] text-emerald-300' : delivery.status === 'failed' ? 'border-red-500/25 bg-red-500/[0.12] text-red-300' : 'border-amber-500/25 bg-amber-500/[0.12] text-amber-300'}`}>
-                            {delivery.status}
-                          </span>
+                          <DeliveryBadge status={delivery.status} />
                         </div>
                         <div className="mt-3 grid gap-2 text-[11px] text-gray-400">
                           <p>Webhook: <span className="font-mono text-gray-300">{delivery.webhook?.url || delivery.webhook_id}</span></p>
                           <p>Attempts: <span className="text-gray-300">{delivery.attempts}{delivery.max_retries ? ` / ${delivery.max_retries}` : ''}</span></p>
                           <p>HTTP: <span className="text-gray-300">{delivery.response_status ?? '—'}</span></p>
                           <p>Related IDs: <span className="font-mono text-gray-300">contract={delivery.related_contract_id || '—'} task={delivery.related_task_id || '—'}</span></p>
+                        </div>
+
+                        <div className="mt-4 rounded-xl border border-white/[0.06] bg-[#09090f] px-4 py-3">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-600">Replay / debug</p>
+                            {delivery.replay_debug.can_operator_requeue ? (
+                              <RequeueDeliveryButton
+                                deliveryId={delivery.id}
+                                webhookId={delivery.webhook_id}
+                                contractId={delivery.related_contract_id}
+                                taskId={delivery.related_task_id}
+                              />
+                            ) : null}
+                          </div>
+                          <div className="mt-3 grid gap-2 text-[11px] text-gray-400">
+                            <p>Delivery ID: <span className="font-mono text-gray-300">{delivery.replay_debug.delivery_id}</span></p>
+                            <p>Signature version: <span className="text-gray-300">{delivery.replay_debug.signature_version}</span></p>
+                            <p>Retryability: <span className="text-gray-300">{delivery.replay_debug.retryable ? `yes${delivery.replay_debug.next_attempt_number ? ` · next attempt #${delivery.replay_debug.next_attempt_number}` : ''}` : delivery.replay_debug.final_attempt ? 'no · retries exhausted' : 'no'}</span></p>
+                            <p>Operator requeue: <span className="text-gray-300">{delivery.replay_debug.can_operator_requeue ? 'allowed' : delivery.replay_debug.requeue_reason || 'not allowed'}</span></p>
+                            <p>Last retry: <span className="text-gray-300">{delivery.last_retry_at ? `${formatDateTime(delivery.last_retry_at)} (${formatRelative(delivery.last_retry_at)})` : '—'}</span></p>
+                            <p>Retry delay: <span className="text-gray-300">{delivery.retry_delay_ms ? `${Math.round(delivery.retry_delay_ms / 1000)}s` : '—'}</span></p>
+                            <p>Event timestamp: <span className="text-gray-300">{delivery.replay_debug.event_timestamp ? `${formatDateTime(delivery.replay_debug.event_timestamp)} (${formatRelative(delivery.replay_debug.event_timestamp)})` : '—'}</span></p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 rounded-xl border border-white/[0.06] bg-[#09090f] px-4 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-600">Stored event payload</p>
+                          <div className="mt-3">
+                            <JsonBlock value={delivery.payload} />
+                          </div>
                         </div>
                       </div>
                     ))}

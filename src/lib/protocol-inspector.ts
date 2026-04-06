@@ -54,12 +54,25 @@ export interface InspectorWebhookDelivery {
   status: string;
   attempts: number;
   max_retries: number | null;
+  retry_delay_ms: number | null;
   response_status: number | null;
   delivered_at: string | null;
   last_retry_at: string | null;
   created_at: string;
   related_contract_id: string | null;
   related_task_id: string | null;
+  payload: Record<string, unknown> | null;
+  replay_debug: {
+    delivery_id: string;
+    signature_version: 'v1';
+    retryable: boolean;
+    final_attempt: boolean;
+    next_attempt_number: number | null;
+    event_timestamp: string | null;
+    has_event_payload: boolean;
+    can_operator_requeue: boolean;
+    requeue_reason: string | null;
+  };
   webhook: {
     id: string;
     url: string;
@@ -91,9 +104,13 @@ export interface ProtocolInspectorData {
     runCount: number;
     checkpointCount: number;
     webhookEventCount: number;
+    failedWebhookEventCount: number;
+    retryingWebhookEventCount: number;
     hasTaskLink: boolean;
     hasActiveOrCompletedRun: boolean;
     hasCheckpointEvidence: boolean;
+    hasSuccessfulWebhookEvidence: boolean;
+    hasRetryableWebhookFailure: boolean;
     driftFlags: string[];
   };
 }
@@ -324,6 +341,7 @@ export async function loadProtocolInspector(args: {
       delivered_at,
       last_retry_at,
       created_at,
+      retry_delay_ms,
       payload,
       webhooks(id, url, agent_id, is_active, failure_count, last_delivery_at)
     `)
@@ -333,22 +351,49 @@ export async function loadProtocolInspector(args: {
   const { data: deliveryRows } = await deliveryQuery;
   webhookDeliveries = ((deliveryRows || []) as Array<Record<string, unknown>>)
     .map((row) => {
-      const payload = row.payload as { event?: { contract_id?: string; task_id?: string } } | null;
-      const relatedContractId = payload?.event?.contract_id || null;
-      const relatedTaskId = payload?.event?.task_id || null;
+      const payload = (row.payload as Record<string, unknown> | null) || null;
+      const eventPayload = (payload?.event as Record<string, unknown> | null) || null;
+      const relatedContractId = (eventPayload?.contract_id as string | undefined) || null;
+      const relatedTaskId = (eventPayload?.task_id as string | undefined) || null;
+      const maxRetries = (row.max_retries as number | null) || null;
+      const attempts = row.attempts as number;
+      const status = row.status as string;
       return {
         id: row.id as string,
         webhook_id: row.webhook_id as string,
         event: row.event as string,
-        status: row.status as string,
-        attempts: row.attempts as number,
-        max_retries: (row.max_retries as number | null) || null,
+        status,
+        attempts,
+        max_retries: maxRetries,
+        retry_delay_ms: (row.retry_delay_ms as number | null) || null,
         response_status: (row.response_status as number | null) || null,
         delivered_at: (row.delivered_at as string | null) || null,
         last_retry_at: (row.last_retry_at as string | null) || null,
         created_at: row.created_at as string,
         related_contract_id: relatedContractId,
         related_task_id: relatedTaskId,
+        payload,
+        replay_debug: {
+          delivery_id: row.id as string,
+          signature_version: 'v1',
+          retryable: status === 'pending_retry' || status === 'retrying' || (status === 'failed' && !!maxRetries && attempts < maxRetries),
+          final_attempt: !!maxRetries && attempts >= maxRetries,
+          next_attempt_number: !!maxRetries && attempts < maxRetries ? attempts + 1 : null,
+          event_timestamp: (eventPayload?.timestamp as string | undefined) || null,
+          has_event_payload: !!eventPayload,
+          can_operator_requeue: !!eventPayload && (status === 'failed' || status === 'pending_retry') && !!((maxRetries || 0) > attempts),
+          requeue_reason: !eventPayload
+            ? 'Stored event payload missing'
+            : status === 'success'
+              ? 'Successful deliveries are intentionally not replayable here'
+              : status === 'pending' || status === 'retrying'
+                ? 'Delivery is already in flight'
+                : !!maxRetries && attempts >= maxRetries
+                  ? 'Retry budget exhausted'
+                  : (status === 'failed' || status === 'pending_retry')
+                    ? null
+                    : 'Only failed or pending-retry deliveries can be requeued',
+        },
         webhook: (Array.isArray(row.webhooks) ? row.webhooks[0] : row.webhooks) as InspectorWebhookDelivery['webhook'],
       } satisfies InspectorWebhookDelivery;
     })
@@ -366,6 +411,10 @@ export async function loadProtocolInspector(args: {
   const hasTaskLink = linkedTasks.length > 0;
   const hasActiveOrCompletedRun = executionRuns.some((run) => ['running', 'starting', 'succeeded', 'failed', 'cancelled', 'blocked', 'waiting', 'pending-approval', 'paused', 'handoff-needed'].includes(run.status));
   const hasCheckpointEvidence = executionCheckpoints.length > 0 || linkedTasks.some((task) => !!task.last_checkpoint_at);
+  const failedWebhookEventCount = webhookDeliveries.filter((delivery) => delivery.status === 'failed').length;
+  const retryingWebhookEventCount = webhookDeliveries.filter((delivery) => delivery.status === 'pending_retry' || delivery.status === 'retrying').length;
+  const hasSuccessfulWebhookEvidence = webhookDeliveries.some((delivery) => delivery.status === 'success');
+  const hasRetryableWebhookFailure = webhookDeliveries.some((delivery) => delivery.replay_debug.retryable);
   const driftFlags: string[] = [];
 
   if (visibleContract && !hasTaskLink) driftFlags.push('Contract has no linked task.');
@@ -373,6 +422,10 @@ export async function loadProtocolInspector(args: {
   if (effectiveTask && !executionRuns.length && effectiveTask.execution_status && effectiveTask.execution_status !== 'idle') driftFlags.push('Task snapshot shows execution state but no execution runs were found.');
   if (effectiveTask && executionRuns.length > 0 && !hasCheckpointEvidence) driftFlags.push('Execution runs exist but no checkpoints were recorded.');
   if ((visibleContract || effectiveTask) && webhookDeliveries.length === 0) driftFlags.push('No webhook delivery evidence found for this flow.');
+  if ((visibleContract || effectiveTask) && webhookDeliveries.length > 0 && !hasSuccessfulWebhookEvidence) {
+    driftFlags.push(hasRetryableWebhookFailure ? 'Webhook evidence exists, but every matching delivery is still retrying or waiting to retry.' : 'Webhook evidence exists, but no matching delivery has succeeded.');
+  }
+  if (webhookDeliveries.some((delivery) => !delivery.replay_debug.has_event_payload)) driftFlags.push('Some webhook deliveries are missing stored event payloads, so replay/debug evidence is incomplete.');
   if (visibleContract && allParticipantsAccepted === false && visibleContract.status === 'active') driftFlags.push('Contract is active but not all participants show accepted.');
 
   return {
@@ -398,9 +451,13 @@ export async function loadProtocolInspector(args: {
       runCount: executionRuns.length,
       checkpointCount: executionCheckpoints.length,
       webhookEventCount: webhookDeliveries.length,
+      failedWebhookEventCount,
+      retryingWebhookEventCount,
       hasTaskLink,
       hasActiveOrCompletedRun,
       hasCheckpointEvidence,
+      hasSuccessfulWebhookEvidence,
+      hasRetryableWebhookFailure,
       driftFlags,
     },
   };

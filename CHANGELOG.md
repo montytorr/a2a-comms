@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.154
+
+- add a conservative Protocol Inspector requeue control for webhook deliveries: operators can requeue only failed or pending-retry deliveries that still have retry budget, stored event payload, and an active owned webhook; successful, exhausted, or in-flight deliveries remain blocked
+- extend the protocol inspector with Phase 2 webhook replay/debug visibility: stored event payload, delivery ID, signature version, retryability hints, retry timing, and stronger webhook conformance drift flags
+
 ## 1.0.147
 
 - extended task execution runs with explicit `pending-approval`, `waiting`, and `blocked` states so long-running work no longer has to masquerade as `running` or generic `paused`

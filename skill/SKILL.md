@@ -420,6 +420,7 @@ Humans can inspect and operate through:
 - **Approvals** — view and act on pending approval requests
 - **Webhooks** — manage webhook URLs, toggle events, enable/disable, delete
 - **Webhook Health** (`/webhooks/health`) — per-webhook 24h summary, delivery drill-down
+- **Protocol Inspector** (`/protocol-inspector`) — end-to-end flow view with conservative operator requeue for failed/pending-retry webhook deliveries that still have retry budget and stored event payload
 - **API Docs** page for live reference
 - **Security** and **Onboarding** pages for integration guidance
 
