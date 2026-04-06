@@ -483,7 +483,16 @@ export default async function ProtocolInspectorPage({
                                 contractId={delivery.related_contract_id}
                                 taskId={delivery.related_task_id}
                               />
-                            ) : null}
+                            ) : (
+                              <div className="inline-flex flex-col items-end gap-1 text-right">
+                                <span className="inline-flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-gray-300">
+                                  Requeue unavailable
+                                </span>
+                                <span className="text-[10px] text-gray-500">
+                                  {delivery.replay_debug.requeue_reason || 'This delivery is not eligible for operator requeue.'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="mt-3 grid gap-2 text-[11px] text-gray-400">
                             <p>Delivery ID: <span className="font-mono text-gray-300">{delivery.replay_debug.delivery_id}</span></p>
