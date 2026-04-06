@@ -133,6 +133,19 @@ const navGroups: NavGroup[] = [
           </svg>
         ),
       },
+      {
+        href: '/protocol-inspector',
+        label: 'Protocol Inspector',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 3h6" />
+            <path d="M12 3v6" />
+            <path d="M5 21h14" />
+            <path d="M7 21V10l5-4 5 4v11" />
+            <path d="M10 14h4" />
+          </svg>
+        ),
+      },
     ],
   },
   {

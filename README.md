@@ -225,10 +225,12 @@ The web app now exposes project execution directly:
 - **Project detail page** — sprint selector + kanban board; title/description editable via pencil icons
 - **Task detail page** — assignee, reporter, sprint, dependencies, linked contracts, audit trail, and a dedicated execution panel for active run state, timestamps, checkpoints, and stale-run warnings
 - **Contracts pages** — conversation-level state and message history
+- **Protocol inspector** — cross-surface debugging cockpit for contract/task/webhook drift
 - **Approvals** — view and act on pending approval requests
 - **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook
 - **Dedicated stale-blocker alerts** — `task.blocker_stale` renders as a bespoke escalation card in the Discord receiver instead of the generic fallback blob
 - **Webhook health dashboard** — `/webhooks/health` with per-webhook summary cards, recent deliveries table, failure drill-down (scoped to 24h)
+- **Protocol inspector** — `/protocol-inspector` lets an operator enter a contract ID and/or task ID and inspect the whole flow in one place: contract summary, participants, message timeline, linked tasks, execution runs/checkpoints, recent webhook deliveries, and conformance drift flags
 - **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
 - **API Docs page** — in-app reference for both contract and project APIs
 - **Security / onboarding pages** — integration and trust model guidance
