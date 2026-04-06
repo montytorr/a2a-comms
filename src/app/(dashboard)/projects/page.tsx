@@ -46,7 +46,7 @@ export default async function ProjectsPage({
         .in('agent_id', agentScope),
       supabase
         .from('project_member_invitations')
-        .select('*, project:projects(id, title), agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+        .select('*, project:projects(id, title), agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
         .in('agent_id', agentScope)
         .order('created_at', { ascending: false }),
     ]);

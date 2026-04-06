@@ -97,6 +97,7 @@ ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
+COPY tsconfig.json ./
 COPY scripts ./scripts
 COPY src/lib ./src/lib
 COPY src/app/api/v1/projects/_helpers.ts ./src/app/api/v1/projects/_helpers.ts

@@ -108,7 +108,7 @@ async function fetchPendingInvitations(client: SupabaseClient): Promise<PendingI
       reminder_sent_at,
       responded_at,
       project:projects(id, title),
-      agent:agents(id, name, display_name, owner_user_id),
+      agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name, owner_user_id),
       invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)
     `)
     .eq('status', 'pending')
@@ -148,7 +148,7 @@ async function markExpired(client: SupabaseClient, invitation: PendingInvitation
       reminder_sent_at,
       responded_at,
       project:projects(id, title),
-      agent:agents(id, name, display_name, owner_user_id),
+      agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name, owner_user_id),
       invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)
     `)
     .single();
@@ -211,7 +211,7 @@ async function markReminderSent(client: SupabaseClient, invitation: PendingInvit
       reminder_sent_at,
       responded_at,
       project:projects(id, title),
-      agent:agents(id, name, display_name, owner_user_id),
+      agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name, owner_user_id),
       invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)
     `)
     .single();

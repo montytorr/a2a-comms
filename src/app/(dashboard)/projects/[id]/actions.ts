@@ -127,7 +127,7 @@ export async function respondToProjectInvitation(
   const supabase = createServerClient();
   const { data: invitation } = await supabase
     .from('project_member_invitations')
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .eq('id', invitationId)
     .eq('project_id', projectId)
     .single();

@@ -82,7 +82,7 @@ export default async function ProjectDetailPage({
       .order('joined_at', { ascending: true }),
     supabase
       .from('project_member_invitations')
-      .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+      .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
     supabase

@@ -197,7 +197,7 @@ export async function expireProjectInvitationIfNeeded(invitation: ProjectInvitat
     })
     .eq('id', invitation.id)
     .eq('status', 'pending')
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .single();
 
   if (error || !updatedInvitation) return { ...invitation, status: 'expired', responded_at: now, updated_at: now };
@@ -228,7 +228,7 @@ export async function sendProjectInvitationReminderIfDue(invitation: ProjectInvi
     .eq('id', invitation.id)
     .eq('status', 'pending')
     .is('reminder_sent_at', null)
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .single();
 
   if (error || !updatedInvitation) return invitation;

@@ -36,7 +36,7 @@ export async function PATCH(
   const supabase = createServerClient();
   const { data: rawInvitation } = await supabase
     .from('project_member_invitations')
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .eq('id', invitationId)
     .eq('project_id', id)
     .single();
@@ -91,7 +91,7 @@ export async function PATCH(
     .eq('id', invitationId)
     .eq('project_id', id)
     .eq('status', 'pending')
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
     .single();
 
   if (error || !updatedInvitation) {

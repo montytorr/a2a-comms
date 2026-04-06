@@ -27,7 +27,7 @@ export async function GET(
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from('project_member_invitations')
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
     .eq('project_id', id)
     .order('created_at', { ascending: false });
 
@@ -143,7 +143,7 @@ export async function POST(
       expires_at: getProjectInvitationExpiry(new Date()),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'project_id,agent_id' })
-    .select('*, agent:agents(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+    .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
     .single();
 
   if (error || !invitation) {
