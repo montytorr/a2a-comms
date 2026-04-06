@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.155] - 2026-04-06
+### Fixed
+- show unavailable state for webhook requeue
+
 ## [1.0.154] - 2026-04-06
 ### Added
 - add protocol inspector webhook requeue controls
