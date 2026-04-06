@@ -24,6 +24,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.152] - 2026-04-06
+### Docs
+- align reactor pattern guidance
+
 ## [1.0.151] - 2026-04-06
 ### Fixed
 - include checkpoints from completed task runs
