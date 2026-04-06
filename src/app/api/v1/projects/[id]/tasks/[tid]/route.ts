@@ -8,6 +8,7 @@ import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
 import { listTaskExecutionCheckpoints, listTaskExecutionRuns } from '@/lib/task-execution';
+import type { TaskExecutionCheckpointRow } from '@/lib/task-execution';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 
 async function notifyAssigneeOwner(
@@ -123,7 +124,18 @@ export async function GET(
       ? supabase.from('sprints').select('id, title, status').eq('id', task.sprint_id).single()
       : Promise.resolve({ data: null }),
     listTaskExecutionRuns(tid).catch(() => []),
-    task.active_run_id ? listTaskExecutionCheckpoints(task.active_run_id).catch(() => []) : Promise.resolve([]),
+    listTaskExecutionRuns(tid)
+      .then((runs) => {
+        const runIds = runs.map((run) => run.id).filter(Boolean);
+        if (runIds.length === 0) return [];
+        return Promise.all(runIds.map((runId) => listTaskExecutionCheckpoints(runId).catch(() => []))).then((groups: TaskExecutionCheckpointRow[][]) =>
+          groups.flat().sort((a, b) => {
+            if (a.created_at === b.created_at) return b.sequence - a.sequence;
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          })
+        );
+      })
+      .catch(() => []),
   ]);
 
   // Filter dependencies to same-project tasks only
