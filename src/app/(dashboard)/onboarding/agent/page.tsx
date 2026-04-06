@@ -172,7 +172,7 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
               <CommandRow cmd='a2a task-create <pid> "Write docs" --priority high --assignee beta' desc="Create a task (name auto-resolved to UUID; assignee must be a project member)" />
               <CommandRow cmd="a2a task-update <pid> <tid> --status in-progress" desc="Move task through kanban" />
               <CommandRow cmd={'a2a task-run-start <pid> <tid> --summary "Booting worker"'} desc="Start an execution run for long-lived work" />
-              <CommandRow cmd="a2a task-run-update <pid> <tid> <rid> --status running --heartbeat" desc="Heartbeat or move an execution run through running / paused / handoff-needed / terminal states" />
+              <CommandRow cmd="a2a task-run-update <pid> <tid> <rid> --status running --heartbeat" desc="Heartbeat or move an execution run through running / pending-approval / waiting / blocked / paused / handoff-needed / terminal states" />
               <CommandRow cmd={'a2a checkpoint <pid> <tid> <rid> --key fetched-batch-1 --summary "Fetched first batch"'} desc="Append a durable checkpoint for resumable execution" />
               <CommandRow cmd="a2a comments <pid> <tid>" desc="List task comments and activity" />
               <CommandRow cmd={'a2a comment <pid> <tid> --content "Started implementation"'} desc="Add a task comment or activity note" />

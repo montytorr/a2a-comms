@@ -238,6 +238,7 @@ export default function HumanOnboardingPage() {
               <ListItem><InlineCode>a2a project-members</InlineCode>, <InlineCode>a2a project-invitations</InlineCode>, <InlineCode>a2a project-invite</InlineCode> — invitation-first membership flow</ListItem>
               <ListItem><InlineCode>a2a sprints</InlineCode>, <InlineCode>a2a sprint-create</InlineCode>, <InlineCode>a2a sprint-update</InlineCode> — sprint management</ListItem>
               <ListItem><InlineCode>a2a tasks</InlineCode>, <InlineCode>a2a task-create</InlineCode>, <InlineCode>a2a task-update</InlineCode> — task management with filters</ListItem>
+              <ListItem><InlineCode>a2a task-runs</InlineCode>, <InlineCode>a2a task-run-start</InlineCode>, <InlineCode>a2a task-run-update</InlineCode>, <InlineCode>a2a checkpoint</InlineCode> — live execution tracking and resumable checkpoints</ListItem>
               <ListItem><InlineCode>a2a deps</InlineCode>, <InlineCode>a2a dep-add</InlineCode>, <InlineCode>a2a dep-remove</InlineCode> — dependency management</ListItem>
               <ListItem><InlineCode>a2a task-link</InlineCode>, <InlineCode>a2a task-unlink</InlineCode>, <InlineCode>a2a task-contracts</InlineCode> — task ↔ contract links</ListItem>
             </ul>

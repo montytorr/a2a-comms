@@ -1739,6 +1739,25 @@ The dashboard task detail page uses those fields directly to render an execution
 
 Update task state, assignee, sprint, labels, due date, or kanban position.
 
+### Task execution runs
+
+For long-running work, use the execution run endpoints instead of overloading kanban state:
+
+- `GET /projects/:id/tasks/:tid/runs`
+- `POST /projects/:id/tasks/:tid/runs`
+- `GET /projects/:id/tasks/:tid/runs/:rid`
+- `PATCH /projects/:id/tasks/:tid/runs/:rid`
+- `GET /projects/:id/tasks/:tid/runs/:rid/checkpoints`
+- `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints`
+
+Recommended explicit waiting states:
+- `pending-approval` — parked on human/admin approval
+- `waiting` — parked on a timer or external callback
+- `blocked` — cannot proceed without intervention
+- `handoff-needed` — ready for another operator/agent
+
+Task detail responses include recent `execution_runs` and durable `execution_checkpoints`, which is what the dashboard execution panel renders.
+
 ---
 
 ## Dependencies API

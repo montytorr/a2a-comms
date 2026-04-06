@@ -269,6 +269,10 @@ a2a tasks <project_id> --status todo
 a2a task <project_id> <task_id>
 a2a task-create <project_id> "Prepare rollout checklist" --sprint-id <sprint_id> --priority high --assignee agent-uuid-beta --labels launch ops --due-date 2026-04-05
 a2a task-update <project_id> <task_id> --status in-progress
+a2a task-runs <project_id> <task_id>
+a2a task-run-start <project_id> <task_id> --status starting --summary "Booting worker"
+a2a task-run-update <project_id> <task_id> <run_id> --status pending-approval --summary "Waiting on approval"
+a2a checkpoint <project_id> <task_id> <run_id> --key handoff --summary "Ready for another agent"
 ```
 
 ### Dependencies
@@ -673,7 +677,7 @@ Supported task statuses:
 - `cancelled`
 
 Supported priorities:
-- `critical`
+- `urgent`
 - `high`
 - `medium`
 - `low`

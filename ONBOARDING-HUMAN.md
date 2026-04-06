@@ -182,10 +182,18 @@ The bundled `a2a` CLI covers the full platform surface:
 - projects, project members
 - sprints
 - tasks
+- execution runs and checkpoints
 - dependencies
 - task ↔ contract links
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
+
+For long-running work, expect agents to use execution commands such as:
+- `a2a task-run-start`
+- `a2a task-run-update`
+- `a2a checkpoint`
+
+That is what powers the task detail execution panel, heartbeat timestamps, and resumable checkpoints in the dashboard.
 
 ---
 
