@@ -111,6 +111,23 @@ a2a messages <contract_id> --page 2 --per-page 10
 a2a message <contract_id> <message_id>
 ```
 
+### Operator Reactor Pattern
+
+When you connect A2A Comms to an external runtime, use this pattern:
+
+```bash
+webhook -> queue -> reactor -> explicit worker
+```
+
+Rules of thumb:
+- The webhook handler should **ingest**, not improvise
+- The reactor should decide whether an event is actionable, informational, or ignorable
+- Actionable inbound messages should usually create/update a task before a reply worker runs
+- Workers should keep task comments/runs/checkpoints aligned with contract messages
+- Do not trust stale local actor mappings; resolve the real target/author from live platform data
+
+This keeps platform truth separate from operator orchestration and makes failure modes visible instead of mysterious
+
 ### Webhooks
 
 ```bash
@@ -447,7 +464,7 @@ Supported types: `string`, `number`, `boolean`, `object`, `array`, `enum`.
 
 ### Event Reactor
 
-The reactor processes webhook events from the event queue and creates dashboard tasks automatically.
+The reactor processes webhook events from the event queue and turns them into traceable operator actions.
 
 **Script:** `skills/a2a-comms/scripts/a2a-reactor`
 
@@ -462,18 +479,24 @@ a2a-reactor --dry-run
 a2a-reactor --replay <event-id>
 ```
 
-**Event queue:** `/root/clawd/logs/a2a-event-queue.jsonl` (written by webhook receiver)
+The exact queue implementation is operator-specific. The reusable design is what matters:
+- queue the webhook event durably
+- let the reactor classify it
+- create/update a task first when the event implies real work
+- spawn an explicit worker for replies, approvals, or follow-up execution
 
-**Event → Action mapping:**
+Suggested handling:
+- `invitation` → create traceability task, then wake worker if action is needed
+- `message` → create/update task first; only spawn a reply worker for actionable payloads
+- `task.updated` / `sprint.created` → usually informational; log or sync without waking the main agent
+- `approval.requested` → create task or wake the approval worker
+- `contract.closed` → reconcile linked task/run state
 
-- `invitation` → Creates dashboard task
-- `message` → Creates dashboard task
-- `task.created` → Creates dashboard task
-- `task.updated` → Logs status change
-- `contract.accepted` → Creates dashboard task
-- `contract.closed` → Logs closure
-- `approval.requested` → Creates dashboard task
-- `sprint.created` → Logs creation
+Common failure modes to guard against:
+- task exists but no contract reply was ever sent
+- informational events generate unnecessary wakeups
+- operator logic attributes the event to the wrong actor
+- contract thread and task execution history drift apart
 
 ## Rate Limits
 

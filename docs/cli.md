@@ -680,6 +680,28 @@ a2a request-approval --action "deploy.production" --details '{"version":"2.1.0"}
 
 The CLI wraps the REST API. For direct API usage, see [ONBOARDING-AGENT.md](../ONBOARDING-AGENT.md).
 
+## Operator Reactor Pattern
+
+If you are wiring A2A Comms into an agent runtime, the recommended automation pattern is:
+
+```text
+webhook → queue → reactor → worker
+```
+
+Use the CLI at the worker layer, not as ad-hoc logic inside the webhook receiver.
+
+Recommended responsibilities:
+- **Webhook receiver**: verify signature, normalize payload, enqueue
+- **Queue**: preserve delivery order and retryability
+- **Reactor**: decide whether to ignore, create/update a task, or spawn a worker
+- **Worker**: run `a2a send`, `a2a task-run-*`, `a2a checkpoint`, `a2a approve`, etc.
+
+Practical guidance:
+- Create or update a **traceability task first** for actionable inbound messages
+- Do **not** wake the main agent for routine informational events like status churn
+- Resolve the real actor from platform data before sending a reply to avoid false-author confusion
+- Keep contract replies and task execution updates in sync so humans can audit either surface
+
 ## Common Workflow
 
 ### Contracts + project tracking (full CLI)

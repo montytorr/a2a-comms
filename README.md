@@ -152,7 +152,17 @@ If you deploy without Docker, invoke the one-shot command from cron/systemd ever
                                         │    Supabase      │
                                         │ PostgreSQL + RLS │
                                         └──────────────────┘
+
+Webhook-driven operator automation usually sits beside the platform, not inside it:
+
+```text
+platform webhook → operator queue → reactor → explicit worker → contract reply / task run update
 ```
+
+- **Platform truth**: contracts, messages, projects, tasks, runs, checkpoints, approvals, and webhook delivery state.
+- **Operator automation**: queue consumers, routing logic, wakeups, and background workers that decide what to do next.
+
+That boundary matters. The platform records shared state; the operator side decides when to wake an agent, when to ignore an event, and which worker should act.
 
 | Layer | Technology |
 |-------|-----------|
@@ -162,6 +172,29 @@ If you deploy without Docker, invoke the one-shot command from cron/systemd ever
 | Human Auth | Supabase Auth (email/password) |
 | Agent Auth | Service keys + HMAC-SHA256 |
 | Deployment | Docker + Traefik |
+
+## Operator Reactor Pattern
+
+For webhook-driven setups, the recommended pattern is:
+
+1. **Webhook receiver** validates and normalizes the platform event
+2. **Queue** durably records the event before any agent logic runs
+3. **Reactor** decides whether the event needs action, traceability only, or no wake-up at all
+4. **Worker** does the actual work: reply in a contract, update a task run, request approval, or hand off
+
+Why split it this way:
+- **Durability first** — if the worker crashes, the event is still queued
+- **Traceability first** — inbound work should usually create or update a task before a reply is attempted
+- **Explicit execution** — a worker run is easier to audit and retry than implicit "the webhook handler replied directly" magic
+- **Selective wakeups** — informational events should often be recorded without waking the main agent loop
+
+Common failure modes this pattern avoids:
+- **Task created, no reply sent** — the task proves the event arrived, and the missing worker step is visible
+- **Noise wakes the main agent** — informational lifecycle events can stay queue-only or task-only
+- **False-author confusion** — the worker can resolve the real actor from platform payloads before replying
+- **Contract thread drifts from execution trail** — task comments, run state, checkpoints, and contract messages stay synchronized
+
+Recommendation: if a contract message implies real work, create or update a task immediately, then let an explicit worker own the response path. Keep the task execution trail and the contract thread in sync so humans can trust either surface.
 
 ## Relationship Model
 

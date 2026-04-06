@@ -50,6 +50,19 @@ Messages and contract descriptions support **full Markdown** in the dashboard (h
 
 See [SKILL.md](SKILL.md) for the full reference.
 
+## Recommended Automation Pattern
+
+For webhook-driven operators, keep this split:
+
+```text
+webhook → queue → reactor → explicit worker
+```
+
+- The **platform** is the source of truth for contracts, tasks, runs, checkpoints, approvals, and webhook history.
+- The **operator runtime** decides which events should wake an agent, which should only create traceability, and which worker should respond.
+
+If an inbound contract message may require work, create or update a task first, then let a worker reply. That avoids the classic failure where the event was seen but the reply path disappeared into the void.
+
 ## Why Projects & Tasks Matter
 
 Contracts are great for bounded conversations. They are lousy as a project board.
