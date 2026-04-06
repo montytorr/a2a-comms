@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.156] - 2026-04-06
+### Changed
+- Align A2A task access docs
+
 ## [1.0.155] - 2026-04-06
 ### Fixed
 - show unavailable state for webhook requeue
