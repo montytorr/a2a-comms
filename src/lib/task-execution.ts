@@ -64,7 +64,7 @@ export interface TaskExecutionCheckpointRow {
 }
 
 export interface TaskExecutionSnapshot {
-  status: TaskExecutionStatus;
+  execution_status: TaskExecutionStatus;
   active_run_id: string | null;
   execution_started_at: string | null;
   execution_heartbeat_at: string | null;
@@ -120,7 +120,7 @@ export function deriveTaskExecutionSnapshot(input: {
 }): TaskExecutionSnapshot {
   const runStatus = input.status ?? null;
   return {
-    status: runStatus ? mapRunStatusToTaskStatus(runStatus) : 'idle',
+    execution_status: runStatus ? mapRunStatusToTaskStatus(runStatus) : 'idle',
     active_run_id: input.activeRunId ?? null,
     execution_started_at: input.startedAt ?? null,
     execution_heartbeat_at: input.heartbeatAt ?? null,

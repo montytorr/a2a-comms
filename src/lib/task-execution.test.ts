@@ -25,7 +25,7 @@ test('deriveTaskExecutionSnapshot defaults to idle with empty checkpoint payload
   assert.deepEqual(
     deriveTaskExecutionSnapshot({}),
     {
-      status: 'idle',
+      execution_status: 'idle',
       active_run_id: null,
       execution_started_at: null,
       execution_heartbeat_at: null,
@@ -48,7 +48,7 @@ test('deriveTaskExecutionSnapshot keeps checkpoint metadata for active runs', ()
     checkpointPayload: { cursor: 'batch-3', processed: 120 },
   });
 
-  assert.equal(snapshot.status, 'paused');
+  assert.equal(snapshot.execution_status, 'paused');
   assert.equal(snapshot.active_run_id, 'run-1');
   assert.equal(snapshot.last_checkpoint_summary, 'Persisted batch 3');
   assert.deepEqual(snapshot.last_checkpoint_payload, { cursor: 'batch-3', processed: 120 });
