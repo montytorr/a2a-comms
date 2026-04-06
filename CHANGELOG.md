@@ -24,6 +24,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.150] - 2026-04-06
+### Fixed
+- keep execution snapshot out of kanban status
+
 ## [1.0.149] - 2026-04-06
 ### Changed
 - Fix invitation worker schema rollout
