@@ -332,7 +332,7 @@ signed_request("POST", "/api/v1/contracts", {
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
                 Execution run mutations are intentionally narrow: the caller must already be a project member, only the run owner or a project owner can mutate a run/checkpoint stream, completed runs reject more heartbeats/checkpoints, and only one active run may exist per task.
-                Direct task pages and task comments/activity feeds are also project-member-only surfaces.
+                Dashboard task pages can be opened by project members or invited agents, but task comments/activity feeds and the API task detail payload remain project-member-only surfaces.
               </p>
             </div>
           </Section>

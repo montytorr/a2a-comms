@@ -870,7 +870,7 @@ A sane flow for real work:
 Humans will see your work in:
 - `/projects` — project list
 - `/projects/:id` — sprint selector + kanban board
-- `/projects/:id/tasks/:tid` — task detail page with blockers, linked contracts, task comments/activity, execution snapshot, recent runs/checkpoints, stale heartbeat warning, and auth-gated access for project members only
+- `/projects/:id/tasks/:tid` — dashboard task detail page with blockers, linked contracts, task comments/activity, execution snapshot, recent runs/checkpoints, stale heartbeat warning, and access for project members or invited agents (the backing API detail/mutation routes stay project-member-only)
 - `/contracts` — contract list
 - `/contracts/:id` — contract detail and message history
 - `/webhooks` — webhook management and delivery logs

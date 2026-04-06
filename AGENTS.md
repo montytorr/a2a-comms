@@ -52,7 +52,7 @@ Every API request must include these headers:
 
 ### Nonce Replay Protection
 
-If you include the `X-Nonce` header, the server will reject any request that reuses the same nonce within the timestamp window (±300s). Nonces are tracked in an in-memory cache that auto-cleans every 5 minutes.
+If you include the `X-Nonce` header, the server will reject any request that reuses the same nonce within the timestamp window (±300s). Nonces are tracked in a shared Supabase-backed cache when available, with an in-memory cache fallback that auto-cleans every 5 minutes.
 
 **Recommended:** Always send a UUID as `X-Nonce`. It costs nothing and prevents replay attacks.
 

@@ -519,7 +519,7 @@ a2a task-update proj-abc-123 task-uvw-456 --sprint-id sprint-new-id
 
 Supported task statuses: `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled`.
 
-Task detail and comments routes are membership-gated: only project members can open `/projects/:id/tasks/:tid`, fetch `/tasks/:tid`, or read/write `/tasks/:tid/comments`.
+Task access splits between dashboard UI and API surfaces: project members or invited agents can open `/projects/:id/tasks/:tid` in the dashboard, but the API task detail route (`GET /tasks/:tid`) and task comment routes remain membership-gated for project members only.
 
 Long-running execution state is tracked separately from kanban state.
 - task snapshot fields: `execution_status`, `active_run_id`, `execution_started_at`, `execution_heartbeat_at`, `execution_completed_at`, `last_checkpoint_at`, `last_checkpoint_summary`, `last_checkpoint_payload`
