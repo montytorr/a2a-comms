@@ -150,31 +150,39 @@ function isMissingAttachmentIdsColumn(error: PostgrestError | null) {
 }
 
 async function selectTaskExecutionCheckpoints(
-  supabase: SupabaseClient,
-  build: (selectClause: string) => ReturnType<SupabaseClient['from']>
+  build: (selectClause: string) => Promise<{ data: unknown; error: PostgrestError | null }>
 ) {
   const withAttachments = await build('*');
-  if (!isMissingAttachmentIdsColumn(withAttachments.error as PostgrestError | null)) {
+  if (!isMissingAttachmentIdsColumn(withAttachments.error)) {
     return withAttachments;
   }
 
   const fallback = await build('id, run_id, task_id, project_id, agent_id, sequence, checkpoint_key, status, summary, payload, created_at');
   if (fallback.error) return fallback;
 
+  if (Array.isArray(fallback.data)) {
+    return {
+      ...fallback,
+      data: fallback.data.map((row: unknown) => ({ ...(row as Record<string, unknown>), attachment_ids: [] })),
+    };
+  }
+
   return {
     ...fallback,
-    data: (fallback.data || []).map((row: Record<string, unknown>) => ({ ...row, attachment_ids: [] })),
+    data: fallback.data
+      ? { ...(fallback.data as Record<string, unknown>), attachment_ids: [] }
+      : fallback.data,
   };
 }
 
 export async function listTaskExecutionCheckpoints(runId: string) {
   const supabase = createServerClient();
-  const { data, error } = await selectTaskExecutionCheckpoints(supabase, (selectClause) =>
-    supabase
+  const { data, error } = await selectTaskExecutionCheckpoints(async (selectClause) =>
+    (await supabase
       .from('task_execution_checkpoints')
       .select(selectClause)
       .eq('run_id', runId)
-      .order('sequence', { ascending: false })
+      .order('sequence', { ascending: false })) as { data: unknown; error: PostgrestError | null }
   );
 
   if (error) throw error;
@@ -363,7 +371,8 @@ export async function appendTaskCheckpoint(input: {
 
   if (checkpointError || !checkpoint) throw checkpointError;
 
-  const now = checkpoint.created_at;
+  const typedCheckpoint = checkpoint as unknown as TaskExecutionCheckpointRow;
+  const now = typedCheckpoint.created_at;
   const { data: updatedRun, error: updateError } = await supabase
     .from('task_execution_runs')
     .update({
@@ -384,17 +393,17 @@ export async function appendTaskCheckpoint(input: {
     startedAt: updatedRun.started_at,
     heartbeatAt: updatedRun.heartbeat_at,
     completedAt: updatedRun.completed_at,
-    checkpointAt: checkpoint.created_at,
-    checkpointSummary: checkpoint.summary,
+    checkpointAt: typedCheckpoint.created_at,
+    checkpointSummary: typedCheckpoint.summary,
     checkpointPayload,
   });
 
-  return checkpoint as TaskExecutionCheckpointRow;
+  return typedCheckpoint;
 }
 
 export async function getLatestTaskCheckpoint(taskId: string, runId?: string) {
   const supabase = createServerClient();
-  const { data, error } = await selectTaskExecutionCheckpoints(supabase, (selectClause) => {
+  const { data, error } = await selectTaskExecutionCheckpoints(async (selectClause) => {
     let query = supabase
       .from('task_execution_checkpoints')
       .select(selectClause)
@@ -403,7 +412,7 @@ export async function getLatestTaskCheckpoint(taskId: string, runId?: string) {
       .limit(1);
 
     if (runId) query = query.eq('run_id', runId);
-    return query.maybeSingle();
+    return (await query.maybeSingle()) as { data: unknown; error: PostgrestError | null };
   });
 
   if (error) throw error;
