@@ -7,6 +7,7 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
+import { buildHandoffContractDescription, buildHandoffContractTitle } from '@/lib/handoff-contracts';
 
 async function notifyAssigneeOwner(
   supabase: ReturnType<typeof createServerClient>,
@@ -90,7 +91,7 @@ export async function GET(
 
   const status = url.searchParams.get('status');
   const sprint_id = url.searchParams.get('sprint_id');
-  const assignee = url.searchParams.get('assignee');
+  const assignee = url.searchParams.get('assignee') || url.searchParams.get('assignee_agent_id');
   const priority = url.searchParams.get('priority');
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') || '50', 10)));
@@ -175,6 +176,14 @@ export async function POST(
     );
   }
 
+  const handoffInvitees = parsed.handoff_contract?.invitees;
+  if (parsed.handoff_contract && (!Array.isArray(handoffInvitees) || handoffInvitees.length === 0)) {
+    return NextResponse.json(
+      { error: 'handoff_contract.invitees must be a non-empty array', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
   // Validate priority
   if (parsed.priority) {
     const validPriorities = ['urgent', 'high', 'medium', 'low'];
@@ -187,6 +196,40 @@ export async function POST(
   }
 
   const supabase = createServerClient();
+
+  let handoffInviteeAgents: Array<{ id: string; name: string; display_name: string; max_concurrent_contracts: number | null; owner_user_id?: string | null }> = [];
+  if (parsed.handoff_contract) {
+    const invitees = [...new Set(parsed.handoff_contract.invitees.map((invitee) => invitee.trim()).filter(Boolean))];
+    if (invitees.includes(auth.agent.name)) {
+      return NextResponse.json(
+        { error: 'Cannot invite yourself to a handoff contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const { data: inviteeAgents, error: inviteeError } = await supabase
+      .from('agents')
+      .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
+      .in('name', invitees);
+
+    if (inviteeError) {
+      return NextResponse.json(
+        { error: 'Failed to validate handoff invitees', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const foundNames = new Set((inviteeAgents || []).map((agent) => agent.name));
+    const missing = invitees.filter((name) => !foundNames.has(name));
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { error: `Unknown handoff invitee(s): ${missing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    handoffInviteeAgents = inviteeAgents || [];
+  }
 
   // Validate sprint belongs to same project
   if (parsed.sprint_id) {
@@ -258,12 +301,117 @@ export async function POST(
     );
   }
 
+  let handoffContract: Record<string, unknown> | null = null;
+  if (parsed.handoff_contract) {
+    const expiresInHours = parsed.handoff_contract.expires_in_hours ?? 168;
+    const maxTurns = parsed.handoff_contract.max_turns ?? 30;
+    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+    const handoffDescription = parsed.handoff_contract.description || buildHandoffContractDescription({
+      task,
+      run: null,
+      checkpoints: [],
+      attachments: [],
+      priorHandoffs: [],
+    });
+
+    const { data: contract, error: contractError } = await supabase
+      .from('contracts')
+      .insert({
+        title: parsed.handoff_contract.title || buildHandoffContractTitle(task.title),
+        description: handoffDescription,
+        status: 'proposed',
+        proposer_id: auth.agent.id,
+        max_turns: maxTurns,
+        current_turns: 0,
+        expires_at: expiresAt,
+        message_schema: null,
+      })
+      .select()
+      .single();
+
+    if (contractError || !contract) {
+      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      return NextResponse.json(
+        { error: 'Failed to create handoff contract', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const participants = [
+      {
+        contract_id: contract.id,
+        agent_id: auth.agent.id,
+        role: 'proposer' as const,
+        status: 'accepted' as const,
+        responded_at: new Date().toISOString(),
+      },
+      ...handoffInviteeAgents.map((agent) => ({
+        contract_id: contract.id,
+        agent_id: agent.id,
+        role: 'invitee' as const,
+        status: 'pending' as const,
+        responded_at: null,
+      })),
+    ];
+
+    const { error: participantError } = await supabase.from('contract_participants').insert(participants);
+    if (participantError) {
+      await supabase.from('contracts').delete().eq('id', contract.id);
+      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      return NextResponse.json(
+        { error: 'Failed to create handoff contract participants', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: task.id, contract_id: contract.id });
+    if (linkError) {
+      await supabase.from('contract_participants').delete().eq('contract_id', contract.id);
+      await supabase.from('contracts').delete().eq('id', contract.id);
+      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      return NextResponse.json(
+        { error: 'Failed to link handoff contract to task', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    handoffContract = contract;
+
+    const inviteeIds = handoffInviteeAgents.map((agent) => agent.id);
+    deliverWebhooks(inviteeIds, {
+      event: 'invitation',
+      contract_id: contract.id,
+      project_id: id,
+      task_id: task.id,
+      data: { title: contract.title, proposer: auth.agent.name, expires_at: expiresAt, handoff: true },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+
+    Promise.all(
+      handoffInviteeAgents.map(async (agent) => {
+        if (!agent.owner_user_id) return;
+        const email = await getUserEmail(agent.owner_user_id);
+        if (!email) return;
+        await sendTaskAssignedEmail(
+          email,
+          {
+            taskTitle: task.title,
+            projectName: 'Task handoff',
+            priority: task.priority || 'medium',
+            taskUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech'}/contracts/${contract.id}`,
+          },
+          agent.owner_user_id
+        );
+      })
+    ).catch(() => {});
+  }
+
   await auditLog({
     actor: auth.agent.name,
     action: 'task.create',
     resourceType: 'task',
     resourceId: task.id,
-    details: { project_id: id, title: parsed.title, priority: parsed.priority || 'medium' },
+    details: { project_id: id, title: parsed.title, priority: parsed.priority || 'medium', handoff_contract_id: handoffContract?.id || null },
     ipAddress: getClientIp(req),
   });
 
@@ -289,7 +437,11 @@ export async function POST(
     }).catch(() => {});
   }
 
-  await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/projects/${id}/tasks`, 201, task);
+  const responseBody = handoffContract
+    ? { ...task, handoff_contract: handoffContract }
+    : task;
 
-  return NextResponse.json(task, { status: 201 });
+  await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/projects/${id}/tasks`, 201, responseBody);
+
+  return NextResponse.json(responseBody, { status: 201 });
 }

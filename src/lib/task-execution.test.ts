@@ -6,6 +6,8 @@ import {
   isTaskExecutionStatus,
   mapRunStatusToTaskStatus,
 } from './task-execution';
+import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract } from './handoff-contracts';
+import type { CreateTaskRequest, UpdateTaskRequest } from './types';
 
 function isMissingAttachmentIdsColumn(error: { message?: string } | null | undefined) {
   return !!error && /attachment_ids/i.test(error.message || '');
@@ -72,4 +74,98 @@ test('missing attachment_ids detection catches pre-migration schema errors', () 
   assert.equal(isMissingAttachmentIdsColumn({ message: 'column task_execution_checkpoints.attachment_ids does not exist' }), true);
   assert.equal(isMissingAttachmentIdsColumn({ message: 'duplicate key value violates unique constraint' }), false);
   assert.equal(isMissingAttachmentIdsColumn(null), false);
+});
+
+test('handoff contract helpers build deterministic handoff surfaces', () => {
+  assert.equal(buildHandoffContractTitle('Rollout QA'), 'Handoff · Rollout QA');
+
+  const description = buildHandoffContractDescription({
+    task: {
+      id: 'task-1',
+      title: 'Rollout QA',
+      description: 'Validate the rollout before release.',
+      status: 'in-progress',
+      priority: 'high',
+      labels: ['qa', 'release'],
+      due_date: '2026-04-09',
+      execution_status: 'handoff-needed',
+      execution_started_at: '2026-04-07T10:00:00.000Z',
+      execution_heartbeat_at: '2026-04-07T10:10:00.000Z',
+      execution_completed_at: null,
+      last_checkpoint_at: '2026-04-07T10:09:00.000Z',
+      last_checkpoint_summary: 'Browser smoke done; API replay still pending',
+      last_checkpoint_payload: { browser: 'done', apiReplay: 'pending' },
+      active_run_id: 'run-1',
+    },
+    run: {
+      id: 'run-1',
+      status: 'handoff-needed',
+      attempt: 2,
+      summary: 'Waiting for takeover',
+      error_message: null,
+      heartbeat_at: '2026-04-07T10:10:00.000Z',
+      started_at: '2026-04-07T10:00:00.000Z',
+      completed_at: null,
+      metadata: { env: 'staging' },
+    },
+    checkpoints: [
+      {
+        id: 'cp-1',
+        sequence: 3,
+        checkpoint_key: 'qa-pass',
+        summary: 'Smoke test mostly complete',
+        payload: { remaining: ['api replay'] },
+        created_at: '2026-04-07T10:09:00.000Z',
+        attachment_ids: ['att-1'],
+      },
+    ],
+    attachments: [
+      {
+        id: 'att-1',
+        original_name: 'qa-notes.md',
+        filename: 'qa-notes.md',
+        mime_type: 'text/markdown',
+        size_bytes: 1200,
+        created_at: '2026-04-07T10:08:00.000Z',
+      },
+    ],
+    priorHandoffs: [
+      {
+        contractId: 'contract-1',
+        title: 'Handoff · Earlier QA',
+        status: 'closed',
+        linkedTaskId: 'task-1',
+        linkedTaskTitle: 'Rollout QA',
+      },
+    ],
+  });
+
+  assert.match(description, /## Task handoff/);
+  assert.match(description, /Latest checkpoint summary: \*\*Browser smoke done; API replay still pending\*\*/);
+  assert.match(description, /qa-notes\.md/);
+  assert.match(description, /Prior handoff contracts/);
+  assert.equal(isLikelyHandoffContract({ title: 'Handoff · Rollout QA', description }), true);
+  assert.equal(isLikelyHandoffContract({ title: 'Weekly sync', description: 'Nothing to see here' }), false);
+});
+
+test('task request types accept handoff contract payloads', () => {
+  const createPayload: CreateTaskRequest = {
+    title: 'Take over rollout QA',
+    handoff_contract: {
+      invitees: ['clawclaw'],
+      max_turns: 20,
+      expires_in_hours: 72,
+      title: 'Handoff · Rollout QA',
+    },
+  };
+
+  const updatePayload: UpdateTaskRequest = {
+    handoff_contract: {
+      invitees: ['clawclaw'],
+      description: 'Use the latest checkpoint and continue from there.',
+    },
+  };
+
+  assert.deepEqual(createPayload.handoff_contract?.invitees, ['clawclaw']);
+  assert.equal(updatePayload.handoff_contract?.description, 'Use the latest checkpoint and continue from there.');
 });

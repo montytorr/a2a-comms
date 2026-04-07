@@ -885,9 +885,26 @@ def cmd_task_create(args):
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
+    if args.handoff_to:
+        invitees = [name.strip() for name in args.handoff_to.split(",") if name.strip()]
+        if not invitees:
+            print("Error: --handoff-to must include at least one agent name", file=sys.stderr)
+            sys.exit(1)
+        handoff = {"invitees": invitees}
+        if args.handoff_max_turns:
+            handoff["max_turns"] = args.handoff_max_turns
+        if args.handoff_expires_hours:
+            handoff["expires_in_hours"] = args.handoff_expires_hours
+        if args.handoff_title:
+            handoff["title"] = args.handoff_title
+        if args.handoff_description:
+            handoff["description"] = args.handoff_description
+        body["handoff_contract"] = handoff
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks", body)
     print("✅ Task created!")
     print(format_task(data, verbose=True))
+    if data.get("handoff_contract"):
+        print(f"\n🤝 Handoff contract: {data['handoff_contract']['id']}")
 
 
 def cmd_task_update(args):
@@ -909,12 +926,29 @@ def cmd_task_update(args):
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
+    if args.handoff_to:
+        invitees = [name.strip() for name in args.handoff_to.split(",") if name.strip()]
+        if not invitees:
+            print("Error: --handoff-to must include at least one agent name", file=sys.stderr)
+            sys.exit(1)
+        handoff = {"invitees": invitees}
+        if args.handoff_max_turns:
+            handoff["max_turns"] = args.handoff_max_turns
+        if args.handoff_expires_hours:
+            handoff["expires_in_hours"] = args.handoff_expires_hours
+        if args.handoff_title:
+            handoff["title"] = args.handoff_title
+        if args.handoff_description:
+            handoff["description"] = args.handoff_description
+        body["handoff_contract"] = handoff
     if not body:
         print("Error: provide at least one field to update", file=sys.stderr)
         sys.exit(1)
     data = api_request("PATCH", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}", body)
     print("✅ Task updated!")
     print(format_task(data, verbose=True))
+    if data.get("handoff_contract"):
+        print(f"\n🤝 Handoff contract: {data['handoff_contract']['id']}")
 
 
 def cmd_task_runs(args):
@@ -1518,6 +1552,11 @@ def main():
     p.add_argument("--assignee", help="Assignee agent name or UUID")
     p.add_argument("--labels", nargs="+", help="Task labels")
     p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
+    p.add_argument("--handoff-to", help="Comma-separated agent names to invite into a new handoff contract")
+    p.add_argument("--handoff-title", help="Optional handoff contract title override")
+    p.add_argument("--handoff-description", help="Optional handoff contract description override")
+    p.add_argument("--handoff-max-turns", type=int, help="Optional max turns for generated handoff contract")
+    p.add_argument("--handoff-expires-hours", type=int, help="Optional expiration window for generated handoff contract")
 
     # task-update
     p = sub.add_parser("task-update", help="Update a task")
@@ -1531,6 +1570,11 @@ def main():
     p.add_argument("--priority", choices=["urgent", "high", "medium", "low"], help="New priority")
     p.add_argument("--labels", nargs="+", help="New labels")
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
+    p.add_argument("--handoff-to", help="Comma-separated agent names to invite into a new handoff contract")
+    p.add_argument("--handoff-title", help="Optional handoff contract title override")
+    p.add_argument("--handoff-description", help="Optional handoff contract description override")
+    p.add_argument("--handoff-max-turns", type=int, help="Optional max turns for generated handoff contract")
+    p.add_argument("--handoff-expires-hours", type=int, help="Optional expiration window for generated handoff contract")
 
     # task-runs
     p = sub.add_parser("task-runs", help="List execution runs for a task")

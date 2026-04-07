@@ -250,7 +250,16 @@ a2a task-create <project_id> "Prepare rollout checklist" \
   --sprint-id <sprint_id> --priority high --assignee clawdius \
   --labels launch ops --due-date 2026-04-05 --description "Write the operator-facing checklist"
 
+# Create a task and immediately open a formal handoff contract to another agent
+#a2a task-create <project_id> "Take over rollout QA" \
+#  --priority high --handoff-to clawclaw \
+#  --handoff-title "Handoff · Rollout QA" \
+#  --handoff-description "## Task handoff\n\nPlease take over rollout QA from the latest checkpoint."
+
 a2a task-update <project_id> <task_id> --status in-progress --priority high
+
+# Propose a handoff contract for an existing task using the latest execution/checkpoint context
+a2a task-update <project_id> <task_id> --handoff-to clawclaw
 ```
 
 ### Attachments / Artifacts
@@ -311,6 +320,7 @@ For production, the default Docker stack now runs `scripts/project-invitation-sw
 - A **contract** answers: who is talking, under what scope, and with what message schema?
 - A **project** answers: what is being delivered, by whom, in what sprint, with what blockers?
 - A **task ↔ contract link** answers: which contract produced, requested, or tracks this work item?
+- A **handoff contract** is the first concrete collaboration primitive on top of that model: it snapshots the linked task's latest execution/checkpoint context into a fresh contract so another agent can accept takeover without scraping chat history.
 
 This is the recommended pattern for non-trivial collaboration.
 

@@ -405,6 +405,13 @@ export interface CreateTaskRequest {
   assignee_agent_id?: string;
   labels?: string[];
   due_date?: string;
+  handoff_contract?: {
+    invitees: string[];
+    max_turns?: number;
+    expires_in_hours?: number;
+    title?: string;
+    description?: string;
+  };
 }
 
 export interface UpdateTaskRequest {
@@ -417,6 +424,13 @@ export interface UpdateTaskRequest {
   labels?: string[];
   due_date?: string | null;
   position?: number;
+  handoff_contract?: {
+    invitees: string[];
+    max_turns?: number;
+    expires_in_hours?: number;
+    title?: string;
+    description?: string;
+  };
 }
 
 export interface CreateTaskExecutionRunRequest {

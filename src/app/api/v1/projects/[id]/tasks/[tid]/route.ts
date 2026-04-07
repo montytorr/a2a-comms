@@ -7,9 +7,10 @@ import { getProjectMemberAgentIds } from '../../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
-import { listTaskExecutionCheckpoints, listTaskExecutionRuns } from '@/lib/task-execution';
+import { appendTaskCheckpoint, listTaskExecutionCheckpoints, listTaskExecutionRuns, updateTaskExecutionRun } from '@/lib/task-execution';
 import type { TaskExecutionCheckpointRow } from '@/lib/task-execution';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
+import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract, type HandoffContractSummary } from '@/lib/handoff-contracts';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 
 async function notifyAssigneeOwner(
@@ -234,7 +235,15 @@ export async function PATCH(
   if ('due_date' in parsed) updates.due_date = parsed.due_date;
   if (parsed.position !== undefined) updates.position = parsed.position;
 
-  if (Object.keys(updates).length === 0) {
+  const handoffInvitees = parsed.handoff_contract?.invitees;
+  if (parsed.handoff_contract && (!Array.isArray(handoffInvitees) || handoffInvitees.length === 0)) {
+    return NextResponse.json(
+      { error: 'handoff_contract.invitees must be a non-empty array', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
+  if (Object.keys(updates).length === 0 && !parsed.handoff_contract) {
     return NextResponse.json(
       { error: 'No fields to update', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
@@ -262,7 +271,7 @@ export async function PATCH(
   // Fetch existing task for change detection (activity feed)
   const { data: oldTask } = await supabase
     .from('tasks')
-    .select('status, priority, assignee_agent_id, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at')
+    .select('*')
     .eq('id', tid)
     .eq('project_id', id)
     .single();
@@ -284,13 +293,22 @@ export async function PATCH(
     }
   }
 
-  const { data: task, error } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', tid)
-    .eq('project_id', id)
-    .select()
-    .single();
+  const taskResult = Object.keys(updates).length > 0
+    ? await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', tid)
+        .eq('project_id', id)
+        .select()
+        .single()
+    : await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', tid)
+        .eq('project_id', id)
+        .single();
+
+  const { data: task, error } = taskResult;
 
   if (error || !task) {
     return NextResponse.json(
@@ -299,12 +317,189 @@ export async function PATCH(
     );
   }
 
+  let handoffContract: Record<string, unknown> | null = null;
+  if (parsed.handoff_contract) {
+    const normalizedInvitees = [...new Set(parsed.handoff_contract.invitees.map((invitee) => invitee.trim()).filter(Boolean))];
+    if (normalizedInvitees.includes(auth.agent.name)) {
+      return NextResponse.json(
+        { error: 'Cannot invite yourself to a handoff contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const { data: inviteeAgents, error: inviteeError } = await supabase
+      .from('agents')
+      .select('id, name, display_name, owner_user_id')
+      .in('name', normalizedInvitees);
+
+    if (inviteeError) {
+      return NextResponse.json(
+        { error: 'Failed to validate handoff invitees', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const foundNames = new Set((inviteeAgents || []).map((agent) => agent.name));
+    const missing = normalizedInvitees.filter((name) => !foundNames.has(name));
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { error: `Unknown handoff invitee(s): ${missing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const [runs, attachments, taskContracts] = await Promise.all([
+      listTaskExecutionRuns(tid).catch(() => []),
+      listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
+      supabase
+        .from('task_contracts')
+        .select('contract_id, contract:contracts(id, title, status, description)')
+        .eq('task_id', tid),
+    ]);
+
+    const activeRun = task.active_run_id ? runs.find((run) => run.id === task.active_run_id) ?? null : runs[0] ?? null;
+    const checkpoints = activeRun
+      ? await listTaskExecutionCheckpoints(activeRun.id).catch(() => [])
+      : [];
+
+    const priorHandoffs: HandoffContractSummary[] = ((taskContracts.data || []) as Array<Record<string, unknown>>)
+      .map((row) => row.contract as { id: string; title: string; status: string; description?: string | null } | null)
+      .filter((contract): contract is { id: string; title: string; status: string; description?: string | null } => !!contract)
+      .filter((contract) => isLikelyHandoffContract({ title: contract.title, description: contract.description || null } as never))
+      .map((contract) => ({
+        contractId: contract.id,
+        title: contract.title,
+        status: contract.status,
+        linkedTaskId: tid,
+        linkedTaskTitle: task.title,
+      }));
+
+    const expiresInHours = parsed.handoff_contract.expires_in_hours ?? 168;
+    const maxTurns = parsed.handoff_contract.max_turns ?? 30;
+    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+    const contractTitle = parsed.handoff_contract.title || buildHandoffContractTitle(task.title);
+    const contractDescription = parsed.handoff_contract.description || buildHandoffContractDescription({
+      task,
+      run: activeRun,
+      checkpoints,
+      attachments,
+      priorHandoffs,
+    });
+
+    const { data: createdContract, error: contractError } = await supabase
+      .from('contracts')
+      .insert({
+        title: contractTitle,
+        description: contractDescription,
+        status: 'proposed',
+        proposer_id: auth.agent.id,
+        max_turns: maxTurns,
+        current_turns: 0,
+        expires_at: expiresAt,
+        message_schema: null,
+      })
+      .select()
+      .single();
+
+    if (contractError || !createdContract) {
+      return NextResponse.json(
+        { error: 'Failed to create handoff contract', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const participantRows = [
+      {
+        contract_id: createdContract.id,
+        agent_id: auth.agent.id,
+        role: 'proposer' as const,
+        status: 'accepted' as const,
+        responded_at: new Date().toISOString(),
+      },
+      ...(inviteeAgents || []).map((agent) => ({
+        contract_id: createdContract.id,
+        agent_id: agent.id,
+        role: 'invitee' as const,
+        status: 'pending' as const,
+        responded_at: null,
+      })),
+    ];
+
+    const { error: participantError } = await supabase.from('contract_participants').insert(participantRows);
+    if (participantError) {
+      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      return NextResponse.json(
+        { error: 'Failed to create handoff contract participants', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: tid, contract_id: createdContract.id });
+    if (linkError) {
+      await supabase.from('contract_participants').delete().eq('contract_id', createdContract.id);
+      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      return NextResponse.json(
+        { error: 'Failed to link handoff contract to task', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    handoffContract = createdContract;
+
+    async function appendTaskCommentForHandoff() {
+      await supabase.from('task_comments').insert({
+        task_id: tid,
+        project_id: id,
+        author_agent_id: auth.agent.id,
+        author_name: auth.agent.display_name || auth.agent.name,
+        content: `Proposed handoff contract \`${createdContract.id}\` for ${normalizedInvitees.join(', ')}.`,
+        comment_type: 'system',
+        metadata: { handoff_contract_id: createdContract.id, invitees: normalizedInvitees },
+      });
+    }
+
+    if (activeRun?.id) {
+      await updateTaskExecutionRun({
+        runId: activeRun.id,
+        taskId: tid,
+        status: 'handoff-needed',
+        summary: activeRun.summary ?? task.last_checkpoint_summary ?? 'Handoff contract proposed',
+        metadata: { ...activeRun.metadata, handoff_contract_id: createdContract.id, handoff_invitees: normalizedInvitees },
+      }).catch(() => {});
+
+      await appendTaskCheckpoint({
+        runId: activeRun.id,
+        taskId: tid,
+        projectId: id,
+        agentId: auth.agent.id,
+        checkpointKey: 'handoff-contract',
+        summary: `Handoff contract ${createdContract.id} proposed`,
+        payload: {
+          handoff_contract_id: createdContract.id,
+          invitees: normalizedInvitees,
+          contract_title: createdContract.title,
+        },
+      }).catch(() => {});
+    }
+
+    await appendTaskCommentForHandoff();
+
+    deliverWebhooks((inviteeAgents || []).map((agent) => agent.id), {
+      event: 'invitation',
+      contract_id: createdContract.id,
+      project_id: id,
+      task_id: tid,
+      data: { title: createdContract.title, proposer: auth.agent.name, expires_at: expiresAt, handoff: true },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }
+
   await auditLog({
     actor: auth.agent.name,
     action: 'task.update',
     resourceType: 'task',
     resourceId: tid,
-    details: { project_id: id, ...updates },
+    details: { project_id: id, ...updates, handoff_contract_id: handoffContract?.id || null },
     ipAddress: getClientIp(req),
   });
 
@@ -394,5 +589,5 @@ export async function PATCH(
     .eq('project_id', id)
     .single();
 
-  return NextResponse.json(refreshedTask || task);
+  return NextResponse.json(handoffContract ? { ...(refreshedTask || task), handoff_contract: handoffContract } : (refreshedTask || task));
 }
