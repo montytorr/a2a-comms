@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.161] - 2026-04-07
+### Docs
+- align skill attachment guidance
+
 ## [1.0.160] - 2026-04-07
 ### Docs
 - align attachments and webhook guidance
