@@ -39,9 +39,13 @@ export default async function ProjectsPage({
   // Get project IDs where user's agents are members (admin sees all)
   let scopedProjectIds: string[] | null = null;
   if (!user.isSuperAdmin) {
-    const [{ data: memberRows }, { data: inviteRowsRaw }] = await Promise.all([
+    const [{ data: memberRows }, { data: observerRows }, { data: inviteRowsRaw }] = await Promise.all([
       supabase
         .from('project_members')
+        .select('project_id')
+        .in('agent_id', agentScope),
+      supabase
+        .from('project_observers')
         .select('project_id')
         .in('agent_id', agentScope),
       supabase
@@ -53,6 +57,7 @@ export default async function ProjectsPage({
 
     const inviteRows = await hydrateProjectInvitations(inviteRowsRaw || []);
     const scopedSet = new Set((memberRows || []).map(m => m.project_id));
+    (observerRows || []).forEach((row) => scopedSet.add(row.project_id));
     inviteRows.forEach((inv) => scopedSet.add(inv.project_id));
     scopedProjectIds = Array.from(scopedSet);
 

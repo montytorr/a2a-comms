@@ -65,11 +65,18 @@ export default async function TaskDetailPage({
 
   const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
 
-  // Verify access: admin, project member, or invited agent.
+  // Verify access: admin, project member, project observer, or invited agent.
+  let hasReadOnlyObserverAccess = false;
   if (!user.isSuperAdmin) {
-    const [{ data: membership }, { data: invitationAccess }] = await Promise.all([
+    const [{ data: membership }, { data: observerAccess }, { data: invitationAccess }] = await Promise.all([
       supabase
         .from('project_members')
+        .select('id')
+        .eq('project_id', projectId)
+        .in('agent_id', agentScope)
+        .limit(1),
+      supabase
+        .from('project_observers')
         .select('id')
         .eq('project_id', projectId)
         .in('agent_id', agentScope)
@@ -82,7 +89,9 @@ export default async function TaskDetailPage({
         .limit(1),
     ]);
 
-    if ((!membership || membership.length === 0) && (!invitationAccess || invitationAccess.length === 0)) {
+    hasReadOnlyObserverAccess = !!observerAccess && observerAccess.length > 0;
+
+    if ((!membership || membership.length === 0) && !hasReadOnlyObserverAccess && (!invitationAccess || invitationAccess.length === 0)) {
       redirect('/projects');
     }
   }
@@ -243,10 +252,21 @@ export default async function TaskDetailPage({
           <div className="animate-fade-in">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex-1">
-                <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
+                {hasReadOnlyObserverAccess ? (
+                  <h1 className="text-[28px] font-bold text-white tracking-tight">{task.title}</h1>
+                ) : (
+                  <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
+                )}
                 <div className="flex items-center gap-3 flex-wrap">
-                  <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
-                  <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
+                  {hasReadOnlyObserverAccess ? (
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${statusConfig[task.status as TaskStatus]?.bg || statusConfig.backlog.bg} ${statusConfig[task.status as TaskStatus]?.text || statusConfig.backlog.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[task.status as TaskStatus]?.dot || statusConfig.backlog.dot}`} />
+                      {task.status}
+                    </span>
+                  ) : (
+                    <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
+                  )}
+                  {!hasReadOnlyObserverAccess && <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />}
                   {isOverdue && (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 bg-red-500/[0.1] border border-red-500/20">
                       ⚠ Overdue
@@ -265,10 +285,23 @@ export default async function TaskDetailPage({
           {/* Description */}
           <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
             <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">Description</p>
-            <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
+            {hasReadOnlyObserverAccess ? (
+              <div className="text-[13px] text-gray-400 leading-relaxed whitespace-pre-wrap">{task.description || 'No description yet.'}</div>
+            ) : (
+              <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
+            )}
           </div>
 
           <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} attachments={attachments} />
+
+          {hasReadOnlyObserverAccess && (
+            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.08] px-4 py-3 animate-fade-in" style={{ animationDelay: '0.085s' }}>
+              <p className="text-[11px] font-semibold text-cyan-200 uppercase tracking-[0.15em]">Observer mode</p>
+              <p className="text-[12px] text-cyan-100/80 mt-2">
+                You can inspect execution state, checkpoints, attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state.
+              </p>
+            </div>
+          )}
 
           <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.09s' }}>
             <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
@@ -277,7 +310,10 @@ export default async function TaskDetailPage({
                 <p className="text-[12px] text-gray-400 mt-2">Artifacts tied directly to this task.</p>
               </div>
             </div>
-            <AttachmentUpload projectId={projectId} taskId={tid} />
+            {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
+            {hasReadOnlyObserverAccess && (
+              <p className="text-[11px] text-gray-500">Observers can inspect attachments but cannot upload new artifacts.</p>
+            )}
             <div className="mt-4">
               <AttachmentList attachments={attachments} />
             </div>
@@ -314,7 +350,7 @@ export default async function TaskDetailPage({
                       <p className="text-gray-300">{blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated'}</p>
                     </div>
                   </div>
-                  <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} />
+                  {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} />}
                 </>
               )}
 
@@ -408,12 +444,16 @@ export default async function TaskDetailPage({
               {/* Assignee */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Assignee</p>
-                <AssigneePicker
-                  currentId={task.assignee_agent_id}
-                  members={members as unknown as Array<{ agent: { id: string; name: string; display_name: string } | null }>}
-                  projectId={projectId}
-                  taskId={tid}
-                />
+                {hasReadOnlyObserverAccess ? (
+                  <span className="text-[13px] text-gray-300 font-medium">{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
+                ) : (
+                  <AssigneePicker
+                    currentId={task.assignee_agent_id}
+                    members={members as unknown as Array<{ agent: { id: string; name: string; display_name: string } | null }>}
+                    projectId={projectId}
+                    taskId={tid}
+                  />
+                )}
               </div>
 
               {/* Reporter */}
@@ -431,39 +471,55 @@ export default async function TaskDetailPage({
               {/* Sprint */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Sprint</p>
-                <SprintPicker
-                  currentSprintId={task.sprint_id}
-                  sprints={sprints}
-                  projectId={projectId}
-                  taskId={tid}
-                />
+                {hasReadOnlyObserverAccess ? (
+                  <span className="text-[13px] text-gray-300 font-medium">{_sprint ? _sprint.title : 'Backlog'}</span>
+                ) : (
+                  <SprintPicker
+                    currentSprintId={task.sprint_id}
+                    sprints={sprints}
+                    projectId={projectId}
+                    taskId={tid}
+                  />
+                )}
               </div>
 
               {/* Priority */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Priority</p>
-                <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
+                {hasReadOnlyObserverAccess ? (
+                  <span className="text-[13px] text-gray-300 font-medium">{task.priority}</span>
+                ) : (
+                  <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
+                )}
               </div>
 
               {/* Due Date */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Due Date</p>
-                <DueDatePicker
-                  value={task.due_date}
-                  projectId={projectId}
-                  taskId={tid}
-                  isOverdue={!!isOverdue}
-                />
+                {hasReadOnlyObserverAccess ? (
+                  <span className="text-[13px] text-gray-300 font-medium">{task.due_date || 'None'}</span>
+                ) : (
+                  <DueDatePicker
+                    value={task.due_date}
+                    projectId={projectId}
+                    taskId={tid}
+                    isOverdue={!!isOverdue}
+                  />
+                )}
               </div>
 
               {/* Labels */}
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-2">Labels</p>
-                <LabelsEditor
-                  labels={task.labels || []}
-                  projectId={projectId}
-                  taskId={tid}
-                />
+                {hasReadOnlyObserverAccess ? (
+                  <div className="flex flex-wrap gap-1.5">{(task.labels || []).length ? (task.labels || []).map((label) => <span key={label} className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-gray-300">{label}</span>) : <span className="text-[12px] text-gray-500 italic">No labels</span>}</div>
+                ) : (
+                  <LabelsEditor
+                    labels={task.labels || []}
+                    projectId={projectId}
+                    taskId={tid}
+                  />
+                )}
               </div>
 
               {/* Created */}
@@ -484,7 +540,7 @@ export default async function TaskDetailPage({
             </div>
 
             {/* Delete Task */}
-            <DeleteTaskButton projectId={projectId} taskId={tid} />
+            {!hasReadOnlyObserverAccess && <DeleteTaskButton projectId={projectId} taskId={tid} />}
           </div>
         </div>
       </div>

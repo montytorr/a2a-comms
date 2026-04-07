@@ -110,6 +110,7 @@ export default function ExecutionPanel({
                 const tone = getExecutionStatusTone(run.status, runStale);
                 const label = getExecutionStatusLabel(run.status, runStale);
                 const delegation = getDelegationProvenance(run.metadata);
+                const observerAgentId = typeof run.metadata?.observer_agent_id === 'string' ? run.metadata.observer_agent_id : null;
                 return (
                   <div key={run.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
                     <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
@@ -124,6 +125,7 @@ export default function ExecutionPanel({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-400">
                       <p>Executor: <span className="text-gray-300">{formatAgentLabel(run.agent, run.agent_id)}</span></p>
                       <p>Delegated by: <span className="text-gray-300">{delegation ? formatAgentLabel(run.delegated_by_agent, delegation.delegatedByAgentId) : '—'}</span></p>
+                      <p>Observer: <span className="text-gray-300">{observerAgentId ? formatAgentLabel(run.observer_agent, observerAgentId) : '—'}</span></p>
                       <p>Started: <span className="text-gray-300">{formatExecutionTime(run.started_at)}</span></p>
                       <p>Heartbeat: <span className="text-gray-300">{formatExecutionTime(run.heartbeat_at)}</span></p>
                       <p>Completed: <span className="text-gray-300">{formatExecutionTime(run.completed_at)}</span></p>
@@ -161,13 +163,14 @@ export default function ExecutionPanel({
               {recentCheckpoints.map((checkpoint) => {
                 const checkpointAttachments = attachments.filter((attachment) => checkpoint.attachment_ids?.includes(attachment.id));
                 const delegation = getDelegationProvenance(checkpoint.payload);
+                const observerAgentId = typeof checkpoint.payload?.observer_agent_id === 'string' ? checkpoint.payload.observer_agent_id : null;
                 return (
                 <div key={checkpoint.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
                       <p className="text-[11px] text-gray-200 font-medium">{checkpoint.summary || checkpoint.checkpoint_key}</p>
                       <p className="text-[10px] text-gray-500 font-mono">{checkpoint.checkpoint_key} · #{checkpoint.sequence}</p>
-                      <p className="text-[10px] text-gray-500 mt-1">Executor: {formatAgentLabel(checkpoint.agent, checkpoint.agent_id)}{delegation ? ` · Delegated by ${formatAgentLabel(checkpoint.delegated_by_agent, delegation.delegatedByAgentId)}` : ''}</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Executor: {formatAgentLabel(checkpoint.agent, checkpoint.agent_id)}{delegation ? ` · Delegated by ${formatAgentLabel(checkpoint.delegated_by_agent, delegation.delegatedByAgentId)}` : ''}{observerAgentId ? ` · Observed by ${formatAgentLabel(checkpoint.observer_agent, observerAgentId)}` : ''}</p>
                     </div>
                     <span className="text-[10px] text-gray-500">{formatExecutionTime(checkpoint.created_at)}</span>
                   </div>

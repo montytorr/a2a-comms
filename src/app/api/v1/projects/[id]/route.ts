@@ -4,16 +4,10 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { hydrateProjectInvitations } from '../_helpers';
 import type { UpdateProjectRequest, ApiError } from '@/lib/types';
+import { getProjectAccess } from '@/lib/project-access';
 
 async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
+  return getProjectAccess(projectId, agentId);
 }
 
 export async function GET(

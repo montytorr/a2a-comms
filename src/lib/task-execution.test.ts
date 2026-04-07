@@ -9,7 +9,7 @@ import {
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract } from './handoff-contracts';
 import { getLinkedTaskForContract } from './handoff-resume';
 import { getDelegationProvenance, isDelegatedExecutionRun } from './delegated-execution';
-import type { CreateTaskRequest, UpdateTaskRequest } from './types';
+import type { CreateTaskRequest, UpdateTaskRequest, TaskExecutionRun, TaskExecutionCheckpoint } from './types';
 
 function isMissingAttachmentIdsColumn(error: { message?: string } | null | undefined) {
   return !!error && /attachment_ids/i.test(error.message || '');
@@ -183,6 +183,46 @@ test('delegated execution provenance is extracted from run metadata', () => {
 
   assert.equal(isDelegatedExecutionRun({ metadata: { delegated_by_agent_id: 'agent-alpha' } as Record<string, unknown> }), true);
   assert.equal(isDelegatedExecutionRun({ metadata: {} as Record<string, unknown> }), false);
+});
+
+test('observer metadata is surfaced on execution runs and checkpoints types', () => {
+  const run: TaskExecutionRun = {
+    id: 'run-1',
+    task_id: 'task-1',
+    project_id: 'project-1',
+    agent_id: 'agent-exec',
+    status: 'running',
+    attempt: 1,
+    started_at: null,
+    heartbeat_at: null,
+    completed_at: null,
+    checkpoint_count: 0,
+    summary: null,
+    error_message: null,
+    metadata: { observer_agent_id: 'agent-observer', observer_mode: 'read-only' },
+    observer_agent: { id: 'agent-observer', name: 'observer', display_name: 'Observer' },
+    created_at: '2026-04-07T00:00:00.000Z',
+    updated_at: '2026-04-07T00:00:00.000Z',
+  };
+
+  const checkpoint: TaskExecutionCheckpoint = {
+    id: 'cp-1',
+    run_id: 'run-1',
+    task_id: 'task-1',
+    project_id: 'project-1',
+    agent_id: 'agent-exec',
+    sequence: 1,
+    checkpoint_key: 'observe',
+    status: 'written',
+    summary: 'Observer reviewed the payload',
+    payload: { observer_agent_id: 'agent-observer', observer_note: 'Looks good' },
+    observer_agent: { id: 'agent-observer', name: 'observer', display_name: 'Observer' },
+    created_at: '2026-04-07T00:00:00.000Z',
+  };
+
+  assert.equal(run.observer_agent?.id, 'agent-observer');
+  assert.equal((checkpoint.payload as Record<string, unknown>).observer_note, 'Looks good');
+  assert.equal(checkpoint.observer_agent?.display_name, 'Observer');
 });
 
 test('task request types accept handoff contract payloads', () => {

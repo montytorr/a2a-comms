@@ -35,6 +35,7 @@ interface Comment {
 
 const typeConfig: Record<string, { icon: string; label: string }> = {
   comment: { icon: '💬', label: 'Comment' },
+  analysis: { icon: '👁️', label: 'Observer note' },
   status_change: { icon: '🔄', label: 'Status' },
   assignment: { icon: '👤', label: 'Assignment' },
   system: { icon: '⚙️', label: 'System' },
@@ -44,12 +45,17 @@ function summarizeMetadata(metadata: Record<string, unknown>) {
   const delegatedBy = typeof metadata.delegated_by_agent_id === 'string' ? metadata.delegated_by_agent_id : null;
   const executor = typeof metadata.executor_agent_id === 'string' ? metadata.executor_agent_id : typeof metadata.new_assignee === 'string' ? metadata.new_assignee : null;
   const contractId = typeof metadata.delegation_contract_id === 'string' ? metadata.delegation_contract_id : typeof metadata.handoff_contract_id === 'string' ? metadata.handoff_contract_id : null;
-  if (!delegatedBy && !executor && !contractId) return null;
+  const participantRole = typeof metadata.participant_role === 'string' ? metadata.participant_role : null;
+  const accessKind = typeof metadata.participant_access_kind === 'string' ? metadata.participant_access_kind : null;
+
+  if (!delegatedBy && !executor && !contractId && !participantRole && !accessKind) return null;
 
   const parts = [] as string[];
   if (delegatedBy) parts.push(`delegated by ${delegatedBy}`);
   if (executor) parts.push(`executor ${executor}`);
   if (contractId) parts.push(`contract ${contractId}`);
+  if (participantRole) parts.push(`role ${participantRole}`);
+  if (accessKind === 'observer') parts.push('read-only observer');
   return parts.join(' · ');
 }
 

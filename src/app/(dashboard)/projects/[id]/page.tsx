@@ -38,11 +38,17 @@ export default async function ProjectDetailPage({
 
   const inviteeScopedQuery = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
 
-  // Verify access: admin, member, or invitee with an outstanding/resolved invitation.
+  // Verify access: admin, member, observer, or invitee with an outstanding/resolved invitation.
   if (!user.isSuperAdmin) {
-    const [{ data: membership }, { data: invitationAccess }] = await Promise.all([
+    const [{ data: membership }, { data: observerAccess }, { data: invitationAccess }] = await Promise.all([
       supabase
         .from('project_members')
+        .select('id')
+        .eq('project_id', id)
+        .in('agent_id', inviteeScopedQuery)
+        .limit(1),
+      supabase
+        .from('project_observers')
         .select('id')
         .eq('project_id', id)
         .in('agent_id', inviteeScopedQuery)
@@ -55,7 +61,7 @@ export default async function ProjectDetailPage({
         .limit(1),
     ]);
 
-    if ((!membership || membership.length === 0) && (!invitationAccess || invitationAccess.length === 0)) {
+    if ((!membership || membership.length === 0) && (!observerAccess || observerAccess.length === 0) && (!invitationAccess || invitationAccess.length === 0)) {
       redirect('/projects');
     }
   }

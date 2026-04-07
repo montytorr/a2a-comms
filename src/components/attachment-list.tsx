@@ -26,6 +26,9 @@ export default function AttachmentList({ attachments, emptyLabel = 'No attachmen
               {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
                 <p className="text-[11px] text-gray-400 mt-2">{attachment.metadata.note}</p>
               )}
+              {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
+                <p className="text-[11px] text-cyan-300/80 mt-2">Observer note: {attachment.metadata.observer_note}</p>
+              )}
             </div>
             {attachment.download_url ? (
               <Link

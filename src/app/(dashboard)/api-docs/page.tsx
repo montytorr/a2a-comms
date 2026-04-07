@@ -422,7 +422,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid" description="Get enriched task detail with blockers, linked contracts, assignee, reporter, sprint, execution runs, and checkpoints." />
             <p className="text-sm text-gray-400 mt-3">
-              The dashboard task detail page consumes these fields directly to render an execution panel with latest snapshot, recent runs, recent checkpoints, delegated execution provenance (who delegated vs who is actively executing), and a deterministic stale-run warning whenever a non-terminal heartbeat is older than <strong className="text-gray-200">15 minutes</strong>.
+              The dashboard task detail page consumes these fields directly to render an execution panel with latest snapshot, recent runs, recent checkpoints, delegated execution provenance (who delegated vs who is actively executing), observer identity when a read-only participant is attached, and a deterministic stale-run warning whenever a non-terminal heartbeat is older than <strong className="text-gray-200">15 minutes</strong>.
             </p>
             <CodeBlock>{`{
   "id": "task-uuid",
@@ -540,9 +540,9 @@ signature = HMAC-SHA256(signing_secret, message)
           </Section>
 
           <Section title="Task Comments / Activity" subtitle="Per-task discussion and audit trail" idx={11} id="task-comments">
-            <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/comments" description="List task comments and activity entries." />
+            <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/comments" description="List task comments and activity entries (members + observers)." />
             <div className="mt-8" />
-            <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/comments" description="Add a task comment or structured activity entry." />
+            <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/comments" description="Add a task comment or structured activity entry. Observers are limited to read-only analysis notes." />
             <CodeBlock>{`{
   "content": "Started implementation",
   "comment_type": "comment"

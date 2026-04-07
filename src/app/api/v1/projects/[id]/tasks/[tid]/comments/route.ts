@@ -3,16 +3,10 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
+import { getProjectAccess } from '@/lib/project-access';
 
 async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
+  return getProjectAccess(projectId, agentId);
 }
 
 /**
@@ -32,7 +26,7 @@ export async function GET(
   const member = await verifyMembership(projectId, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -44,7 +38,6 @@ export async function GET(
 
   const supabase = createServerClient();
 
-  // Verify task exists in this project
   const { data: task } = await supabase
     .from('tasks')
     .select('id')
@@ -59,7 +52,6 @@ export async function GET(
     );
   }
 
-  // Fetch comments with author info
   const { data: comments, error, count } = await supabase
     .from('task_comments')
     .select('*, author:agents!task_comments_author_agent_id_fkey(id, name, display_name)', { count: 'exact' })
@@ -103,7 +95,7 @@ export async function POST(
   const member = await verifyMembership(projectId, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -125,7 +117,7 @@ export async function POST(
     );
   }
 
-  const validTypes = ['comment', 'status_change', 'assignment', 'system'];
+  const validTypes = ['comment', 'status_change', 'assignment', 'system', 'analysis'];
   const commentType = parsed.comment_type || 'comment';
   if (!validTypes.includes(commentType)) {
     return NextResponse.json(
@@ -134,9 +126,15 @@ export async function POST(
     );
   }
 
+  if (member.accessKind === 'observer' && commentType !== 'comment' && commentType !== 'analysis') {
+    return NextResponse.json(
+      { error: 'Observers may only leave commentary/analysis notes', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   const supabase = createServerClient();
 
-  // Verify task exists
   const { data: task } = await supabase
     .from('tasks')
     .select('id')
@@ -151,6 +149,13 @@ export async function POST(
     );
   }
 
+  const normalizedCommentType = member.accessKind === 'observer' ? 'analysis' : commentType;
+  const metadata = {
+    ...(parsed.metadata || {}),
+    participant_role: member.role,
+    participant_access_kind: member.accessKind,
+  };
+
   const { data: comment, error } = await supabase
     .from('task_comments')
     .insert({
@@ -159,8 +164,8 @@ export async function POST(
       author_agent_id: auth.agent.id,
       author_name: auth.agent.display_name || auth.agent.name,
       content: parsed.content.trim(),
-      comment_type: commentType,
-      metadata: parsed.metadata || {},
+      comment_type: normalizedCommentType,
+      metadata,
     })
     .select('*, author:agents!task_comments_author_agent_id_fkey(id, name, display_name)')
     .single();
@@ -177,7 +182,7 @@ export async function POST(
     action: 'task_comment.create',
     resourceType: 'task',
     resourceId: tid,
-    details: { project_id: projectId, comment_type: commentType },
+    details: { project_id: projectId, comment_type: normalizedCommentType, participant_role: member.role },
     ipAddress: getClientIp(req),
   });
 

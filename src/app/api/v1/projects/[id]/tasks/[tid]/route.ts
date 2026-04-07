@@ -3,7 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
-import { getProjectMemberAgentIds } from '../../../_helpers';
+import { getProjectVisibleAgentIds } from '../../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
@@ -12,6 +12,7 @@ import type { TaskExecutionCheckpointRow } from '@/lib/task-execution';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract, type HandoffContractSummary } from '@/lib/handoff-contracts';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
+import { getProjectAccess } from '@/lib/project-access';
 
 async function notifyAssigneeOwner(
   supabase: ReturnType<typeof createServerClient>,
@@ -58,14 +59,7 @@ async function notifyAssigneeOwner(
 }
 
 async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
+  return getProjectAccess(projectId, agentId);
 }
 
 export async function GET(
@@ -81,7 +75,7 @@ export async function GET(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -187,11 +181,20 @@ export async function GET(
       ...run,
       agent: agentMap.get(run.agent_id) || null,
       delegated_by_agent: hydrateDelegationAgent((run.metadata || {}) as Record<string, unknown>),
+      observer_agent: (() => {
+        const observerAgentId = typeof run.metadata?.observer_agent_id === 'string' ? run.metadata.observer_agent_id : null;
+        return observerAgentId ? agentMap.get(observerAgentId) || null : null;
+      })(),
     })),
     execution_checkpoints: (checkpointRows || []).map((checkpoint) => ({
       ...checkpoint,
       agent: agentMap.get(checkpoint.agent_id) || null,
       delegated_by_agent: hydrateDelegationAgent((checkpoint.payload || {}) as Record<string, unknown>),
+      observer_agent: (() => {
+        const payload = (checkpoint.payload || {}) as Record<string, unknown>;
+        const observerAgentId = typeof payload.observer_agent_id === 'string' ? payload.observer_agent_id : null;
+        return observerAgentId ? agentMap.get(observerAgentId) || null : null;
+      })(),
     })),
     attachments,
   });
@@ -210,7 +213,14 @@ export async function PATCH(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (member.accessKind === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may not mutate task state', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -579,7 +589,7 @@ export async function PATCH(
   }
 
   // Deliver webhook notifications to all project members (fire-and-forget)
-  getProjectMemberAgentIds(id).then(memberIds => {
+  getProjectVisibleAgentIds(id).then(memberIds => {
     deliverWebhooks(memberIds, {
       event: 'task.updated',
       project_id: id,

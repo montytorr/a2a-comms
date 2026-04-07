@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { listProjectObserverAgentIds } from '@/lib/project-access';
 import {
   getProjectInvitationExpiry,
   isProjectInvitationExpired,
@@ -27,6 +28,15 @@ export async function getProjectMemberAgentIds(projectId: string): Promise<strin
     .select('agent_id')
     .eq('project_id', projectId);
   return (data || []).map((m: { agent_id: string }) => m.agent_id);
+}
+
+export async function getProjectVisibleAgentIds(projectId: string): Promise<string[]> {
+  const [members, observers] = await Promise.all([
+    getProjectMemberAgentIds(projectId),
+    listProjectObserverAgentIds(projectId),
+  ]);
+
+  return Array.from(new Set([...members, ...observers]));
 }
 
 export async function getProjectPendingInvitation(projectId: string, agentId: string) {

@@ -1,16 +1,10 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { createSignedAttachmentUrl } from '@/lib/attachments';
 import type { AttachmentRecord } from '@/lib/attachments';
+import { getProjectAccess } from '@/lib/project-access';
 
 export async function getProjectMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role, agent_id')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data || null;
+  return getProjectAccess(projectId, agentId);
 }
 
 export async function verifyContractParticipation(contractId: string, agentId: string) {

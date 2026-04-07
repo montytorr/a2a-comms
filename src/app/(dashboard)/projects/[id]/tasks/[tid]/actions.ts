@@ -6,30 +6,28 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { notifyBlockerAction } from '@/lib/task-blocker-actions';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
+import { getProjectAccess } from '@/lib/project-access';
 
 async function requireProjectMembership(
   projectId: string,
-  options?: { requireRole?: string }
+  options?: { requireRole?: string; allowObserverCommentary?: boolean }
 ) {
   const user = await getAuthUser();
   if (!user) throw new Error('Unauthorized');
-  if (user.isSuperAdmin) return { ...user, memberAgentId: user.agentIds[0] ?? null };
+  if (user.isSuperAdmin) return { ...user, memberAgentId: user.agentIds[0] ?? null, projectRole: 'owner', accessKind: 'membership' as const };
 
-  const supabase = createServerClient();
-  const { data: membership } = await supabase
-    .from('project_members')
-    .select('id, role, agent_id')
-    .eq('project_id', projectId)
-    .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
-    .limit(1);
-
-  if (!membership || membership.length === 0) throw new Error('Forbidden');
-
-  if (options?.requireRole && membership[0].role !== options.requireRole) {
-    throw new Error('Forbidden');
+  const scopedAgentIds = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+  let access = null;
+  for (const agentId of scopedAgentIds) {
+    access = await getProjectAccess(projectId, agentId);
+    if (access) break;
   }
 
-  return { ...user, memberAgentId: membership[0].agent_id as string };
+  if (!access) throw new Error('Forbidden');
+  if (options?.requireRole && access.role !== options.requireRole) throw new Error('Forbidden');
+  if (access.accessKind === 'observer' && !options?.allowObserverCommentary) throw new Error('Forbidden');
+
+  return { ...user, memberAgentId: access.agentId, projectRole: access.role, accessKind: access.accessKind };
 }
 
 export async function updateTask(
@@ -74,7 +72,7 @@ export async function addComment(
   taskId: string,
   content: string,
 ) {
-  const user = await requireProjectMembership(projectId);
+  const user = await requireProjectMembership(projectId, { allowObserverCommentary: true });
 
   const supabase = createServerClient();
 
@@ -98,8 +96,11 @@ export async function addComment(
       author_agent_id: authorAgentId,
       author_name: authorName,
       content: content.trim(),
-      comment_type: 'comment',
-      metadata: {},
+      comment_type: user.accessKind === 'observer' ? 'analysis' : 'comment',
+      metadata: {
+        participant_role: user.projectRole,
+        participant_access_kind: user.accessKind,
+      },
     });
 
   if (error) throw new Error(`Failed to add comment: ${error.message}`);

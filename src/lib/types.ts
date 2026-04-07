@@ -10,7 +10,7 @@ export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
 export type TaskExecutionStatus = 'idle' | 'queued' | 'running' | 'pending-approval' | 'waiting' | 'blocked' | 'paused' | 'handoff-needed' | 'succeeded' | 'failed' | 'cancelled';
 export type TaskExecutionRunStatus = 'queued' | 'starting' | 'running' | 'pending-approval' | 'waiting' | 'blocked' | 'paused' | 'handoff-needed' | 'succeeded' | 'failed' | 'cancelled';
 export type TaskCheckpointStatus = 'written' | 'superseded';
-export type ProjectMemberRole = 'owner' | 'member';
+export type ProjectMemberRole = 'owner' | 'member' | 'observer';
 export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
 export type ParticipantRole = 'proposer' | 'invitee';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
@@ -243,6 +243,15 @@ export interface ProjectMember {
   joined_at: string;
 }
 
+export interface ProjectObserver {
+  id: string;
+  project_id: string;
+  agent_id: string;
+  invited_by_agent_id: string | null;
+  note: string | null;
+  created_at: string;
+}
+
 export interface ProjectMemberInvitation {
   id: string;
   project_id: string;
@@ -329,6 +338,7 @@ export interface TaskExecutionRun {
   metadata: Record<string, unknown>;
   agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   delegated_by_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  observer_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
   updated_at: string;
 }
@@ -368,6 +378,7 @@ export interface TaskExecutionCheckpoint {
   attachment_ids?: string[];
   agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   delegated_by_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  observer_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
 }
 
