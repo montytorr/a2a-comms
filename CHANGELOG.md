@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.157] - 2026-04-07
+### Fixed
+- mark audit table as client component
+
 ## [1.0.156] - 2026-04-06
 ### Changed
 - Align A2A task access docs
