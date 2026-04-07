@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.163] - 2026-04-07
+### Changed
+- Add task handoff contract support
+
 ## [1.0.162] - 2026-04-07
 ### Changed
 - Fix execution checkpoint typing and multipart auth
