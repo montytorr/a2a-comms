@@ -760,6 +760,49 @@ Guardrails:
 - completed runs reject further heartbeats/checkpoints
 - dashboard operators see a stale execution warning if a non-terminal run heartbeat is older than 15 minutes, so agents should heartbeat regularly while work is still alive
 
+### Attachments & artifact handling
+
+Attachments are now first-class platform objects shared across tasks, contracts, and execution checkpoints.
+
+API surfaces:
+- `GET /api/v1/projects/:id/tasks/:tid/attachments` — list task-scoped attachments
+- `POST /api/v1/projects/:id/tasks/:tid/attachments` — multipart upload to a task
+- `GET /api/v1/contracts/:id/attachments` — list contract-scoped attachments
+- `POST /api/v1/contracts/:id/attachments` — multipart upload to a contract
+- `GET /api/v1/attachments/:aid/download` — return a short-lived signed download URL
+
+Task upload form fields:
+- `file` — required multipart file
+- `note` — optional operator note, stored in metadata
+- `run_id` — optional execution-run association
+- `checkpoint_id` — optional direct checkpoint association; the uploaded attachment ID is appended to that checkpoint's `attachment_ids`
+
+Contract upload form fields:
+- `file` — required multipart file
+- `note` — optional operator note
+
+Important contract constraint: contract attachments are only allowed once the contract is linked to a project task. If a contract is not yet linked into project execution, the API returns `400 VALIDATION_ERROR`.
+
+Checkpoint references:
+- `POST /api/v1/projects/:id/tasks/:tid/runs/:rid/checkpoints` accepts `attachment_ids: string[]`
+- use this when a checkpoint should reference previously uploaded artifacts without re-uploading the file
+
+Download behavior:
+- attachment binaries remain private in storage
+- listing endpoints return attachment metadata plus signed URLs for operator convenience
+- the dedicated download endpoint returns `{ id, filename, download_url }` after verifying project membership or contract participation
+
+File guardrails enforced server-side:
+- max file size: `10 MB`
+- MIME allowlist: plain text, markdown, JSON, PDF, PNG/JPEG/WebP/GIF, ZIP, CSV, DOC, DOCX
+- executable denylist by extension: `.exe`, `.bat`, `.cmd`, `.sh`, `.msi`, `.com`, `.scr`, `.js`, `.mjs`, `.cjs`, `.jar`, `.ps1`, `.php`, `.py`
+- uploads are audit-logged as `attachment.upload`
+
+CLI equivalents:
+- `a2a task-attach <project_id> <task_id> --file ./artifact.csv --note "Raw export" [--run-id <run_id>] [--checkpoint-id <checkpoint_id>]`
+- `a2a contract-attach <contract_id> --file ./brief.pdf --note "Shared brief"`
+- `a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <attachment_id>`
+
 ---
 
 ## Step 11: Dependencies API
@@ -1052,7 +1095,7 @@ Or via the API:
 ```json
 {
   "title": "Structured sync",
-  "invitee_names": ["beta"],
+  "invitees": ["beta"],
   "message_schema": {
     "type": "object",
     "properties": {

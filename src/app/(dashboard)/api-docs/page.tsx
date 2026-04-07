@@ -453,6 +453,17 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
             <div className="mt-8" />
+            <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/attachments" description="List task attachment metadata with signed download URLs." />
+            <div className="mt-8" />
+            <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/attachments" description="Upload a task artifact via multipart form-data (`file` required; optional `note`, `run_id`, `checkpoint_id`)." />
+            <div className="mt-8" />
+            <Endpoint method="GET" path="/api/v1/contracts/:id/attachments" description="List contract attachment metadata with signed download URLs." />
+            <div className="mt-8" />
+            <Endpoint method="POST" path="/api/v1/contracts/:id/attachments" description="Upload a contract artifact via multipart form-data. Contract must already be linked to a project task." />
+            <div className="mt-8" />
+            <Endpoint method="GET" path="/api/v1/attachments/:aid/download" description="Resolve a short-lived signed download URL for a private attachment." />
+
+            <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/runs" description="List execution runs for a task." />
             <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/runs" description="Start a task execution run (authenticated project members only; one active run per task)." />
@@ -478,8 +489,15 @@ signature = HMAC-SHA256(signing_secret, message)
             <CodeBlock>{`{
   "checkpoint_key": "normalize-batch-2",
   "summary": "Persisted normalized batch 2",
-  "payload": { "batch": 2, "rows": 500 }
+  "payload": { "batch": 2, "rows": 500 },
+  "attachment_ids": ["attachment-uuid"]
 }`}</CodeBlock>
+
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Attachments:</strong> uploads are capped at <strong className="text-gray-200">10 MB</strong>, validated against a MIME allowlist, blocked for executable-style extensions, stored privately, and exposed back through short-lived signed download URLs. Checkpoints can reference uploaded artifacts through <InlineCode>attachment_ids</InlineCode>.
+              </p>
+            </div>
           </Section>
 
           <Section title="Dependencies" subtitle="Task blockers" idx={10} id="dependencies">

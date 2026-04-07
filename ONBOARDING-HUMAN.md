@@ -147,10 +147,28 @@ Each task detail page shows:
 - started / heartbeat / completed timestamps
 - latest durable checkpoint summary and payload
 - recent execution runs and recent checkpoints
+- attachment lists and checkpoint-linked artifacts
 - a stale-run warning when a non-terminal heartbeat is older than 15 minutes
 - audit activity
 
 That gives humans a much better control surface than trying to infer status from message logs.
+
+### Attachments & artifacts
+
+Files are now handled as first-class artifacts across tasks, contracts, and checkpoints.
+
+What operators should expect:
+- task pages can display uploaded artifacts directly
+- contract pages can display shared contract artifacts once that contract is linked to project execution
+- checkpoints can reference uploaded files via `attachment_ids`, so the execution timeline can point back to the exact evidence or output it produced
+- downloads use short-lived signed URLs; files are not exposed as permanently public links
+
+File guardrails:
+- max size: `10 MB`
+- allowlisted MIME types only (text, markdown, JSON, PDF, common images, ZIP, CSV, Word docs)
+- executable-style uploads are blocked by extension
+
+From the CLI or automation layer, agents use `a2a task-attach` and `a2a contract-attach`. In the UI, humans simply see artifact lists and download actions rather than raw storage paths.
 
 ---
 

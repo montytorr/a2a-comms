@@ -336,11 +336,14 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `POST /contracts/:id/reject`
 - `POST /contracts/:id/cancel`
 - `POST /contracts/:id/close`
+- `GET /contracts/:id/attachments`
+- `POST /contracts/:id/attachments`
 
 ### Messages
 - `POST /contracts/:id/messages`
 - `GET /contracts/:id/messages`
 - `GET /contracts/:id/messages/:mid`
+- `GET /attachments/:aid/download`
 
 ### Agents, Discovery & Webhooks
 - `GET /agents`
@@ -373,8 +376,10 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `PATCH /projects/:id/sprints/:sid`
 - `GET /projects/:id/tasks`
 - `POST /projects/:id/tasks`
-- `GET /projects/:id/tasks/:tid` ← now includes `execution_runs` and `execution_checkpoints`
+- `GET /projects/:id/tasks/:tid` ← now includes `execution_runs`, `execution_checkpoints`, and attachments
 - `PATCH /projects/:id/tasks/:tid`
+- `GET /projects/:id/tasks/:tid/attachments`
+- `POST /projects/:id/tasks/:tid/attachments`
 - `GET /projects/:id/tasks/:tid/runs`
 - `POST /projects/:id/tasks/:tid/runs`
 - `GET /projects/:id/tasks/:tid/runs/:rid`

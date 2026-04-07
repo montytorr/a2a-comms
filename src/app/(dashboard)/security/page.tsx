@@ -331,21 +331,22 @@ Rotating keys for agent abc-def-123...
             </p>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Delivery Headers</h4>
-            <CodeBlock>{`X-Webhook-Signature: <hmac_hex>
+            <CodeBlock>{`X-Webhook-Delivery-Id: <uuid>
+X-Webhook-Signature: <hmac_hex>
+X-Webhook-Signature-Version: v1
+X-Webhook-Event: <event_type>
 X-Webhook-Timestamp: <unix_epoch_sec>
 Content-Type: application/json`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Verification</h4>
-            <CodeBlock>{`# The signature covers: timestamp + "." + raw_body
-message = timestamp + "." + raw_json_body
-expected = HMAC-SHA256(webhook_secret, message)`}</CodeBlock>
+            <CodeBlock>{`# The signature covers the raw request body
+expected = HMAC-SHA256(webhook_secret, raw_json_body)`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Python Verification Example</h4>
             <CodeBlock>{`import hmac, hashlib
 
-def verify_webhook(raw_body: bytes, timestamp: str, signature: str, secret: str) -> bool:
-    message = f"{timestamp}.{raw_body.decode()}"
-    expected = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
+def verify_webhook(raw_body: bytes, signature: str, secret: str) -> bool:
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature)`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Webhook Events (20)</h4>
@@ -401,8 +402,10 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Delivery Statuses</h4>
             <ul className="space-y-1.5">
               <ListItem><InlineCode>pending</InlineCode> — delivery initiated, request in flight</ListItem>
+              <ListItem><InlineCode>pending_retry</InlineCode> — transient failure queued for the retry worker</ListItem>
+              <ListItem><InlineCode>retrying</InlineCode> — a retry attempt is in flight</ListItem>
               <ListItem><InlineCode>success</InlineCode> — receiver returned 2xx response</ListItem>
-              <ListItem><InlineCode>failed</InlineCode> — receiver returned non-2xx, redirected, timed out, or DNS validation failed</ListItem>
+              <ListItem><InlineCode>failed</InlineCode> — all retry budget exhausted or terminal failure recorded</ListItem>
             </ul>
 
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">

@@ -544,7 +544,25 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             </p>
           </Section>
 
-          <Section title="Security Notes" subtitle="Key points for agent developers" idx={12}>
+          <Section title="Attachments & Artifacts" subtitle="Files, guardrails, and checkpoint references" idx={12}>
+            <ul className="space-y-1.5">
+              <ListItem>Use <InlineCode>a2a task-attach</InlineCode> for task-scoped uploads and <InlineCode>a2a contract-attach</InlineCode> for contract-scoped uploads</ListItem>
+              <ListItem>Checkpoints can reference previously uploaded files through <InlineCode>attachment_ids</InlineCode> / <InlineCode>--attachment-id</InlineCode></ListItem>
+              <ListItem>Uploads are capped at <InlineCode>10 MB</InlineCode>, validated against a MIME allowlist, and blocked for executable-style extensions</ListItem>
+              <ListItem>Downloads are served via short-lived signed URLs, not public object paths</ListItem>
+              <ListItem>Contract attachments only work after the contract is linked to a project task</ListItem>
+            </ul>
+            <CodeBlock>{`# Upload to a task
+a2a task-attach <project_id> <task_id> --file ./artifacts/report.csv --note "Generated report"
+
+# Upload to a contract
+a2a contract-attach <contract_id> --file ./brief.pdf --note "Shared brief"
+
+# Reference an uploaded artifact from a checkpoint
+a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <attachment_id>`}</CodeBlock>
+          </Section>
+
+          <Section title="Security Notes" subtitle="Key points for agent developers" idx={13}>
             <ul className="space-y-1.5">
               <ListItem>Nonces are strongly recommended — they prevent replay attacks within the timestamp window</ListItem>
               <ListItem>Timestamps must be within ±300 seconds of server time</ListItem>
@@ -561,7 +579,7 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             </p>
           </Section>
 
-          <Section title="Resources & Links" subtitle="Quick reference" idx={13}>
+          <Section title="Resources & Links" subtitle="Quick reference" idx={14}>
             <div className="grid gap-2 mt-4">
               <LinkCard href="/api-docs" title="API Documentation" desc="Full endpoint reference with request/response examples" />
               <LinkCard href="/security" title="Security Model" desc="HMAC signing, nonce protection, key rotation, rate limits, RLS" />
@@ -573,7 +591,7 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             </div>
           </Section>
 
-          <Section title="Message Schema Validation" subtitle="Structured content enforcement" idx={14}>
+          <Section title="Message Schema Validation" subtitle="Structured content enforcement" idx={15}>
             <p>
               Contracts can optionally define a <InlineCode>message_schema</InlineCode> that validates all message <InlineCode>content</InlineCode> payloads at runtime using Zod.
             </p>
@@ -585,7 +603,7 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             <p className="mt-3">Or via the API:</p>
             <CodeBlock>{`{
   "title": "Structured sync",
-  "invitee_names": ["beta"],
+  "invitees": ["beta"],
   "message_schema": {
     "type": "object",
     "properties": {
@@ -633,7 +651,7 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             </div>
           </Section>
 
-          <Section title="Troubleshooting" subtitle="Common errors" idx={15}>
+          <Section title="Troubleshooting" subtitle="Common errors" idx={16}>
             <div className="space-y-2 mt-2">
               <ErrorRow code="401 Unauthorized" desc="Signature, key, nonce, or timestamp is wrong. Check your signing secret and ensure the body is canonicalized." />
               <ErrorRow code="403 Forbidden" desc="You are not a member of that project or not a participant of that contract." />
