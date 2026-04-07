@@ -8,6 +8,11 @@ import { formatDateTime } from '@/lib/format-date';
 
 type EventType = 'message' | 'contract' | 'audit';
 
+type EventLink = {
+  href: string;
+  label: string;
+};
+
 interface FeedEvent {
   id: string;
   type: EventType;
@@ -15,6 +20,7 @@ interface FeedEvent {
   actor: string;
   summary: string;
   link?: string;
+  links?: EventLink[];
   isNew?: boolean;
 }
 
@@ -58,6 +64,87 @@ function truncate(str: string, max: number): string {
   return str.slice(0, max) + '…';
 }
 
+function toId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function buildAuditLinks(row: Record<string, unknown>): EventLink[] {
+  const links: EventLink[] = [];
+  const details = toRecord(row.details);
+  const resourceType = String(row.resource_type || '').toLowerCase();
+  const resourceId = toId(row.resource_id);
+
+  const contractId =
+    toId(details?.contract_id) || (resourceType === 'contract' ? resourceId : null);
+  const taskId =
+    toId(details?.task_id) || (resourceType === 'task' ? resourceId : null);
+  const webhookId =
+    toId(details?.webhook_id) || (resourceType === 'webhook' ? resourceId : null);
+  const projectId =
+    toId(details?.project_id) || (resourceType === 'project' ? resourceId : null);
+
+  if (contractId) {
+    links.push({ href: `/contracts/${contractId}`, label: 'Contract' });
+  }
+
+  if (projectId) {
+    links.push({ href: `/projects/${projectId}`, label: 'Project' });
+  }
+
+  if (taskId) {
+    links.push({
+      href: projectId
+        ? `/projects/${projectId}/tasks/${taskId}`
+        : `/protocol-inspector?task=${encodeURIComponent(taskId)}`,
+      label: projectId ? 'Task' : 'Task inspector',
+    });
+  }
+
+  if (webhookId) {
+    links.push({
+      href: `/webhooks/health?webhook=${encodeURIComponent(webhookId)}`,
+      label: 'Webhook deliveries',
+    });
+    links.push({ href: '/webhooks', label: 'Webhooks' });
+  }
+
+  const deliveryId = toId(details?.delivery_id) || (resourceType === 'webhook.delivery' ? resourceId : null);
+  if (deliveryId) {
+    links.push({ href: '/audit', label: 'Audit log' });
+  }
+
+  if (resourceType && links.length === 0 && resourceId && resourceType !== 'message') {
+    if (resourceType === 'contract') {
+      links.push({ href: `/contracts/${resourceId}`, label: 'Contract' });
+    }
+    if (resourceType === 'project') {
+      links.push({ href: `/projects/${resourceId}`, label: 'Project' });
+    }
+    if (resourceType === 'task') {
+      links.push({ href: `/protocol-inspector?task=${encodeURIComponent(resourceId)}`, label: 'Task inspector' });
+    }
+    if (resourceType.startsWith('webhook.')) {
+      links.push({ href: `/webhooks/health?webhook=${encodeURIComponent(resourceId)}`, label: 'Webhook deliveries' });
+      links.push({ href: '/webhooks', label: 'Webhooks' });
+    }
+  }
+
+  const deduped = new Map<string, string>();
+  for (const link of links) {
+    if (!deduped.has(link.href)) {
+      deduped.set(link.href, link.label);
+    }
+  }
+  return [...deduped.entries()].map(([href, label]) => ({ href, label }));
+}
+
 export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: FeedClientProps) {
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [connected, setConnected] = useState(false);
@@ -79,14 +166,20 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     return supabaseRef.current;
   }, []);
 
-  const auditToEvent = useCallback((row: Record<string, unknown>): FeedEvent => ({
-    id: `audit-${row.id}`,
-    type: 'audit',
-    timestamp: row.created_at as string,
-    actor: (row.actor as string) || 'system',
-    summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}${row.resource_id ? ` (${String(row.resource_id).slice(0, 8)}…)` : ''}`,
-    link: row.resource_type === 'contract' && row.resource_id ? `/contracts/${row.resource_id}` : '/audit',
-  }), []);
+  const auditToEvent = useCallback((row: Record<string, unknown>): FeedEvent => {
+    const links = buildAuditLinks(row);
+    const primary = links[0]?.href || '/audit';
+
+    return {
+      id: `audit-${row.id}`,
+      type: 'audit',
+      timestamp: row.created_at as string,
+      actor: (row.actor as string) || 'system',
+      summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}${row.resource_id ? ` (${String(row.resource_id).slice(0, 8)}…)` : ''}`,
+      links,
+      link: primary,
+    };
+  }, []);
 
   const messageToEvent = useCallback((row: Record<string, unknown>): FeedEvent => {
     const content = row.content;
@@ -95,25 +188,29 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
       ? ((content as Record<string, unknown>).summary as string || JSON.stringify(content))
       : String(content || '');
     const senderName = sender?.display_name as string || sender?.name as string || String(row.sender_id || '').slice(0, 8) || 'unknown';
+    const contractId = toId(row.contract_id);
     return {
       id: `msg-${row.id}`,
       type: 'message',
       timestamp: row.created_at as string,
       actor: senderName,
       summary: `Message: ${truncate(contentStr, 120)}`,
-      link: row.contract_id ? `/contracts/${row.contract_id}` : undefined,
+      link: contractId ? `/contracts/${contractId}` : undefined,
+      links: contractId ? [{ href: `/contracts/${contractId}`, label: 'Open contract' }] : undefined,
     };
   }, []);
 
   const contractToEvent = useCallback((row: Record<string, unknown>, eventType: string): FeedEvent => {
     const proposer = row.proposer as Record<string, unknown> | null;
+    const id = toId(row.id);
     return {
       id: `contract-${row.id}-${Date.now()}`,
       type: 'contract',
       timestamp: (row.updated_at || row.created_at) as string,
       actor: (proposer?.display_name as string) || (proposer?.name as string) || 'system',
       summary: `Contract "${row.title}" ${eventType === 'INSERT' ? 'created' : 'updated'} — ${row.status}`,
-      link: `/contracts/${row.id}`,
+      link: id ? `/contracts/${id}` : undefined,
+      links: id ? [{ href: `/contracts/${id}`, label: 'Open contract' }] : undefined,
     };
   }, []);
 
@@ -236,17 +333,8 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
           const row = payload.new as Record<string, unknown>;
           // Scope: only show messages from user's contracts
           if (!isSuperAdmin && !contractIds.includes(row.contract_id as string)) return;
-          const contentStr = typeof row.content === 'object'
-            ? JSON.stringify(row.content)
-            : String(row.content || '');
-          addEvent({
-            id: `msg-${row.id}`,
-            type: 'message',
-            timestamp: row.created_at as string,
-            actor: String(row.sender_id || '').slice(0, 8) || 'unknown',
-            summary: `New message in contract — ${truncate(contentStr, 120)}`,
-            link: row.contract_id ? `/contracts/${row.contract_id}` : undefined,
-          });
+          const event = messageToEvent(row);
+          addEvent(event);
         }
       )
       .on(
@@ -257,14 +345,8 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
           // Scope: only show user's contracts
           if (!isSuperAdmin && !contractIds.includes(row.id as string)) return;
           const eventName = payload.eventType === 'INSERT' ? 'created' : 'updated';
-          addEvent({
-            id: `contract-${row.id}-${Date.now()}`,
-            type: 'contract',
-            timestamp: (row.updated_at || row.created_at) as string,
-            actor: String(row.proposer_id || '').slice(0, 8) || 'system',
-            summary: `Contract "${row.title}" ${eventName} — status: ${row.status}`,
-            link: `/contracts/${row.id}`,
-          });
+          const event = contractToEvent(row, eventName);
+          addEvent(event);
         }
       )
       .on(
@@ -274,14 +356,8 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
           const row = payload.new as Record<string, unknown>;
           // Scope: only show audit for user's agents
           if (!isSuperAdmin && !agentNames.includes(row.actor as string)) return;
-          addEvent({
-            id: `audit-${row.id}`,
-            type: 'audit',
-            timestamp: row.created_at as string,
-            actor: (row.actor as string) || 'system',
-            summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}`,
-            link: '/audit',
-          });
+          const event = auditToEvent(row);
+          addEvent(event);
         }
       )
       .subscribe((status) => {
@@ -293,7 +369,7 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [addEvent, getSupabase, isSuperAdmin, contractIds, agentNames]);
+  }, [addEvent, getSupabase, isSuperAdmin, contractIds, agentNames, messageToEvent, contractToEvent, auditToEvent]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-10">
@@ -392,37 +468,13 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
             <div className="divide-y divide-white/[0.03]">
               {events.map((ev) => {
                 const config = eventTypeConfig[ev.type];
-                return ev.link ? (
-                  <Link
-                    key={ev.id}
-                    href={ev.link}
-                    className={`block px-6 py-4 hover:bg-white/[0.015] transition-all duration-200 cursor-pointer group ${ev.isNew ? 'animate-fade-in' : ''}`}
-                    style={ev.isNew ? { animationDelay: '0s' } : undefined}
-                  >
-                    <div className="flex items-start gap-4">
-                      <span className={`inline-flex items-center justify-center gap-1.5 min-w-[86px] px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 mt-0.5 ${config.bg} ${config.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-                        {config.label}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[12px] font-semibold text-gray-300">{ev.actor}</span>
-                          <span className="text-[10px] text-gray-700 font-mono tabular-nums">{formatTime(ev.timestamp)}</span>
-                          {ev.isNew && (
-                            <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/[0.1] px-1.5 py-0.5 rounded-full">NEW</span>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-gray-500 leading-relaxed group-hover:text-gray-400 transition-colors">
-                          {ev.summary}
-                        </p>
-                      </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 group-hover:text-cyan-400 transition-colors shrink-0 mt-1">
-                        <path d="M5 12h14" />
-                        <path d="M12 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </Link>
-                ) : (
+                const links = ev.links && ev.links.length > 0
+                  ? ev.links
+                  : ev.link
+                    ? [{ href: ev.link, label: 'Open related' }]
+                    : [];
+
+                return (
                   <div
                     key={ev.id}
                     className={`px-6 py-4 hover:bg-white/[0.015] transition-all duration-200 ${ev.isNew ? 'animate-fade-in' : ''}`}
@@ -433,8 +485,8 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
                         <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
                         {config.label}
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
                           <span className="text-[12px] font-semibold text-gray-300">{ev.actor}</span>
                           <span className="text-[10px] text-gray-700 font-mono tabular-nums">{formatTime(ev.timestamp)}</span>
                           {ev.isNew && (
@@ -442,7 +494,37 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
                           )}
                         </div>
                         <p className="text-[12px] text-gray-500 leading-relaxed">{ev.summary}</p>
+                        {links.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-2">
+                            {links.map((link) => (
+                              <Link
+                                key={`${ev.id}-${link.href}`}
+                                href={link.href}
+                                className="inline-flex items-center rounded-md border border-cyan-400/25 bg-cyan-500/[0.06] px-2 py-0.5 text-[10px] font-semibold text-cyan-300 hover:text-cyan-200 hover:border-cyan-300/45 hover:bg-cyan-500/[0.12] transition-colors"
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                      {ev.link ? (
+                        <Link
+                          href={ev.link}
+                          className="inline-flex items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] p-2 text-gray-600 hover:text-cyan-300 hover:border-cyan-400/30 hover:bg-cyan-500/[0.06] transition-colors shrink-0 mt-1"
+                          aria-label="Open related page"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14" />
+                            <path d="M12 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 shrink-0 mt-1">
+                          <path d="M5 12h14" />
+                          <path d="M12 5l7 7-7 7" />
+                        </svg>
+                      )}
                     </div>
                   </div>
                 );

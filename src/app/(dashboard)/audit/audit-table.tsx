@@ -1,6 +1,5 @@
-'use client';
-
 import { useState } from 'react';
+import Link from 'next/link';
 import type { AuditLogEntry } from '@/lib/types';
 import { formatRelative, formatDateTime } from '@/lib/format-date';
 
@@ -50,6 +49,92 @@ function getActionIcon(action: string): string {
   return '•';
 }
 
+type LinkedEntity = {
+  href: string;
+  label: string;
+};
+
+function toId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function toDetails(entry: AuditLogEntry): Record<string, unknown> | null {
+  if (!entry.details || typeof entry.details !== 'object' || Array.isArray(entry.details)) return null;
+  return entry.details as Record<string, unknown>;
+}
+
+function buildLinks(entry: AuditLogEntry): LinkedEntity[] {
+  const links: LinkedEntity[] = [];
+  const details = toDetails(entry);
+  const resourceType = (entry.resource_type || '').toLowerCase();
+  const resourceId = toId(entry.resource_id);
+  const detailsResource = details ? toId(details.resource_id) : null;
+
+  const contractId =
+    toId(details?.contract_id) || (resourceType === 'contract' ? resourceId : detailsResource);
+  const taskId = toId(details?.task_id) || (resourceType === 'task' ? resourceId : null);
+  const webhookId = toId(details?.webhook_id) || (resourceType === 'webhook' ? resourceId : null);
+  const projectId =
+    toId(details?.project_id) || (resourceType === 'project' ? resourceId : null);
+
+  if (contractId) {
+    links.push({ href: `/contracts/${contractId}`, label: 'Contract' });
+  }
+
+  if (projectId) {
+    links.push({ href: `/projects/${projectId}`, label: 'Project' });
+  }
+
+  if (taskId) {
+    links.push({
+      href: projectId
+        ? `/projects/${projectId}/tasks/${taskId}`
+        : `/protocol-inspector?task=${encodeURIComponent(taskId)}`,
+      label: projectId ? 'Task' : 'Task inspector',
+    });
+  }
+
+  if (webhookId) {
+    links.push({
+      href: `/webhooks/health?webhook=${encodeURIComponent(webhookId)}`,
+      label: 'Webhook deliveries',
+    });
+    links.push({ href: '/webhooks', label: 'Webhooks' });
+  }
+
+  if (resourceType.startsWith('webhook.') && links.length === 0 && resourceId) {
+    links.push({ href: `/webhooks/health?webhook=${encodeURIComponent(resourceId)}`, label: 'Webhook deliveries' });
+    links.push({ href: '/webhooks', label: 'Webhooks' });
+  }
+
+  if (resourceType === 'contract' && !links.some((link) => link.href.includes('/contracts/')) && resourceId) {
+    links.push({ href: `/contracts/${resourceId}`, label: 'Contract' });
+  }
+
+  if (resourceType === 'project' && !links.some((link) => link.href.includes('/projects/')) && resourceId) {
+    links.push({ href: `/projects/${resourceId}`, label: 'Project' });
+  }
+
+  if (resourceType === 'task' && !links.some((link) => link.href.includes('/tasks/') || link.href.includes('/protocol-inspector'))) {
+    if (projectId && resourceId) {
+      links.push({ href: `/projects/${projectId}/tasks/${resourceId}`, label: 'Task' });
+    } else if (resourceId) {
+      links.push({ href: `/protocol-inspector?task=${encodeURIComponent(resourceId)}`, label: 'Task inspector' });
+    }
+  }
+
+  const seen = new Set<string>();
+  const deduped: LinkedEntity[] = [];
+  for (const link of links) {
+    if (seen.has(link.href)) continue;
+    seen.add(link.href);
+    deduped.push(link);
+  }
+  return deduped;
+}
+
 export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -70,23 +155,17 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
         <div className="divide-y divide-white/[0.02]">
           {entries.map((entry, idx) => {
             const isExpanded = expandedId === entry.id;
-            const hasDetails = entry.details && Object.keys(entry.details).length > 0;
+            const hasDetails = entry.details && Object.keys(entry.details as object).length > 0;
             const actionStyle = getActionStyle(entry.action);
-            const isContract = entry.resource_type === 'contract' && entry.resource_id;
+            const links = buildLinks(entry);
+            const hasLinks = links.length > 0;
+            const canExpand = hasDetails;
+
             return (
               <div key={entry.id} className="group">
-                <div
-                  className={`flex items-center gap-4 px-6 py-3.5 hover:bg-white/[0.015] transition-all duration-300 ${hasDetails || isContract ? 'cursor-pointer' : ''}`}
-                  onClick={() => {
-                    if (hasDetails) {
-                      setExpandedId(isExpanded ? null : entry.id);
-                    } else if (isContract) {
-                      window.location.href = `/contracts/${entry.resource_id}`;
-                    }
-                  }}
-                >
+                <div className="flex items-start gap-4 px-6 py-3.5 hover:bg-white/[0.015] transition-all duration-300">
                   {/* Timeline connector */}
-                  <div className="flex flex-col items-center w-6 shrink-0">
+                  <div className="flex flex-col items-center w-6 shrink-0 pt-0.5">
                     <span className="text-xs">{getActionIcon(entry.action)}</span>
                     {idx < entries.length - 1 && (
                       <div className="w-px flex-1 bg-gradient-to-b from-white/[0.04] to-transparent min-h-[8px]" />
@@ -94,18 +173,38 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0 flex items-center gap-3">
-                    <span className="text-[12px] font-medium text-cyan-400 shrink-0 w-20">{entry.actor}</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${actionStyle}`}>
-                      {entry.action}
-                    </span>
-                    {entry.resource_type && (
-                      <span className="text-[10px] text-gray-600 hidden sm:inline">{entry.resource_type}</span>
-                    )}
-                    {entry.resource_id && (
-                      <span className="text-[10px] text-gray-700 font-mono truncate hidden md:inline max-w-[200px]">
-                        {entry.resource_id}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[12px] font-medium text-cyan-400 shrink-0 w-20">{entry.actor}</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${actionStyle}`}>
+                        {entry.action}
                       </span>
+                      {entry.resource_type && (
+                        <span className="text-[10px] text-gray-600 hidden sm:inline">{entry.resource_type}</span>
+                      )}
+                      {entry.resource_id && (
+                        <span className="text-[10px] text-gray-700 font-mono truncate hidden md:inline max-w-[200px]">
+                          {entry.resource_id}
+                        </span>
+                      )}
+                    </div>
+
+                    {hasLinks && (
+                      <div className="flex flex-wrap gap-2">
+                        {links.map((link, linkIdx) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+                              linkIdx === 0
+                                ? 'border-cyan-300/35 bg-cyan-500/[0.10] text-cyan-200 hover:border-cyan-200/55 hover:bg-cyan-500/[0.16]'
+                                : 'border-white/[0.08] bg-white/[0.03] text-gray-400 hover:text-gray-200 hover:border-white/[0.14] hover:bg-white/[0.05]'
+                            }`}
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
                     )}
                   </div>
 
@@ -114,34 +213,32 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
                     <span className="text-[10px] text-gray-600 font-mono tabular-nums" title={formatDateTime(entry.created_at)}>
                       {formatRelative(entry.created_at)}
                     </span>
-                    {hasDetails ? (
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`text-gray-700 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
+
+                    {canExpand && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                        className="inline-flex items-center justify-center rounded-md border border-white/[0.08] px-1.5 py-1 hover:bg-white/[0.03]"
+                        aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
                       >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    ) : isContract ? (
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-gray-700 group-hover:text-cyan-400 transition-colors"
-                      >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`text-gray-700 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
+                        >
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {!canExpand && hasLinks ? (
+                      <span className="text-gray-500 text-[10px]">↗</span>
                     ) : null}
                   </div>
                 </div>
