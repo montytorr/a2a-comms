@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.165] - 2026-04-07
+### Added
+- ship delegated execution provenance
+
 ## [1.0.164] - 2026-04-07
 ### Changed
 - Fix handoff resume typing
