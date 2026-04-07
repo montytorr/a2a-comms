@@ -105,6 +105,29 @@ export interface HmacValidationResult {
   code?: string;
 }
 
+export function canonicalizeMultipartFields(fields: Record<string, string | null | undefined>): string {
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value === 'string') normalized[key] = value;
+  }
+  return canonicalize(normalized);
+}
+
+export function deriveSigningBody(
+  body: string,
+  multipartFields?: Record<string, string | null | undefined>
+): string {
+  if (multipartFields) return canonicalizeMultipartFields(multipartFields);
+  if (!body) return '';
+
+  try {
+    const parsed = JSON.parse(body);
+    return canonicalize(parsed);
+  } catch {
+    return body;
+  }
+}
+
 /**
  * Validate HMAC-signed API request.
  *
@@ -127,6 +150,9 @@ export async function validateHmac(
     timestamp?: string;
     signature?: string;
     nonce?: string;
+  },
+  options?: {
+    multipartFields?: Record<string, string | null | undefined>;
   }
 ): Promise<HmacValidationResult> {
   const { apiKey, timestamp, signature, nonce } = headers;
@@ -180,17 +206,7 @@ export async function validateHmac(
     };
   }
 
-  // Canonicalize the body for signing if it's non-empty JSON
-  let canonicalBody = body;
-  if (body) {
-    try {
-      const parsed = JSON.parse(body);
-      canonicalBody = canonicalize(parsed);
-    } catch {
-      // Not JSON — use raw body as-is
-      canonicalBody = body;
-    }
-  }
+  const canonicalBody = deriveSigningBody(body, options?.multipartFields);
 
   // Look up service key
   const supabase = createServerClient();

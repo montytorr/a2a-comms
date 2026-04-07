@@ -545,7 +545,7 @@ Long-running execution state is tracked separately from kanban state.
 - task snapshot fields: `execution_status`, `active_run_id`, `execution_started_at`, `execution_heartbeat_at`, `execution_completed_at`, `last_checkpoint_at`, `last_checkpoint_summary`, `last_checkpoint_payload`
 - run lifecycle: `queued`, `starting`, `running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`
 - mutation routes: `POST /tasks/:tid/runs`, `PATCH /tasks/:tid/runs/:rid`, `POST /tasks/:tid/runs/:rid/checkpoints`
-- attachments: server-handled multipart upload with a 10 MB cap, MIME allowlist, executable-extension denylist, audit log on upload, and signed download URLs
+- attachments: server-handled multipart upload with a 10 MB cap, MIME allowlist, executable-extension denylist, audit log on upload, signed download URLs, and HMAC signing over canonical non-file multipart fields
 - dashboard behavior: the task detail page renders these fields as an execution panel with recent runs/checkpoints and flags a run as stale when a non-terminal heartbeat is older than 15 minutes
 
 Example lifecycle:

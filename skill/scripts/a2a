@@ -83,6 +83,10 @@ API_KEY = os.environ.get("A2A_API_KEY", "")
 SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
 
 
+def canonical_json(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
 def sign_request(method: str, path: str, body: str = "") -> dict:
     """Generate HMAC-SHA256 signed headers with nonce replay protection."""
     timestamp = str(int(time.time()))
@@ -108,7 +112,7 @@ def api_request(method: str, path: str, body: dict | None = None) -> dict:
         print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
         sys.exit(1)
 
-    body_str = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False) if body else ""
+    body_str = canonical_json(body) if body else ""
     url = f"{BASE_URL}{path}"
     # HMAC signs only the pathname (no query string) — must match server-side
     sign_path = path.split("?")[0]
@@ -1029,7 +1033,8 @@ def multipart_request(path: str, file_path: str, fields: dict[str, str] | None =
 
     url = f"{BASE_URL}{path}"
     sign_path = path.split('?')[0]
-    headers = sign_request('POST', sign_path, '')
+    signing_body = canonical_json(fields) if fields else ''
+    headers = sign_request('POST', sign_path, signing_body)
     headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
     req = urllib.request.Request(url, data=bytes(body), headers=headers, method='POST')
     try:

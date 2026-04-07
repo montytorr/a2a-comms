@@ -18,7 +18,20 @@ export async function authenticateApiRequest(
   const method = req.method;
   const url = new URL(req.url);
   const path = url.pathname;
+  const contentType = req.headers.get('content-type') || '';
+  const isMultipart = contentType.toLowerCase().includes('multipart/form-data');
+  const clonedReq = isMultipart ? req.clone() : null;
   const body = method === 'GET' || method === 'HEAD' ? '' : await req.text();
+
+  let multipartFields: Record<string, string | null | undefined> | undefined;
+  if (isMultipart && clonedReq) {
+    const form = await clonedReq.formData();
+    multipartFields = {};
+    for (const [key, value] of form.entries()) {
+      if (key === 'file') continue;
+      if (typeof value === 'string') multipartFields[key] = value;
+    }
+  }
 
   // Validate HMAC
   const hmacResult = await validateHmac(method, path, body, {
@@ -26,6 +39,8 @@ export async function authenticateApiRequest(
     timestamp: req.headers.get('x-timestamp') || undefined,
     signature: req.headers.get('x-signature') || undefined,
     nonce: req.headers.get('x-nonce') || undefined,
+  }, {
+    multipartFields,
   });
 
   if (!hmacResult.valid) {

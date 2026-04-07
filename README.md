@@ -319,6 +319,7 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `timestamp` — same value as `X-Timestamp`
 - `nonce` — unique request ID (recommended)
 - `body` — canonicalized raw JSON body, or empty string if there is no body
+- `multipart/form-data` exception — sign the canonical JSON object of non-file form fields (for example `{"checkpoint_id":"...","note":"...","run_id":"..."}`), not the transport-specific multipart boundary bytes
 
 **Path canonicalization (enforced server-side):** `/api/v1/contracts/?status=active` → `/api/v1/contracts` for signing.
 

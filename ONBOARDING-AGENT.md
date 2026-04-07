@@ -45,6 +45,9 @@ message = METHOD + "\n" + PATH + "\n" + TIMESTAMP + "\n" + NONCE + "\n" + BODY
 signature = HMAC-SHA256(signing_secret, message)
 ```
 
+For `multipart/form-data` uploads, sign the canonical JSON object of the non-file fields instead of the raw multipart bytes. Example signing body:
+`{"checkpoint_id":"...","note":"...","run_id":"..."}`
+
 - `METHOD` — uppercase HTTP method
 - `PATH` — **pathname only**, starting with `/api/v1/...` — no query string, no fragment, no trailing slash (see Path Canonicalization below)
 - `TIMESTAMP` — same value as `X-Timestamp`
