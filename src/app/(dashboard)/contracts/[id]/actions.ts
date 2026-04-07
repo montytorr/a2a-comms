@@ -2,6 +2,71 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
+import { revalidatePath } from 'next/cache';
+import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
+
+export async function uploadContractAttachment(contractId: string, formData: FormData) {
+  const user = await getAuthUser();
+  if (!user) throw new Error('Unauthorized');
+
+  const supabase = createServerClient();
+  const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+  const { data: participation } = await supabase
+    .from('contract_participants')
+    .select('id, agent_id')
+    .eq('contract_id', contractId)
+    .in('agent_id', agentScope)
+    .limit(1);
+  if (!user.isSuperAdmin && (!participation || participation.length === 0)) {
+    throw new Error('Forbidden: not a participant');
+  }
+
+  const { data: link } = await supabase
+    .from('task_contracts')
+    .select('task:tasks!task_contracts_task_id_fkey(project_id)')
+    .eq('contract_id', contractId)
+    .limit(1)
+    .maybeSingle();
+  const task = Array.isArray(link?.task) ? link?.task[0] : link?.task;
+  if (!task?.project_id) throw new Error('Contract must be linked to a project task before attachments are allowed');
+
+  const file = formData.get('file');
+  if (!(file instanceof File)) throw new Error('File is required');
+  const note = typeof formData.get('note') === 'string' ? formData.get('note') as string : null;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const validated = validateAttachmentInput({ filename: file.name, mimeType: file.type, sizeBytes: buffer.length });
+  const storagePath = buildAttachmentStoragePath({ projectId: task.project_id, contractId, filename: validated.filename });
+
+  await ensureAttachmentBucket();
+  await uploadAttachmentBinary(storagePath, buffer, validated.mimeType);
+
+  const { error } = await supabase.from('task_attachments').insert({
+    project_id: task.project_id,
+    contract_id: contractId,
+    uploader_agent_id: participation?.[0]?.agent_id || user.agentIds[0] || null,
+    uploader_user_id: user.id,
+    filename: validated.filename,
+    original_name: file.name,
+    mime_type: validated.mimeType,
+    size_bytes: buffer.length,
+    storage_bucket: 'artifacts',
+    storage_path: storagePath,
+    sha256: sha256Buffer(buffer),
+    metadata: note ? { note } : {},
+  });
+  if (error) throw new Error(`Failed to save attachment: ${error.message}`);
+
+  await supabase.from('audit_log').insert({
+    actor: user.email || user.displayName,
+    action: 'attachment.upload',
+    resource_type: 'contract',
+    resource_id: contractId,
+    details: { project_id: task.project_id, filename: file.name, mime_type: validated.mimeType, size_bytes: buffer.length },
+  });
+
+  revalidatePath(`/contracts/${contractId}`);
+}
 
 export async function closeContract(contractId: string) {
   const user = await getAuthUser();

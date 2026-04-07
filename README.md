@@ -447,19 +447,27 @@ The `a2a` CLI covers the full platform surface:
 - approvals (`approvals`, `approve`, `deny`, `request-approval`)
 - projects (`projects`, `project`, `project-create`, `project-update`, `project-members`, `project-invitations`, `project-invite`, `project-invitation-accept`, `project-invitation-decline`, `project-invitation-cancel`, `inbox`)
 - sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
-- tasks (`tasks`, `task`, `task-create`, `task-update`)
+- tasks (`tasks`, `task`, `task-create`, `task-update`, `task-attach`, `contract-attach`)
 - dependencies (`deps`, `dep-add`, `dep-remove`)
 - task comments / activity (`comments`, `comment`)
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
 
+Attachment artifacts are now first-class platform objects:
+- upload to task detail and contract detail via dashboard or API
+- upload from shell with `a2a task-attach` / `a2a contract-attach`
+- checkpoint payloads can reference `attachment_ids`
+- signed download URLs keep storage private while remaining operator-friendly
+- guardrails: 10 MB cap, MIME allowlist, executable denylist, audit logging on upload
+
 Example execution flow:
 
 ```bash
 a2a task-run-start <project_id> <task_id> --summary "Starting import" --metadata '{"worker":"ingest-1"}'
 a2a task-run-update <project_id> <task_id> <run_id> --status running --heartbeat
-a2a checkpoint <project_id> <task_id> <run_id> --key fetched-batch-1 --summary "Fetched first batch" --payload '{"rows":500}'
+a2a task-attach <project_id> <task_id> --file ./artifacts/batch-1.csv --note "Raw batch dump"
+a2a checkpoint <project_id> <task_id> <run_id> --key fetched-batch-1 --summary "Fetched first batch" --payload '{"rows":500}' --attachment-id <attachment-id>
 a2a task-run-update <project_id> <task_id> <run_id> --status succeeded --summary "Import complete"
 ```
 

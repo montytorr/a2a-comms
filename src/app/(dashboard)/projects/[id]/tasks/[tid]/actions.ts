@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { notifyBlockerAction } from '@/lib/task-blocker-actions';
+import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
 
 async function requireProjectMembership(
   projectId: string,
@@ -250,6 +251,47 @@ export async function escalateBlockedTask(projectId: string, taskId: string) {
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/notifications');
+}
+
+export async function uploadTaskAttachment(projectId: string, taskId: string, formData: FormData) {
+  const user = await requireProjectMembership(projectId);
+  const file = formData.get('file');
+  if (!(file instanceof File)) throw new Error('File is required');
+  const note = typeof formData.get('note') === 'string' ? formData.get('note') as string : null;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const validated = validateAttachmentInput({ filename: file.name, mimeType: file.type, sizeBytes: buffer.length });
+  const storagePath = buildAttachmentStoragePath({ projectId, taskId, filename: validated.filename });
+
+  await ensureAttachmentBucket();
+  await uploadAttachmentBinary(storagePath, buffer, validated.mimeType);
+
+  const supabase = createServerClient();
+  const { error } = await supabase.from('task_attachments').insert({
+    project_id: projectId,
+    task_id: taskId,
+    uploader_agent_id: user.memberAgentId,
+    uploader_user_id: user.id,
+    filename: validated.filename,
+    original_name: file.name,
+    mime_type: validated.mimeType,
+    size_bytes: buffer.length,
+    storage_bucket: 'artifacts',
+    storage_path: storagePath,
+    sha256: sha256Buffer(buffer),
+    metadata: note ? { note } : {},
+  });
+  if (error) throw new Error(`Failed to save attachment: ${error.message}`);
+
+  await supabase.from('audit_log').insert({
+    actor: user.displayName || user.email,
+    action: 'attachment.upload',
+    resource_type: 'task',
+    resource_id: taskId,
+    details: { project_id: projectId, filename: file.name, mime_type: validated.mimeType, size_bytes: buffer.length },
+  });
+
+  revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
 }
 
 export async function deleteTask(projectId: string, taskId: string) {

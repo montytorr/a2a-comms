@@ -1,4 +1,4 @@
-import type { Task, TaskExecutionCheckpoint, TaskExecutionRun } from '@/lib/types';
+import type { Task, TaskAttachment, TaskExecutionCheckpoint, TaskExecutionRun } from '@/lib/types';
 import {
   formatExecutionTime,
   getExecutionSnapshotSummary,
@@ -25,10 +25,12 @@ export default function ExecutionPanel({
   task,
   runs,
   checkpoints,
+  attachments,
 }: {
   task: Task;
   runs: TaskExecutionRun[];
   checkpoints: TaskExecutionCheckpoint[];
+  attachments: TaskAttachment[];
 }) {
   const stale = isExecutionStale(task.execution_status, task.execution_heartbeat_at);
   const statusTone = getExecutionStatusTone(task.execution_status, stale);
@@ -139,7 +141,9 @@ export default function ExecutionPanel({
             <p className="text-[11px] text-gray-500">No checkpoints recorded.</p>
           ) : (
             <div className="space-y-2">
-              {recentCheckpoints.map((checkpoint) => (
+              {recentCheckpoints.map((checkpoint) => {
+                const checkpointAttachments = attachments.filter((attachment) => checkpoint.attachment_ids?.includes(attachment.id));
+                return (
                 <div key={checkpoint.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
@@ -151,8 +155,18 @@ export default function ExecutionPanel({
                   <div className="mt-2">
                     <JsonPayload payload={checkpoint.payload} />
                   </div>
+                  {checkpointAttachments.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-white/[0.05]">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-[0.12em] mb-2">Attached artifacts</p>
+                      <div className="space-y-1">
+                        {checkpointAttachments.map((attachment) => (
+                          <div key={attachment.id} className="text-[11px] text-gray-300 break-all">• {attachment.original_name}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>

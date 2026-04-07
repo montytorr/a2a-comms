@@ -19,7 +19,9 @@ import {
 import TaskComments from './task-comments';
 import BlockerActions from './blocker-actions';
 import ExecutionPanel from './execution-panel';
-import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint } from '@/lib/types';
+import AttachmentList from '@/components/attachment-list';
+import AttachmentUpload from './attachment-upload';
+import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint, TaskAttachment } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 export const dynamic = 'force-dynamic';
 
@@ -90,7 +92,7 @@ export default async function TaskDetailPage({
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
     membersRes, sprintsRes, commentsRes,
-    executionRunsRes, executionCheckpointsRes,
+    executionRunsRes, executionCheckpointsRes, attachmentsRes,
   ] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -142,6 +144,12 @@ export default async function TaskDetailPage({
       .eq('task_id', tid)
       .order('created_at', { ascending: false })
       .limit(5),
+    supabase
+      .from('task_attachments')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('task_id', tid)
+      .order('created_at', { ascending: false }),
   ]);
 
   const project = projectRes.data;
@@ -198,6 +206,7 @@ export default async function TaskDetailPage({
   }>;
   const executionRuns = (executionRunsRes.data || []) as TaskExecutionRun[];
   const executionCheckpoints = (executionCheckpointsRes.data || []) as TaskExecutionCheckpoint[];
+  const attachments = (attachmentsRes.data || []) as TaskAttachment[];
 
   const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
@@ -259,7 +268,20 @@ export default async function TaskDetailPage({
             <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
           </div>
 
-          <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} />
+          <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} attachments={attachments} />
+
+          <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.09s' }}>
+            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+              <div>
+                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Attachments</p>
+                <p className="text-[12px] text-gray-400 mt-2">Artifacts tied directly to this task.</p>
+              </div>
+            </div>
+            <AttachmentUpload projectId={projectId} taskId={tid} />
+            <div className="mt-4">
+              <AttachmentList attachments={attachments} />
+            </div>
+          </div>
 
           {/* Dependencies */}
           {(blockedBy.length > 0 || blocks.length > 0) && (

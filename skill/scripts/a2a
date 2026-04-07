@@ -49,7 +49,9 @@ Usage:
   a2a task-run <project_id> <task_id> <run_id>
   a2a task-run-update <project_id> <task_id> <run_id> [--status STATUS] [--summary TEXT] [--error-message TEXT] [--metadata JSON] [--heartbeat]
   a2a checkpoints <project_id> <task_id> <run_id>
-  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON]
+  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON] [--attachment-id ID...]
+  a2a task-attach <project_id> <task_id> --file PATH [--note TEXT] [--checkpoint-id ID] [--run-id ID]
+  a2a contract-attach <contract_id> --file PATH [--note TEXT]
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -66,6 +68,7 @@ import argparse
 import hashlib
 import hmac
 import json
+import mimetypes
 import os
 import sys
 import time
@@ -993,8 +996,73 @@ def cmd_checkpoint(args):
         body["summary"] = args.summary
     if args.payload:
         body["payload"] = parse_json_arg(args.payload, "--payload")
+    if args.attachment_id:
+        body["attachment_ids"] = args.attachment_id
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}/checkpoints", body)
     print("✅ Checkpoint appended!")
+    print(json.dumps(data, indent=2))
+
+
+def multipart_request(path: str, file_path: str, fields: dict[str, str] | None = None) -> dict:
+    if not API_KEY or not SIGNING_SECRET:
+        print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
+        sys.exit(1)
+    boundary = f"----a2a-{uuid.uuid4().hex}"
+    fields = fields or {}
+    with open(file_path, 'rb') as fh:
+        file_bytes = fh.read()
+    filename = os.path.basename(file_path)
+    mime_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+    body = bytearray()
+    for key, value in fields.items():
+        body.extend(f"--{boundary}\r\n".encode())
+        body.extend(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
+        body.extend(str(value).encode())
+        body.extend(b"\r\n")
+    body.extend(f"--{boundary}\r\n".encode())
+    body.extend(f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode())
+    body.extend(f'Content-Type: {mime_type}\r\n\r\n'.encode())
+    body.extend(file_bytes)
+    body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode())
+
+    url = f"{BASE_URL}{path}"
+    sign_path = path.split('?')[0]
+    headers = sign_request('POST', sign_path, '')
+    headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
+    req = urllib.request.Request(url, data=bytes(body), headers=headers, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            err = json.loads(e.read().decode())
+            print(f"Error {e.code}: {err.get('error', 'Unknown error')}", file=sys.stderr)
+        except Exception:
+            print(f"Error {e.code}: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_task_attach(args):
+    fields = {}
+    if args.note:
+        fields['note'] = args.note
+    if args.checkpoint_id:
+        fields['checkpoint_id'] = args.checkpoint_id
+    if args.run_id:
+        fields['run_id'] = args.run_id
+    data = multipart_request(f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/attachments", args.file, fields)
+    print("✅ Task attachment uploaded!")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_contract_attach(args):
+    fields = {}
+    if args.note:
+        fields['note'] = args.note
+    data = multipart_request(f"/api/v1/contracts/{args.contract_id}/attachments", args.file, fields)
+    print("✅ Contract attachment uploaded!")
     print(json.dumps(data, indent=2))
 
 
@@ -1503,6 +1571,20 @@ def main():
     p.add_argument("--key", required=True, help="Checkpoint key")
     p.add_argument("--summary", help="Checkpoint summary")
     p.add_argument("--payload", help="JSON object payload")
+    p.add_argument("--attachment-id", action="append", help="Attachment ID to associate with this checkpoint (repeatable)")
+
+    p = sub.add_parser("task-attach", help="Upload an attachment to a task")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--file", required=True, help="Path to file")
+    p.add_argument("--note", help="Optional note")
+    p.add_argument("--checkpoint-id", help="Optional checkpoint to associate")
+    p.add_argument("--run-id", help="Optional execution run to associate")
+
+    p = sub.add_parser("contract-attach", help="Upload an attachment to a contract")
+    p.add_argument("contract_id", help="Contract ID")
+    p.add_argument("--file", required=True, help="Path to file")
+    p.add_argument("--note", help="Optional note")
 
     # ── Dependencies ──────────────────────────────────────
 
@@ -1607,6 +1689,8 @@ def main():
         "task-run-update": cmd_task_run_update,
         "checkpoints": cmd_checkpoints,
         "checkpoint": cmd_checkpoint,
+        "task-attach": cmd_task_attach,
+        "contract-attach": cmd_contract_attach,
         # Dependencies
         "deps": cmd_deps,
         "dep-add": cmd_dep_add,

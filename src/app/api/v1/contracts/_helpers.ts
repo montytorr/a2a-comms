@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import type { Contract, ContractResponse } from '@/lib/types';
+import { listAttachmentsForScope } from '@/lib/attachment-access';
 
 /**
  * Check if a contract has expired. If so, auto-close it in the DB and return the updated record.
@@ -68,10 +69,23 @@ export async function enrichContract(contract: Contract): Promise<ContractRespon
     status: p.status as 'pending' | 'accepted' | 'rejected',
   }));
 
+  const { data: linkedTask } = await supabase
+    .from('task_contracts')
+    .select('task:tasks!task_contracts_task_id_fkey(project_id)')
+    .eq('contract_id', contract.id)
+    .limit(1)
+    .maybeSingle();
+
+  const task = Array.isArray(linkedTask?.task) ? linkedTask?.task[0] : linkedTask?.task;
+  const attachments = task?.project_id
+    ? await listAttachmentsForScope({ projectId: task.project_id, contractId: contract.id, includeSignedUrl: true }).catch(() => [])
+    : [];
+
   return {
     ...contract,
     proposer: proposer || { id: contract.proposer_id, name: 'unknown', display_name: 'Unknown' },
     participants,
+    attachments,
   };
 }
 

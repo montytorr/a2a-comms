@@ -127,6 +127,7 @@ export async function POST(
     checkpointKey: parsed.checkpoint_key.trim(),
     summary: parsed.summary ?? null,
     payload: parsed.payload ?? {},
+    attachmentIds: parsed.attachment_ids ?? [],
   });
 
   await auditLog({
@@ -134,7 +135,7 @@ export async function POST(
     action: 'task_execution_checkpoint.create',
     resourceType: 'task',
     resourceId: taskId,
-    details: { project_id: projectId, run_id: runId, checkpoint_id: checkpoint.id, checkpoint_key: checkpoint.checkpoint_key },
+    details: { project_id: projectId, run_id: runId, checkpoint_id: checkpoint.id, checkpoint_key: checkpoint.checkpoint_key, attachment_ids: parsed.attachment_ids ?? [] },
     ipAddress: getClientIp(req),
   });
 

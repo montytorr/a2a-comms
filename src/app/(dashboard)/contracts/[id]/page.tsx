@@ -9,6 +9,8 @@ import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
 import MarkdownPreview from '@/components/markdown-preview';
+import AttachmentList from '@/components/attachment-list';
+import ContractAttachmentUpload from './attachment-upload';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 export const dynamic = 'force-dynamic';
 
@@ -184,6 +186,7 @@ export default async function ContractDetailPage({
 
   const messageList = ((messages || []) as ContractMessage[]).slice().reverse();
   const participants = (contract.contract_participants || []) as ContractParticipant[];
+  const attachments = ((contract as Record<string, unknown>).attachments || []) as Array<Record<string, unknown>>;
 
   return (
     <AutoRefresh intervalMs={10000}>
@@ -311,6 +314,23 @@ export default async function ContractDetailPage({
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl glass-card overflow-hidden mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="px-7 py-4 border-b border-white/[0.04]">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight">Attachments</h2>
+              <p className="text-[10px] text-gray-600 mt-0.5">Artifacts shared on this contract.</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          <ContractAttachmentUpload contractId={contract.id} />
+          <div className="mt-4">
+            <AttachmentList attachments={attachments as never[]} emptyLabel="No contract artifacts yet." />
+          </div>
         </div>
       </div>
 

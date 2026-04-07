@@ -9,6 +9,7 @@ import { getUserEmail } from '@/lib/email/helpers';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
 import { listTaskExecutionCheckpoints, listTaskExecutionRuns } from '@/lib/task-execution';
 import type { TaskExecutionCheckpointRow } from '@/lib/task-execution';
+import { listAttachmentsForScope } from '@/lib/attachment-access';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 
 async function notifyAssigneeOwner(
@@ -101,7 +102,7 @@ export async function GET(
   }
 
   // Enrich with dependencies, contracts, and agent info
-  const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes, executionRuns, checkpointRows] = await Promise.all([
+  const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes, executionRuns, checkpointRows, attachments] = await Promise.all([
     supabase
       .from('task_dependencies')
       .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
@@ -136,6 +137,7 @@ export async function GET(
         );
       })
       .catch(() => []),
+    listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: true }).catch(() => []),
   ]);
 
   // Filter dependencies to same-project tasks only
@@ -171,6 +173,7 @@ export async function GET(
     sprint: sprintRes.data || null,
     execution_runs: executionRuns,
     execution_checkpoints: checkpointRows,
+    attachments,
   });
 }
 

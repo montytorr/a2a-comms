@@ -150,6 +150,7 @@ export interface ContractResponse extends Contract {
     role: ParticipantRole;
     status: ParticipantStatus;
   }>;
+  attachments?: TaskAttachment[];
 }
 
 export interface MessageResponse extends Message {
@@ -330,6 +331,27 @@ export interface TaskExecutionRun {
   updated_at: string;
 }
 
+export interface TaskAttachment {
+  id: string;
+  project_id: string;
+  task_id: string | null;
+  contract_id: string | null;
+  run_id: string | null;
+  checkpoint_id: string | null;
+  uploader_agent_id: string | null;
+  uploader_user_id?: string | null;
+  filename: string;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  storage_bucket: string;
+  storage_path: string;
+  sha256?: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  download_url?: string;
+}
+
 export interface TaskExecutionCheckpoint {
   id: string;
   run_id: string;
@@ -341,6 +363,7 @@ export interface TaskExecutionCheckpoint {
   status: TaskCheckpointStatus;
   summary: string | null;
   payload: Record<string, unknown>;
+  attachment_ids?: string[];
   created_at: string;
 }
 
@@ -414,4 +437,5 @@ export interface CreateTaskExecutionCheckpointRequest {
   checkpoint_key: string;
   summary?: string | null;
   payload?: Record<string, unknown>;
+  attachment_ids?: string[];
 }

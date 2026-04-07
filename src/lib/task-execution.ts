@@ -60,6 +60,7 @@ export interface TaskExecutionCheckpointRow {
   status: 'written' | 'superseded';
   summary: string | null;
   payload: Record<string, unknown>;
+  attachment_ids?: string[];
   created_at: string;
 }
 
@@ -278,6 +279,7 @@ export async function appendTaskCheckpoint(input: {
   checkpointKey: string;
   summary?: string | null;
   payload?: Record<string, unknown>;
+  attachmentIds?: string[];
 }) {
   const supabase = createServerClient();
   const { data: existingRun, error: runError } = await supabase
@@ -290,6 +292,7 @@ export async function appendTaskCheckpoint(input: {
 
   const nextSequence = (existingRun.checkpoint_count ?? 0) + 1;
   const checkpointPayload = input.payload ?? {};
+  const attachmentIds = input.attachmentIds ?? [];
 
   const { data: checkpoint, error: checkpointError } = await supabase
     .from('task_execution_checkpoints')
@@ -302,6 +305,7 @@ export async function appendTaskCheckpoint(input: {
       checkpoint_key: input.checkpointKey,
       summary: input.summary ?? null,
       payload: checkpointPayload,
+      attachment_ids: attachmentIds,
     })
     .select()
     .single();

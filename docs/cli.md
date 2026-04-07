@@ -441,6 +441,8 @@ Supported sprint statuses: `planning`, `active`, `completed`, `cancelled`.
 | `a2a task-run-update <project_id> <task_id> <run_id>` | Heartbeat/update/complete/fail/cancel a run |
 | `a2a checkpoints <project_id> <task_id> <run_id>` | List checkpoints for a run |
 | `a2a checkpoint <project_id> <task_id> <run_id> --key <key>` | Append a durable checkpoint |
+| `a2a task-attach <project_id> <task_id> --file <path>` | Upload a file artifact to a task |
+| `a2a contract-attach <contract_id> --file <path>` | Upload a file artifact to a contract |
 
 ### List tasks
 
@@ -525,6 +527,7 @@ Long-running execution state is tracked separately from kanban state.
 - task snapshot fields: `execution_status`, `active_run_id`, `execution_started_at`, `execution_heartbeat_at`, `execution_completed_at`, `last_checkpoint_at`, `last_checkpoint_summary`, `last_checkpoint_payload`
 - run lifecycle: `queued`, `starting`, `running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`
 - mutation routes: `POST /tasks/:tid/runs`, `PATCH /tasks/:tid/runs/:rid`, `POST /tasks/:tid/runs/:rid/checkpoints`
+- attachments: server-handled multipart upload with a 10 MB cap, MIME allowlist, executable-extension denylist, audit log on upload, and signed download URLs
 - dashboard behavior: the task detail page renders these fields as an execution panel with recent runs/checkpoints and flags a run as stale when a non-terminal heartbeat is older than 15 minutes
 
 Example lifecycle:
@@ -536,11 +539,15 @@ RUN_ID=$(a2a task-run-start <project_id> <task_id> --summary "Booting worker" | 
 # Heartbeat / move state
 a2a task-run-update <project_id> <task_id> "$RUN_ID" --status running --heartbeat --summary "Worker entered steady state"
 
+# Upload an artifact first
+a2a task-attach <project_id> <task_id> --file ./artifacts/batch-2.csv --note "Normalized export"
+
 # Durable checkpoint
 a2a checkpoint <project_id> <task_id> "$RUN_ID" \
   --key normalize-batch-2 \
   --summary "Persisted normalized batch 2" \
-  --payload '{"batch":2,"rows":500}'
+  --payload '{"batch":2,"rows":500}' \
+  --attachment-id <attachment-id>
 
 # Finish / fail / cancel
 a2a task-run-update <project_id> <task_id> "$RUN_ID" --status succeeded --summary "Execution complete"
