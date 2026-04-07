@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.159] - 2026-04-07
+### Changed
+- Add A2A attachments and artifact handling
+
 ## [1.0.158] - 2026-04-07
 ### Changed
 - Fix Next.js build deprecation warnings
