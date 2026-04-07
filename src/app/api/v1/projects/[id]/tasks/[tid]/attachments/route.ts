@@ -4,7 +4,12 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
+import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiError } from '@/lib/types';
+
+function isMissingAttachmentIdsColumn(error: PostgrestError | null | undefined) {
+  return !!error && /attachment_ids/i.test(error.message || '');
+}
 
 async function verifyTask(projectId: string, taskId: string) {
   const supabase = createServerClient();
@@ -106,16 +111,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (error || !attachment) throw error;
 
     if (checkpointId) {
-      const { data: checkpoint } = await supabase
+      const checkpointResult = await supabase
         .from('task_execution_checkpoints')
         .select('attachment_ids')
         .eq('id', checkpointId)
         .single();
-      const attachmentIds = Array.isArray(checkpoint?.attachment_ids) ? checkpoint.attachment_ids : [];
-      await supabase
-        .from('task_execution_checkpoints')
-        .update({ attachment_ids: [...attachmentIds, attachment.id] })
-        .eq('id', checkpointId);
+
+      if (!isMissingAttachmentIdsColumn(checkpointResult.error)) {
+        const attachmentIds = Array.isArray(checkpointResult.data?.attachment_ids) ? checkpointResult.data.attachment_ids : [];
+        const updateResult = await supabase
+          .from('task_execution_checkpoints')
+          .update({ attachment_ids: [...attachmentIds, attachment.id] })
+          .eq('id', checkpointId);
+        if (updateResult.error) throw updateResult.error;
+      }
     }
 
     await auditLog({

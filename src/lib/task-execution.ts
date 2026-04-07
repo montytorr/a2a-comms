@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 export const TASK_EXECUTION_STATUSES = [
   'idle',
@@ -144,13 +145,37 @@ export async function listTaskExecutionRuns(taskId: string) {
   return (data || []) as TaskExecutionRunRow[];
 }
 
+function isMissingAttachmentIdsColumn(error: PostgrestError | null) {
+  return !!error && /attachment_ids/i.test(error.message || '');
+}
+
+async function selectTaskExecutionCheckpoints(
+  supabase: SupabaseClient,
+  build: (selectClause: string) => ReturnType<SupabaseClient['from']>
+) {
+  const withAttachments = await build('*');
+  if (!isMissingAttachmentIdsColumn(withAttachments.error as PostgrestError | null)) {
+    return withAttachments;
+  }
+
+  const fallback = await build('id, run_id, task_id, project_id, agent_id, sequence, checkpoint_key, status, summary, payload, created_at');
+  if (fallback.error) return fallback;
+
+  return {
+    ...fallback,
+    data: (fallback.data || []).map((row: Record<string, unknown>) => ({ ...row, attachment_ids: [] })),
+  };
+}
+
 export async function listTaskExecutionCheckpoints(runId: string) {
   const supabase = createServerClient();
-  const { data, error } = await supabase
-    .from('task_execution_checkpoints')
-    .select('*')
-    .eq('run_id', runId)
-    .order('sequence', { ascending: false });
+  const { data, error } = await selectTaskExecutionCheckpoints(supabase, (selectClause) =>
+    supabase
+      .from('task_execution_checkpoints')
+      .select(selectClause)
+      .eq('run_id', runId)
+      .order('sequence', { ascending: false })
+  );
 
   if (error) throw error;
   return (data || []) as TaskExecutionCheckpointRow[];
@@ -294,7 +319,10 @@ export async function appendTaskCheckpoint(input: {
   const checkpointPayload = input.payload ?? {};
   const attachmentIds = input.attachmentIds ?? [];
 
-  const { data: checkpoint, error: checkpointError } = await supabase
+  let checkpoint: Record<string, unknown> | null = null;
+  let checkpointError: PostgrestError | null = null;
+
+  const insertWithAttachments = await supabase
     .from('task_execution_checkpoints')
     .insert({
       run_id: input.runId,
@@ -309,6 +337,29 @@ export async function appendTaskCheckpoint(input: {
     })
     .select()
     .single();
+
+  checkpoint = insertWithAttachments.data;
+  checkpointError = insertWithAttachments.error;
+
+  if (isMissingAttachmentIdsColumn(checkpointError)) {
+    const fallbackInsert = await supabase
+      .from('task_execution_checkpoints')
+      .insert({
+        run_id: input.runId,
+        task_id: input.taskId,
+        project_id: input.projectId,
+        agent_id: input.agentId,
+        sequence: nextSequence,
+        checkpoint_key: input.checkpointKey,
+        summary: input.summary ?? null,
+        payload: checkpointPayload,
+      })
+      .select('id, run_id, task_id, project_id, agent_id, sequence, checkpoint_key, status, summary, payload, created_at')
+      .single();
+
+    checkpoint = fallbackInsert.data ? { ...fallbackInsert.data, attachment_ids: attachmentIds } : null;
+    checkpointError = fallbackInsert.error;
+  }
 
   if (checkpointError || !checkpoint) throw checkpointError;
 
@@ -343,16 +394,18 @@ export async function appendTaskCheckpoint(input: {
 
 export async function getLatestTaskCheckpoint(taskId: string, runId?: string) {
   const supabase = createServerClient();
-  let query = supabase
-    .from('task_execution_checkpoints')
-    .select('*')
-    .eq('task_id', taskId)
-    .order('sequence', { ascending: false })
-    .limit(1);
+  const { data, error } = await selectTaskExecutionCheckpoints(supabase, (selectClause) => {
+    let query = supabase
+      .from('task_execution_checkpoints')
+      .select(selectClause)
+      .eq('task_id', taskId)
+      .order('sequence', { ascending: false })
+      .limit(1);
 
-  if (runId) query = query.eq('run_id', runId);
+    if (runId) query = query.eq('run_id', runId);
+    return query.maybeSingle();
+  });
 
-  const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return (data || null) as TaskExecutionCheckpointRow | null;
 }

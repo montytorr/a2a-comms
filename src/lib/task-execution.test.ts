@@ -7,6 +7,10 @@ import {
   mapRunStatusToTaskStatus,
 } from './task-execution';
 
+function isMissingAttachmentIdsColumn(error: { message?: string } | null | undefined) {
+  return !!error && /attachment_ids/i.test(error.message || '');
+}
+
 test('run status maps cleanly to task execution snapshot status', () => {
   assert.equal(mapRunStatusToTaskStatus('queued'), 'queued');
   assert.equal(mapRunStatusToTaskStatus('starting'), 'running');
@@ -62,4 +66,10 @@ test('status guards accept only known execution values', () => {
   assert.equal(isTaskExecutionRunStatus('waiting'), true);
   assert.equal(isTaskExecutionRunStatus('blocked'), true);
   assert.equal(isTaskExecutionRunStatus('idle'), false);
+});
+
+test('missing attachment_ids detection catches pre-migration schema errors', () => {
+  assert.equal(isMissingAttachmentIdsColumn({ message: 'column task_execution_checkpoints.attachment_ids does not exist' }), true);
+  assert.equal(isMissingAttachmentIdsColumn({ message: 'duplicate key value violates unique constraint' }), false);
+  assert.equal(isMissingAttachmentIdsColumn(null), false);
 });
