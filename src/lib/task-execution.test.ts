@@ -8,6 +8,7 @@ import {
 } from './task-execution';
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract } from './handoff-contracts';
 import { getLinkedTaskForContract } from './handoff-resume';
+import { getDelegationProvenance, isDelegatedExecutionRun } from './delegated-execution';
 import type { CreateTaskRequest, UpdateTaskRequest } from './types';
 
 function isMissingAttachmentIdsColumn(error: { message?: string } | null | undefined) {
@@ -151,6 +152,37 @@ test('handoff contract helpers build deterministic handoff surfaces', () => {
 
 test('getLinkedTaskForContract is exported for accept-route handoff claims', () => {
   assert.equal(typeof getLinkedTaskForContract, 'function');
+});
+
+test('delegated execution provenance is extracted from run metadata', () => {
+  const provenance = getDelegationProvenance({
+    delegated_by_agent_id: 'agent-alpha',
+    delegated_by_run_id: 'run-1',
+    delegated_by_checkpoint_id: 'cp-1',
+    delegated_by_checkpoint_key: 'snapshot',
+    delegated_by_summary: 'Resume from API replay',
+    delegated_at: '2026-04-07T18:00:00.000Z',
+    delegation_contract_id: 'contract-1',
+    claim_type: 'delegated-execution',
+  });
+
+  assert.deepEqual(provenance, {
+    delegatedByAgentId: 'agent-alpha',
+    delegatedByRunId: 'run-1',
+    delegatedByCheckpointId: 'cp-1',
+    delegatedByCheckpointKey: 'snapshot',
+    delegatedBySummary: 'Resume from API replay',
+    delegatedAt: '2026-04-07T18:00:00.000Z',
+    delegatedFromAssigneeAgentId: null,
+    delegatedFromTaskStatus: null,
+    delegatedFromExecutionStatus: null,
+    delegationReason: null,
+    delegationContractId: 'contract-1',
+    claimType: 'delegated-execution',
+  });
+
+  assert.equal(isDelegatedExecutionRun({ metadata: { delegated_by_agent_id: 'agent-alpha' } as Record<string, unknown> }), true);
+  assert.equal(isDelegatedExecutionRun({ metadata: {} as Record<string, unknown> }), false);
 });
 
 test('task request types accept handoff contract payloads', () => {

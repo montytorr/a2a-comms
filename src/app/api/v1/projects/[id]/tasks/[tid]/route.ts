@@ -103,7 +103,7 @@ export async function GET(
   }
 
   // Enrich with dependencies, contracts, and agent info
-  const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes, executionRuns, checkpointRows, attachments] = await Promise.all([
+  const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes, executionRuns, checkpointRows, attachments, agentsRes] = await Promise.all([
     supabase
       .from('task_dependencies')
       .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
@@ -139,6 +139,7 @@ export async function GET(
       })
       .catch(() => []),
     listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: true }).catch(() => []),
+    supabase.from('agents').select('id, name, display_name'),
   ]);
 
   // Filter dependencies to same-project tasks only
@@ -162,6 +163,16 @@ export async function GET(
     visibleContractIds = new Set((participation || []).map(p => p.contract_id));
   }
 
+  const agentMap = new Map(((agentsRes.data || []) as Array<{ id: string; name: string; display_name: string }>).map((agent) => [agent.id, agent]));
+  const hydrateDelegationAgent = (record: Record<string, unknown> | null | undefined) => {
+    const delegatedByAgentId = typeof record?.delegated_by_agent_id === 'string'
+      ? record.delegated_by_agent_id
+      : typeof record?.claimed_from_agent_id === 'string'
+        ? record.claimed_from_agent_id
+        : null;
+    return delegatedByAgentId ? agentMap.get(delegatedByAgentId) || null : null;
+  };
+
   return NextResponse.json({
     ...task,
     blocked_by: blockedBy,
@@ -172,8 +183,16 @@ export async function GET(
     assignee: assigneeRes.data || null,
     reporter: reporterRes.data || null,
     sprint: sprintRes.data || null,
-    execution_runs: executionRuns,
-    execution_checkpoints: checkpointRows,
+    execution_runs: (executionRuns || []).map((run) => ({
+      ...run,
+      agent: agentMap.get(run.agent_id) || null,
+      delegated_by_agent: hydrateDelegationAgent((run.metadata || {}) as Record<string, unknown>),
+    })),
+    execution_checkpoints: (checkpointRows || []).map((checkpoint) => ({
+      ...checkpoint,
+      agent: agentMap.get(checkpoint.agent_id) || null,
+      delegated_by_agent: hydrateDelegationAgent((checkpoint.payload || {}) as Record<string, unknown>),
+    })),
     attachments,
   });
 }

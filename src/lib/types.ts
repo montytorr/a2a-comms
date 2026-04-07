@@ -327,6 +327,8 @@ export interface TaskExecutionRun {
   summary: string | null;
   error_message: string | null;
   metadata: Record<string, unknown>;
+  agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  delegated_by_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
   updated_at: string;
 }
@@ -364,6 +366,8 @@ export interface TaskExecutionCheckpoint {
   summary: string | null;
   payload: Record<string, unknown>;
   attachment_ids?: string[];
+  agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  delegated_by_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
 }
 

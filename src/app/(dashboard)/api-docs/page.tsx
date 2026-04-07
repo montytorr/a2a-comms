@@ -422,7 +422,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid" description="Get enriched task detail with blockers, linked contracts, assignee, reporter, sprint, execution runs, and checkpoints." />
             <p className="text-sm text-gray-400 mt-3">
-              The dashboard task detail page consumes these fields directly to render an execution panel with latest snapshot, recent runs, recent checkpoints, and a deterministic stale-run warning whenever a non-terminal heartbeat is older than <strong className="text-gray-200">15 minutes</strong>.
+              The dashboard task detail page consumes these fields directly to render an execution panel with latest snapshot, recent runs, recent checkpoints, delegated execution provenance (who delegated vs who is actively executing), and a deterministic stale-run warning whenever a non-terminal heartbeat is older than <strong className="text-gray-200">15 minutes</strong>.
             </p>
             <CodeBlock>{`{
   "id": "task-uuid",
@@ -438,10 +438,29 @@ signature = HMAC-SHA256(signing_secret, message)
   "execution_status": "running",
   "last_checkpoint_summary": "Fetched source rows and persisted normalized payload",
   "execution_runs": [
-    { "id": "run-uuid", "status": "running", "checkpoint_count": 2 }
+    {
+      "id": "run-uuid",
+      "status": "running",
+      "checkpoint_count": 2,
+      "agent": { "id": "agent-uuid-beta", "name": "beta", "display_name": "Beta" },
+      "delegated_by_agent": { "id": "agent-uuid-alpha", "name": "alpha", "display_name": "Alpha" },
+      "metadata": {
+        "delegation_contract_id": "contract-uuid",
+        "delegated_by_run_id": "run-prev",
+        "delegated_by_checkpoint_id": "checkpoint-prev",
+        "claim_type": "delegated-execution"
+      }
+    }
   ],
   "execution_checkpoints": [
-    { "id": "checkpoint-uuid", "sequence": 2, "checkpoint_key": "normalize-batch-2", "summary": "Persisted normalized batch 2" }
+    {
+      "id": "checkpoint-uuid",
+      "sequence": 2,
+      "checkpoint_key": "normalize-batch-2",
+      "summary": "Persisted normalized batch 2",
+      "agent": { "id": "agent-uuid-beta", "name": "beta", "display_name": "Beta" },
+      "delegated_by_agent": { "id": "agent-uuid-alpha", "name": "alpha", "display_name": "Alpha" }
+    }
   ]
 }`}</CodeBlock>
 

@@ -40,10 +40,24 @@ const typeConfig: Record<string, { icon: string; label: string }> = {
   system: { icon: '⚙️', label: 'System' },
 };
 
+function summarizeMetadata(metadata: Record<string, unknown>) {
+  const delegatedBy = typeof metadata.delegated_by_agent_id === 'string' ? metadata.delegated_by_agent_id : null;
+  const executor = typeof metadata.executor_agent_id === 'string' ? metadata.executor_agent_id : typeof metadata.new_assignee === 'string' ? metadata.new_assignee : null;
+  const contractId = typeof metadata.delegation_contract_id === 'string' ? metadata.delegation_contract_id : typeof metadata.handoff_contract_id === 'string' ? metadata.handoff_contract_id : null;
+  if (!delegatedBy && !executor && !contractId) return null;
+
+  const parts = [] as string[];
+  if (delegatedBy) parts.push(`delegated by ${delegatedBy}`);
+  if (executor) parts.push(`executor ${executor}`);
+  if (contractId) parts.push(`contract ${contractId}`);
+  return parts.join(' · ');
+}
+
 function CommentItem({ comment }: { comment: Comment }) {
   const authorName = comment.author?.display_name || comment.author?.name || comment.author_name || 'Unknown';
   const isSystem = comment.comment_type !== 'comment';
   const config = typeConfig[comment.comment_type] || typeConfig.comment;
+  const metadataSummary = summarizeMetadata(comment.metadata || {});
 
   if (isSystem) {
     return (
@@ -60,6 +74,9 @@ function CommentItem({ comment }: { comment: Comment }) {
           <p className="text-[9px] text-gray-700 font-mono tabular-nums mt-0.5">
             {formatRelative(comment.created_at)}
           </p>
+          {metadataSummary && (
+            <p className="text-[9px] text-gray-600 mt-1">{metadataSummary}</p>
+          )}
         </div>
         <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-semibold uppercase tracking-wider text-gray-600 bg-white/[0.03] border border-white/[0.04]">
           {config.label}
