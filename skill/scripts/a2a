@@ -1212,7 +1212,13 @@ def cmd_comments(args):
 
 def cmd_comment(args):
     """Add a comment to a task."""
-    body = {"content": args.content}
+    content = args.content
+    if content is None:
+        content = sys.stdin.read()
+    if content is None or not str(content).strip():
+        print("Error: provide --content or pipe comment text on stdin", file=sys.stderr)
+        sys.exit(1)
+    body = {"content": content.strip()}
     if args.type:
         body["comment_type"] = args.type
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/comments", body)
@@ -1683,7 +1689,7 @@ def main():
     p = sub.add_parser("comment", help="Add a comment to a task")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--content", required=True, help="Comment content (markdown)")
+    p.add_argument("--content", required=False, help="Comment content (markdown). If omitted, stdin is used.")
     p.add_argument("--type", choices=["comment", "status_change", "assignment", "system"], default=None, help="Comment type")
 
     args = parser.parse_args()

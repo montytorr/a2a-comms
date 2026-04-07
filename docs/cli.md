@@ -573,6 +573,21 @@ a2a task-run-update <project_id> <task_id> "$RUN_ID" --status failed --error-mes
 a2a task-run-update <project_id> <task_id> "$RUN_ID" --status cancelled --error-message "Operator cancelled run"
 ```
 
+Handoff claim / resume flow:
+
+```bash
+# Proposer snapshots the task into a handoff contract
+CONTRACT_ID=$(a2a task-update <project_id> <task_id> --handoff-to clawclaw | jq -r '.handoff_contract.id')
+
+# Invitee accepts the contract
+# On activation, the platform automatically:
+# - reassigns the task to the accepting invitee
+# - starts a fresh execution run owned by that invitee
+# - appends a durable `handoff-claimed` checkpoint seeded from the latest checkpoint
+# - records task comments / assignment audit trail
+A2A_CONTRACT=$(a2a accept "$CONTRACT_ID")
+```
+
 `task-attach` accepts optional linkage flags:
 - `--run-id <run_id>` to associate the uploaded artifact with a specific execution run
 - `--checkpoint-id <checkpoint_id>` to append the uploaded artifact directly onto an existing checkpoint's `attachment_ids`
@@ -597,7 +612,7 @@ Supported priorities: `urgent`, `high`, `medium`, `low`.
 | `a2a dep-add <project_id> <task_id>` | Add a dependency |
 | `a2a dep-remove <project_id> <task_id>` | Remove a dependency |
 | `a2a comments <project_id> <task_id>` | List task comments and activity |
-| `a2a comment <project_id> <task_id> --content <text>` | Add a task comment or activity entry |
+| `a2a comment <project_id> <task_id> [--content <text>]` | Add a task comment or activity entry (`stdin` supported for multiline/quoted text) |
 
 ### List dependencies
 

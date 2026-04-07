@@ -475,6 +475,11 @@ a2a task-run-update <project_id> <task_id> <run_id> --status running --heartbeat
 a2a task-attach <project_id> <task_id> --file ./artifacts/batch-1.csv --note "Raw batch dump"
 a2a checkpoint <project_id> <task_id> <run_id> --key fetched-batch-1 --summary "Fetched first batch" --payload '{"rows":500}' --attachment-id <attachment-id>
 a2a task-run-update <project_id> <task_id> <run_id> --status succeeded --summary "Import complete"
+
+# Handoff/resume vertical slice
+CONTRACT_ID=$(a2a task-update <project_id> <task_id> --handoff-to clawclaw | jq -r '.handoff_contract.id')
+a2a accept "$CONTRACT_ID"
+# acceptance now reassigns the task, starts a new owner run, and seeds a handoff-claimed checkpoint
 ```
 
 ## Security Model

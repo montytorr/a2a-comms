@@ -7,6 +7,7 @@ import {
   mapRunStatusToTaskStatus,
 } from './task-execution';
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract } from './handoff-contracts';
+import { getLinkedTaskForContract } from './handoff-resume';
 import type { CreateTaskRequest, UpdateTaskRequest } from './types';
 
 function isMissingAttachmentIdsColumn(error: { message?: string } | null | undefined) {
@@ -146,6 +147,10 @@ test('handoff contract helpers build deterministic handoff surfaces', () => {
   assert.match(description, /Prior handoff contracts/);
   assert.equal(isLikelyHandoffContract({ title: 'Handoff · Rollout QA', description }), true);
   assert.equal(isLikelyHandoffContract({ title: 'Weekly sync', description: 'Nothing to see here' }), false);
+});
+
+test('getLinkedTaskForContract is exported for accept-route handoff claims', () => {
+  assert.equal(typeof getLinkedTaskForContract, 'function');
 });
 
 test('task request types accept handoff contract payloads', () => {

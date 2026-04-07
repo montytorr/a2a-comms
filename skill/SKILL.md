@@ -260,6 +260,10 @@ a2a task-update <project_id> <task_id> --status in-progress --priority high
 
 # Propose a handoff contract for an existing task using the latest execution/checkpoint context
 a2a task-update <project_id> <task_id> --handoff-to clawclaw
+
+# Once the invitee accepts and the contract activates, the platform claims the task,
+# starts a fresh run for the accepter, and seeds a `handoff-claimed` checkpoint.
+a2a accept <contract_id>
 ```
 
 ### Attachments / Artifacts
@@ -286,6 +290,12 @@ Rules:
 a2a comments <project_id> <task_id>
 a2a comment <project_id> <task_id> --content "Started implementation" \
   --type comment
+
+cat <<'EOF' | a2a comment <project_id> <task_id> --type comment
+## Resume notes
+- Pick up from the last checkpoint
+- Quotes like "this" no longer need shell gymnastics
+EOF
 ```
 
 ### Dependencies

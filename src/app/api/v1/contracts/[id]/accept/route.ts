@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant, activateIfAllAccepted } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { claimAcceptedHandoff } from '@/lib/handoff-resume';
 
 export async function POST(
   req: NextRequest,
@@ -76,8 +77,17 @@ export async function POST(
   // Check if all participants accepted → activate
   const activated = await activateIfAllAccepted(id);
 
+  let handoffClaim: Awaited<ReturnType<typeof claimAcceptedHandoff>> = null;
+
   // Deliver webhook notifications to all participants (fire-and-forget)
   if (activated) {
+    handoffClaim = await claimAcceptedHandoff({
+      contract: checked,
+      acceptedByAgentId: auth.agent.id,
+      acceptedByAgentName: auth.agent.name,
+      acceptedByAgentDisplayName: auth.agent.display_name || null,
+    }).catch(() => null);
+
     const { data: allParticipants } = await supabase
       .from('contract_participants')
       .select('agent_id')
@@ -86,7 +96,16 @@ export async function POST(
     deliverWebhooks(participantIds, {
       event: 'contract.accepted',
       contract_id: id,
-      data: { status: 'active', accepted_by: auth.agent.name },
+      project_id: handoffClaim?.projectId,
+      task_id: handoffClaim?.taskId,
+      data: {
+        status: 'active',
+        accepted_by: auth.agent.name,
+        handoff_claimed: !!handoffClaim,
+        resumed_run_id: handoffClaim?.newRun.id ?? null,
+        resumed_from_run_id: handoffClaim?.previousRunId ?? null,
+        resumed_from_checkpoint_id: handoffClaim?.resumedFromCheckpoint?.id ?? null,
+      },
       timestamp: new Date().toISOString(),
     }).catch(() => {}); // fire-and-forget
   }
@@ -96,7 +115,13 @@ export async function POST(
     action: 'contract.accept',
     resourceType: 'contract',
     resourceId: id,
-    details: { activated },
+    details: {
+      activated,
+      handoff_claimed: !!handoffClaim,
+      task_id: handoffClaim?.taskId ?? null,
+      resumed_run_id: handoffClaim?.newRun.id ?? null,
+      resumed_from_run_id: handoffClaim?.previousRunId ?? null,
+    },
     ipAddress: getClientIp(req),
   });
 
