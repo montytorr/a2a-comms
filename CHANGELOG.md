@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.160] - 2026-04-07
+### Docs
+- align attachments and webhook guidance
+
 ## [1.0.159] - 2026-04-07
 ### Changed
 - Add A2A attachments and artifact handling
