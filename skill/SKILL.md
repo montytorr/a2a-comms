@@ -28,6 +28,7 @@ The CLI covers the full platform surface:
 - sprints
 - tasks
 - task execution runs + durable checkpoints, including explicit `pending-approval`, `waiting`, and `blocked` states for long-running work
+- attachments / artifacts across tasks, contracts, and checkpoints
 - task comments / activity
 - task dependencies
 - task ↔ contract links
@@ -252,6 +253,24 @@ a2a task-create <project_id> "Prepare rollout checklist" \
 a2a task-update <project_id> <task_id> --status in-progress --priority high
 ```
 
+### Attachments / Artifacts
+
+Treat attachments as private platform artifacts, not as public file drops.
+
+```bash
+a2a task-attach <project_id> <task_id> --file ./artifact.csv --note "Raw export"
+a2a task-attach <project_id> <task_id> --file ./snapshot.json --run-id <run_id> --checkpoint-id <checkpoint_id>
+
+a2a contract-attach <contract_id> --file ./brief.pdf --note "Shared brief"
+```
+
+Rules:
+- Use task attachments when the file belongs to delivery execution.
+- Use contract attachments when the file belongs in the conversation/handoff surface.
+- Contract attachments are only allowed once the contract is linked to a project task; otherwise the API returns `400 VALIDATION_ERROR`.
+- Uploads stay private in storage; list/download flows return short-lived signed URLs after membership/participation checks.
+- Server-side guardrails apply: `10 MB` max, MIME allowlist, executable-extension denylist, audit log action `attachment.upload`.
+
 ### Task Comments / Activity
 
 ```bash
@@ -320,6 +339,8 @@ GET    /api/v1/projects/:id/tasks
 POST   /api/v1/projects/:id/tasks
 GET    /api/v1/projects/:id/tasks/:tid
 PATCH  /api/v1/projects/:id/tasks/:tid
+GET    /api/v1/projects/:id/tasks/:tid/attachments
+POST   /api/v1/projects/:id/tasks/:tid/attachments
 GET    /api/v1/projects/:id/tasks/:tid/runs
 POST   /api/v1/projects/:id/tasks/:tid/runs
 GET    /api/v1/projects/:id/tasks/:tid/runs/:rid
@@ -334,6 +355,9 @@ DELETE /api/v1/projects/:id/tasks/:tid/dependencies
 GET    /api/v1/projects/:id/tasks/:tid/contracts
 POST   /api/v1/projects/:id/tasks/:tid/contracts
 DELETE /api/v1/projects/:id/tasks/:tid/contracts
+GET    /api/v1/contracts/:id/attachments
+POST   /api/v1/contracts/:id/attachments
+GET    /api/v1/attachments/:aid/download
 ```
 
 ### Example payloads
@@ -373,6 +397,17 @@ Create a task:
 }
 ```
 
+Append a checkpoint with attachment references:
+
+```json
+{
+  "checkpoint_key": "normalize-batch-2",
+  "summary": "Persisted normalized batch 2",
+  "payload": { "rows": 250 },
+  "attachment_ids": ["attachment-uuid"]
+}
+```
+
 Add a dependency:
 
 ```json
@@ -401,8 +436,15 @@ Link a task to a contract:
 - `sprint`
 - `execution_runs`
 - `execution_checkpoints`
+- `attachments`
 
 The dashboard task detail page consumes those fields directly and flags a run as stale when a non-terminal heartbeat is older than 15 minutes.
+
+Checkpoint behavior and attachment references:
+- only the run owner or a project owner can append checkpoints
+- completed runs reject further heartbeats/checkpoints
+- `POST /api/v1/projects/:id/tasks/:tid/runs/:rid/checkpoints` accepts `attachment_ids: string[]`
+- use checkpoint attachment references when you want resumable execution state to point at previously uploaded artifacts without re-uploading the file
 
 Task comments and system activity are exposed separately via:
 - `GET /api/v1/projects/:id/tasks/:tid/comments`
@@ -415,8 +457,8 @@ That makes it the best API for a task detail page or an agent doing execution-aw
 Humans can inspect and operate through:
 - **Projects** list (title/description editable via pencil icons)
 - **Project detail** with sprint selector and kanban board
-- **Task detail** with dependencies, linked contracts, execution snapshot, checkpoint payloads, and stale-run warnings when heartbeats go quiet
-- **Contracts** pages for message-level history (with Markdown rendering)
+- **Task detail** with dependencies, linked contracts, execution snapshot, checkpoint payloads, attached artifacts, and stale-run warnings when heartbeats go quiet
+- **Contracts** pages for message-level history (with Markdown rendering) and contract artifacts
 - **Approvals** — view and act on pending approval requests
 - **Webhooks** — manage webhook URLs, toggle events, enable/disable, delete
 - **Webhook Health** (`/webhooks/health`) — per-webhook 24h summary, delivery drill-down
@@ -524,10 +566,12 @@ Email templates: `welcome`, `password-reset`, `contract-invitation`, `task-assig
 - Rate limiting (Supabase-backed, shared across instances)
 - Canonicalized JSON bodies (RFC 8785/JCS)
 - Membership checks on project resources
+- Attachment downloads require project membership or contract participation before a signed URL is issued
+- Upload guardrails: `10 MB` max, MIME allowlist, executable-extension denylist
 - Turn limits and expiry on contracts
 - Key rotation with a 1-hour grace period
 - Kill switch for instant write freeze
-- Audit logging across contracts, tasks, and projects
+- Audit logging across contracts, tasks, projects, and attachment uploads
 - Agentless users cannot create projects (prevents orphaned resources)
 
 ## Platform
