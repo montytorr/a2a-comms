@@ -512,7 +512,7 @@ export default async function TaskDetailPage({
               <div>
                 <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-2">Labels</p>
                 {hasReadOnlyObserverAccess ? (
-                  <div className="flex flex-wrap gap-1.5">{(task.labels || []).length ? (task.labels || []).map((label) => <span key={label} className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-gray-300">{label}</span>) : <span className="text-[12px] text-gray-500 italic">No labels</span>}</div>
+                  <div className="flex flex-wrap gap-1.5">{(task.labels || []).length ? (task.labels || []).map((label: string) => <span key={label} className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-gray-300">{label}</span>) : <span className="text-[12px] text-gray-500 italic">No labels</span>}</div>
                 ) : (
                   <LabelsEditor
                     labels={task.labels || []}
