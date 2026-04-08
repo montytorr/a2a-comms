@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.168] - 2026-04-08
+### Changed
+- Add brokered escalation collaboration slice
+
 ## [1.0.167] - 2026-04-08
 ### Changed
 - Ship observer read-only participation slice
