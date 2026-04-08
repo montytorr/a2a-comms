@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.167] - 2026-04-08
+### Changed
+- Ship observer read-only participation slice
+
 ## [1.0.166] - 2026-04-07
 ### Changed
 - Fix observer task labels typing
