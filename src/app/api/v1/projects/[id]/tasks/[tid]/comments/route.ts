@@ -153,14 +153,15 @@ export async function POST(
   const normalizedCommentType = member.accessKind === 'observer'
     ? normalizeObserverCommentType(commentType)
     : commentType;
+  const callerMetadata = parsed.metadata || {};
   const metadata = member.accessKind === 'observer'
     ? {
-        ...buildObserverCommentMetadata(parsed.metadata || {}),
+        ...buildObserverCommentMetadata(callerMetadata),
         participant_role: member.role,
         participant_access_kind: member.accessKind,
       }
     : {
-        ...(parsed.metadata || {}),
+        ...callerMetadata,
         participant_role: member.role,
         participant_access_kind: member.accessKind,
       };

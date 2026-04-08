@@ -339,6 +339,7 @@ export interface TaskExecutionRun {
   agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   delegated_by_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   observer_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  broker_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
   updated_at: string;
 }
@@ -379,6 +380,7 @@ export interface TaskExecutionCheckpoint {
   agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   delegated_by_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   observer_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  broker_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
 }
 
@@ -412,6 +414,16 @@ export interface UpdateSprintRequest {
   position?: number;
 }
 
+export interface EscalationContractRequest {
+  brokers: string[];
+  max_turns?: number;
+  expires_in_hours?: number;
+  title?: string;
+  description?: string;
+  escalation_reason?: string;
+  requested_intervention?: string;
+}
+
 export interface CreateTaskRequest {
   title: string;
   description?: string;
@@ -427,6 +439,7 @@ export interface CreateTaskRequest {
     title?: string;
     description?: string;
   };
+  escalation_contract?: EscalationContractRequest;
 }
 
 export interface UpdateTaskRequest {
@@ -446,6 +459,7 @@ export interface UpdateTaskRequest {
     title?: string;
     description?: string;
   };
+  escalation_contract?: EscalationContractRequest;
 }
 
 export interface CreateTaskExecutionRunRequest {

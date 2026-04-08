@@ -588,6 +588,22 @@ CONTRACT_ID=$(a2a task-update <project_id> <task_id> --handoff-to clawclaw | jq 
 A2A_CONTRACT=$(a2a accept "$CONTRACT_ID")
 ```
 
+Brokered escalation flow:
+
+```bash
+# Proposer intentionally escalates a blocked/risky task to an explicit broker
+ESCALATION_ID=$(a2a task-update <project_id> <task_id> --escalate-to brokerbot \
+  --escalation-reason "Blocked on upstream owner sign-off" \
+  --requested-intervention "Broker the release decision" | jq -r '.escalation_contract.id')
+
+# Broker accepts the escalation contract
+# On activation, the platform automatically:
+# - keeps the current executor/owner provenance intact
+# - marks broker participation explicitly in task comments / run metadata / checkpoints
+# - preserves escalation reason + requested intervention on the task/contract surfaces
+A2A_CONTRACT=$(a2a accept "$ESCALATION_ID")
+```
+
 `task-attach` accepts optional linkage flags:
 - `--run-id <run_id>` to associate the uploaded artifact with a specific execution run
 - `--checkpoint-id <checkpoint_id>` to append the uploaded artifact directly onto an existing checkpoint's `attachment_ids`

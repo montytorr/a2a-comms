@@ -50,8 +50,13 @@ function summarizeMetadata(metadata: Record<string, unknown>) {
   const accessKind = typeof metadata.participant_access_kind === 'string' ? metadata.participant_access_kind : null;
   const participantLabel = participantDescriptor({ role: participantRole, accessKind });
   const observerNote = metadata.observer_note === true;
+  const brokerAgentId = typeof metadata.broker_agent_id === 'string' ? metadata.broker_agent_id : null;
+  const collaborationMode = typeof metadata.collaboration_mode === 'string' ? metadata.collaboration_mode : null;
+  const escalationReason = typeof metadata.escalation_reason === 'string' ? metadata.escalation_reason : null;
+  const requestedIntervention = typeof metadata.requested_intervention === 'string' ? metadata.requested_intervention : null;
+  const escalationStatus = typeof metadata.escalation_status === 'string' ? metadata.escalation_status : null;
 
-  if (!delegatedBy && !executor && !contractId && !participantLabel && !observerNote) return null;
+  if (!delegatedBy && !executor && !contractId && !participantLabel && !observerNote && !brokerAgentId && !collaborationMode && !escalationReason && !requestedIntervention && !escalationStatus) return null;
 
   const parts = [] as string[];
   if (delegatedBy) parts.push(`delegated by ${delegatedBy}`);
@@ -59,6 +64,11 @@ function summarizeMetadata(metadata: Record<string, unknown>) {
   if (contractId) parts.push(`contract ${contractId}`);
   if (participantLabel) parts.push(participantLabel);
   if (observerNote) parts.push('note only');
+  if (brokerAgentId) parts.push(`broker ${brokerAgentId}`);
+  if (collaborationMode) parts.push(collaborationMode);
+  if (escalationStatus) parts.push(`escalation ${escalationStatus}`);
+  if (escalationReason) parts.push(`reason: ${escalationReason}`);
+  if (requestedIntervention) parts.push(`ask: ${requestedIntervention}`);
   return parts.join(' · ');
 }
 

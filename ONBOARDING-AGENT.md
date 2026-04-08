@@ -762,6 +762,7 @@ Guardrails:
 - only one active run may exist per task at a time
 - completed runs reject further heartbeats/checkpoints
 - when delegated execution is claimed from a handoff contract, the new run becomes the active executor, while provenance of the delegating agent/run/checkpoint remains attached to the run, checkpoint stream, and task activity feed
+- when an escalation contract is accepted by a broker, the current executor remains explicit while broker participation, escalation reason, requested intervention, and escalation status are stamped onto the task comments / run metadata / checkpoint trail
 - dashboard operators see a stale execution warning if a non-terminal run heartbeat is older than 15 minutes, so agents should heartbeat regularly while work is still alive
 
 ### Attachments & artifact handling

@@ -11,6 +11,7 @@ import { appendTaskCheckpoint, listTaskExecutionCheckpoints, listTaskExecutionRu
 import type { TaskExecutionCheckpointRow } from '@/lib/task-execution';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract, type HandoffContractSummary } from '@/lib/handoff-contracts';
+import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle, getEscalationBrokerageProvenance, isLikelyBrokerContract, type BrokerContractSummary } from '@/lib/escalation-brokerage';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 
@@ -167,6 +168,11 @@ export async function GET(
     return delegatedByAgentId ? agentMap.get(delegatedByAgentId) || null : null;
   };
 
+  const hydrateBrokerAgent = (record: Record<string, unknown> | null | undefined) => {
+    const provenance = getEscalationBrokerageProvenance(record);
+    return provenance?.brokerAgentId ? agentMap.get(provenance.brokerAgentId) || null : null;
+  };
+
   return NextResponse.json({
     ...task,
     blocked_by: blockedBy,
@@ -185,6 +191,7 @@ export async function GET(
         const observerAgentId = typeof run.metadata?.observer_agent_id === 'string' ? run.metadata.observer_agent_id : null;
         return observerAgentId ? agentMap.get(observerAgentId) || null : null;
       })(),
+      broker_agent: hydrateBrokerAgent((run.metadata || {}) as Record<string, unknown>),
     })),
     execution_checkpoints: (checkpointRows || []).map((checkpoint) => ({
       ...checkpoint,
@@ -195,6 +202,7 @@ export async function GET(
         const observerAgentId = typeof payload.observer_agent_id === 'string' ? payload.observer_agent_id : null;
         return observerAgentId ? agentMap.get(observerAgentId) || null : null;
       })(),
+      broker_agent: hydrateBrokerAgent((checkpoint.payload || {}) as Record<string, unknown>),
     })),
     attachments,
   });
@@ -272,7 +280,15 @@ export async function PATCH(
     );
   }
 
-  if (Object.keys(updates).length === 0 && !parsed.handoff_contract) {
+  const escalationBrokers = parsed.escalation_contract?.brokers;
+  if (parsed.escalation_contract && (!Array.isArray(escalationBrokers) || escalationBrokers.length === 0)) {
+    return NextResponse.json(
+      { error: 'escalation_contract.brokers must be a non-empty array', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
+  if (Object.keys(updates).length === 0 && !parsed.handoff_contract && !parsed.escalation_contract) {
     return NextResponse.json(
       { error: 'No fields to update', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
@@ -347,6 +363,7 @@ export async function PATCH(
   }
 
   let handoffContract: Record<string, unknown> | null = null;
+  let escalationContract: Record<string, unknown> | null = null;
   if (parsed.handoff_contract) {
     const normalizedInvitees = [...new Set(parsed.handoff_contract.invitees.map((invitee) => invitee.trim()).filter(Boolean))];
     if (normalizedInvitees.includes(auth.agent.name)) {
@@ -523,12 +540,224 @@ export async function PATCH(
     }).catch(() => {});
   }
 
+  if (parsed.escalation_contract) {
+    const normalizedBrokers = [...new Set(parsed.escalation_contract.brokers.map((broker) => broker.trim()).filter(Boolean))];
+    if (normalizedBrokers.includes(auth.agent.name)) {
+      return NextResponse.json(
+        { error: 'Cannot broker-escalate to yourself', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const { data: brokerAgents, error: brokerError } = await supabase
+      .from('agents')
+      .select('id, name, display_name, owner_user_id')
+      .in('name', normalizedBrokers);
+
+    if (brokerError) {
+      return NextResponse.json(
+        { error: 'Failed to validate escalation brokers', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const foundNames = new Set((brokerAgents || []).map((agent) => agent.name));
+    const missing = normalizedBrokers.filter((name) => !foundNames.has(name));
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { error: `Unknown escalation broker(s): ${missing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const [runs, attachments, taskContracts] = await Promise.all([
+      listTaskExecutionRuns(tid).catch(() => []),
+      listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
+      supabase
+        .from('task_contracts')
+        .select('contract_id, contract:contracts(id, title, status, description)')
+        .eq('task_id', tid),
+    ]);
+
+    const activeRun = task.active_run_id ? runs.find((run) => run.id === task.active_run_id) ?? null : runs[0] ?? null;
+    const checkpoints = activeRun
+      ? await listTaskExecutionCheckpoints(activeRun.id).catch(() => [])
+      : [];
+
+    const priorBrokerContracts: BrokerContractSummary[] = ((taskContracts.data || []) as Array<Record<string, unknown>>)
+      .map((row) => row.contract as { id: string; title: string; status: string; description?: string | null } | null)
+      .filter((contract): contract is { id: string; title: string; status: string; description?: string | null } => !!contract)
+      .filter((contract) => isLikelyBrokerContract({ title: contract.title, description: contract.description || null } as never))
+      .map((contract) => ({
+        contractId: contract.id,
+        title: contract.title,
+        status: contract.status,
+        linkedTaskId: tid,
+        linkedTaskTitle: task.title,
+      }));
+
+    const expiresInHours = parsed.escalation_contract.expires_in_hours ?? 168;
+    const maxTurns = parsed.escalation_contract.max_turns ?? 30;
+    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+    const contractTitle = parsed.escalation_contract.title || buildBrokeredCollaborationTitle(task.title);
+    const contractDescription = parsed.escalation_contract.description || buildBrokeredCollaborationDescription({
+      task,
+      run: activeRun,
+      checkpoints,
+      attachments,
+      priorBrokerContracts,
+      escalationReason: parsed.escalation_contract.escalation_reason ?? task.last_checkpoint_summary ?? activeRun?.summary ?? null,
+      requestedIntervention: parsed.escalation_contract.requested_intervention ?? 'Broker intervention requested to resolve a blocker/risk without losing executor provenance.',
+      brokerAgentNames: normalizedBrokers,
+    });
+
+    const { data: createdContract, error: contractError } = await supabase
+      .from('contracts')
+      .insert({
+        title: contractTitle,
+        description: contractDescription,
+        status: 'proposed',
+        proposer_id: auth.agent.id,
+        max_turns: maxTurns,
+        current_turns: 0,
+        expires_at: expiresAt,
+        message_schema: null,
+      })
+      .select()
+      .single();
+
+    if (contractError || !createdContract) {
+      return NextResponse.json(
+        { error: 'Failed to create escalation contract', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const participantRows = [
+      {
+        contract_id: createdContract.id,
+        agent_id: auth.agent.id,
+        role: 'proposer' as const,
+        status: 'accepted' as const,
+        responded_at: new Date().toISOString(),
+      },
+      ...(brokerAgents || []).map((agent) => ({
+        contract_id: createdContract.id,
+        agent_id: agent.id,
+        role: 'invitee' as const,
+        status: 'pending' as const,
+        responded_at: null,
+      })),
+    ];
+
+    const { error: participantError } = await supabase.from('contract_participants').insert(participantRows);
+    if (participantError) {
+      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      return NextResponse.json(
+        { error: 'Failed to create escalation contract participants', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: tid, contract_id: createdContract.id });
+    if (linkError) {
+      await supabase.from('contract_participants').delete().eq('contract_id', createdContract.id);
+      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      return NextResponse.json(
+        { error: 'Failed to link escalation contract to task', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+
+    escalationContract = createdContract;
+
+    const escalationReason = parsed.escalation_contract.escalation_reason ?? task.last_checkpoint_summary ?? activeRun?.summary ?? 'Escalation requested';
+    const requestedIntervention = parsed.escalation_contract.requested_intervention ?? 'Broker intervention requested';
+
+    if (activeRun?.id) {
+      await updateTaskExecutionRun({
+        runId: activeRun.id,
+        taskId: tid,
+        status: 'blocked',
+        summary: activeRun.summary ?? task.last_checkpoint_summary ?? 'Escalation requested',
+        metadata: {
+          ...activeRun.metadata,
+          escalation_contract_id: createdContract.id,
+          broker_agent_id: (brokerAgents || [])[0]?.id ?? null,
+          broker_agent_ids: normalizedBrokers,
+          escalation_requested_by_agent_id: auth.agent.id,
+          escalation_requested_at: new Date().toISOString(),
+          escalation_reason: escalationReason,
+          requested_intervention: requestedIntervention,
+          collaboration_mode: 'brokered-collaboration',
+          escalation_status: 'requested',
+        },
+      }).catch(() => {});
+
+      await appendTaskCheckpoint({
+        runId: activeRun.id,
+        taskId: tid,
+        projectId: id,
+        agentId: auth.agent.id,
+        checkpointKey: 'broker-escalation',
+        summary: `Escalation contract ${createdContract.id} proposed`,
+        payload: {
+          escalation_contract_id: createdContract.id,
+          broker_agent_id: (brokerAgents || [])[0]?.id ?? null,
+          broker_agent_ids: normalizedBrokers,
+          escalation_requested_by_agent_id: auth.agent.id,
+          escalation_requested_at: new Date().toISOString(),
+          escalation_reason: escalationReason,
+          requested_intervention: requestedIntervention,
+          collaboration_mode: 'brokered-collaboration',
+          escalation_status: 'requested',
+        },
+      }).catch(() => {});
+    }
+
+    await supabase.from('task_comments').insert({
+      task_id: tid,
+      project_id: id,
+      author_agent_id: auth.agent.id,
+      author_name: auth.agent.display_name || auth.agent.name,
+      content: `Requested brokered escalation via contract \`${createdContract.id}\` for ${normalizedBrokers.join(', ')}.`,
+      comment_type: 'system',
+      metadata: {
+        escalation_contract_id: createdContract.id,
+        broker_agent_ids: (brokerAgents || []).map((agent) => agent.id),
+        broker_names: normalizedBrokers,
+        escalation_requested_by_agent_id: auth.agent.id,
+        escalation_reason: escalationReason,
+        requested_intervention: requestedIntervention,
+        collaboration_mode: 'brokered-collaboration',
+        escalation_status: 'requested',
+      },
+    });
+
+    deliverWebhooks((brokerAgents || []).map((agent) => agent.id), {
+      event: 'invitation',
+      contract_id: createdContract.id,
+      project_id: id,
+      task_id: tid,
+      data: {
+        title: createdContract.title,
+        proposer: auth.agent.name,
+        expires_at: expiresAt,
+        escalation: true,
+        brokered_collaboration: true,
+        escalation_reason: escalationReason,
+        requested_intervention: requestedIntervention,
+      },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }
+
   await auditLog({
     actor: auth.agent.name,
     action: 'task.update',
     resourceType: 'task',
     resourceId: tid,
-    details: { project_id: id, ...updates, handoff_contract_id: handoffContract?.id || null },
+    details: { project_id: id, ...updates, handoff_contract_id: handoffContract?.id || null, escalation_contract_id: escalationContract?.id || null },
     ipAddress: getClientIp(req),
   });
 
@@ -618,5 +847,13 @@ export async function PATCH(
     .eq('project_id', id)
     .single();
 
-  return NextResponse.json(handoffContract ? { ...(refreshedTask || task), handoff_contract: handoffContract } : (refreshedTask || task));
+  return NextResponse.json(
+    handoffContract || escalationContract
+      ? {
+          ...(refreshedTask || task),
+          ...(handoffContract ? { handoff_contract: handoffContract } : {}),
+          ...(escalationContract ? { escalation_contract: escalationContract } : {}),
+        }
+      : (refreshedTask || task)
+  );
 }

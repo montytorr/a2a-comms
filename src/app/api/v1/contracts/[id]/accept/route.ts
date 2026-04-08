@@ -6,6 +6,7 @@ import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant, activateIfAllAccepted } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { claimAcceptedHandoff } from '@/lib/handoff-resume';
+import { getEscalationBrokerageProvenance, isLikelyBrokerContract } from '@/lib/escalation-brokerage';
 
 export async function POST(
   req: NextRequest,
@@ -78,15 +79,82 @@ export async function POST(
   const activated = await activateIfAllAccepted(id);
 
   let handoffClaim: Awaited<ReturnType<typeof claimAcceptedHandoff>> = null;
+  let brokerActivation: { projectId: string; taskId: string; runId: string | null } | null = null;
 
   // Deliver webhook notifications to all participants (fire-and-forget)
   if (activated) {
-    handoffClaim = await claimAcceptedHandoff({
-      contract: checked,
-      acceptedByAgentId: auth.agent.id,
-      acceptedByAgentName: auth.agent.name,
-      acceptedByAgentDisplayName: auth.agent.display_name || null,
-    }).catch(() => null);
+    if (isLikelyBrokerContract({ title: checked.title, description: checked.description } as never)) {
+      const { data: linkedTaskRow } = await supabase
+        .from('task_contracts')
+        .select('task_id, task:tasks!task_contracts_task_id_fkey(id, project_id, active_run_id, assignee_agent_id, last_checkpoint_summary, last_checkpoint_payload)')
+        .eq('contract_id', id)
+        .limit(1)
+        .maybeSingle();
+
+      const linkedTask = Array.isArray(linkedTaskRow?.task) ? linkedTaskRow?.task[0] : linkedTaskRow?.task;
+      if (linkedTask?.id && linkedTask?.project_id) {
+        const activeRunId = linkedTask.active_run_id as string | null;
+        const latestReason = checked.description || checked.title;
+        if (activeRunId) {
+          const { data: run } = await supabase
+            .from('task_execution_runs')
+            .select('*')
+            .eq('id', activeRunId)
+            .single();
+
+          if (run) {
+            const metadata = { ...(run.metadata || {}), broker_agent_id: auth.agent.id, broker_assigned_at: new Date().toISOString(), escalation_contract_id: id, broker_contract_id: id, collaboration_mode: 'brokered-collaboration', escalation_status: 'broker-engaged' };
+            await supabase
+              .from('task_execution_runs')
+              .update({ metadata, heartbeat_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+              .eq('id', activeRunId);
+          }
+
+          await supabase.from('task_execution_checkpoints').insert({
+            run_id: activeRunId,
+            task_id: linkedTask.id,
+            project_id: linkedTask.project_id,
+            agent_id: auth.agent.id,
+            sequence: 999999,
+            checkpoint_key: 'broker-engaged',
+            summary: `Broker ${auth.agent.display_name || auth.agent.name} accepted escalation contract ${id}`,
+            payload: {
+              broker_agent_id: auth.agent.id,
+              broker_assigned_at: new Date().toISOString(),
+              escalation_contract_id: id,
+              broker_contract_id: id,
+              collaboration_mode: 'brokered-collaboration',
+              escalation_status: 'broker-engaged',
+              broker_note: latestReason,
+            },
+          });
+        }
+
+        await supabase.from('task_comments').insert({
+          task_id: linkedTask.id,
+          project_id: linkedTask.project_id,
+          author_agent_id: auth.agent.id,
+          author_name: auth.agent.display_name || auth.agent.name,
+          content: `Accepted escalation contract \`${id}\` as broker/mediator. Execution ownership stays explicit while broker intervention proceeds.`,
+          comment_type: 'system',
+          metadata: {
+            escalation_contract_id: id,
+            broker_agent_id: auth.agent.id,
+            collaboration_mode: 'brokered-collaboration',
+            escalation_status: 'broker-engaged',
+          },
+        });
+
+        brokerActivation = { projectId: linkedTask.project_id, taskId: linkedTask.id, runId: activeRunId };
+      }
+    } else {
+      handoffClaim = await claimAcceptedHandoff({
+        contract: checked,
+        acceptedByAgentId: auth.agent.id,
+        acceptedByAgentName: auth.agent.name,
+        acceptedByAgentDisplayName: auth.agent.display_name || null,
+      }).catch(() => null);
+    }
 
     const { data: allParticipants } = await supabase
       .from('contract_participants')
@@ -102,7 +170,8 @@ export async function POST(
         status: 'active',
         accepted_by: auth.agent.name,
         handoff_claimed: !!handoffClaim,
-        resumed_run_id: handoffClaim?.newRun.id ?? null,
+        broker_engaged: !!brokerActivation,
+        resumed_run_id: handoffClaim?.newRun.id ?? brokerActivation?.runId ?? null,
         resumed_from_run_id: handoffClaim?.previousRunId ?? null,
         resumed_from_checkpoint_id: handoffClaim?.resumedFromCheckpoint?.id ?? null,
       },
@@ -118,8 +187,9 @@ export async function POST(
     details: {
       activated,
       handoff_claimed: !!handoffClaim,
-      task_id: handoffClaim?.taskId ?? null,
-      resumed_run_id: handoffClaim?.newRun.id ?? null,
+      broker_engaged: !!brokerActivation,
+      task_id: handoffClaim?.taskId ?? brokerActivation?.taskId ?? null,
+      resumed_run_id: handoffClaim?.newRun.id ?? brokerActivation?.runId ?? null,
       resumed_from_run_id: handoffClaim?.previousRunId ?? null,
     },
     ipAddress: getClientIp(req),

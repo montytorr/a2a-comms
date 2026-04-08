@@ -10,6 +10,7 @@ import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHan
 import { getLinkedTaskForContract } from './handoff-resume';
 import { getDelegationProvenance, isDelegatedExecutionRun } from './delegated-execution';
 import type { CreateTaskRequest, UpdateTaskRequest, TaskExecutionRun, TaskExecutionCheckpoint } from './types';
+import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle, getEscalationBrokerageProvenance } from './escalation-brokerage';
 
 function isMissingAttachmentIdsColumn(error: { message?: string } | null | undefined) {
   return !!error && /attachment_ids/i.test(error.message || '');
@@ -225,6 +226,79 @@ test('observer metadata is surfaced on execution runs and checkpoints types', ()
   assert.equal(checkpoint.observer_agent?.display_name, 'Observer');
 });
 
+test('brokered collaboration helpers build deterministic escalation surfaces', () => {
+  assert.equal(buildBrokeredCollaborationTitle('Rollout QA'), 'Escalation · Rollout QA');
+
+  const description = buildBrokeredCollaborationDescription({
+    task: {
+      id: 'task-1',
+      title: 'Rollout QA',
+      description: 'Validate the rollout before release.',
+      status: 'in-progress',
+      priority: 'high',
+      labels: ['qa', 'release'],
+      due_date: '2026-04-09',
+      execution_status: 'blocked',
+      execution_started_at: '2026-04-07T10:00:00.000Z',
+      execution_heartbeat_at: '2026-04-07T10:10:00.000Z',
+      execution_completed_at: null,
+      last_checkpoint_at: '2026-04-07T10:09:00.000Z',
+      last_checkpoint_summary: 'Browser smoke passed but release is blocked on API drift',
+      last_checkpoint_payload: { apiReplay: 'blocked' },
+      active_run_id: 'run-1',
+    },
+    run: {
+      id: 'run-1',
+      status: 'blocked',
+      attempt: 2,
+      summary: 'Need broker help',
+      error_message: 'Upstream owner unavailable',
+      heartbeat_at: '2026-04-07T10:10:00.000Z',
+      started_at: '2026-04-07T10:00:00.000Z',
+      completed_at: null,
+      metadata: { env: 'staging' },
+    },
+    checkpoints: [],
+    attachments: [],
+    priorBrokerContracts: [],
+    escalationReason: 'Blocked on upstream owner sign-off',
+    requestedIntervention: 'Broker the release decision with the upstream owner',
+    brokerAgentNames: ['brokerbot'],
+  });
+
+  assert.match(description, /## Task escalation/);
+  assert.match(description, /Escalation reason: Blocked on upstream owner sign-off/);
+  assert.match(description, /Requested broker\(s\): `brokerbot`/);
+
+  const provenance = getEscalationBrokerageProvenance({
+    escalation_requested_by_agent_id: 'agent-alpha',
+    escalation_requested_at: '2026-04-07T18:00:00.000Z',
+    escalation_reason: 'blocked',
+    requested_intervention: 'mediate',
+    broker_agent_id: 'agent-broker',
+    broker_assigned_at: '2026-04-07T18:10:00.000Z',
+    broker_contract_id: 'contract-esc',
+    collaboration_mode: 'brokered-collaboration',
+    escalation_status: 'broker-engaged',
+  });
+
+  assert.deepEqual(provenance, {
+    escalationRequestedByAgentId: 'agent-alpha',
+    escalationRequestedAt: '2026-04-07T18:00:00.000Z',
+    escalationReason: 'blocked',
+    requestedIntervention: 'mediate',
+    brokerAgentId: 'agent-broker',
+    brokerAssignedAt: '2026-04-07T18:10:00.000Z',
+    brokeredFromRunId: null,
+    brokeredFromCheckpointId: null,
+    brokeredFromCheckpointKey: null,
+    brokeredFromSummary: null,
+    brokerContractId: 'contract-esc',
+    collaborationMode: 'brokered-collaboration',
+    escalationStatus: 'broker-engaged',
+  });
+});
+
 test('task request types accept handoff contract payloads', () => {
   const createPayload: CreateTaskRequest = {
     title: 'Take over rollout QA',
@@ -241,8 +315,14 @@ test('task request types accept handoff contract payloads', () => {
       invitees: ['clawclaw'],
       description: 'Use the latest checkpoint and continue from there.',
     },
+    escalation_contract: {
+      brokers: ['brokerbot'],
+      escalation_reason: 'blocked on review',
+      requested_intervention: 'mediate next step',
+    },
   };
 
   assert.deepEqual(createPayload.handoff_contract?.invitees, ['clawclaw']);
   assert.equal(updatePayload.handoff_contract?.description, 'Use the latest checkpoint and continue from there.');
+  assert.deepEqual(updatePayload.escalation_contract?.brokers, ['brokerbot']);
 });
