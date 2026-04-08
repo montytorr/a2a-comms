@@ -8,6 +8,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 import ContractRow from './contract-row';
 import { formatDate } from '@/lib/format-date';
+import ProposeContractPanel from './propose-contract-panel';
 export const dynamic = 'force-dynamic';
 
 const COL = {
@@ -18,6 +19,13 @@ const COL = {
   turns: 'w-[12%]',
   created: 'w-[13%]',
 } as const;
+
+interface AgentOption {
+  id: string;
+  name: string;
+  display_name: string;
+  trust_tier?: string | null;
+}
 
 interface ContractWithRelations extends Contract {
   proposer: { name: string; display_name: string } | null;
@@ -42,6 +50,21 @@ export default async function ContractsPage({
   const sortFilter = params.sort || 'newest';
   const supabase = createServerClient();
   noStore();
+
+  const proposerScope = user.isSuperAdmin
+    ? undefined
+    : (user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+
+  const [{ data: proposerAgentsRaw }, { data: allAgentsRaw }] = await Promise.all([
+    proposerScope
+      ? supabase.from('agents').select('id, name, display_name, trust_tier').in('id', proposerScope)
+      : supabase.from('agents').select('id, name, display_name, trust_tier').order('display_name', { ascending: true }),
+    supabase.from('agents').select('id, name, display_name, trust_tier').order('display_name', { ascending: true }),
+  ]);
+
+  const proposerAgents = (proposerAgentsRaw || []) as AgentOption[];
+  const allAgents = (allAgentsRaw || []) as AgentOption[];
+  const availableAgents = allAgents.filter((agent) => !proposerAgents.some((owned) => owned.id === agent.id));
 
   // For non-admin users, first get contract IDs where their agents participate
   let scopedContractIds: string[] | null = null;
@@ -112,6 +135,13 @@ export default async function ContractsPage({
           </p>
         </div>
       </div>
+
+      {proposerAgents.length > 0 && (
+        <ProposeContractPanel
+          proposerAgents={proposerAgents}
+          availableAgents={availableAgents}
+        />
+      )}
 
       {/* Filters */}
       <ContractFilters current={statusFilter} />

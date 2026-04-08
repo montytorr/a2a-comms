@@ -13,6 +13,7 @@ import AttachmentList from '@/components/attachment-list';
 import ContractAttachmentUpload from './attachment-upload';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
+import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
 export const dynamic = 'force-dynamic';
 
 // Pretty-print a schema descriptor with syntax highlighting
@@ -186,6 +187,7 @@ export default async function ContractDetailPage({
     .order('created_at', { ascending: true });
 
   const messageList = ((messages || []) as ContractMessage[]).slice().reverse();
+  const { threadMessages, observerNotes } = splitContractMessagesByVisibility(messageList);
   const participants = (contract.contract_participants || []) as ContractParticipant[];
   const attachments = ((contract as Record<string, unknown>).attachments || []) as Array<Record<string, unknown>>;
   const isObserverParticipant = participants.some((participant) => user.agentIds.includes(participant.agent?.id || '') && participant.role === 'observer');
@@ -353,12 +355,12 @@ export default async function ContractDetailPage({
         <div className="px-7 py-4 border-b border-white/[0.04] flex items-center justify-between">
           <div>
             <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight">Message Thread</h2>
-            <p className="text-[10px] text-gray-600 mt-0.5">{messageList.length} message{messageList.length !== 1 ? 's' : ''}</p>
+            <p className="text-[10px] text-gray-600 mt-0.5">{threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
 
         <div className="p-4 space-y-1">
-          {messageList.length === 0 ? (
+          {threadMessages.length === 0 ? (
             <div className="py-16 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
@@ -369,7 +371,7 @@ export default async function ContractDetailPage({
               <p className="text-[11px] text-gray-700 mt-1">Messages will appear here once exchanged</p>
             </div>
           ) : (
-            messageList.map((msg: ContractMessage) => {
+            threadMessages.map((msg: ContractMessage) => {
               const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
               const gradient = getAvatarColor(senderName);
               return (
@@ -397,6 +399,41 @@ export default async function ContractDetailPage({
           )}
         </div>
       </div>
+
+      {observerNotes.length > 0 && (
+        <div className="rounded-2xl glass-card overflow-hidden animate-fade-in mt-8" style={{ animationDelay: '0.15s' }}>
+          <div className="px-7 py-4 border-b border-white/[0.04] flex items-center justify-between">
+            <div>
+              <h2 className="text-[13px] font-semibold text-cyan-200 tracking-tight">Observer Notes</h2>
+              <p className="text-[10px] text-gray-600 mt-0.5">Kept separate from the main contract thread so read-only commentary stays distinct.</p>
+            </div>
+            <span className="text-[10px] text-gray-600">{observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="p-4 space-y-1">
+            {observerNotes.map((msg: ContractMessage) => {
+              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
+              const gradient = getAvatarColor(senderName);
+              return (
+                <div key={msg.id} className="group rounded-xl px-5 py-4 hover:bg-white/[0.015] transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shrink-0`}>
+                      <span className="text-[10px] font-bold text-white">{getInitials(senderName)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-[13px] font-semibold text-gray-200">{senderName}</span>
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-cyan-500/80 bg-cyan-500/[0.06] border border-cyan-500/[0.1] px-2 py-0.5 rounded-md">observer note</span>
+                    </div>
+                    <span className="text-[10px] text-gray-700 font-mono tabular-nums shrink-0">{formatDateTime(msg.created_at)}</span>
+                  </div>
+                  <div className="ml-11">
+                    <MessageCard content={msg.content} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
     </AutoRefresh>
   );

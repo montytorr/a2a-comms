@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { auditLog, getClientIp } from '@/lib/api-helpers';
+import { getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
@@ -14,7 +14,7 @@ import { autoCloseIfExpired, enrichContract } from './_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
-import { evaluateContractCollaboration } from '@/lib/trust-tiers';
+import { createContractProposal, ContractProposalError } from '@/lib/contract-proposals';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -127,223 +127,51 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!parsed.title || !Array.isArray(parsed.invitees) || parsed.invitees.length === 0) {
-    return NextResponse.json(
-      { error: 'Missing required fields: title, invitees (non-empty array)', code: 'VALIDATION_ERROR' } satisfies ApiError,
-      { status: 400 }
-    );
-  }
+  try {
+    const proposal = await createContractProposal({
+      actor: auth.agent,
+      request: parsed,
+      ipAddress: getClientIp(req),
+      auditActor: auth.agent.name,
+    });
 
-  const normalizedObservers = Array.from(new Set((parsed.observers || []).filter((value): value is string => typeof value === 'string' && value.trim().length > 0)));
+    const expiresAt = proposal.contract.expires_at;
+    const inviteeIds = proposal.contract.participants
+      .filter((participant) => participant.role === 'invitee')
+      .map((participant) => participant.agent.id);
 
-  const maxTurns = parsed.max_turns ?? 50;
-  const expiresInHours = parsed.expires_in_hours ?? 168;
-  const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+    deliverWebhooks(inviteeIds, {
+      event: 'invitation',
+      contract_id: proposal.contractId,
+      data: { title: parsed.title, proposer: auth.agent.name, expires_at: expiresAt },
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
 
-  const supabase = createServerClient();
+    Promise.all(
+      proposal.inviteeOwnerIds.map(async (ownerUserId) => {
+        const email = await getUserEmail(ownerUserId);
+        if (!email) return;
+        await sendContractInvitationEmail(
+          email,
+          {
+            contractTitle: parsed.title,
+            proposerName: auth.agent.display_name || auth.agent.name,
+            contractId: proposal.contractId,
+          },
+          ownerUserId
+        );
+      })
+    ).catch(() => {});
 
-  const requestedAgentNames = Array.from(new Set([...parsed.invitees, ...normalizedObservers]));
-
-  const { data: requestedAgents, error: requestedAgentsError } = await supabase
-    .from('agents')
-    .select('id, name, display_name, max_concurrent_contracts, owner_user_id, trust_tier')
-    .in('name', requestedAgentNames);
-
-  if (requestedAgentsError) {
-    return NextResponse.json(
-      { error: 'Failed to validate participants', code: 'DB_ERROR' } satisfies ApiError,
-      { status: 500 }
-    );
-  }
-
-  const agentByName = new Map((requestedAgents || []).map((agent) => [agent.name, agent]));
-  const missingInvitees = parsed.invitees.filter((n) => !agentByName.has(n));
-  const missingObservers = normalizedObservers.filter((n) => !agentByName.has(n));
-  if (missingInvitees.length > 0 || missingObservers.length > 0) {
-    const parts = [] as string[];
-    if (missingInvitees.length > 0) parts.push(`unknown invitee(s): ${missingInvitees.join(', ')}`);
-    if (missingObservers.length > 0) parts.push(`unknown observer(s): ${missingObservers.join(', ')}`);
-    return NextResponse.json(
-      { error: parts.join('; '), code: 'INVALID_INVITEES' } satisfies ApiError,
-      { status: 400 }
-    );
-  }
-
-  if (parsed.invitees.includes(auth.agent.name) || normalizedObservers.includes(auth.agent.name)) {
-    return NextResponse.json(
-      { error: 'Cannot add yourself as an invitee or observer on the same contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
-      { status: 400 }
-    );
-  }
-
-  const overlap = normalizedObservers.filter((name) => parsed.invitees.includes(name));
-  if (overlap.length > 0) {
-    return NextResponse.json(
-      { error: `Agents cannot be both invitees and observers on the same contract: ${overlap.join(', ')}`, code: 'VALIDATION_ERROR' } satisfies ApiError,
-      { status: 400 }
-    );
-  }
-
-  const inviteeAgents = parsed.invitees.map((name) => agentByName.get(name)).filter((agent): agent is NonNullable<typeof agent> => !!agent);
-  const observerAgents = normalizedObservers.map((name) => agentByName.get(name)).filter((agent): agent is NonNullable<typeof agent> => !!agent);
-
-  const trustGate = evaluateContractCollaboration(auth.agent, inviteeAgents, observerAgents);
-  if (!trustGate.allowed) {
-    return NextResponse.json(
-      { error: trustGate.reason || 'Participant trust tier blocks contract proposal', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
-  // Enforce max_concurrent_contracts for proposer
-  {
-    const { data: activeContracts } = await supabase
-      .from('contracts')
-      .select('id')
-      .in('status', ['active', 'proposed'])
-      .in('id', (await supabase
-        .from('contract_participants')
-        .select('contract_id')
-        .eq('agent_id', auth.agent.id))
-        .data?.map(r => r.contract_id) || []);
-
-    const currentActive = activeContracts?.length || 0;
-    if (auth.agent.max_concurrent_contracts && currentActive >= auth.agent.max_concurrent_contracts) {
-      return NextResponse.json(
-        { error: `Proposer ${auth.agent.name} has reached max concurrent active contracts (${auth.agent.max_concurrent_contracts})`, code: 'MAX_CONTRACTS_REACHED' } satisfies ApiError,
-        { status: 409 }
-      );
+    await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, proposal.contract);
+    return NextResponse.json(proposal.contract, { status: 201 });
+  } catch (error) {
+    if (error instanceof ContractProposalError) {
+      return NextResponse.json(error.body, { status: error.status });
     }
-  }
-
-  // Enforce max_concurrent_contracts for each invitee
-  for (const invitee of inviteeAgents || []) {
-    if (!invitee.max_concurrent_contracts) continue;
-    const { data: inviteeContracts } = await supabase
-      .from('contracts')
-      .select('id')
-      .in('status', ['active', 'proposed'])
-      .in('id', (await supabase
-        .from('contract_participants')
-        .select('contract_id')
-        .eq('agent_id', invitee.id))
-        .data?.map(r => r.contract_id) || []);
-
-    if ((inviteeContracts?.length || 0) >= invitee.max_concurrent_contracts) {
-      return NextResponse.json(
-        { error: `Invitee ${invitee.name} has reached max concurrent active contracts (${invitee.max_concurrent_contracts})`, code: 'MAX_CONTRACTS_REACHED' } satisfies ApiError,
-        { status: 409 }
-      );
-    }
-  }
-
-  // Create contract
-  const { data: contract, error: contractErr } = await supabase
-    .from('contracts')
-    .insert({
-      title: parsed.title,
-      description: parsed.description || null,
-      status: 'proposed',
-      proposer_id: auth.agent.id,
-      max_turns: maxTurns,
-      current_turns: 0,
-      expires_at: expiresAt,
-      message_schema: parsed.message_schema || null,
-    })
-    .select()
-    .single();
-
-  if (contractErr || !contract) {
     return NextResponse.json(
       { error: 'Failed to create contract', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
     );
   }
-
-  // Add proposer as participant (auto-accepted)
-  const participants = [
-    {
-      contract_id: contract.id,
-      agent_id: auth.agent.id,
-      role: 'proposer' as const,
-      status: 'accepted' as const,
-      responded_at: new Date().toISOString(),
-    },
-    ...inviteeAgents.map((a) => ({
-      contract_id: contract.id,
-      agent_id: a.id,
-      role: 'invitee' as const,
-      status: 'pending' as const,
-      responded_at: null,
-    })),
-    ...observerAgents.map((a) => ({
-      contract_id: contract.id,
-      agent_id: a.id,
-      role: 'observer' as const,
-      status: 'accepted' as const,
-      responded_at: new Date().toISOString(),
-    })),
-  ];
-
-  const { error: partInsertErr } = await supabase
-    .from('contract_participants')
-    .insert(participants);
-
-  if (partInsertErr) {
-    // Attempt cleanup
-    await supabase.from('contracts').delete().eq('id', contract.id);
-    return NextResponse.json(
-      { error: 'Failed to create participants', code: 'DB_ERROR' } satisfies ApiError,
-      { status: 500 }
-    );
-  }
-
-  await auditLog({
-    actor: auth.agent.name,
-    action: 'contract.propose',
-    resourceType: 'contract',
-    resourceId: contract.id,
-    details: {
-      title: parsed.title,
-      invitees: parsed.invitees,
-      observers: normalizedObservers,
-      max_turns: maxTurns,
-      expires_in_hours: expiresInHours,
-    },
-    ipAddress: getClientIp(req),
-  });
-
-  // Deliver webhook notifications to invitees (fire-and-forget)
-  const inviteeIds = inviteeAgents.map(a => a.id);
-  deliverWebhooks(inviteeIds, {
-    event: 'invitation',
-    contract_id: contract.id,
-    data: { title: parsed.title, proposer: auth.agent.name, expires_at: expiresAt },
-    timestamp: new Date().toISOString(),
-  }).catch(() => {}); // fire-and-forget
-
-  // Email notifications to invitee owners (fire-and-forget)
-  Promise.all(
-    inviteeAgents.map(async (agent) => {
-      if (!agent.owner_user_id) return;
-      const email = await getUserEmail(agent.owner_user_id);
-      if (!email) return;
-      await sendContractInvitationEmail(
-        email,
-        {
-          contractTitle: parsed.title,
-          proposerName: auth.agent.display_name || auth.agent.name,
-          contractId: contract.id,
-        },
-        agent.owner_user_id
-      );
-    })
-  ).catch(() => {}); // fire-and-forget
-
-  // Return enriched response
-  const enriched = await enrichContract(contract);
-
-  await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, enriched);
-
-  return NextResponse.json(enriched, { status: 201 });
 }

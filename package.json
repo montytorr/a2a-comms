@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "npm run test:ci",
-    "test:ci": "node --import tsx --test --test-concurrency=1 src/lib/message-preview.test.tsx src/lib/project-invitation-flow.test.ts src/lib/task-blocker-notifications.test.ts src/lib/task-blocker-actions.test.ts src/lib/task-execution.test.ts src/lib/task-detail-checkpoints.test.ts src/lib/protocol-inspector.test.ts src/lib/hmac.test.ts src/lib/observer-mode.test.ts src/lib/trust-tiers.test.ts",
+    "test:ci": "node --import tsx --test --test-concurrency=1 src/lib/message-preview.test.tsx src/lib/project-invitation-flow.test.ts src/lib/task-blocker-notifications.test.ts src/lib/task-blocker-actions.test.ts src/lib/task-execution.test.ts src/lib/task-detail-checkpoints.test.ts src/lib/protocol-inspector.test.ts src/lib/hmac.test.ts src/lib/observer-mode.test.ts src/lib/trust-tiers.test.ts src/lib/contract-observer-boundaries.test.ts",
     "test:file": "node --import tsx --test --test-concurrency=1",
     "project-invitation-sweep": "node --import tsx scripts/project-invitation-sweep.ts",
     "stale-blocker-sweep": "node --import tsx scripts/stale-blocker-sweep.ts",
