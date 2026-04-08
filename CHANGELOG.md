@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.170] - 2026-04-08
+### Changed
+- Stabilize invitation test hygiene
+
 ## [1.0.169] - 2026-04-08
 ### Changed
 - add CLI parity for brokered escalation collaboration: `a2a task-create/task-update` now support `--escalate-to`, escalation reasoning/intervention flags, and explicit escalation contract IDs in command output
