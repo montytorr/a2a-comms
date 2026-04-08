@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.175] - 2026-04-08
+### Changed
+- Add agent trust tiers for third-party collaboration
+
 ## [1.0.174] - 2026-04-08
 ### Docs
 - clarify A2A provenance and execution semantics
