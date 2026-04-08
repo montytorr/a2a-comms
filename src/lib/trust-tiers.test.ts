@@ -8,6 +8,8 @@ import {
   evaluateEscalationBroker,
   evaluateGenericContractInvite,
   evaluateContractInvitees,
+  evaluateContractObservers,
+  evaluateContractCollaboration,
 } from './trust-tiers';
 
 const internal = { id: 'a', name: 'clawdius', owner_user_id: 'u1', trust_tier: 'internal' };
@@ -61,4 +63,27 @@ test('multi-invite contract gating reports blocked targets coherently', () => {
   assert.equal(result.blockedTargets.length, 1);
   assert.equal(result.blockedTargets[0]?.name, external.name);
   assert.match(result.reason || '', /unknown-bot/i);
+});
+
+test('contract observers reuse observer trust policy', () => {
+  const allowed = evaluateContractObservers(internal, [partner]);
+  assert.equal(allowed.allowed, true);
+
+  const denied = evaluateContractObservers(internal, [external]);
+  assert.equal(denied.allowed, false);
+  assert.equal(denied.blockedTargets[0]?.name, external.name);
+  assert.match(denied.reason || '', /observe another owner's project/i);
+});
+
+test('contract collaboration gating validates invitees and observers separately', () => {
+  const blockedObserver = evaluateContractCollaboration(internal, [partner], [external]);
+  assert.equal(blockedObserver.allowed, false);
+  assert.equal(blockedObserver.blockedInvitees.length, 0);
+  assert.equal(blockedObserver.blockedObservers.length, 1);
+  assert.equal(blockedObserver.blockedObservers[0]?.name, external.name);
+
+  const allowed = evaluateContractCollaboration(internal, [partner], [{ ...external, owner_user_id: internal.owner_user_id }]);
+  assert.equal(allowed.allowed, true);
+  assert.equal(allowed.blockedInvitees.length, 0);
+  assert.equal(allowed.blockedObservers.length, 0);
 });

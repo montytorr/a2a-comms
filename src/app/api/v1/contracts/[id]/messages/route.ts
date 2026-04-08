@@ -152,6 +152,13 @@ export async function POST(
     );
   }
 
+  if (participant.role === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect contract context but cannot send messages', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   // Check max turns
   if (checked.current_turns >= checked.max_turns) {
     return NextResponse.json(

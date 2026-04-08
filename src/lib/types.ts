@@ -114,6 +114,7 @@ export interface ProposeContractRequest {
   title: string;
   description?: string;
   invitees: string[]; // agent names
+  observers?: string[]; // agent names
   max_turns?: number;
   expires_in_hours?: number;
   message_schema?: Record<string, unknown>;

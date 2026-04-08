@@ -26,6 +26,13 @@ export async function POST(
     );
   }
 
+  if (participant.role === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect contract context but cannot close contracts', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   // Check contract is active
   const { data: contract } = await supabase
     .from('contracts')

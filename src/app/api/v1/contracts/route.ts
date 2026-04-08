@@ -14,7 +14,7 @@ import { autoCloseIfExpired, enrichContract } from './_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
-import { evaluateContractInvitees } from '@/lib/trust-tiers';
+import { evaluateContractCollaboration } from '@/lib/trust-tiers';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -134,46 +134,63 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const normalizedObservers = Array.from(new Set((parsed.observers || []).filter((value): value is string => typeof value === 'string' && value.trim().length > 0)));
+
   const maxTurns = parsed.max_turns ?? 50;
   const expiresInHours = parsed.expires_in_hours ?? 168;
   const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
 
   const supabase = createServerClient();
 
-  // Validate all invitees exist
-  const { data: inviteeAgents, error: invErr } = await supabase
-    .from('agents')
-    .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
-    .in('name', parsed.invitees);
+  const requestedAgentNames = Array.from(new Set([...parsed.invitees, ...normalizedObservers]));
 
-  if (invErr) {
+  const { data: requestedAgents, error: requestedAgentsError } = await supabase
+    .from('agents')
+    .select('id, name, display_name, max_concurrent_contracts, owner_user_id, trust_tier')
+    .in('name', requestedAgentNames);
+
+  if (requestedAgentsError) {
     return NextResponse.json(
-      { error: 'Failed to validate invitees', code: 'DB_ERROR' } satisfies ApiError,
+      { error: 'Failed to validate participants', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
     );
   }
 
-  const foundNames = new Set((inviteeAgents || []).map((a) => a.name));
-  const missing = parsed.invitees.filter((n) => !foundNames.has(n));
-  if (missing.length > 0) {
+  const agentByName = new Map((requestedAgents || []).map((agent) => [agent.name, agent]));
+  const missingInvitees = parsed.invitees.filter((n) => !agentByName.has(n));
+  const missingObservers = normalizedObservers.filter((n) => !agentByName.has(n));
+  if (missingInvitees.length > 0 || missingObservers.length > 0) {
+    const parts = [] as string[];
+    if (missingInvitees.length > 0) parts.push(`unknown invitee(s): ${missingInvitees.join(', ')}`);
+    if (missingObservers.length > 0) parts.push(`unknown observer(s): ${missingObservers.join(', ')}`);
     return NextResponse.json(
-      { error: `Unknown invitee(s): ${missing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
+      { error: parts.join('; '), code: 'INVALID_INVITEES' } satisfies ApiError,
       { status: 400 }
     );
   }
 
-  // Prevent inviting yourself
-  if (parsed.invitees.includes(auth.agent.name)) {
+  if (parsed.invitees.includes(auth.agent.name) || normalizedObservers.includes(auth.agent.name)) {
     return NextResponse.json(
-      { error: 'Cannot invite yourself to a contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { error: 'Cannot add yourself as an invitee or observer on the same contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
     );
   }
 
-  const trustGate = evaluateContractInvitees(auth.agent, inviteeAgents || []);
+  const overlap = normalizedObservers.filter((name) => parsed.invitees.includes(name));
+  if (overlap.length > 0) {
+    return NextResponse.json(
+      { error: `Agents cannot be both invitees and observers on the same contract: ${overlap.join(', ')}`, code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
+  const inviteeAgents = parsed.invitees.map((name) => agentByName.get(name)).filter((agent): agent is NonNullable<typeof agent> => !!agent);
+  const observerAgents = normalizedObservers.map((name) => agentByName.get(name)).filter((agent): agent is NonNullable<typeof agent> => !!agent);
+
+  const trustGate = evaluateContractCollaboration(auth.agent, inviteeAgents, observerAgents);
   if (!trustGate.allowed) {
     return NextResponse.json(
-      { error: trustGate.reason || 'Invitee trust tier blocks contract proposal', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+      { error: trustGate.reason || 'Participant trust tier blocks contract proposal', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -252,12 +269,19 @@ export async function POST(req: NextRequest) {
       status: 'accepted' as const,
       responded_at: new Date().toISOString(),
     },
-    ...(inviteeAgents || []).map((a) => ({
+    ...inviteeAgents.map((a) => ({
       contract_id: contract.id,
       agent_id: a.id,
       role: 'invitee' as const,
       status: 'pending' as const,
       responded_at: null,
+    })),
+    ...observerAgents.map((a) => ({
+      contract_id: contract.id,
+      agent_id: a.id,
+      role: 'observer' as const,
+      status: 'accepted' as const,
+      responded_at: new Date().toISOString(),
     })),
   ];
 
@@ -282,6 +306,7 @@ export async function POST(req: NextRequest) {
     details: {
       title: parsed.title,
       invitees: parsed.invitees,
+      observers: normalizedObservers,
       max_turns: maxTurns,
       expires_in_hours: expiresInHours,
     },
@@ -289,7 +314,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Deliver webhook notifications to invitees (fire-and-forget)
-  const inviteeIds = (inviteeAgents || []).map(a => a.id);
+  const inviteeIds = inviteeAgents.map(a => a.id);
   deliverWebhooks(inviteeIds, {
     event: 'invitation',
     contract_id: contract.id,
@@ -299,7 +324,7 @@ export async function POST(req: NextRequest) {
 
   // Email notifications to invitee owners (fire-and-forget)
   Promise.all(
-    (inviteeAgents || []).map(async (agent) => {
+    inviteeAgents.map(async (agent) => {
       if (!agent.owner_user_id) return;
       const email = await getUserEmail(agent.owner_user_id);
       if (!email) return;

@@ -254,6 +254,14 @@ export default async function ContractDetailPage({
             </div>
           </div>
 
+          {isObserverParticipant && (
+            <div className="mt-6 pt-6 border-t border-white/[0.04]">
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] px-4 py-3 text-[11px] text-cyan-100/90">
+                You are attached as a read-only observer on this contract. You can inspect the thread, schema, and artifacts, but contract mutations stay participant-only.
+              </div>
+            </div>
+          )}
+
           {/* Participants */}
           <div className="mt-6 pt-6 border-t border-white/[0.04]">
             <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-3">Participants</p>
@@ -324,7 +332,7 @@ export default async function ContractDetailPage({
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight">Attachments</h2>
-              <p className="text-[10px] text-gray-600 mt-0.5">Artifacts shared on this contract.</p>
+              <p className="text-[10px] text-gray-600 mt-0.5">Artifacts shared on this contract. Observer access is read-only.</p>
             </div>
           </div>
         </div>

@@ -148,7 +148,11 @@ export default async function ContractsPage({
               rows.map((contract: ContractWithRelations) => {
                 const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
                 const participants = (contract.contract_participants || [])
-                  .map((p) => p.agent?.display_name || p.agent?.name)
+                  .map((p) => {
+                    const label = p.agent?.display_name || p.agent?.name;
+                    if (!label) return null;
+                    return p.role === 'observer' ? `${label} (observer)` : label;
+                  })
                   .filter(Boolean)
                   .join(', ');
 

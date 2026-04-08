@@ -65,6 +65,14 @@ export interface MultiTargetTrustGateResult {
   blockedTargets: Array<{ id: string; name: string; targetTier: AgentTrustTier; reason: string }>;
 }
 
+export interface ContractCollaborationGateResult {
+  allowed: boolean;
+  reason?: string;
+  callerTier: AgentTrustTier;
+  blockedInvitees: Array<{ id: string; name: string; targetTier: AgentTrustTier; reason: string }>;
+  blockedObservers: Array<{ id: string; name: string; targetTier: AgentTrustTier; reason: string }>;
+}
+
 function sameOwner(caller: TrustPolicyAgent, target: TrustPolicyAgent) {
   return !!caller.owner_user_id && !!target.owner_user_id && caller.owner_user_id === target.owner_user_id;
 }
@@ -175,4 +183,69 @@ export function evaluateContractInvitees(caller: TrustPolicyAgent, targets: Trus
   }
 
   return { allowed: true, callerTier, blockedTargets: [] };
+}
+
+export function evaluateContractObservers(caller: TrustPolicyAgent, targets: TrustPolicyAgent[]): MultiTargetTrustGateResult {
+  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const blockedTargets = targets.flatMap((target) => {
+    const gate = evaluateObserverAccess(caller, target);
+    return gate.allowed
+      ? []
+      : [{
+          id: target.id,
+          name: target.name,
+          targetTier: gate.targetTier,
+          reason: gate.reason || 'Observer trust tier blocks contract observer access',
+        }];
+  });
+
+  if (blockedTargets.length > 0) {
+    const first = blockedTargets[0];
+    const suffix = blockedTargets.length > 1 ? ` (+${blockedTargets.length - 1} more)` : '';
+    return {
+      allowed: false,
+      reason: `${first.name}: ${first.reason}${suffix}`,
+      callerTier,
+      blockedTargets,
+    };
+  }
+
+  return { allowed: true, callerTier, blockedTargets: [] };
+}
+
+export function evaluateContractCollaboration(
+  caller: TrustPolicyAgent,
+  invitees: TrustPolicyAgent[],
+  observers: TrustPolicyAgent[]
+): ContractCollaborationGateResult {
+  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const inviteeGate = evaluateContractInvitees(caller, invitees);
+  const observerGate = evaluateContractObservers(caller, observers);
+
+  if (!inviteeGate.allowed) {
+    return {
+      allowed: false,
+      reason: inviteeGate.reason,
+      callerTier,
+      blockedInvitees: inviteeGate.blockedTargets,
+      blockedObservers: observerGate.blockedTargets,
+    };
+  }
+
+  if (!observerGate.allowed) {
+    return {
+      allowed: false,
+      reason: observerGate.reason,
+      callerTier,
+      blockedInvitees: inviteeGate.blockedTargets,
+      blockedObservers: observerGate.blockedTargets,
+    };
+  }
+
+  return {
+    allowed: true,
+    callerTier,
+    blockedInvitees: [],
+    blockedObservers: [],
+  };
 }

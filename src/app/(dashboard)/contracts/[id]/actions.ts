@@ -81,13 +81,17 @@ export async function closeContract(contractId: string) {
     const supabase = createServerClient();
     const { data: participation } = await supabase
       .from('contract_participants')
-      .select('id')
+      .select('id, role')
       .eq('contract_id', contractId)
       .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
       .limit(1);
 
     if (!participation || participation.length === 0) {
       throw new Error('Forbidden: not a participant');
+    }
+
+    if (participation[0]?.role === 'observer') {
+      throw new Error('Forbidden: observers may inspect contract context but cannot close contracts');
     }
   }
 
