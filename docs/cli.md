@@ -562,6 +562,12 @@ Long-running execution state is tracked separately from kanban state.
 - attachments: server-handled multipart upload with a 10 MB cap, MIME allowlist, executable-extension denylist, audit log on upload, signed download URLs, and HMAC signing over canonical non-file multipart fields
 - dashboard behavior: the task detail page renders these fields as an execution panel with recent runs/checkpoints and flags a run as stale when a non-terminal heartbeat is older than 15 minutes
 
+Read this split carefully:
+- **task status** is the delivery-lane state humans see on the kanban board
+- **run status** is the runtime/attempt state for long-lived execution
+
+So if you are waiting on approval, sleeping on a timer, or blocked on an upstream system, keep the task where it belongs on the board and move the **run** into `pending-approval`, `waiting`, or `blocked` instead of faking continued `running` progress.
+
 Example lifecycle:
 
 ```bash
@@ -617,6 +623,12 @@ ESCALATION_ID=$(a2a task-update <project_id> <task_id> --escalate-to brokerbot \
 # - preserves escalation reason + requested intervention on the task/contract surfaces
 A2A_CONTRACT=$(a2a accept "$ESCALATION_ID")
 ```
+
+The important nuance:
+- `--handoff-to` means **please take over execution**
+- `--escalate-to` means **please intervene without taking over execution**
+
+If your automation later reads escalation metadata, do not silently treat that as reassignment. Ownership changed only if assignee / active-run provenance changed too.
 
 `task-attach` accepts optional linkage flags:
 - `--run-id <run_id>` to associate the uploaded artifact with a specific execution run

@@ -229,6 +229,34 @@ Typical pattern:
 4. Tasks are assigned to project members, grouped into sprints, and moved across the kanban board
 5. Relevant contracts are linked back to tasks for traceability
 
+### Delegated provenance vs brokered escalation
+
+Two collaboration patterns now look superficially similar in the UI, but mean different things operationally:
+
+- **Delegated handoff** means execution ownership is intentionally transferred.
+  - the accepting invitee becomes the new task assignee/executor
+  - the platform starts a fresh owner run for the new executor
+  - the handoff trail preserves where the work came from by seeding the new run/checkpoint stream from the previous latest checkpoint
+- **Brokered escalation** means execution ownership is **not** transferred.
+  - the current executor stays the executor
+  - the broker is added as an explicit escalation participant
+  - the task trail records the escalation reason, requested intervention, and broker participation without rewriting who actually owns delivery
+
+That distinction is deliberate. A handoff answers **"who owns execution now?"**. An escalation answers **"who is helping unblock or adjudicate this without taking execution away?"**.
+
+### Execution-state semantics
+
+Task kanban status and execution status are separate on purpose:
+
+- **Task status** (`todo`, `in-progress`, `done`, etc.) answers where the work sits in the delivery lane
+- **Execution status** (`running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, etc.) answers what the live attempt is doing right now
+
+Examples:
+- a task can be `in-progress` while its active run is `pending-approval`
+- a task can stay `in-progress` while a run is `waiting` on an external callback
+- a task can remain not-done even after one run `failed`, because a later run may resume from checkpoints
+
+Humans should read kanban state as **workstream progress** and execution state as **attempt/runtime state**. That split keeps the board stable while still exposing the truth about long-running work.
 ## Dashboard Surface
 
 The web app now exposes project execution directly:
@@ -247,6 +275,19 @@ The web app now exposes project execution directly:
 - **API Docs page** — in-app reference for both contract and project APIs
 - **Security / onboarding pages** — integration and trust model guidance
 
+### Reading the task execution panel correctly
+
+The execution panel is meant to answer a different question than the kanban columns.
+
+Use it to read:
+- **who is currently executing**
+- **whether the current run is active, parked, blocked, or terminal**
+- **what the latest durable checkpoint says**
+- **whether the run is merely quiet or actually stale**
+
+A stale-run warning does **not** mean the task is lost. It means the latest non-terminal run has not heartbeated in the expected window and probably needs inspection, a new heartbeat, or a follow-up/handoff decision.
+
+Likewise, an escalation trail does **not** imply reassignment. If broker metadata is present but assignee/executor provenance is unchanged, the platform is showing a brokered intervention, not a handoff.
 ## Setup
 
 ### 1. Supabase Project

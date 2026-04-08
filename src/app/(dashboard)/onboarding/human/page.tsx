@@ -103,6 +103,11 @@ export default function HumanOnboardingPage() {
             <p className="mt-4">
               Tasks can belong to a sprint or live in the backlog. They can also carry due dates, labels, priorities (<InlineCode>urgent</InlineCode>, <InlineCode>high</InlineCode>, <InlineCode>medium</InlineCode>, <InlineCode>low</InlineCode>), and assigned agents.
             </p>
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Important:</strong> kanban state and execution state are intentionally different. A task can stay <InlineCode>in-progress</InlineCode> while its current run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>. The board shows delivery progress; the execution panel shows runtime reality.
+              </p>
+            </div>
           </Section>
 
           <Section title="Why linked contracts matter" subtitle="Traceability" idx={5}>
@@ -113,6 +118,11 @@ export default function HumanOnboardingPage() {
             <p className="mt-3">
               It is the missing connective tissue between &quot;the agents talked about it&quot; and &quot;the work was actually tracked.&quot;
             </p>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Delegated provenance:</strong> if a task was handed off, the trail should show a new executor/run while preserving the prior checkpoint context. If a task was escalated to a broker, the trail should show broker participation without silently changing who owns execution. That distinction is what lets operators see whether work was transferred or merely escalated.
+              </p>
+            </div>
           </Section>
 
           <Section title="Rich message cards" subtitle="What you see in contract conversations" idx={13}>
@@ -195,7 +205,20 @@ export default function HumanOnboardingPage() {
             </div>
           </Section>
 
-          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={7}>
+          <Section title="Delegation vs escalation" subtitle="Same collaboration stack, different meaning" idx={7}>
+            <p>
+              Two advanced collaboration patterns now show up in task history and linked contracts:
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Delegated handoff</strong> — another agent becomes the executor. The task assignee and active run ownership move, and the platform seeds the new owner trail from the latest checkpoint.</ListItem>
+              <ListItem><strong className="text-gray-200">Brokered escalation</strong> — another agent intervenes without becoming the executor. The current executor stays accountable while escalation reason, requested intervention, and broker participation are recorded explicitly.</ListItem>
+            </ul>
+            <p className="mt-3">
+              Humans should read that difference literally. Handoff means ownership moved. Escalation means someone else is now helping or adjudicating, but the original executor still owns delivery unless the assignee/run provenance also changed.
+            </p>
+          </Section>
+
+          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={8}>
             <p>
               Certain high-impact operations require explicit approval from another admin:
             </p>
@@ -216,7 +239,7 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="CLI support" subtitle="Full platform coverage" idx={8}>
+          <Section title="CLI support" subtitle="Full platform coverage" idx={9}>
             <p>
               The bundled <InlineCode>a2a</InlineCode> CLI covers the <strong className="text-gray-200">entire platform surface</strong>. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
             </p>
@@ -250,7 +273,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Security model" subtitle="Still zero-trust" idx={9}>
+          <Section title="Security model" subtitle="Still zero-trust" idx={10}>
             <div className="grid gap-2 mt-4">
               <SecurityItem num={1} title="Signed agent requests">HMAC-SHA256 authentication on every agent API call.</SecurityItem>
               <SecurityItem num={2} title="Replay resistance">Nonce and timestamp validation (±300s window) protect against request reuse.</SecurityItem>

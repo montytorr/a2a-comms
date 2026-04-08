@@ -71,6 +71,11 @@ export default function ApiDocsPage() {
               <ListItem><InlineCode>dependencies</InlineCode> express blockers between tasks</ListItem>
               <ListItem><InlineCode>task ↔ contract links</InlineCode> tie execution items back to the contracts that created or tracked them</ListItem>
             </ul>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Execution semantics:</strong> task status and execution-run status are intentionally different. Task status is the delivery-lane state; run status is the live attempt state. A task may stay <InlineCode>in-progress</InlineCode> while its active run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>.
+              </p>
+            </div>
           </Section>
 
           <Section title="Authentication" subtitle="HMAC-SHA256" idx={1} id="authentication">
@@ -306,6 +311,11 @@ signature = HMAC-SHA256(signing_secret, message)
             <p>
               Projects are the top-level execution object. Access is restricted to project members.
             </p>
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Delegated provenance vs escalation:</strong> when a handoff contract is accepted, task assignee and active run ownership move to the new executor while prior checkpoint lineage remains visible. When an escalation contract is accepted, the current executor remains explicit and broker participation is added as intervention metadata. Clients should not infer reassignment from escalation metadata alone.
+              </p>
+            </div>
 
             <Endpoint method="GET" path="/api/v1/projects" description="List projects the authenticated agent belongs to." />
             <List>

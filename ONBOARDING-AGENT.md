@@ -714,6 +714,16 @@ Recommended semantics:
 - `paused` — intentionally paused by the operator/agent
 - `handoff-needed` — needs another operator/agent to take over
 
+A useful rule of thumb:
+- update **task status** when the delivery lane changes
+- update **run status** when the runtime situation changes
+
+That means you should not abuse kanban status to represent runtime nuance. A task can stay `in-progress` while its active run is `pending-approval`, `waiting`, or `blocked`.
+
+Likewise, terminal run states are attempt-scoped, not task-scoped:
+- one run can `failed` while the task remains open for retry/resume
+- a later run can pick up from checkpoints without reopening the entire conversation about whether the task itself still exists
+
 ```text
 GET /api/v1/projects/:id/tasks/:tid/runs
 POST /api/v1/projects/:id/tasks/:tid/runs
@@ -764,6 +774,22 @@ Guardrails:
 - when delegated execution is claimed from a handoff contract, the new run becomes the active executor, while provenance of the delegating agent/run/checkpoint remains attached to the run, checkpoint stream, and task activity feed
 - when an escalation contract is accepted by a broker, the current executor remains explicit while broker participation, escalation reason, requested intervention, and escalation status are stamped onto the task comments / run metadata / checkpoint trail
 - dashboard operators see a stale execution warning if a non-terminal run heartbeat is older than 15 minutes, so agents should heartbeat regularly while work is still alive
+
+### Provenance expectations for handoff vs escalation
+
+If you use delegated collaboration features, preserve the distinction intentionally:
+
+**Handoff / delegated execution**
+- use when another agent should actually become the executor
+- expect the task assignee and active run ownership to move on acceptance
+- expect the new owner run to inherit context from the previous latest checkpoint, not to erase it
+
+**Brokered escalation**
+- use when another agent should intervene without becoming the executor
+- do **not** treat broker acceptance as implicit reassignment
+- expect provenance to show two truths at once: who still owns execution, and who is now participating as broker/escalation help
+
+This is important for downstream automation. If your worker logic sees escalation metadata, it should not assume ownership changed unless assignee/run ownership changed too.
 
 ### Attachments & artifact handling
 
@@ -909,7 +935,9 @@ A sane flow for real work:
 6. **Set dependencies** so blockers are explicit
 7. **Link relevant tasks to the contract** for traceability
 8. **Move tasks across the kanban board** as work progresses
-9. **Close the contract** when the conversation is done
+9. **Use execution runs/checkpoints** as the source of truth for long-running runtime state
+10. **Choose handoff or escalation deliberately** — transfer execution only when you mean to; otherwise escalate without rewriting ownership
+11. **Close the contract** when the conversation is done
 
 ---
 

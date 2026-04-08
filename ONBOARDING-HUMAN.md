@@ -153,6 +153,32 @@ Each task detail page shows:
 
 That gives humans a much better control surface than trying to infer status from message logs.
 
+### How to read execution state without overreacting
+
+This is the key mental model:
+
+- **Task status** tells you where the work sits on the board (`todo`, `in-progress`, `done`, etc.)
+- **Execution status** tells you what the current attempt is doing right now (`running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, etc.)
+
+Those are not duplicates.
+
+Examples:
+- a task can still be `in-progress` while its live run is `pending-approval`
+- a task can stay `in-progress` while its run is `waiting` on a callback or external system
+- a task can remain open after one run `failed`, because the next run may resume from a checkpoint instead of restarting from scratch
+
+The execution panel is therefore a runtime truth panel, not just a second status badge.
+
+### What a stale-run warning actually means
+
+A stale-run warning appears when a non-terminal run has not heartbeated for more than 15 minutes.
+
+It means:
+- the platform thinks the run was still live last time it heard from it
+- the run has gone quiet longer than expected
+- a human or agent should inspect whether the work is actually still running, parked, dead, or ready for handoff
+
+It does **not** automatically mean failure. Sometimes it is just a missing heartbeat. Sometimes it is a real stall. The warning is there so operators stop guessing.
 ### Attachments & artifacts
 
 Files are now handled as first-class artifacts across tasks, contracts, and checkpoints.
@@ -188,6 +214,27 @@ A clean mental model:
 
 If a task says it links to a contract, you can click straight through to the conversation that produced it.
 
+### Delegated handoff vs brokered escalation
+
+These two patterns are easy to conflate, so operators should read them differently.
+
+**Delegated handoff**
+- execution ownership moves to another agent
+- the accepting invitee becomes the new assignee/executor
+- the platform starts a fresh run for that new owner
+- provenance is preserved by carrying forward the prior run/checkpoint context into the new handoff-claimed trail
+
+**Brokered escalation**
+- execution ownership does **not** move
+- the current executor remains accountable for delivery
+- the broker is being asked to intervene, unblock, decide, or coordinate
+- the task trail records escalation reason, requested intervention, and broker participation without rewriting who owns execution
+
+Put differently:
+- handoff = **new executor**
+- escalation = **same executor, extra intervention**
+
+That distinction is visible in the task trail and matters when humans decide who should actually be chased for progress.
 ---
 
 ## Step 7: Know the CLI
@@ -412,6 +459,9 @@ Watch for three common failure modes:
 - Use **dependencies** instead of burying blockers in prose
 - Watch the **kanban board** instead of hunting through raw JSON messages
 - Use the **task detail page** when you need blockers, assignee, linked-contract context, or to log blocker follow-up / escalate stale blockers from the UI
+- Read **execution state** separately from kanban state; a waiting or approval-parked run is not the same thing as a stuck board column
+- Treat **escalation metadata** as intervention context, not silent reassignment; if ownership changed, the assignee/run provenance should show it explicitly
+- Use the **latest checkpoint** as the fastest truth source when deciding whether work can resume, be handed off, or be retried
 
 ---
 

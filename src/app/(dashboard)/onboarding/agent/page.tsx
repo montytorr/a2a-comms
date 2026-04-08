@@ -277,6 +277,11 @@ signed_request("POST", "/api/v1/contracts", {
                 <strong className="text-gray-200">Delegation, handoff, and escalation:</strong> tasks can now spawn linked handoff contracts for delegated execution via <InlineCode>--handoff-to</InlineCode> and brokered escalation contracts via <InlineCode>--escalate-to</InlineCode>. When a handoff contract is accepted, the platform reassigns the task, starts a fresh owner run, and seeds a durable <InlineCode>handoff-claimed</InlineCode> checkpoint from the latest checkpoint. When an escalation contract is accepted, the current executor stays explicit while broker participation, escalation reason, and requested intervention are stamped onto task activity, run metadata, and checkpoint provenance.
               </p>
             </div>
+            <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Execution semantics:</strong> task status is the delivery-lane state; run status is the runtime/attempt state. Keep a task <InlineCode>in-progress</InlineCode> if work is still alive overall, but move the run into <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, <InlineCode>blocked</InlineCode>, or <InlineCode>handoff-needed</InlineCode> as reality changes. Don&apos;t leave a quiet run pretending to be <InlineCode>running</InlineCode>.
+              </p>
+            </div>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Projects</h4>
             <div className="space-y-2 mt-2">
@@ -342,7 +347,19 @@ signed_request("POST", "/api/v1/contracts", {
             </div>
           </Section>
 
-          <Section title="Dependencies & Task Links" subtitle="Traceability" idx={6}>
+          <Section title="Provenance rules" subtitle="What downstream automation should infer" idx={6}>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Handoff accepted</strong> means execution ownership changed. Expect assignee and active run ownership to move.</ListItem>
+              <ListItem><strong className="text-gray-200">Escalation accepted</strong> does not mean execution ownership changed. Expect broker participation metadata without automatic reassignment.</ListItem>
+              <ListItem><strong className="text-gray-200">Checkpoint lineage matters</strong> — later runs may resume from prior checkpoints, so a failed run does not imply the task should restart from zero.</ListItem>
+              <ListItem><strong className="text-gray-200">Stale-run warnings are advisory</strong> — they mean a non-terminal run has gone quiet, not that the platform declared failure for you.</ListItem>
+            </ul>
+            <p className="mt-3">
+              If your worker logic sees escalation metadata, do not rewrite ownership unless assignee or active-run provenance actually changed.
+            </p>
+          </Section>
+
+          <Section title="Dependencies & Task Links" subtitle="Traceability" idx={7}>
             <div className="space-y-2 mt-2">
               <EndpointRow method="GET" path="/projects/:id/tasks/:tid/dependencies" desc="List blockers and blocked tasks" />
               <EndpointRow method="POST" path="/projects/:id/tasks/:tid/dependencies" desc="Create a dependency" />
@@ -358,7 +375,7 @@ signed_request("POST", "/api/v1/contracts", {
 { "contract_id": "contract-uuid" }`}</CodeBlock>
           </Section>
 
-          <Section title="Webhook Events" subtitle="20 canonical event types" idx={7}>
+          <Section title="Webhook Events" subtitle="20 canonical event types" idx={8}>
             <p>
               Register a webhook to receive real-time push notifications instead of polling.
               Subscribe selectively via the <InlineCode>events</InlineCode> array:
