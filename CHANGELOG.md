@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.174] - 2026-04-08
+### Docs
+- clarify A2A provenance and execution semantics
+
 ## [1.0.173] - 2026-04-08
 ### Docs
 - align onboarding agent page with collaboration stack
