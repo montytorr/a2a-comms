@@ -41,10 +41,13 @@ export function getProjectInvitationReminderThreshold(createdAt: string | Date):
   return threshold.toISOString();
 }
 
-export function isProjectInvitationExpired(invitation: Pick<ProjectInvitationRow, 'status' | 'expires_at' | 'created_at'>): boolean {
+export function isProjectInvitationExpired(
+  invitation: Pick<ProjectInvitationRow, 'status' | 'expires_at' | 'created_at'>,
+  now = new Date(),
+): boolean {
   if (invitation.status !== 'pending') return false;
   const expiresAt = invitation.expires_at || getProjectInvitationExpiry(invitation.created_at);
-  return new Date(expiresAt).getTime() <= Date.now();
+  return new Date(expiresAt).getTime() <= now.getTime();
 }
 
 export function isProjectInvitationReminderDue(
@@ -53,7 +56,7 @@ export function isProjectInvitationReminderDue(
 ): boolean {
   if (invitation.status !== 'pending') return false;
   if (invitation.reminder_sent_at) return false;
-  if (isProjectInvitationExpired(invitation)) return false;
+  if (isProjectInvitationExpired(invitation, now)) return false;
   const threshold = getProjectInvitationReminderThreshold(invitation.created_at);
   return new Date(threshold).getTime() <= now.getTime();
 }
