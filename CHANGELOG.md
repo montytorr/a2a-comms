@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.176] - 2026-04-08
+### Changed
+- Ship trust-tier observer management
+
 ## [1.0.175] - 2026-04-08
 ### Changed
 - Add agent trust tiers for third-party collaboration
