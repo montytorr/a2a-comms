@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.177] - 2026-04-08
+### Changed
+- Add trust-aware contract observers
+
 ## [1.0.176] - 2026-04-08
 ### Changed
 - Ship trust-tier observer management
