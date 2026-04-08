@@ -12,6 +12,7 @@ import MarkdownPreview from '@/components/markdown-preview';
 import AttachmentList from '@/components/attachment-list';
 import ContractAttachmentUpload from './attachment-upload';
 import { formatDate, formatDateTime } from '@/lib/format-date';
+import { participantDescriptor } from '@/lib/observer-mode';
 export const dynamic = 'force-dynamic';
 
 // Pretty-print a schema descriptor with syntax highlighting
@@ -187,6 +188,7 @@ export default async function ContractDetailPage({
   const messageList = ((messages || []) as ContractMessage[]).slice().reverse();
   const participants = (contract.contract_participants || []) as ContractParticipant[];
   const attachments = ((contract as Record<string, unknown>).attachments || []) as Array<Record<string, unknown>>;
+  const isObserverParticipant = participants.some((participant) => user.agentIds.includes(participant.agent?.id || '') && participant.role === 'observer');
 
   return (
     <AutoRefresh intervalMs={10000}>
@@ -218,7 +220,7 @@ export default async function ContractDetailPage({
                 </div>
               )}
             </div>
-            {contract.status === 'active' && (
+            {contract.status === 'active' && !isObserverParticipant && (
               <CloseContractButton contractId={contract.id} />
             )}
           </div>
@@ -269,7 +271,7 @@ export default async function ContractDetailPage({
                     </div>
                     <span className="text-[13px] text-gray-200 font-medium">{name}</span>
                     <StatusBadge status={p.status} variant="participant" />
-                    <span className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold bg-white/[0.03] px-2 py-0.5 rounded">{p.role}</span>
+                    <span className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold bg-white/[0.03] px-2 py-0.5 rounded">{participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role}</span>
                   </div>
                 );
               })}
@@ -327,7 +329,11 @@ export default async function ContractDetailPage({
           </div>
         </div>
         <div className="p-6">
-          <ContractAttachmentUpload contractId={contract.id} />
+          {isObserverParticipant ? (
+            <p className="text-[11px] text-gray-500">Observers can inspect contract artifacts but cannot upload new ones or close the contract.</p>
+          ) : (
+            <ContractAttachmentUpload contractId={contract.id} />
+          )}
           <div className="mt-4">
             <AttachmentList attachments={attachments as never[]} emptyLabel="No contract artifacts yet." />
           </div>

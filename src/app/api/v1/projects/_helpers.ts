@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
-import { listProjectObserverAgentIds } from '@/lib/project-access';
+import { getProjectAccess, listProjectObserverAgentIds } from '@/lib/project-access';
 import {
   getProjectInvitationExpiry,
   isProjectInvitationExpired,
@@ -8,14 +8,7 @@ import {
 import type { ProjectMemberInvitation } from '@/lib/types';
 
 export async function getProjectMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
+  return getProjectAccess(projectId, agentId);
 }
 
 /**

@@ -49,6 +49,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Not a participant in this contract', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
 
+  if (participation.role === 'observer') {
+    return NextResponse.json({ error: 'Observers may inspect contract artifacts but cannot upload new ones', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
+  }
+
   const projectId = await resolveProjectForContract(contractId);
   if (!projectId) {
     return NextResponse.json({ error: 'Contract is not linked to a project task yet', code: 'VALIDATION_ERROR' } satisfies ApiError, { status: 400 });

@@ -13,12 +13,16 @@ export async function uploadContractAttachment(contractId: string, formData: For
   const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
   const { data: participation } = await supabase
     .from('contract_participants')
-    .select('id, agent_id')
+    .select('id, agent_id, role, status')
     .eq('contract_id', contractId)
     .in('agent_id', agentScope)
     .limit(1);
   if (!user.isSuperAdmin && (!participation || participation.length === 0)) {
     throw new Error('Forbidden: not a participant');
+  }
+
+  if (!user.isSuperAdmin && participation?.[0]?.role === 'observer') {
+    throw new Error('Forbidden: observers may inspect contract artifacts but cannot upload new ones');
   }
 
   const { data: link } = await supabase

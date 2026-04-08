@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { notifyBlockerAction } from '@/lib/task-blocker-actions';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
 import { getProjectAccess } from '@/lib/project-access';
+import { buildObserverCommentMetadata, normalizeObserverCommentType } from '@/lib/observer-mode';
 
 async function requireProjectMembership(
   projectId: string,
@@ -96,11 +97,17 @@ export async function addComment(
       author_agent_id: authorAgentId,
       author_name: authorName,
       content: content.trim(),
-      comment_type: user.accessKind === 'observer' ? 'analysis' : 'comment',
-      metadata: {
-        participant_role: user.projectRole,
-        participant_access_kind: user.accessKind,
-      },
+      comment_type: user.accessKind === 'observer' ? normalizeObserverCommentType('analysis') : 'comment',
+      metadata: user.accessKind === 'observer'
+        ? {
+            ...buildObserverCommentMetadata(),
+            participant_role: user.projectRole,
+            participant_access_kind: user.accessKind,
+          }
+        : {
+            participant_role: user.projectRole,
+            participant_access_kind: user.accessKind,
+          },
     });
 
   if (error) throw new Error(`Failed to add comment: ${error.message}`);

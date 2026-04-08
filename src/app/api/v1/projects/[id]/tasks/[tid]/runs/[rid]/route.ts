@@ -40,7 +40,7 @@ export async function GET(
   const member = await getProjectMembership(projectId, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -69,7 +69,14 @@ export async function PATCH(
   const member = await getProjectMembership(projectId, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (member.accessKind === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect runs but cannot mutate execution state', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }

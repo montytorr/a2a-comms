@@ -4,6 +4,7 @@ import { useState, useRef, useTransition } from 'react';
 import MarkdownPreview from '@/components/markdown-preview';
 import { addComment } from './actions';
 import { formatRelative } from '@/lib/format-date';
+import { participantDescriptor } from '@/lib/observer-mode';
 
 const avatarGradients = [
   'from-cyan-500 to-blue-600',
@@ -47,21 +48,23 @@ function summarizeMetadata(metadata: Record<string, unknown>) {
   const contractId = typeof metadata.delegation_contract_id === 'string' ? metadata.delegation_contract_id : typeof metadata.handoff_contract_id === 'string' ? metadata.handoff_contract_id : null;
   const participantRole = typeof metadata.participant_role === 'string' ? metadata.participant_role : null;
   const accessKind = typeof metadata.participant_access_kind === 'string' ? metadata.participant_access_kind : null;
+  const participantLabel = participantDescriptor({ role: participantRole, accessKind });
+  const observerNote = metadata.observer_note === true;
 
-  if (!delegatedBy && !executor && !contractId && !participantRole && !accessKind) return null;
+  if (!delegatedBy && !executor && !contractId && !participantLabel && !observerNote) return null;
 
   const parts = [] as string[];
   if (delegatedBy) parts.push(`delegated by ${delegatedBy}`);
   if (executor) parts.push(`executor ${executor}`);
   if (contractId) parts.push(`contract ${contractId}`);
-  if (participantRole) parts.push(`role ${participantRole}`);
-  if (accessKind === 'observer') parts.push('read-only observer');
+  if (participantLabel) parts.push(participantLabel);
+  if (observerNote) parts.push('note only');
   return parts.join(' · ');
 }
 
 function CommentItem({ comment }: { comment: Comment }) {
   const authorName = comment.author?.display_name || comment.author?.name || comment.author_name || 'Unknown';
-  const isSystem = comment.comment_type !== 'comment';
+  const isSystem = comment.comment_type !== 'comment' && comment.comment_type !== 'analysis';
   const config = typeConfig[comment.comment_type] || typeConfig.comment;
   const metadataSummary = summarizeMetadata(comment.metadata || {});
 
@@ -108,6 +111,9 @@ function CommentItem({ comment }: { comment: Comment }) {
         <div className="text-[13px] text-gray-400">
           <MarkdownPreview content={comment.content} />
         </div>
+        {metadataSummary && (
+          <p className="text-[9px] text-gray-600 mt-1">{metadataSummary}</p>
+        )}
       </div>
     </div>
   );

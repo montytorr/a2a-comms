@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
+import { buildObserverCommentMetadata, isObserverCommentTypeAllowed, normalizeObserverCommentType } from '@/lib/observer-mode';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -126,7 +127,7 @@ export async function POST(
     );
   }
 
-  if (member.accessKind === 'observer' && commentType !== 'comment' && commentType !== 'analysis') {
+  if (member.accessKind === 'observer' && !isObserverCommentTypeAllowed(commentType)) {
     return NextResponse.json(
       { error: 'Observers may only leave commentary/analysis notes', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
@@ -149,12 +150,20 @@ export async function POST(
     );
   }
 
-  const normalizedCommentType = member.accessKind === 'observer' ? 'analysis' : commentType;
-  const metadata = {
-    ...(parsed.metadata || {}),
-    participant_role: member.role,
-    participant_access_kind: member.accessKind,
-  };
+  const normalizedCommentType = member.accessKind === 'observer'
+    ? normalizeObserverCommentType(commentType)
+    : commentType;
+  const metadata = member.accessKind === 'observer'
+    ? {
+        ...buildObserverCommentMetadata(parsed.metadata || {}),
+        participant_role: member.role,
+        participant_access_kind: member.accessKind,
+      }
+    : {
+        ...(parsed.metadata || {}),
+        participant_role: member.role,
+        participant_access_kind: member.accessKind,
+      };
 
   const { data: comment, error } = await supabase
     .from('task_comments')

@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
+import { getProjectAccess } from '@/lib/project-access';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiError } from '@/lib/types';
 
@@ -23,14 +24,7 @@ async function verifyTask(projectId: string, taskId: string) {
 }
 
 async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data || null;
+  return getProjectAccess(projectId, agentId);
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string; tid: string }> }) {
@@ -41,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const member = await verifyMembership(projectId, auth.agent.id);
   if (!member) {
-    return NextResponse.json({ error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
+    return NextResponse.json({ error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
 
   const task = await verifyTask(projectId, taskId);
@@ -61,7 +55,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const member = await verifyMembership(projectId, auth.agent.id);
   if (!member) {
-    return NextResponse.json({ error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
+    return NextResponse.json({ error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
+  }
+
+  if (member.accessKind === 'observer') {
+    return NextResponse.json({ error: 'Observers may inspect attachments but cannot upload new artifacts', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
 
   const task = await verifyTask(projectId, taskId);
