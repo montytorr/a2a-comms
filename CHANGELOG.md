@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.171] - 2026-04-08
+### Changed
+- Fix HMAC test worker hang
+
 ## [1.0.170] - 2026-04-08
 ### Changed
 - Stabilize invitation test hygiene
