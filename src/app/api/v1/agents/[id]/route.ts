@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, UpdateAgentRequest } from '@/lib/types';
+import { isAgentTrustTier, normalizeAgentTrustTier } from '@/lib/trust-tiers';
 
 export async function GET(
   req: NextRequest,
@@ -17,7 +18,7 @@ export async function GET(
 
   const { data: agent, error } = await supabase
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, created_at, updated_at')
     .eq('id', id)
     .single();
 
@@ -65,6 +66,16 @@ export async function PATCH(
   if (parsed.protocols !== undefined) updates.protocols = parsed.protocols;
   if (parsed.max_concurrent_contracts !== undefined) updates.max_concurrent_contracts = parsed.max_concurrent_contracts;
   if (parsed.description !== undefined) updates.description = parsed.description;
+  if (parsed.trust_tier !== undefined) {
+    if (!isAgentTrustTier(parsed.trust_tier)) {
+      return NextResponse.json(
+        { error: 'Invalid trust_tier. Must be one of: internal, partner, external', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+    updates.trust_tier = normalizeAgentTrustTier(parsed.trust_tier);
+  }
+  if (parsed.trust_notes !== undefined) updates.trust_notes = parsed.trust_notes;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(
@@ -80,7 +91,7 @@ export async function PATCH(
     .from('agents')
     .update(updates)
     .eq('id', id)
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, created_at, updated_at')
     .single();
 
   if (error || !agent) {

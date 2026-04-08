@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getProjectMembership, hydrateProjectInvitations } from '../../_helpers';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated } from '@/lib/project-invitations';
 import type { ApiError } from '@/lib/types';
+import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
 
 export async function GET(
   req: NextRequest,
@@ -113,6 +114,14 @@ export async function POST(
     return NextResponse.json(
       { error: 'Owner is already part of the project', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
+    );
+  }
+
+  const trustGate = evaluateProjectMemberInvite(auth.agent, agent);
+  if (!trustGate.allowed) {
+    return NextResponse.json(
+      { error: trustGate.reason || 'Target agent is not trusted enough for project membership', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+      { status: 403 }
     );
   }
 

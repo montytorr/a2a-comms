@@ -14,6 +14,7 @@ import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHan
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle, getEscalationBrokerageProvenance, isLikelyBrokerContract, type BrokerContractSummary } from '@/lib/escalation-brokerage';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
+import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
 
 async function notifyAssigneeOwner(
   supabase: ReturnType<typeof createServerClient>,
@@ -394,6 +395,16 @@ export async function PATCH(
       );
     }
 
+    for (const invitee of inviteeAgents || []) {
+      const trustGate = evaluateHandoffInvite(auth.agent, invitee);
+      if (!trustGate.allowed) {
+        return NextResponse.json(
+          { error: `${invitee.name}: ${trustGate.reason}`, code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+          { status: 403 }
+        );
+      }
+    }
+
     const [runs, attachments, taskContracts] = await Promise.all([
       listTaskExecutionRuns(tid).catch(() => []),
       listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
@@ -568,6 +579,16 @@ export async function PATCH(
         { error: `Unknown escalation broker(s): ${missing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
         { status: 400 }
       );
+    }
+
+    for (const broker of brokerAgents || []) {
+      const trustGate = evaluateEscalationBroker(auth.agent, broker);
+      if (!trustGate.allowed) {
+        return NextResponse.json(
+          { error: `${broker.name}: ${trustGate.reason}`, code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+          { status: 403 }
+        );
+      }
     }
 
     const [runs, attachments, taskContracts] = await Promise.all([

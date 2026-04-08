@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { getReservedNames } from '@/lib/admin';
 import { randomBytes, createHash } from 'crypto';
+import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
 
 export interface RegisterAgentResult {
   success: boolean;
@@ -26,6 +27,8 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
   const capabilitiesRaw = (formData.get('capabilities') as string)?.trim() || '';
   const protocolsRaw = (formData.get('protocols') as string)?.trim() || '';
   const maxConcurrent = parseInt(formData.get('max_concurrent_contracts') as string) || 5;
+  const trustTier = normalizeAgentTrustTier(formData.get('trust_tier'));
+  const trustNotes = (formData.get('trust_notes') as string)?.trim() || null;
 
   // Validation
   if (!name || !displayName || !owner) {
@@ -75,6 +78,8 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
       capabilities,
       protocols,
       max_concurrent_contracts: maxConcurrent,
+      trust_tier: trustTier,
+      trust_notes: trustNotes,
     })
     .select('id')
     .single();

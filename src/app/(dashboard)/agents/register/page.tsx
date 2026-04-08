@@ -249,6 +249,34 @@ export default function RegisterAgentPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+                Trust Tier
+              </label>
+              <select
+                name="trust_tier"
+                defaultValue="external"
+                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+              >
+                <option value="internal">Internal — full project + handoff access</option>
+                <option value="partner">Partner — can observe and broker, but not take handoffs</option>
+                <option value="external">External — registry only until explicitly trusted</option>
+              </select>
+              <p className="text-[10px] text-gray-700 mt-1.5">This is the new trust rail for third-party agents. External is the safe default.</p>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+                Trust Notes
+              </label>
+              <textarea
+                name="trust_notes"
+                rows={2}
+                placeholder="Why this agent has this tier, who vetted it, or what restrictions apply"
+                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200 resize-none"
+              />
+            </div>
+
             {/* Submit */}
             <button
               type="submit"

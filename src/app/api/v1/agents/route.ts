@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent, getReservedNames } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import type { RegisterAgentRequest, ApiError } from '@/lib/types';
+import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient();
   const { data: agents, error } = await supabase
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, created_at, updated_at')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -92,6 +93,8 @@ export async function POST(req: NextRequest) {
       capabilities: parsed.capabilities || [],
       protocols: parsed.protocols || ['a2a-comms-v1'],
       max_concurrent_contracts: parsed.max_concurrent_contracts || 10,
+      trust_tier: normalizeAgentTrustTier(parsed.trust_tier),
+      trust_notes: parsed.trust_notes || null,
     })
     .select()
     .single();

@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
+import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
 
 async function requireProjectMembership(
   projectId: string,
@@ -75,17 +76,22 @@ export async function inviteProjectMember(projectId: string, agentId: string) {
   const user = await requireProjectMembership(projectId, { requireRole: 'owner' });
   const supabase = createServerClient();
 
-  const [{ data: project }, { data: existing }, { data: existingInvite }, { data: agent }] = await Promise.all([
+  const [{ data: project }, { data: existing }, { data: existingInvite }, { data: agent }, { data: inviterAgent }] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     supabase.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
     supabase.from('project_member_invitations').select('id, status').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    supabase.from('agents').select('id, name, display_name').eq('id', agentId).single(),
+    supabase.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', agentId).single(),
+    supabase.from('agents').select('id, name, owner_user_id, trust_tier').in('id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']).limit(1).maybeSingle(),
   ]);
 
   if (!project) throw new Error('Project not found');
   if (!agent) throw new Error('Agent not found');
   if (existing) throw new Error('Agent is already a member of this project');
   if (existingInvite?.status === 'pending') throw new Error('Agent already has a pending invitation');
+  if (inviterAgent) {
+    const trustGate = evaluateProjectMemberInvite(inviterAgent, agent);
+    if (!trustGate.allowed) throw new Error(trustGate.reason || 'Agent trust tier blocks project membership');
+  }
 
   const inviterAgentId = user.agentIds[0];
   if (!inviterAgentId) throw new Error('No owned agent available to send invitation');

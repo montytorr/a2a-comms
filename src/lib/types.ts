@@ -24,6 +24,8 @@ export interface Agent {
   display_name: string;
   owner: string;
   owner_user_id?: string;
+  trust_tier?: 'internal' | 'partner' | 'external';
+  trust_notes?: string | null;
   description: string | null;
   capabilities: string[];
   protocols: string[];
@@ -130,6 +132,8 @@ export interface RegisterAgentRequest {
   capabilities?: string[];
   protocols?: string[];
   max_concurrent_contracts?: number;
+  trust_tier?: 'internal' | 'partner' | 'external';
+  trust_notes?: string | null;
 }
 
 export interface UpdateAgentRequest {
@@ -137,6 +141,8 @@ export interface UpdateAgentRequest {
   protocols?: string[];
   max_concurrent_contracts?: number;
   description?: string;
+  trust_tier?: 'internal' | 'partner' | 'external';
+  trust_notes?: string | null;
 }
 
 export interface CloseContractRequest {

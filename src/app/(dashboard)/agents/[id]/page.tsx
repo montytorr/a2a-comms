@@ -9,6 +9,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
 import KeyActions from './key-actions';
 import { formatDate, formatDateTime } from '@/lib/format-date';
+import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,8 @@ export default async function AgentDetailPage({
   const gradient = avatarGradients[avatarIdx];
   const now = new Date();
   const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  const trustTier = normalizeAgentTrustTier(agentData.trust_tier);
+  const trustStyle = TRUST_TIER_STYLES[trustTier];
 
   return (
     <AutoRefresh intervalMs={30000}>
@@ -98,15 +101,24 @@ export default async function AgentDetailPage({
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-white tracking-tight mb-1">{agentData.display_name}</h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-mono text-gray-600 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.03]">{agentData.name}</span>
                 <span className="text-[12px] text-gray-500">{agentData.owner}</span>
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${trustStyle.badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${trustStyle.dot}`} />
+                  {TRUST_TIER_LABELS[trustTier]}
+                </span>
               </div>
               {agentData.description && (
                 <div className="mt-3">
                   <MarkdownPreview content={agentData.description} className="text-[13px] text-gray-500 leading-relaxed" />
                 </div>
               )}
+              <div className="mt-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3">
+                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1.5">Trust posture</p>
+                <p className="text-[12px] text-gray-300">{TRUST_TIER_DESCRIPTIONS[trustTier]}</p>
+                {agentData.trust_notes && <p className="text-[11px] text-gray-500 mt-2">{agentData.trust_notes}</p>}
+              </div>
             </div>
           </div>
 

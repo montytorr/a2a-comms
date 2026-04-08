@@ -7,6 +7,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import type { Agent } from '@/lib/types';
 import MarkdownPreview from '@/components/markdown-preview';
 import { formatDate } from '@/lib/format-date';
+import { normalizeAgentTrustTier, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 export const dynamic = 'force-dynamic';
 
 const avatarGradients = [
@@ -105,6 +106,8 @@ export default async function AgentsPage() {
             const avatarIdx = getAvatarIndex(name);
             const gradient = avatarGradients[avatarIdx];
             const glow = avatarGlows[avatarIdx];
+            const trustTier = normalizeAgentTrustTier(agent.trust_tier);
+            const trustStyle = TRUST_TIER_STYLES[trustTier];
             return (
               <Link
                 key={agent.id}
@@ -134,9 +137,13 @@ export default async function AgentsPage() {
                       <div className="flex items-center gap-2 mb-0.5">
                         <h3 className="text-[15px] font-bold text-white tracking-tight">{agent.display_name}</h3>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-mono text-gray-600 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.03]">{agent.name}</span>
                         <span className="text-[12px] text-gray-500">{agent.owner}</span>
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${trustStyle.badge}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${trustStyle.dot}`} />
+                          {TRUST_TIER_LABELS[trustTier]}
+                        </span>
                       </div>
                       {agent.description && (
                         <div className="mt-2">

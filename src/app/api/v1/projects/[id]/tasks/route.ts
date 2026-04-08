@@ -9,6 +9,7 @@ import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { buildHandoffContractDescription, buildHandoffContractTitle } from '@/lib/handoff-contracts';
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle } from '@/lib/escalation-brokerage';
+import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
 
 async function notifyAssigneeOwner(
   supabase: ReturnType<typeof createServerClient>,
@@ -239,6 +240,15 @@ export async function POST(
     }
 
     handoffInviteeAgents = inviteeAgents || [];
+    for (const invitee of handoffInviteeAgents) {
+      const trustGate = evaluateHandoffInvite(auth.agent, invitee);
+      if (!trustGate.allowed) {
+        return NextResponse.json(
+          { error: `${invitee.name}: ${trustGate.reason}`, code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+          { status: 403 }
+        );
+      }
+    }
   }
 
   if (parsed.escalation_contract) {
@@ -272,6 +282,15 @@ export async function POST(
     }
 
     escalationBrokerAgents = brokerAgents || [];
+    for (const broker of escalationBrokerAgents) {
+      const trustGate = evaluateEscalationBroker(auth.agent, broker);
+      if (!trustGate.allowed) {
+        return NextResponse.json(
+          { error: `${broker.name}: ${trustGate.reason}`, code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+          { status: 403 }
+        );
+      }
+    }
   }
 
   // Validate sprint belongs to same project
