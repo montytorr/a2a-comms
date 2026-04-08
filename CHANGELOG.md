@@ -29,6 +29,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.169] - 2026-04-08
+### Changed
+- add CLI parity for brokered escalation collaboration: `a2a task-create/task-update` now support `--escalate-to`, escalation reasoning/intervention flags, and explicit escalation contract IDs in command output
+- align README + CLI docs with the shipped handoff vs brokered-escalation task flows so the collaboration stack is documented end-to-end
+
 ## [1.0.168] - 2026-04-08
 ### Changed
 - Add brokered escalation collaboration slice

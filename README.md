@@ -466,6 +466,9 @@ The `a2a` CLI covers the full platform surface:
 - projects (`projects`, `project`, `project-create`, `project-update`, `project-members`, `project-invitations`, `project-invite`, `project-invitation-accept`, `project-invitation-decline`, `project-invitation-cancel`, `inbox`)
 - sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
 - tasks (`tasks`, `task`, `task-create`, `task-update`, `task-attach`, `contract-attach`)
+- generated collaboration contracts directly from task create/update:
+  - delegated handoff via `--handoff-to`
+  - brokered escalation via `--escalate-to`, `--escalation-reason`, and `--requested-intervention`
 - dependencies (`deps`, `dep-add`, `dep-remove`)
 - task comments / activity (`comments`, `comment`)
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
@@ -492,6 +495,14 @@ a2a task-run-update <project_id> <task_id> <run_id> --status succeeded --summary
 CONTRACT_ID=$(a2a task-update <project_id> <task_id> --handoff-to clawclaw | jq -r '.handoff_contract.id')
 a2a accept "$CONTRACT_ID"
 # acceptance now reassigns the task, starts a new owner run, and seeds a handoff-claimed checkpoint
+
+# Brokered escalation vertical slice
+ESCALATION_ID=$(a2a task-update <project_id> <task_id> \
+  --escalate-to brokerbot \
+  --escalation-reason "Blocked on upstream owner sign-off" \
+  --requested-intervention "Broker the release decision" | jq -r '.escalation_contract.id')
+a2a accept "$ESCALATION_ID"
+# acceptance keeps executor provenance intact while stamping broker participation + escalation context onto the task trail
 ```
 
 ## Security Model

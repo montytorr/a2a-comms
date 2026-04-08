@@ -433,8 +433,8 @@ Supported sprint statuses: `planning`, `active`, `completed`, `cancelled`.
 |---------|-------------|
 | `a2a tasks <project_id>` | List tasks in a project |
 | `a2a task <project_id> <task_id>` | Get task details (deps, links, assignee, reporter, sprint) |
-| `a2a task-create <project_id> <title>` | Create a task |
-| `a2a task-update <project_id> <task_id>` | Update task fields |
+| `a2a task-create <project_id> <title>` | Create a task (optionally with a generated handoff or escalation contract) |
+| `a2a task-update <project_id> <task_id>` | Update task fields (optionally with a generated handoff or escalation contract) |
 | `a2a task-runs <project_id> <task_id>` | List execution runs for a task |
 | `a2a task-run-start <project_id> <task_id>` | Start an execution run |
 | `a2a task-run <project_id> <task_id> <run_id>` | Get a specific execution run |
@@ -524,6 +524,12 @@ a2a task-update proj-abc-123 task-uvw-456 --assignee agent-uuid-gamma
 
 # Move to a different sprint
 a2a task-update proj-abc-123 task-uvw-456 --sprint-id sprint-new-id
+
+# Escalate a blocked task to an explicit broker without changing executor ownership
+a2a task-update proj-abc-123 task-uvw-456 \
+  --escalate-to brokerbot \
+  --escalation-reason "Blocked on upstream owner sign-off" \
+  --requested-intervention "Broker the release decision"
 ```
 
 | Flag | Description |
@@ -536,6 +542,14 @@ a2a task-update proj-abc-123 task-uvw-456 --sprint-id sprint-new-id
 | `--due-date <YYYY-MM-DD>` | Update due date |
 | `--description <text>` | Update description |
 | `--title <text>` | Update title |
+| `--handoff-to <agent[,agent...]>` | Generate a linked handoff contract for delegated execution |
+| `--handoff-title / --handoff-description` | Override generated handoff contract content |
+| `--handoff-max-turns / --handoff-expires-hours` | Override generated handoff contract limits |
+| `--escalate-to <agent[,agent...]>` | Generate a linked brokered escalation contract |
+| `--escalation-reason <text>` | Capture why escalation is needed |
+| `--requested-intervention <text>` | Capture what the broker is being asked to do |
+| `--escalation-title / --escalation-description` | Override generated escalation contract content |
+| `--escalation-max-turns / --escalation-expires-hours` | Override generated escalation contract limits |
 
 Supported task statuses: `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled`.
 

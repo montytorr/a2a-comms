@@ -42,8 +42,8 @@ Usage:
   Tasks:
   a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT] [--label LABEL]
   a2a task <project_id> <task_id>
-  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D]
-  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
+  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
+  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
   a2a task-runs <project_id> <task_id>
   a2a task-run-start <project_id> <task_id> [--status STATUS] [--summary TEXT] [--metadata JSON]
   a2a task-run <project_id> <task_id> <run_id>
@@ -885,6 +885,9 @@ def cmd_task_create(args):
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
+    if args.handoff_to and args.escalate_to:
+        print("Error: choose either --handoff-to or --escalate-to, not both", file=sys.stderr)
+        sys.exit(1)
     if args.handoff_to:
         invitees = [name.strip() for name in args.handoff_to.split(",") if name.strip()]
         if not invitees:
@@ -900,11 +903,32 @@ def cmd_task_create(args):
         if args.handoff_description:
             handoff["description"] = args.handoff_description
         body["handoff_contract"] = handoff
+    if args.escalate_to:
+        brokers = [name.strip() for name in args.escalate_to.split(",") if name.strip()]
+        if not brokers:
+            print("Error: --escalate-to must include at least one broker agent name", file=sys.stderr)
+            sys.exit(1)
+        escalation = {"brokers": brokers}
+        if args.escalation_max_turns:
+            escalation["max_turns"] = args.escalation_max_turns
+        if args.escalation_expires_hours:
+            escalation["expires_in_hours"] = args.escalation_expires_hours
+        if args.escalation_title:
+            escalation["title"] = args.escalation_title
+        if args.escalation_description:
+            escalation["description"] = args.escalation_description
+        if args.escalation_reason:
+            escalation["escalation_reason"] = args.escalation_reason
+        if args.requested_intervention:
+            escalation["requested_intervention"] = args.requested_intervention
+        body["escalation_contract"] = escalation
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks", body)
     print("✅ Task created!")
     print(format_task(data, verbose=True))
     if data.get("handoff_contract"):
         print(f"\n🤝 Handoff contract: {data['handoff_contract']['id']}")
+    if data.get("escalation_contract"):
+        print(f"\n🚨 Escalation contract: {data['escalation_contract']['id']}")
 
 
 def cmd_task_update(args):
@@ -926,6 +950,9 @@ def cmd_task_update(args):
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
+    if args.handoff_to and args.escalate_to:
+        print("Error: choose either --handoff-to or --escalate-to, not both", file=sys.stderr)
+        sys.exit(1)
     if args.handoff_to:
         invitees = [name.strip() for name in args.handoff_to.split(",") if name.strip()]
         if not invitees:
@@ -941,6 +968,25 @@ def cmd_task_update(args):
         if args.handoff_description:
             handoff["description"] = args.handoff_description
         body["handoff_contract"] = handoff
+    if args.escalate_to:
+        brokers = [name.strip() for name in args.escalate_to.split(",") if name.strip()]
+        if not brokers:
+            print("Error: --escalate-to must include at least one broker agent name", file=sys.stderr)
+            sys.exit(1)
+        escalation = {"brokers": brokers}
+        if args.escalation_max_turns:
+            escalation["max_turns"] = args.escalation_max_turns
+        if args.escalation_expires_hours:
+            escalation["expires_in_hours"] = args.escalation_expires_hours
+        if args.escalation_title:
+            escalation["title"] = args.escalation_title
+        if args.escalation_description:
+            escalation["description"] = args.escalation_description
+        if args.escalation_reason:
+            escalation["escalation_reason"] = args.escalation_reason
+        if args.requested_intervention:
+            escalation["requested_intervention"] = args.requested_intervention
+        body["escalation_contract"] = escalation
     if not body:
         print("Error: provide at least one field to update", file=sys.stderr)
         sys.exit(1)
@@ -949,6 +995,8 @@ def cmd_task_update(args):
     print(format_task(data, verbose=True))
     if data.get("handoff_contract"):
         print(f"\n🤝 Handoff contract: {data['handoff_contract']['id']}")
+    if data.get("escalation_contract"):
+        print(f"\n🚨 Escalation contract: {data['escalation_contract']['id']}")
 
 
 def cmd_task_runs(args):
@@ -1563,6 +1611,13 @@ def main():
     p.add_argument("--handoff-description", help="Optional handoff contract description override")
     p.add_argument("--handoff-max-turns", type=int, help="Optional max turns for generated handoff contract")
     p.add_argument("--handoff-expires-hours", type=int, help="Optional expiration window for generated handoff contract")
+    p.add_argument("--escalate-to", help="Comma-separated broker agent names to invite into a new escalation contract")
+    p.add_argument("--escalation-title", help="Optional escalation contract title override")
+    p.add_argument("--escalation-description", help="Optional escalation contract description override")
+    p.add_argument("--escalation-max-turns", type=int, help="Optional max turns for generated escalation contract")
+    p.add_argument("--escalation-expires-hours", type=int, help="Optional expiration window for generated escalation contract")
+    p.add_argument("--escalation-reason", help="Why brokered escalation is needed")
+    p.add_argument("--requested-intervention", help="What the broker should do once engaged")
 
     # task-update
     p = sub.add_parser("task-update", help="Update a task")
