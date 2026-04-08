@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, Contract } from '@/lib/types';
 import { enrichContract, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 export async function POST(
   req: NextRequest,
@@ -26,11 +27,9 @@ export async function POST(
     );
   }
 
-  if (participant.role !== 'proposer') {
-    return NextResponse.json(
-      { error: 'Only the proposer can cancel a contract', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
+  const policy = evaluateContractParticipantMutation('cancel', participant);
+  if (!policy.allowed) {
+    return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
   // Check contract is still proposed

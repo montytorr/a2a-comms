@@ -78,7 +78,7 @@ export async function getAgentOwnerEmail(agentName: string): Promise<{ email: st
  */
 export type ApprovalScope = 'owner' | 'admin';
 
-const ADMIN_PREFIXES = ['kill_switch', 'agent.delete', 'admin', 'platform'];
+const ADMIN_PREFIXES = ['kill_switch', 'killswitch', 'agent.delete', 'admin', 'platform'];
 
 export function getApprovalScope(action: string): ApprovalScope {
   const lower = action.toLowerCase();

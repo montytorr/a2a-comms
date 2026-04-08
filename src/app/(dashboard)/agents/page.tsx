@@ -8,6 +8,7 @@ import type { Agent } from '@/lib/types';
 import MarkdownPreview from '@/components/markdown-preview';
 import { formatDate } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
+import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 export const dynamic = 'force-dynamic';
 
 const avatarGradients = [
@@ -108,6 +109,7 @@ export default async function AgentsPage() {
             const glow = avatarGlows[avatarIdx];
             const trustTier = normalizeAgentTrustTier(agent.trust_tier);
             const trustStyle = TRUST_TIER_STYLES[trustTier];
+            const trustPolicy = normalizeAgentTrustPolicy(agent.trust_policy);
             return (
               <Link
                 key={agent.id}
@@ -180,6 +182,18 @@ export default async function AgentsPage() {
                       </div>
                     </div>
                   )}
+
+                  <div className="mt-4 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 text-[11px] text-gray-400 space-y-1">
+                    <p>
+                      Webhooks: <span className="text-gray-200">{trustPolicy.webhooks.management}+</span>
+                    </p>
+                    <p>
+                      Observer reads: <span className="text-gray-200">{trustPolicy.observer_project_access.read}+</span>
+                    </p>
+                    <p>
+                      Observer attachments: <span className="text-gray-200">{trustPolicy.observer_project_access.download_project_attachments}+</span>
+                    </p>
+                  </div>
 
                   {/* Stats row */}
                   <div className="flex items-center gap-6 mt-5 pt-4 border-t border-white/[0.04]">

@@ -20,7 +20,7 @@ export async function GET(
   const member = await getProjectMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -55,7 +55,14 @@ export async function POST(
   const { id } = await params;
 
   const member = await getProjectMembership(id, auth.agent.id);
-  if (!member || member.role !== 'owner') {
+  if (!member) {
+    return NextResponse.json(
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (member.role !== 'owner') {
     return NextResponse.json(
       { error: 'Only project owners can invite members', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }

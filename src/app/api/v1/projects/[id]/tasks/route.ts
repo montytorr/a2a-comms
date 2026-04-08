@@ -5,6 +5,7 @@ import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
+import { getProjectAccess } from '@/lib/project-access';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { buildHandoffContractDescription, buildHandoffContractTitle } from '@/lib/handoff-contracts';
@@ -62,14 +63,7 @@ import type {
 } from '@/lib/types';
 
 async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
+  return getProjectAccess(projectId, agentId);
 }
 
 export async function GET(
@@ -86,7 +80,7 @@ export async function GET(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -156,7 +150,14 @@ export async function POST(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (member.accessKind === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect project tasks but cannot create new ones', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }

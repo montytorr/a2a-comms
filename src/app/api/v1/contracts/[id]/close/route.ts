@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, CloseContractRequest, Contract } from '@/lib/types';
 import { enrichContract, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 export async function POST(
   req: NextRequest,
@@ -26,11 +27,9 @@ export async function POST(
     );
   }
 
-  if (participant.role === 'observer') {
-    return NextResponse.json(
-      { error: 'Observers may inspect contract context but cannot close contracts', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
+  const policy = evaluateContractParticipantMutation('close', participant);
+  if (!policy.allowed) {
+    return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
   // Check contract is active

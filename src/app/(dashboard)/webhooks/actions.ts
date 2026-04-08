@@ -6,6 +6,7 @@ import { createHmac } from 'crypto';
 import { resolveAndValidateHost } from '@/lib/url-validator';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import { revalidatePath } from 'next/cache';
+import { evaluateWebhookManagementAccess } from '@/lib/webhook-trust-policy';
 
 export interface WebhookTestResult {
   success: boolean;
@@ -32,17 +33,20 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
     return { success: false, error: 'Webhook not found' };
   }
 
-  // Verify ownership: user must own the agent or be admin
-  if (!user.isSuperAdmin) {
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('owner_user_id')
-      .eq('id', webhook.agent_id)
-      .single();
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('owner_user_id, trust_tier')
+    .eq('id', webhook.agent_id)
+    .single();
 
-    if (!agent || agent.owner_user_id !== user.id) {
-      return { success: false, error: 'You can only test webhooks for your own agents' };
-    }
+  // Verify ownership: user must own the agent or be admin
+  if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) {
+    return { success: false, error: 'You can only test webhooks for your own agents' };
+  }
+
+  const trustGate = evaluateWebhookManagementAccess('test', agent || {});
+  if (!trustGate.allowed) {
+    return { success: false, error: trustGate.body.error };
   }
 
   const payload = JSON.stringify({
@@ -125,16 +129,20 @@ export async function updateWebhook(
 
   if (!webhook) return { error: 'Webhook not found' };
 
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('owner_user_id, trust_tier')
+    .eq('id', webhook.agent_id)
+    .single();
+
   // Verify ownership
-  if (!user.isSuperAdmin) {
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('owner_user_id')
-      .eq('id', webhook.agent_id)
-      .single();
-    if (!agent || agent.owner_user_id !== user.id) {
-      return { error: 'You can only edit webhooks for your own agents' };
-    }
+  if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) {
+    return { error: 'You can only edit webhooks for your own agents' };
+  }
+
+  const trustGate = evaluateWebhookManagementAccess('update', agent || {});
+  if (!trustGate.allowed) {
+    return { error: trustGate.body.error };
   }
 
   // Validate URL if changing
@@ -189,22 +197,24 @@ export async function getDeliveries(webhookId: string): Promise<{ data: WebhookD
 
   const supabase = createServerClient();
 
-  // Verify ownership
-  if (!user.isSuperAdmin) {
-    const { data: webhook } = await supabase
-      .from('webhooks')
-      .select('agent_id')
-      .eq('id', webhookId)
-      .single();
-    if (!webhook) return { data: [], error: 'Webhook not found' };
+  const { data: webhook } = await supabase
+    .from('webhooks')
+    .select('agent_id')
+    .eq('id', webhookId)
+    .single();
+  if (!webhook) return { data: [], error: 'Webhook not found' };
 
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('owner_user_id')
-      .eq('id', webhook.agent_id)
-      .single();
-    if (!agent || agent.owner_user_id !== user.id) return { data: [], error: 'Access denied' };
-  }
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('owner_user_id, trust_tier')
+    .eq('id', webhook.agent_id)
+    .single();
+
+  // Verify ownership
+  if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) return { data: [], error: 'Access denied' };
+
+  const trustGate = evaluateWebhookManagementAccess('list', agent || {});
+  if (!trustGate.allowed) return { data: [], error: trustGate.body.error };
 
   const { data, error } = await supabase
     .from('webhook_deliveries')
@@ -231,15 +241,18 @@ export async function deleteWebhook(webhookId: string): Promise<{ error?: string
 
   if (!webhook) return { error: 'Webhook not found' };
 
-  if (!user.isSuperAdmin) {
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('owner_user_id')
-      .eq('id', webhook.agent_id)
-      .single();
-    if (!agent || agent.owner_user_id !== user.id) {
-      return { error: 'You can only delete webhooks for your own agents' };
-    }
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('owner_user_id, trust_tier')
+    .eq('id', webhook.agent_id)
+    .single();
+  if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) {
+    return { error: 'You can only delete webhooks for your own agents' };
+  }
+
+  const trustGate = evaluateWebhookManagementAccess('delete', agent || {});
+  if (!trustGate.allowed) {
+    return { error: trustGate.body.error };
   }
 
   // Delete deliveries first (FK)

@@ -58,3 +58,13 @@ export async function listProjectObserverAgentIds(projectId: string): Promise<st
 
   return (data || []).map((row: { agent_id: string }) => row.agent_id);
 }
+
+export async function listObservedProjectIds(agentId: string): Promise<string[]> {
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from('project_observers')
+    .select('project_id')
+    .eq('agent_id', agentId);
+
+  return (data || []).map((row: { project_id: string }) => row.project_id);
+}

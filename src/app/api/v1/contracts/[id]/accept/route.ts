@@ -7,6 +7,7 @@ import { autoCloseIfExpired, enrichContract, getParticipant, activateIfAllAccept
 import { deliverWebhooks } from '@/lib/webhooks';
 import { claimAcceptedHandoff } from '@/lib/handoff-resume';
 import { getEscalationBrokerageProvenance, isLikelyBrokerContract } from '@/lib/escalation-brokerage';
+import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 export async function POST(
   req: NextRequest,
@@ -28,19 +29,9 @@ export async function POST(
     );
   }
 
-  // Must be an invitee with pending status
-  if (participant.role !== 'invitee') {
-    return NextResponse.json(
-      { error: 'Only invitees can accept contracts', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
-  if (participant.status !== 'pending') {
-    return NextResponse.json(
-      { error: `Already responded: ${participant.status}`, code: 'ALREADY_RESPONDED' } satisfies ApiError,
-      { status: 409 }
-    );
+  const policy = evaluateContractParticipantMutation('accept', participant);
+  if (!policy.allowed) {
+    return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
   // Check contract is still proposed

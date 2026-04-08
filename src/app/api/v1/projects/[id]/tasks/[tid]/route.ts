@@ -14,6 +14,7 @@ import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHan
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle, getEscalationBrokerageProvenance, isLikelyBrokerContract, type BrokerContractSummary } from '@/lib/escalation-brokerage';
 import type { UpdateTaskRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
+import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
 
 async function notifyAssigneeOwner(
@@ -80,6 +81,16 @@ export async function GET(
       { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  if (member.accessKind === 'observer') {
+    const observerReadDecision = evaluateObserverProjectReadPolicyAccess(auth.agent);
+    if (!observerReadDecision.allowed) {
+      return NextResponse.json(
+        observerReadDecision.body || { error: 'Observer task visibility blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+        { status: observerReadDecision.status || 403 }
+      );
+    }
   }
 
   const supabase = createServerClient();

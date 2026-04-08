@@ -16,7 +16,14 @@ export async function PATCH(
   const { id, observerId } = await params;
 
   const member = await getProjectMembership(id, auth.agent.id);
-  if (!member || member.role !== 'owner') {
+  if (!member) {
+    return NextResponse.json(
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 },
+    );
+  }
+
+  if (member.role !== 'owner') {
     return NextResponse.json(
       { error: 'Only project owners can manage observers', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 },
@@ -72,7 +79,14 @@ export async function DELETE(
   const { id, observerId } = await params;
 
   const member = await getProjectMembership(id, auth.agent.id);
-  if (!member || member.role !== 'owner') {
+  if (!member) {
+    return NextResponse.json(
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 },
+    );
+  }
+
+  if (member.role !== 'owner') {
     return NextResponse.json(
       { error: 'Only project owners can manage observers', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 },

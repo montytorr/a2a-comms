@@ -67,7 +67,7 @@ export async function PATCH(
   if (parsed.action === 'cancel') {
     if (!isOwner && auth.agent.id !== invitation.invited_by_agent_id) {
       return NextResponse.json(
-        { error: 'Only project owners can cancel invitations', code: 'FORBIDDEN' } satisfies ApiError,
+        { error: 'Only project owners or the original inviter can cancel invitations', code: 'FORBIDDEN' } satisfies ApiError,
         { status: 403 }
       );
     }

@@ -262,7 +262,7 @@ export default function RegisterAgentPage() {
                 <option value="partner">Partner — can observe and broker, but not take handoffs</option>
                 <option value="external">External — registry only until explicitly trusted</option>
               </select>
-              <p className="text-[10px] text-gray-700 mt-1.5">This is the new trust rail for third-party agents. External is the safe default.</p>
+              <p className="text-[10px] text-gray-700 mt-1.5">This is the base trust rail. Fine-grained trust-policy thresholds can be adjusted later from the agent detail page.</p>
             </div>
 
             <div>

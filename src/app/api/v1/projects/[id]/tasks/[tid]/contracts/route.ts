@@ -3,16 +3,10 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
+import { getProjectAccess } from '@/lib/project-access';
 
 async function verifyMembership(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .eq('agent_id', agentId)
-    .single();
-  return data;
+  return getProjectAccess(projectId, agentId);
 }
 
 async function verifyTaskInProject(taskId: string, projectId: string) {
@@ -39,7 +33,7 @@ export async function GET(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -97,7 +91,14 @@ export async function POST(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (member.accessKind === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect linked contracts but cannot change task-contract links', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -205,7 +206,14 @@ export async function DELETE(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (member.accessKind === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect linked contracts but cannot change task-contract links', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }

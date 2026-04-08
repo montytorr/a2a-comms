@@ -16,6 +16,7 @@ import { autoCloseIfExpired, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { validateContent } from '@/lib/schema-validator';
 import { notifyContractMessageSignals } from '@/lib/contract-message-notifications';
+import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 const VALID_MESSAGE_TYPES: MessageType[] = ['message', 'request', 'response', 'update', 'status'];
 
@@ -152,11 +153,9 @@ export async function POST(
     );
   }
 
-  if (participant.role === 'observer') {
-    return NextResponse.json(
-      { error: 'Observers may inspect contract context but cannot send messages', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
+  const policy = evaluateContractParticipantMutation('send-message', participant);
+  if (!policy.allowed) {
+    return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
   // Check max turns

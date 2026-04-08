@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { hydrateProjectInvitations } from '../_helpers';
 import type { UpdateProjectRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
+import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -25,9 +26,19 @@ export async function GET(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  if (member.accessKind === 'observer') {
+    const observerReadDecision = evaluateObserverProjectReadPolicyAccess(auth.agent);
+    if (!observerReadDecision.allowed) {
+      return NextResponse.json(
+        observerReadDecision.body || { error: 'Observer project visibility blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+        { status: observerReadDecision.status || 403 }
+      );
+    }
   }
 
   const { data: project, error } = await supabase
@@ -44,11 +55,18 @@ export async function GET(
   }
 
   // Enrich with members and stats
-  const [membersRes, tasksRes, sprintsRes, invitationsRes, executionRunsRes] = await Promise.all([
+  const [membersRes, observersRes, tasksRes, sprintsRes, invitationsRes, executionRunsRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
       .eq('project_id', id),
+    member.accessKind === 'observer'
+      ? Promise.resolve({ data: [] as Array<Record<string, unknown>> })
+      : supabase
+          .from('project_observers')
+          .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
+          .eq('project_id', id)
+          .order('created_at', { ascending: false }),
     supabase
       .from('tasks')
       .select('id, status')
@@ -58,11 +76,13 @@ export async function GET(
       .select('*')
       .eq('project_id', id)
       .order('position', { ascending: true }),
-    supabase
-      .from('project_member_invitations')
-      .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
-      .eq('project_id', id)
-      .order('created_at', { ascending: false }),
+    member.accessKind === 'observer'
+      ? Promise.resolve({ data: [] as Array<Record<string, unknown>> })
+      : supabase
+          .from('project_member_invitations')
+          .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+          .eq('project_id', id)
+          .order('created_at', { ascending: false }),
     supabase
       .from('task_execution_runs')
       .select('id, task_id, status, checkpoint_count, updated_at, created_at')
@@ -79,6 +99,7 @@ export async function GET(
   return NextResponse.json({
     ...project,
     members: membersRes.data || [],
+    observers: observersRes.data || [],
     invitations,
     sprints: sprintsRes.data || [],
     task_stats: { total: totalTasks, done: doneTasks },
@@ -100,7 +121,7 @@ export async function PATCH(
   const member = await verifyMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }

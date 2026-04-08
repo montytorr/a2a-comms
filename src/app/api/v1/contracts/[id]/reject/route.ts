@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 export async function POST(
   req: NextRequest,
@@ -26,19 +27,9 @@ export async function POST(
     );
   }
 
-  // Must be an invitee with pending status
-  if (participant.role !== 'invitee') {
-    return NextResponse.json(
-      { error: 'Only invitees can reject contracts', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
-  if (participant.status !== 'pending') {
-    return NextResponse.json(
-      { error: `Already responded: ${participant.status}`, code: 'ALREADY_RESPONDED' } satisfies ApiError,
-      { status: 409 }
-    );
+  const policy = evaluateContractParticipantMutation('reject', participant);
+  if (!policy.allowed) {
+    return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
   // Check contract is still proposed

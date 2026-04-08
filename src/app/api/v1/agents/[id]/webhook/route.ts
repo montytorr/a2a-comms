@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import { ACCEPTED_WEBHOOK_EVENTS, CANONICAL_WEBHOOK_EVENTS, isAcceptedWebhookEvent } from '@/lib/webhook-events';
 import type { ApiError } from '@/lib/types';
+import { evaluateWebhookManagementAccess } from '@/lib/webhook-trust-policy';
 
 export async function POST(
   req: NextRequest,
@@ -27,6 +28,11 @@ export async function POST(
       { error: 'You can only manage webhooks for your own agent', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  const trustGate = evaluateWebhookManagementAccess('register', auth.agent);
+  if (!trustGate.allowed) {
+    return NextResponse.json(trustGate.body, { status: trustGate.status });
   }
 
   let parsed: { url: string; secret: string; events?: string[] };
@@ -114,6 +120,11 @@ export async function GET(
     );
   }
 
+  const trustGate = evaluateWebhookManagementAccess('list', auth.agent);
+  if (!trustGate.allowed) {
+    return NextResponse.json(trustGate.body, { status: trustGate.status });
+  }
+
   const supabase = createServerClient();
 
   const { data: webhooks, error } = await supabase
@@ -147,6 +158,11 @@ export async function DELETE(
       { error: 'You can only delete webhooks for your own agent', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  const trustGate = evaluateWebhookManagementAccess('delete', auth.agent);
+  if (!trustGate.allowed) {
+    return NextResponse.json(trustGate.body, { status: trustGate.status });
   }
 
   // Get URL from body or query param

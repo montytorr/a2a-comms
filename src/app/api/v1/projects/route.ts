@@ -9,6 +9,7 @@ import type {
   Project,
 } from '@/lib/types';
 import { notifyProjectInvitationCreated } from '@/lib/project-invitations';
+import { listObservedProjectIds } from '@/lib/project-access';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -22,20 +23,25 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServerClient();
 
-  // Get project IDs where this agent is a member
-  const { data: memberRows, error: memErr } = await supabase
-    .from('project_members')
-    .select('project_id')
-    .eq('agent_id', auth.agent.id);
+  const [memberRes, observedProjectIds] = await Promise.all([
+    supabase
+      .from('project_members')
+      .select('project_id')
+      .eq('agent_id', auth.agent.id),
+    listObservedProjectIds(auth.agent.id),
+  ]);
 
-  if (memErr) {
+  if (memberRes.error) {
     return NextResponse.json(
       { error: 'Failed to fetch projects', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
     );
   }
 
-  const projectIds = (memberRows || []).map((r) => r.project_id);
+  const projectIds = Array.from(new Set([
+    ...(memberRes.data || []).map((r) => r.project_id),
+    ...observedProjectIds,
+  ]));
 
   if (projectIds.length === 0) {
     return NextResponse.json({

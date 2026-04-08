@@ -4,7 +4,8 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
 import { createTaskExecutionRun, isTaskExecutionRunStatus, listTaskExecutionRuns } from '@/lib/task-execution';
-import { getProjectMembership } from '../../../../_helpers';
+import { getProjectAccess } from '@/lib/project-access';
+import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import type { ApiError, CreateTaskExecutionRunRequest } from '@/lib/types';
 
 async function getTaskContext(projectId: string, taskId: string) {
@@ -30,12 +31,22 @@ export async function GET(
   const { auth } = result;
   const { id: projectId, tid: taskId } = await params;
 
-  const member = await getProjectMembership(projectId, auth.agent.id);
+  const member = await getProjectAccess(projectId, auth.agent.id);
   if (!member) {
     return NextResponse.json(
       { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  if (member.accessKind === 'observer') {
+    const observerReadDecision = evaluateObserverProjectReadPolicyAccess(auth.agent);
+    if (!observerReadDecision.allowed) {
+      return NextResponse.json(
+        observerReadDecision.body || { error: 'Observer execution visibility blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+        { status: observerReadDecision.status || 403 }
+      );
+    }
   }
 
   const task = await getTaskContext(projectId, taskId);
@@ -64,7 +75,7 @@ export async function POST(
   const idempotency = await checkIdempotency(req, auth, endpoint);
   if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
-  const member = await getProjectMembership(projectId, auth.agent.id);
+  const member = await getProjectAccess(projectId, auth.agent.id);
   if (!member) {
     return NextResponse.json(
       { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,

@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import { getReservedNames } from '@/lib/admin';
 import { randomBytes, createHash } from 'crypto';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
+import { buildDefaultAgentTrustPolicyForTier } from '@/lib/agent-trust-policy';
 
 export interface RegisterAgentResult {
   success: boolean;
@@ -80,6 +81,7 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
       max_concurrent_contracts: maxConcurrent,
       trust_tier: trustTier,
       trust_notes: trustNotes,
+      trust_policy: buildDefaultAgentTrustPolicyForTier(trustTier),
     })
     .select('id')
     .single();

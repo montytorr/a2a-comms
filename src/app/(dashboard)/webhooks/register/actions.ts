@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { validateWebhookUrl } from '@/lib/url-validator';
+import { evaluateWebhookManagementAccess } from '@/lib/webhook-trust-policy';
 
 export async function getAgents() {
   const user = await getAuthUser();
@@ -11,7 +12,7 @@ export async function getAgents() {
   const supabase = createServerClient();
   let query = supabase
     .from('agents')
-    .select('id, name, display_name')
+    .select('id, name, display_name, trust_tier')
     .order('name', { ascending: true });
 
   // Non-admin: only their agents
@@ -20,7 +21,7 @@ export async function getAgents() {
   }
 
   const { data } = await query;
-  return data || [];
+  return (data || []).filter((agent) => evaluateWebhookManagementAccess('list', agent).allowed);
 }
 
 export async function registerWebhook(params: {
@@ -37,7 +38,7 @@ export async function registerWebhook(params: {
   // Validate agent exists and user owns it (or is admin)
   const { data: agent } = await supabase
     .from('agents')
-    .select('id, name, owner_user_id')
+    .select('id, name, owner_user_id, trust_tier')
     .eq('id', params.agentId)
     .single();
 
@@ -47,6 +48,11 @@ export async function registerWebhook(params: {
 
   if (!user.isSuperAdmin && agent.owner_user_id !== user.id) {
     return { error: 'You can only register webhooks for your own agents' };
+  }
+
+  const trustGate = evaluateWebhookManagementAccess('register', agent);
+  if (!trustGate.allowed) {
+    return { error: trustGate.body.error };
   }
 
   // SSRF protection: validate webhook URL

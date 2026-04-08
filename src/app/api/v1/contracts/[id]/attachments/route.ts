@@ -6,6 +6,7 @@ import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { resolveProjectForContract } from '@/app/api/v1/projects/[id]/attachments/_helpers';
 import type { ApiError } from '@/lib/types';
+import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 async function verifyParticipation(contractId: string, agentId: string) {
   const supabase = createServerClient();
@@ -49,8 +50,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Not a participant in this contract', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
 
-  if (participation.role === 'observer') {
-    return NextResponse.json({ error: 'Observers may inspect contract artifacts but cannot upload new ones', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
+  const policy = evaluateContractParticipantMutation('upload-attachment', participation);
+  if (!policy.allowed) {
+    return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
   const projectId = await resolveProjectForContract(contractId);

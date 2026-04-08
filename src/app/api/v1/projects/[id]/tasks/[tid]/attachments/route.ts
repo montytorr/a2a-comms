@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { getProjectAccess } from '@/lib/project-access';
+import { evaluateAttachmentDownloadAccess } from '@/lib/attachment-trust-policy';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiError } from '@/lib/types';
 
@@ -41,6 +42,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const task = await verifyTask(projectId, taskId);
   if (!task) {
     return NextResponse.json({ error: 'Task not found', code: 'NOT_FOUND' } satisfies ApiError, { status: 404 });
+  }
+
+  const accessDecision = evaluateAttachmentDownloadAccess(auth.agent, member, { contract_id: null });
+  if (!accessDecision.allowed) {
+    return NextResponse.json(
+      accessDecision.body || { error: 'Attachment download blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+      { status: accessDecision.status }
+    );
   }
 
   const attachments = await listAttachmentsForScope({ projectId, taskId, includeSignedUrl: true });

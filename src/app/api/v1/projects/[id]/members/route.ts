@@ -17,7 +17,7 @@ export async function GET(
   const member = await getProjectMembership(id, auth.agent.id);
   if (!member) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }
@@ -49,11 +49,17 @@ export async function POST(
   const { auth, body } = result;
   const { id } = await params;
 
-  // Verify caller is a member
   const callerMember = await getProjectMembership(id, auth.agent.id);
   if (!callerMember) {
     return NextResponse.json(
-      { error: 'Not a member of this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  if (callerMember.accessKind === 'observer') {
+    return NextResponse.json(
+      { error: 'Observers may inspect project members but cannot invite new ones directly', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
   }

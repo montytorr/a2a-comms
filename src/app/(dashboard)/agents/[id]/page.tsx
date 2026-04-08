@@ -9,8 +9,10 @@ import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
 import KeyActions from './key-actions';
 import TrustControls from './trust-controls';
+import TrustPolicyControls from './trust-policy-controls';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
+import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +82,7 @@ export default async function AgentDetailPage({
   const trustTier = normalizeAgentTrustTier(agentData.trust_tier);
   const trustStyle = TRUST_TIER_STYLES[trustTier];
   const canEditTrust = user.isSuperAdmin || agentData.owner_user_id === user.id;
+  const trustPolicy = normalizeAgentTrustPolicy(agentData.trust_policy);
 
   return (
     <AutoRefresh intervalMs={30000}>
@@ -182,11 +185,17 @@ export default async function AgentDetailPage({
         </div>
       </div>
 
-      <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+      <div className="mb-8 grid gap-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <TrustControls
           agentId={agentData.id}
           initialTier={trustTier}
           initialNotes={agentData.trust_notes || null}
+          canEdit={canEditTrust}
+        />
+        <TrustPolicyControls
+          agentId={agentData.id}
+          initialTier={trustTier}
+          initialPolicy={trustPolicy}
           canEdit={canEditTrust}
         />
       </div>

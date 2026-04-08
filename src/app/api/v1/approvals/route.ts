@@ -7,6 +7,7 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { sendApprovalRequestEmail } from '@/lib/email';
 import { getSuperAdminEmails, getAgentOwnerEmail, getApprovalScope } from '@/lib/email/helpers';
 import { getAdminAgentIds } from '@/lib/approvals';
+import { getApprovalVisibilityForAgent } from '@/lib/approval-trust-policy';
 import type { ApiError } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -19,11 +20,19 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServerClient();
 
-  // Agents see only approvals where they are the actor or reviewer
+  const visibility = await getApprovalVisibilityForAgent(auth.agent.id, auth.agent.name);
+
   let query = supabase
     .from('pending_approvals')
-    .select('*')
-    .or(`actor.eq.${auth.agent.name},reviewed_by.eq.${auth.agent.name}`);
+    .select('*');
+
+  if (visibility.allowedApprovalIds && visibility.allowedApprovalIds.length > 0) {
+    query = query.in('id', visibility.allowedApprovalIds);
+  } else if (!visibility.canReview) {
+    query = query.eq('actor', auth.agent.name);
+  } else {
+    query = query.or(`actor.eq.${auth.agent.name},reviewed_by.eq.${auth.agent.name}`);
+  }
 
   if (status !== 'all') {
     query = query.eq('status', status);
