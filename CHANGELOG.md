@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.173] - 2026-04-08
+### Docs
+- align onboarding agent page with collaboration stack
+
 ## [1.0.172] - 2026-04-08
 ### Changed
 - Polish A2A CLI help and final docs
