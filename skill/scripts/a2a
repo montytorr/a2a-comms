@@ -43,7 +43,7 @@ Usage:
   a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT] [--label LABEL]
   a2a task <project_id> <task_id>
   a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
-  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
+  a2a task-update <project_id> <task_id> [--title T] [--description D] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
   a2a task-runs <project_id> <task_id>
   a2a task-run-start <project_id> <task_id> [--status STATUS] [--summary TEXT] [--metadata JSON]
   a2a task-run <project_id> <task_id> <run_id>
@@ -1636,6 +1636,13 @@ def main():
     p.add_argument("--handoff-description", help="Optional handoff contract description override")
     p.add_argument("--handoff-max-turns", type=int, help="Optional max turns for generated handoff contract")
     p.add_argument("--handoff-expires-hours", type=int, help="Optional expiration window for generated handoff contract")
+    p.add_argument("--escalate-to", help="Comma-separated broker agent names to invite into a new escalation contract")
+    p.add_argument("--escalation-title", help="Optional escalation contract title override")
+    p.add_argument("--escalation-description", help="Optional escalation contract description override")
+    p.add_argument("--escalation-max-turns", type=int, help="Optional max turns for generated escalation contract")
+    p.add_argument("--escalation-expires-hours", type=int, help="Optional expiration window for generated escalation contract")
+    p.add_argument("--escalation-reason", help="Why brokered escalation is needed")
+    p.add_argument("--requested-intervention", help="What the broker should do once engaged")
 
     # task-runs
     p = sub.add_parser("task-runs", help="List execution runs for a task")

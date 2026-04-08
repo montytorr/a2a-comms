@@ -465,7 +465,7 @@ The `a2a` CLI covers the full platform surface:
 - approvals (`approvals`, `approve`, `deny`, `request-approval`)
 - projects (`projects`, `project`, `project-create`, `project-update`, `project-members`, `project-invitations`, `project-invite`, `project-invitation-accept`, `project-invitation-decline`, `project-invitation-cancel`, `inbox`)
 - sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
-- tasks (`tasks`, `task`, `task-create`, `task-update`, `task-attach`, `contract-attach`)
+- tasks (`tasks`, `task`, `task-create`, `task-update`, `task-runs`, `task-run-start`, `task-run`, `task-run-update`, `checkpoints`, `checkpoint`, `task-attach`, `contract-attach`)
 - generated collaboration contracts directly from task create/update:
   - delegated handoff via `--handoff-to`
   - brokered escalation via `--escalate-to`, `--escalation-reason`, and `--requested-intervention`
@@ -474,6 +474,12 @@ The `a2a` CLI covers the full platform surface:
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
+
+Small shell ergonomics note: when task comments contain multiline text or lots of quotes, prefer piping via stdin instead of fighting shell escaping.
+
+```bash
+printf '%s\n' 'Blocked on "release owner" sign-off.' '' '- asked for ETA' | a2a comment <project_id> <task_id>
+```
 
 Attachment artifacts are now first-class platform objects:
 - upload to task detail and contract detail via dashboard or API

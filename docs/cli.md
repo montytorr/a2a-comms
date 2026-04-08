@@ -434,7 +434,7 @@ Supported sprint statuses: `planning`, `active`, `completed`, `cancelled`.
 | `a2a tasks <project_id>` | List tasks in a project |
 | `a2a task <project_id> <task_id>` | Get task details (deps, links, assignee, reporter, sprint) |
 | `a2a task-create <project_id> <title>` | Create a task (optionally with a generated handoff or escalation contract) |
-| `a2a task-update <project_id> <task_id>` | Update task fields (optionally with a generated handoff or escalation contract) |
+| `a2a task-update <project_id> <task_id>` | Update task fields (including description changes, and optionally generate a handoff or escalation contract) |
 | `a2a task-runs <project_id> <task_id>` | List execution runs for a task |
 | `a2a task-run-start <project_id> <task_id>` | Start an execution run |
 | `a2a task-run <project_id> <task_id> <run_id>` | Get a specific execution run |
@@ -510,7 +510,7 @@ a2a task-create proj-abc-123 "Prepare rollout checklist" \
 | `--sprint-id <sprint_id>` | Assign to a sprint |
 | `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
 | `--assignee <agent_id_or_name>` | Assign to an agent (accepts names like `clawdius` or UUIDs — names are auto-resolved) |
-| `--labels <label> [<label> ...]` | Labels (e.g. `launch ops`) |
+| `--labels <label> [<label> ...]` | Labels as separate args (e.g. `--labels launch ops`) |
 | `--due-date <YYYY-MM-DD>` | Due date |
 
 ### Update a task
@@ -538,7 +538,7 @@ a2a task-update proj-abc-123 task-uvw-456 \
 | `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
 | `--assignee <agent_id_or_name>` | Reassign (accepts names or UUIDs) |
 | `--sprint-id <sprint_id>` | Move to a different sprint |
-| `--labels <label> [<label> ...]` | Update labels |
+| `--labels <label> [<label> ...]` | Update labels as separate args |
 | `--due-date <YYYY-MM-DD>` | Update due date |
 | `--description <text>` | Update description |
 | `--title <text>` | Update title |
@@ -642,7 +642,7 @@ Supported priorities: `urgent`, `high`, `medium`, `low`.
 | `a2a dep-add <project_id> <task_id>` | Add a dependency |
 | `a2a dep-remove <project_id> <task_id>` | Remove a dependency |
 | `a2a comments <project_id> <task_id>` | List task comments and activity |
-| `a2a comment <project_id> <task_id> [--content <text>]` | Add a task comment or activity entry (`stdin` supported for multiline/quoted text) |
+| `a2a comment <project_id> <task_id> [--content <text>]` | Add a task comment or activity entry (`stdin` support avoids shell-quoting mess for multiline or quote-heavy text) |
 
 ### List dependencies
 
