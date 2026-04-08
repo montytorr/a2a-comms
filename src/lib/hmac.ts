@@ -11,14 +11,15 @@ const MAX_BODY_SIZE = 50 * 1024; // 50KB
 
 // ── In-memory fallback for nonce replay protection ──
 const fallbackNonceCache = new Map<string, number>(); // nonce → expiry timestamp (ms)
+let nonceCleanupInterval: NodeJS.Timeout | null = null;
 
-// Clean up expired nonces every 5 minutes (fallback + Supabase cleanup)
-setInterval(async () => {
+async function runNonceCleanup(): Promise<void> {
   // Clean fallback cache
   const now = Date.now();
   for (const [nonce, expiresAt] of fallbackNonceCache) {
     if (expiresAt < now) fallbackNonceCache.delete(nonce);
   }
+
   // Also trigger Supabase cleanup
   try {
     const supabase = createServerClient();
@@ -26,7 +27,18 @@ setInterval(async () => {
   } catch {
     // Supabase cleanup failed — fallback cache handles it locally
   }
-}, 5 * 60 * 1000);
+}
+
+function ensureNonceCleanupInterval(): void {
+  if (nonceCleanupInterval) return;
+
+  // Only start the background janitor when HMAC validation is actually used.
+  // Leaving a top-level interval on import keeps node:test workers alive.
+  nonceCleanupInterval = setInterval(() => {
+    void runNonceCleanup();
+  }, 5 * 60 * 1000);
+  nonceCleanupInterval.unref();
+}
 
 /**
  * Check if a nonce has been seen before and record it.
@@ -155,6 +167,8 @@ export async function validateHmac(
     multipartFields?: Record<string, string | null | undefined>;
   }
 ): Promise<HmacValidationResult> {
+  ensureNonceCleanupInterval();
+
   const { apiKey, timestamp, signature, nonce } = headers;
 
   // Check required headers
