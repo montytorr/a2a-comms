@@ -6,6 +6,8 @@ import {
   evaluateObserverAccess,
   evaluateHandoffInvite,
   evaluateEscalationBroker,
+  evaluateGenericContractInvite,
+  evaluateContractInvitees,
 } from './trust-tiers';
 
 const internal = { id: 'a', name: 'clawdius', owner_user_id: 'u1', trust_tier: 'internal' };
@@ -41,4 +43,22 @@ test('handoff contracts are restricted to internal-tier agents', () => {
 test('escalation brokers allow partners but reject external-tier agents', () => {
   assert.equal(evaluateEscalationBroker(internal, partner).allowed, true);
   assert.equal(evaluateEscalationBroker(internal, external).allowed, false);
+});
+
+test('generic contract proposals block cross-owner external invitees but allow same-owner exception', () => {
+  assert.equal(evaluateGenericContractInvite(internal, partner).allowed, true);
+  const denied = evaluateGenericContractInvite(internal, external);
+  assert.equal(denied.allowed, false);
+  assert.match(denied.reason || '', /generic contract proposals/i);
+
+  const sameOwnerExternal = { ...external, owner_user_id: internal.owner_user_id };
+  assert.equal(evaluateGenericContractInvite(internal, sameOwnerExternal).allowed, true);
+});
+
+test('multi-invite contract gating reports blocked targets coherently', () => {
+  const result = evaluateContractInvitees(internal, [partner, external]);
+  assert.equal(result.allowed, false);
+  assert.equal(result.blockedTargets.length, 1);
+  assert.equal(result.blockedTargets[0]?.name, external.name);
+  assert.match(result.reason || '', /unknown-bot/i);
 });

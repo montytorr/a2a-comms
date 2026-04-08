@@ -6,6 +6,7 @@ import { redirect, notFound } from 'next/navigation';
 import KanbanBoard, { type TaskRow } from './kanban-board';
 import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
+import ObserverManager from './observer-manager';
 import AutoRefresh from '@/components/auto-refresh';
 import type { ProjectInvitationStatus } from '@/lib/types';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
@@ -79,8 +80,8 @@ export default async function ProjectDetailPage({
     isOwner = !!(ownerCheck && ownerCheck.length > 0);
   }
 
-  // Fetch members, invitations, sprints, ALL tasks (for completion %), filtered tasks, dependencies, and available agents in parallel
-  const [membersRes, invitationsRes, sprintsRes, allTasksRes, tasksRes, depsRes, allAgentsRes] = await Promise.all([
+  // Fetch members, invitations, observers, sprints, ALL tasks (for completion %), filtered tasks, dependencies, and available agents in parallel
+  const [membersRes, invitationsRes, observersRes, sprintsRes, allTasksRes, tasksRes, depsRes, allAgentsRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
@@ -89,6 +90,11 @@ export default async function ProjectDetailPage({
     supabase
       .from('project_member_invitations')
       .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('project_observers')
+      .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
     supabase
@@ -123,6 +129,7 @@ export default async function ProjectDetailPage({
 
   const members = membersRes.data || [];
   const invitations = await hydrateProjectInvitations(invitationsRes.data || []);
+  const observers = observersRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
   const tasks = (tasksRes.data || []) as TaskRow[];
@@ -137,12 +144,13 @@ export default async function ProjectDetailPage({
 
   // Available agents = all agents minus current members and pending invitees
   const memberAgentIds = new Set(members.map((m: { agent_id?: string; agent?: { id: string } | null }) => m.agent?.id).filter(Boolean));
+  const observerAgentIds = new Set(observers.map((observer: { agent_id?: string; agent?: { id: string } | null }) => observer.agent?.id).filter(Boolean));
   const pendingInviteAgentIds = new Set(
     invitations
       .filter((inv: { status: ProjectInvitationStatus }) => inv.status === 'pending')
       .map((inv: { agent_id: string }) => inv.agent_id)
   );
-  const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id) && !pendingInviteAgentIds.has(a.id));
+  const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id) && !observerAgentIds.has(a.id) && !pendingInviteAgentIds.has(a.id));
 
   const myPendingInvitations = invitations.filter((inv: { agent_id: string; status: ProjectInvitationStatus }) => (
     inv.status === 'pending' && user.agentIds.includes(inv.agent_id)
@@ -218,6 +226,15 @@ export default async function ProjectDetailPage({
           projectId={id}
           sprintStats={sprintStats}
         />
+
+        <div className="mb-6">
+          <ObserverManager
+            projectId={id}
+            isOwner={isOwner}
+            availableAgents={availableAgents}
+            observers={observers as never[]}
+          />
+        </div>
 
         {blockedTaskCards.length > 0 && (
           <div className="mb-6 rounded-2xl border border-red-500/15 bg-gradient-to-br from-red-500/[0.08] via-amber-500/[0.04] to-transparent p-5 animate-fade-in">

@@ -65,7 +65,7 @@ export async function enrichContract(contract: Contract): Promise<ContractRespon
 
   const participants = (participantRows || []).map((p) => ({
     agent: agentMap.get(p.agent_id) || { id: p.agent_id, name: 'unknown', display_name: 'Unknown' },
-    role: p.role as 'proposer' | 'invitee',
+    role: p.role as 'proposer' | 'invitee' | 'observer',
     status: p.status as 'pending' | 'accepted' | 'rejected',
   }));
 

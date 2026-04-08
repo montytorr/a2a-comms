@@ -132,18 +132,24 @@ async function renderProjectsPage({
   const projectIds = rows.map(p => p.id);
 
   const memberCounts: Record<string, number> = {};
+  const observerCounts: Record<string, number> = {};
   const taskStats: Record<string, { total: number; done: number }> = {};
   const sprintNames: Record<string, string | null> = {};
 
   if (projectIds.length > 0) {
-    const [membersRes, tasksRes, sprintsRes] = await Promise.all([
+    const [membersRes, observersRes, tasksRes, sprintsRes] = await Promise.all([
       supabase.from('project_members').select('project_id').in('project_id', projectIds),
+      supabase.from('project_observers').select('project_id').in('project_id', projectIds),
       supabase.from('tasks').select('project_id, status').in('project_id', projectIds),
       supabase.from('sprints').select('project_id, title, status').in('project_id', projectIds).eq('status', 'active'),
     ]);
 
     for (const m of membersRes.data || []) {
       memberCounts[m.project_id] = (memberCounts[m.project_id] || 0) + 1;
+    }
+
+    for (const observer of observersRes.data || []) {
+      observerCounts[observer.project_id] = (observerCounts[observer.project_id] || 0) + 1;
     }
 
     for (const t of tasksRes.data || []) {
@@ -215,6 +221,7 @@ async function renderProjectsPage({
             rows.map((project, idx) => {
               const stats = taskStats[project.id] || { total: 0, done: 0 };
               const members = memberCounts[project.id] || 0;
+              const observers = observerCounts[project.id] || 0;
               const activeSprint = sprintNames[project.id] || null;
               const sc = statusConfig[project.status as ProjectStatus] || statusConfig.planning;
               const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
@@ -277,6 +284,15 @@ async function renderProjectsPage({
                         </svg>
                         <span className="text-[11px] text-gray-500 font-medium">{members}</span>
                       </div>
+                      {observers > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
+                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          <span className="text-[11px] text-gray-500 font-medium">{observers} observer{observers !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1.5">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
                           <path d="M9 11l3 3L22 4" />

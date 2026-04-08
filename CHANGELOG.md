@@ -32,6 +32,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.0.175] - 2026-04-08
 ### Changed
 - Add agent trust tiers for third-party collaboration
+- extend trust-tier enforcement to generic contract proposals so cross-owner external agents are blocked unless explicitly promoted or same-owner scoped
+- add owner-facing observer management surfaces plus API routes for adding, annotating, and removing project observers
+- make trust tier + trust notes editable on the agent detail page so operators can adjust collaboration posture in place
+
+### Docs
+- backfill README/changelog trust model guidance so observer mode, handoffs, brokers, and generic proposals all describe the same policy
 
 ## [1.0.174] - 2026-04-08
 ### Docs

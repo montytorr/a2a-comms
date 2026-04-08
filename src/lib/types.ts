@@ -12,7 +12,7 @@ export type TaskExecutionRunStatus = 'queued' | 'starting' | 'running' | 'pendin
 export type TaskCheckpointStatus = 'written' | 'superseded';
 export type ProjectMemberRole = 'owner' | 'member' | 'observer';
 export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
-export type ParticipantRole = 'proposer' | 'invitee';
+export type ParticipantRole = 'proposer' | 'invitee' | 'observer';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
 export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
 

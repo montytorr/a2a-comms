@@ -58,6 +58,13 @@ export interface TrustGateResult {
   targetTier: AgentTrustTier;
 }
 
+export interface MultiTargetTrustGateResult {
+  allowed: boolean;
+  reason?: string;
+  callerTier: AgentTrustTier;
+  blockedTargets: Array<{ id: string; name: string; targetTier: AgentTrustTier; reason: string }>;
+}
+
 function sameOwner(caller: TrustPolicyAgent, target: TrustPolicyAgent) {
   return !!caller.owner_user_id && !!target.owner_user_id && caller.owner_user_id === target.owner_user_id;
 }
@@ -124,4 +131,48 @@ export function evaluateEscalationBroker(caller: TrustPolicyAgent, target: Trust
   }
 
   return { allowed: true, callerTier, targetTier };
+}
+
+export function evaluateGenericContractInvite(caller: TrustPolicyAgent, target: TrustPolicyAgent): TrustGateResult {
+  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const targetTier = normalizeAgentTrustTier(target.trust_tier);
+
+  if (targetTier === 'external' && !sameOwner(caller, target)) {
+    return {
+      allowed: false,
+      reason: 'External-tier agents cannot receive generic contract proposals across owners until promoted to partner or invited into a narrower project observer flow first.',
+      callerTier,
+      targetTier,
+    };
+  }
+
+  return { allowed: true, callerTier, targetTier };
+}
+
+export function evaluateContractInvitees(caller: TrustPolicyAgent, targets: TrustPolicyAgent[]): MultiTargetTrustGateResult {
+  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const blockedTargets = targets.flatMap((target) => {
+    const gate = evaluateGenericContractInvite(caller, target);
+    return gate.allowed
+      ? []
+      : [{
+          id: target.id,
+          name: target.name,
+          targetTier: gate.targetTier,
+          reason: gate.reason || 'Invitee trust tier blocks generic contract proposal',
+        }];
+  });
+
+  if (blockedTargets.length > 0) {
+    const first = blockedTargets[0];
+    const suffix = blockedTargets.length > 1 ? ` (+${blockedTargets.length - 1} more)` : '';
+    return {
+      allowed: false,
+      reason: `${first.name}: ${first.reason}${suffix}`,
+      callerTier,
+      blockedTargets,
+    };
+  }
+
+  return { allowed: true, callerTier, blockedTargets: [] };
 }

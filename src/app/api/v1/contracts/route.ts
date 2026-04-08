@@ -14,6 +14,7 @@ import { autoCloseIfExpired, enrichContract } from './_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
+import { evaluateContractInvitees } from '@/lib/trust-tiers';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -166,6 +167,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: 'Cannot invite yourself to a contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
+    );
+  }
+
+  const trustGate = evaluateContractInvitees(auth.agent, inviteeAgents || []);
+  if (!trustGate.allowed) {
+    return NextResponse.json(
+      { error: trustGate.reason || 'Invitee trust tier blocks contract proposal', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+      { status: 403 }
     );
   }
 
