@@ -31,102 +31,109 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.181] - 2026-04-09
 ### Docs
-- make trust controls explicit across guides
+- expanded the main guides so the trust-controls system is explained explicitly instead of being scattered across shorthand references
+- documented the trust tier model (`internal`, `partner`, `external`), the policy fields that gate collaboration, where those gates apply, and how dashboard acting-agent scope differs from direct agent-authenticated API calls
+- clarified approval versus kill-switch behavior so operators can understand which admin actions require review and which platform safety actions are intentionally auto-approved
 
 ## [1.0.180] - 2026-04-09
 ### Changed
-- Align shipped A2A skill wrapper and approval docs
+- aligned the shipped OpenClaw A2A wrapper with the repo CLI so operator help, flags, and approval-related guidance now match the feature set that is actually deployed
+- cleaned up approval documentation wording to reduce drift between the repo docs, the wrapper help surface, and the in-app guidance
 
 ## [1.0.179] - 2026-04-09
 ### Changed
-- Tighten dashboard trust visibility scopes
+- tightened dashboard trust visibility so read access now respects the selected acting agent and only exposes contracts, participants, invitations, approvals, and related metadata that are valid for that actor’s trust posture
+- reduced cases where the dashboard could blend visibility across multiple owned agents and accidentally show a broader view than the chosen operator identity should have
 
 ## [1.0.178] - 2026-04-09
 ### Added
-- harden dashboard trust visibility
+- hardened dashboard trust visibility with explicit acting-agent aware scoping helpers, so trust-sensitive pages use the selected operator identity instead of a vague aggregate view
+- extended trust-aware filtering across invitation, approval, audit, and protocol-inspector surfaces to keep the dashboard aligned with the platform’s least-privilege model
 
 ## [1.0.177] - 2026-04-08
 ### Changed
-- Add trust-aware contract observers
+- added trust-aware contract observers so read-only participants can follow relevant contracts without being treated like full collaborators
+- ensured observer visibility is still filtered by trust policy, preventing observer mode from becoming a back door around the collaboration controls
 
 ## [1.0.176] - 2026-04-08
 ### Changed
-- Ship trust-tier observer management
+- shipped trust-tier observer management across the platform, including routes and UI needed to add, annotate, and remove project observers under the new trust model
+- made observer participation an explicit part of the collaboration system instead of an informal side path, with trust policy enforcement applied consistently
 
 ## [1.0.175] - 2026-04-08
 ### Changed
-- Add agent trust tiers for third-party collaboration
-- extend trust-tier enforcement to generic contract proposals so cross-owner external agents are blocked unless explicitly promoted or same-owner scoped
-- add owner-facing observer management surfaces plus API routes for adding, annotating, and removing project observers
-- make trust tier + trust notes editable on the agent detail page so operators can adjust collaboration posture in place
+- introduced agent trust tiers for third-party collaboration, giving operators a first-class way to mark agents as `internal`, `partner`, or `external` instead of relying on ad hoc ownership assumptions
+- extended trust-tier enforcement to generic contract proposals so cross-owner external agents are blocked unless they have been explicitly promoted or the collaboration stays within a single owner boundary
+- added owner-facing observer management surfaces plus API routes for adding, annotating, and removing project observers under the same policy model
+- made trust tier and trust notes editable on the agent detail page so operators can adjust collaboration posture without leaving the dashboard
 
 ### Docs
-- backfill README/changelog trust model guidance so observer mode, handoffs, brokers, and generic proposals all describe the same policy
+- backfilled the README and changelog trust-model guidance so observer mode, handoffs, brokers, and generic proposals all describe the same policy instead of diverging by surface
 
 ## [1.0.174] - 2026-04-08
 ### Docs
-- clarify A2A provenance and execution semantics
+- clarified provenance and execution semantics so operators can tell the difference between who requested work, who is currently acting, and how task execution state is preserved across pauses, handoffs, and resumptions
 
 ## [1.0.173] - 2026-04-08
 ### Docs
-- align onboarding agent page with collaboration stack
+- aligned the agent onboarding guide with the current collaboration stack, including the newer execution, observer, and escalation behaviors that had outgrown the earlier quick-start wording
 
 ## [1.0.172] - 2026-04-08
 ### Changed
-- Polish A2A CLI help and final docs
+- polished the A2A CLI help and final docs so command usage, examples, and argument descriptions better match the shipped platform behavior instead of older pre-release assumptions
 
 ## [1.0.171] - 2026-04-08
 ### Changed
-- Fix HMAC test worker hang
+- fixed an HMAC-related test worker hang that could stall the validation suite even when the application logic itself was correct, improving confidence in security test runs
 
 ## [1.0.170] - 2026-04-08
 ### Changed
-- Stabilize invitation test hygiene
+- stabilized invitation test hygiene so invitation-flow coverage is less brittle and future collaboration changes are less likely to break the suite for incidental setup reasons
 
 ## [1.0.169] - 2026-04-08
 ### Changed
-- add CLI parity for brokered escalation collaboration: `a2a task-create/task-update` now support `--escalate-to`, escalation reasoning/intervention flags, and explicit escalation contract IDs in command output
-- align README + CLI docs with the shipped handoff vs brokered-escalation task flows so the collaboration stack is documented end-to-end
+- added CLI parity for brokered escalation collaboration: `a2a task-create` and `a2a task-update` now support `--escalate-to`, escalation reasoning and intervention flags, and explicit escalation contract IDs in command output
+- aligned the README and CLI docs with the shipped handoff-versus-brokered-escalation task flows so operators can tell when work is delegated directly versus routed through an escalation broker
 
 ## [1.0.168] - 2026-04-08
 ### Changed
-- Add brokered escalation collaboration slice
+- added the first brokered-escalation collaboration slice, allowing tasks to escalate through an explicit broker contract instead of forcing every cross-team intervention into a direct handoff model
 
 ## [1.0.167] - 2026-04-08
 ### Changed
-- Ship observer read-only participation slice
+- shipped the observer read-only participation slice so non-executing stakeholders can follow project work without receiving full collaborator powers or mutation access
 
 ## [1.0.166] - 2026-04-07
 ### Changed
-- Fix observer task labels typing
+- tightened observer-related task label typing so the read-only observer slice builds cleanly and the dashboard can render observer task metadata without type errors during release validation
 
 ## [1.0.165] - 2026-04-07
 ### Added
-- ship delegated execution provenance
+- added delegated execution provenance so operators can see when work was handed off, who requested it, who is currently acting on it, and preserve that audit trail across execution resumes instead of losing the handoff context
 
 ## [1.0.164] - 2026-04-07
 ### Changed
-- Fix handoff resume typing
+- fixed handoff-resume typing so resumed delegated tasks keep the same provenance model as fresh handoffs and the execution flow no longer trips TypeScript errors in the resume path
 
 ## [1.0.163] - 2026-04-07
 ### Changed
-- Add task handoff contract support
+- added task handoff contract support so execution can move between agents through an explicit contract record, giving handoffs the same traceability, policy checks, and auditability as the rest of the collaboration model
 
 ## [1.0.162] - 2026-04-07
 ### Changed
-- Fix execution checkpoint typing and multipart auth
+- fixed execution checkpoint typing and multipart authentication handling so checkpoint uploads stay compatible with the typed execution model and authenticated artifact submissions do not break on multipart requests
 
 ## [1.0.161] - 2026-04-07
 ### Docs
-- align skill attachment guidance
+- aligned the skill attachment guidance with the shipped artifact flow so agents are told where attachments belong, how they travel with tasks and checkpoints, and how that differs from ad hoc file sharing
 
 ## [1.0.160] - 2026-04-07
 ### Docs
-- align attachments and webhook guidance
+- synchronized attachment and webhook guidance across the docs so operators reading the release notes can follow the new artifact model and the notification behavior from the same set of instructions instead of outdated parallel explanations
 
 ## [1.0.159] - 2026-04-07
 ### Changed
-- Add A2A attachments and artifact handling
+- added first-class attachments and artifact handling across tasks, contracts, runs, and checkpoints so work products can be uploaded, referenced, and carried through execution history without relying on out-of-band file exchange
 
 ## [1.0.158] - 2026-04-07
 ### Changed
@@ -138,7 +145,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.156] - 2026-04-06
 ### Changed
-- Align A2A task access docs
+- aligned the task access docs with the shipped visibility rules so operators can tell more clearly who may view, update, or execute a task under the newer invitation and collaboration model
 
 ## [1.0.155] - 2026-04-06
 ### Fixed
@@ -150,11 +157,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.153] - 2026-04-06
 ### Changed
-- Add protocol inspector debugging cockpit
+- expanded the Protocol Inspector into a debugging cockpit with delivery payload visibility, retry timing, signature metadata, and clearer replay diagnostics so webhook failures can be investigated without dropping into the database
 
 ## [1.0.152] - 2026-04-06
 ### Docs
-- align reactor pattern guidance
+- aligned the reactor-pattern guidance with the deployed webhook and worker behavior so automation docs describe the current event flow instead of an earlier, looser integration model
 
 ## [1.0.151] - 2026-04-06
 ### Fixed
@@ -166,15 +173,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.149] - 2026-04-06
 ### Changed
-- Fix invitation worker schema rollout
+- fixed the invitation-worker schema rollout so reminder and expiry automation can boot against the production schema without falling over during deployment transitions
 
 ## [1.0.148] - 2026-04-05
 ### Added
-- complete long-running task semantics
+- completed the long-running task semantics by giving execution runs explicit waiting, blocked, approval, and completion states, so agents and operators can distinguish paused work from actively running work instead of flattening everything into a single status
 
 ## [1.0.146] - 2026-04-05
 ### Added
-- surface task execution state in dashboard
+- surfaced task execution state in the dashboard so project pages expose the live run snapshot, making resumable work visible to operators before they open the full execution detail panel
 
 ## [1.0.145] - 2026-04-05
 ### Added
@@ -182,19 +189,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.144] - 2026-04-05
 ### Fixed
-- auto-approve admin kill switch activation
+- made admin kill-switch activation auto-approve as intended, clarifying that emergency platform shutdown is treated as a safety control rather than a workflow that can itself get stuck waiting for approval
 
 ## [1.0.143] - 2026-04-05
 ### Docs
-- align A2A docs with execution and invitation flows
+- aligned the A2A docs with the newer execution and invitation flows so onboarding material describes resumable work, invitation review, and follow-up automation using the same terms the product now uses
 
 ## [1.0.142] - 2026-04-05
 ### Fixed
-- tolerate missing blocker columns on task page
+- made the task page tolerate deployments where blocker columns are not available yet, reducing schema-rollout breakage while the blocker-escalation features propagate
 
 ## [1.0.141] - 2026-04-05
 ### Fixed
-- allow invited users on task detail page
+- allowed invited users onto the task detail page so pending project invitees can review work context before accepting or declining collaboration, instead of being blocked until membership is final
 
 ## [1.0.140] - 2026-04-05
 ### Added
@@ -210,27 +217,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.138] - 2026-04-04
 ### Changed
-- Add blocker escalation to notifications center
+- added blocker escalation to the notifications center so fresh blockers, follow-through reminders, and stale blocker alerts show up in the same operator inbox as the rest of the platform's actionable events
 
 ## [1.0.137] - 2026-04-04
 ### Added
-- add in-app notifications center
+- added an in-app notifications center to collect collaboration events, invitation follow-ups, approvals, and blocker escalation signals in one place instead of requiring operators to piece the state together from webhooks alone
 
 ## [1.0.136] - 2026-04-04
 ### Changed
-- Remove dead project.member_added webhook event
+- removed the dead `project.member_added` webhook event from the documented and shipped surface so integrations follow the canonical invitation lifecycle instead of listening for an event the platform no longer emits
 
 ## [1.0.135] - 2026-04-04
 ### Changed
-- Align webhook docs with canonical event surface
+- aligned webhook docs with the canonical event surface so operators wiring receivers see the real invitation, task, sprint, project, and approval events rather than stale aliases and pre-refactor names
 
 ## [1.0.134] - 2026-04-04
 ### Docs
-- align A2A skill and CLI with invitation flow
+- aligned the A2A skill and CLI docs with the invitation flow so automation guidance matches the shipped invitation inbox, accept/decline lifecycle, and follow-up worker behavior
 
 ## [1.0.133] - 2026-04-04
 ### Changed
-- Wire invitation sweep worker into production
+- wired the invitation sweep worker into the production stack so reminder and expiry handling no longer depend on manual operator runs after deployment
 
 ## [1.0.132] - 2026-04-04
 ### Added
@@ -243,7 +250,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.131] - 2026-04-04
 ### Changed
-- Add project invitation inbox expiry and reminders
+- added invitation expiry and reminder handling to the project invitation inbox so pending invites visibly age, trigger follow-up automation, and stop looking like indefinitely open requests
 
 ## [1.0.130] - 2026-04-04
 ### Added
@@ -270,11 +277,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.128] - 2026-04-03
 ### Changed
-- Enforce project-member task assignment
+- enforced project-member task assignment so tasks can no longer be assigned to agents outside the project context, closing an easy source of workflow drift and permission confusion
 
 ## [1.0.127] - 2026-04-03
 ### Changed
-- Merge remote-tracking branch 'origin/main' into codex/messages-inbox-markdown-preview
+- merged the inbox Markdown preview work back onto current mainline state to keep the release train moving; no platform behavior change beyond folding the preview improvements onto the latest base
 
 ## [1.0.126] - 2026-04-03
 ### Docs
@@ -282,7 +289,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.125] - 2026-04-03
 ### Docs
-- align CLI flag references with current CLI interface
+- aligned CLI flag references with the current interface so operators copying commands from the docs stop tripping over renamed or removed options
 
 ## [1.0.124] - 2026-04-03
 ### Fixed
@@ -296,7 +303,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.122] - 2026-04-03
 ### Added
-- task comments and activity feed
+- added task comments and an activity feed so execution updates, discussion, and workflow history stay attached to the task instead of disappearing into separate chat channels
 
 ## [1.0.121] - 2026-04-03
 ### Fixed
@@ -312,7 +319,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.118] - 2026-04-03
 ### Added
-- forgot/reset password flow
+- added a forgot/reset password flow so dashboard access no longer depends on manual intervention when an operator loses credentials
 
 ## [1.0.117] - 2026-04-03
 ### Added
