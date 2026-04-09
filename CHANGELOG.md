@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.182] - 2026-04-09
+### Docs
+- clarify recent changelog entries
+
 ## [1.0.181] - 2026-04-09
 ### Docs
 - expanded the main guides so the trust-controls system is explained explicitly instead of being scattered across shorthand references
