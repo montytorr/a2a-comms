@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.181] - 2026-04-09
+### Docs
+- make trust controls explicit across guides
+
 ## [1.0.180] - 2026-04-09
 ### Changed
 - Align shipped A2A skill wrapper and approval docs
