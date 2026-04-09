@@ -1,9 +1,9 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
-import type { ProjectStatus } from '@/lib/types';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
+import type { ProjectInvitationStatus, ProjectStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import { formatDate } from '@/lib/format-date';
 import MarkdownPreview from '@/components/markdown-preview';
@@ -11,6 +11,8 @@ import ProjectFilters from './filters';
 import InvitationInbox from './invitation-inbox';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
 import { categorizeProjectInvitations, type InvitationLike } from './invitation-utils';
+import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
+import { buildProjectCardAccessMap } from '@/lib/project-card-access';
 export const dynamic = 'force-dynamic';
 
 const statusConfig: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {
@@ -25,8 +27,9 @@ export default async function ProjectsPage({
 }: {
   searchParams: Promise<{ status?: string; inbox?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
   const statusFilter = (params.status || 'all') as ProjectStatus | 'all';
@@ -34,15 +37,16 @@ export default async function ProjectsPage({
   const supabase = createServerClient();
   noStore();
 
-  const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+  const agentScope = auth.agentScope;
 
-  // Get project IDs where user's agents are members (admin sees all)
+  // Get project IDs where the signed-in user has access, plus the per-project access mode.
   let scopedProjectIds: string[] | null = null;
+  let projectAccessById: Record<string, ReturnType<typeof buildProjectCardAccessMap>[string]> = {};
   if (!user.isSuperAdmin) {
     const [{ data: memberRows }, { data: observerRows }, { data: inviteRowsRaw }] = await Promise.all([
       supabase
         .from('project_members')
-        .select('project_id')
+        .select('project_id, role')
         .in('agent_id', agentScope),
       supabase
         .from('project_observers')
@@ -56,21 +60,47 @@ export default async function ProjectsPage({
     ]);
 
     const inviteRows = await hydrateProjectInvitations(inviteRowsRaw || []);
-    const scopedSet = new Set((memberRows || []).map(m => m.project_id));
-    (observerRows || []).forEach((row) => scopedSet.add(row.project_id));
-    inviteRows.forEach((inv) => scopedSet.add(inv.project_id));
+    const memberProjectIds = new Set((memberRows || []).map((row) => row.project_id));
+    const ownerProjectIds = new Set((memberRows || []).filter((row) => row.role === 'owner').map((row) => row.project_id));
+    const observerProjectIds = new Set((observerRows || []).map((row) => row.project_id));
+    const inviteProjectIds = new Set(inviteRows.map((inv) => inv.project_id).filter(Boolean));
+    const scopedSet = new Set<string>(memberProjectIds);
+    observerProjectIds.forEach((projectId) => scopedSet.add(projectId));
+    inviteProjectIds.forEach((projectId) => scopedSet.add(projectId));
     scopedProjectIds = Array.from(scopedSet);
+    projectAccessById = buildProjectCardAccessMap({
+      user,
+      projectIds: scopedProjectIds,
+      memberProjectIds,
+      ownerProjectIds,
+      observerProjectIds,
+      inviteProjectIds,
+    });
 
-    const { pendingMine, historyMine } = categorizeProjectInvitations(inviteRows, user.agentIds);
+    const visibleInviteRows = inviteRows.filter((inv) => {
+      const access = projectAccessById[inv.project_id || ''];
+      return applyProjectInvitationVisibility([inv], {
+        trust_tier: auth.trustTier,
+        trust_policy: auth.trustPolicy,
+      }, {
+        treatAsObserver: access?.treatInvitationsAsObserverSummary ?? false,
+        includeObserverSummary: true,
+      }).visibleInvitations.length > 0;
+    });
+
+    const { pendingMine, historyMine } = categorizeProjectInvitations(visibleInviteRows, auth.agentScope);
 
     return renderProjectsPage({
       userIsSuperAdmin: user.isSuperAdmin,
       supabase,
       scopedProjectIds,
+      projectAccessById,
       statusFilter,
       inboxFilter,
       pendingMine,
       historyMine,
+      user,
+      auth: { trustTier: auth.trustTier, trustPolicy: auth.trustPolicy },
     });
   }
 
@@ -82,6 +112,9 @@ export default async function ProjectsPage({
     inboxFilter,
     pendingMine: [],
     historyMine: [],
+    projectAccessById,
+    user,
+    auth: { trustTier: auth.trustTier, trustPolicy: auth.trustPolicy },
   });
 }
 
@@ -92,6 +125,8 @@ async function renderProjectsPage({
   inboxFilter,
   pendingMine,
   historyMine,
+  projectAccessById,
+  user,
 }: {
   userIsSuperAdmin: boolean;
   supabase: ReturnType<typeof createServerClient>;
@@ -100,6 +135,9 @@ async function renderProjectsPage({
   inboxFilter: string;
   pendingMine: InvitationLike[];
   historyMine: InvitationLike[];
+  projectAccessById: Record<string, ReturnType<typeof buildProjectCardAccessMap>[string]>;
+  user: { id: string; displayName: string; isSuperAdmin: boolean; trustTier?: string; trustPolicy?: unknown };
+  auth?: { trustTier: 'internal' | 'partner' | 'external'; trustPolicy: unknown };
 }) {
   let query = supabase.from('projects').select('*');
 
@@ -131,17 +169,24 @@ async function renderProjectsPage({
   // Get member counts and task stats for all projects
   const projectIds = rows.map(p => p.id);
 
+  const activeUser = user!;
   const memberCounts: Record<string, number> = {};
   const observerCounts: Record<string, number> = {};
   const taskStats: Record<string, { total: number; done: number }> = {};
   const sprintNames: Record<string, string | null> = {};
+  const hiddenPendingInvitationCounts: Record<string, number> = {};
+  const canSeeInvitationSummaries: Record<string, boolean> = {};
 
   if (projectIds.length > 0) {
-    const [membersRes, observersRes, tasksRes, sprintsRes] = await Promise.all([
+    const [membersRes, observersRes, tasksRes, sprintsRes, invitationRes] = await Promise.all([
       supabase.from('project_members').select('project_id').in('project_id', projectIds),
       supabase.from('project_observers').select('project_id').in('project_id', projectIds),
       supabase.from('tasks').select('project_id, status').in('project_id', projectIds),
       supabase.from('sprints').select('project_id, title, status').in('project_id', projectIds).eq('status', 'active'),
+      supabase
+        .from('project_member_invitations')
+        .select('project_id, status, agent_id, invited_by_agent_id, created_at')
+        .in('project_id', projectIds),
     ]);
 
     for (const m of membersRes.data || []) {
@@ -161,6 +206,26 @@ async function renderProjectsPage({
 
     for (const s of sprintsRes.data || []) {
       sprintNames[s.project_id] = s.title;
+    }
+
+    const invitationBuckets = new Map<string, Array<{ project_id: string; status: ProjectInvitationStatus; agent_id: string; invited_by_agent_id: string; created_at: string }>>();
+    for (const invitation of invitationRes.data || []) {
+      const bucket = invitationBuckets.get(invitation.project_id) || [];
+      bucket.push(invitation);
+      invitationBuckets.set(invitation.project_id, bucket);
+    }
+
+    for (const projectId of projectIds) {
+      const access = projectAccessById[projectId];
+      const visibility = applyProjectInvitationVisibility(invitationBuckets.get(projectId) || [], {
+        trust_tier: activeUser.trustTier || 'external',
+        trust_policy: activeUser.trustPolicy || null,
+      }, {
+        treatAsObserver: access?.treatInvitationsAsObserverSummary ?? false,
+        includeObserverSummary: true,
+      });
+      hiddenPendingInvitationCounts[projectId] = visibility.hiddenPendingCount;
+      canSeeInvitationSummaries[projectId] = visibility.canSeeSummary;
     }
   }
 
@@ -220,9 +285,12 @@ async function renderProjectsPage({
           ) : (
             rows.map((project, idx) => {
               const stats = taskStats[project.id] || { total: 0, done: 0 };
+              const access = projectAccessById[project.id];
               const members = memberCounts[project.id] || 0;
               const observers = observerCounts[project.id] || 0;
               const activeSprint = sprintNames[project.id] || null;
+              const hiddenPendingInvitations = hiddenPendingInvitationCounts[project.id] || 0;
+              const canSeeInvitationSummary = !!canSeeInvitationSummaries[project.id];
               const sc = statusConfig[project.status as ProjectStatus] || statusConfig.planning;
               const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
@@ -276,22 +344,35 @@ async function renderProjectsPage({
                       </div>
                     )}
 
-                    <div className="flex items-center gap-4 pt-4 border-t border-white/[0.04]">
-                      <div className="flex items-center gap-1.5">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                        <span className="text-[11px] text-gray-500 font-medium">{members}</span>
+                    {canSeeInvitationSummary && hiddenPendingInvitations > 0 && (
+                      <div className="mb-4 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-gray-500">Restricted invitation summary</p>
+                        <p className="mt-1 text-[11px] text-gray-400">
+                          {hiddenPendingInvitations} pending invitation{hiddenPendingInvitations !== 1 ? 's are' : ' is'} hidden by trust policy for this observer-visible project.
+                        </p>
                       </div>
-                      {observers > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                          <span className="text-[11px] text-gray-500 font-medium">{observers} observer{observers !== 1 ? 's' : ''}</span>
-                        </div>
+                    )}
+
+                    <div className="flex items-center gap-4 pt-4 border-t border-white/[0.04]">
+                      {access?.canSeeParticipantCounts !== false && (
+                        <>
+                          <div className="flex items-center gap-1.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            <span className="text-[11px] text-gray-500 font-medium">{members}</span>
+                          </div>
+                          {observers > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                              <span className="text-[11px] text-gray-500 font-medium">{observers} observer{observers !== 1 ? 's' : ''}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                       <div className="flex items-center gap-1.5">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">

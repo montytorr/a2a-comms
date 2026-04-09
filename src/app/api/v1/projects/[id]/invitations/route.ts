@@ -6,6 +6,7 @@ import { getProjectMembership, hydrateProjectInvitations } from '../../_helpers'
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated } from '@/lib/project-invitations';
 import type { ApiError } from '@/lib/types';
 import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
+import { evaluateProjectInvitationListPolicyAccess } from '@/lib/agent-trust-policy';
 
 export async function GET(
   req: NextRequest,
@@ -23,6 +24,16 @@ export async function GET(
       { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  if (member.accessKind === 'observer') {
+    const invitationListDecision = evaluateProjectInvitationListPolicyAccess(auth.agent);
+    if (!invitationListDecision.allowed) {
+      return NextResponse.json(
+        invitationListDecision.body || { error: 'Observer project invitation visibility blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+        { status: invitationListDecision.status || 403 }
+      );
+    }
   }
 
   const supabase = createServerClient();

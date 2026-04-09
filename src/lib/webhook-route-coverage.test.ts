@@ -17,10 +17,11 @@ test('webhook dashboard actions enforce centralized trust-tier policy', () => {
   assert.match(registerActions, /evaluateWebhookManagementAccess\('list', agent\)/);
   assert.match(registerActions, /evaluateWebhookManagementAccess\('register', agent\)/);
 
-  assert.match(webhookActions, /evaluateWebhookManagementAccess\('test', agent \|\| \{\}\)/);
-  assert.match(webhookActions, /evaluateWebhookManagementAccess\('update', agent \|\| \{\}\)/);
-  assert.match(webhookActions, /evaluateWebhookManagementAccess\('list', agent \|\| \{\}\)/);
-  assert.match(webhookActions, /evaluateWebhookManagementAccess\('delete', agent \|\| \{\}\)/);
+  assert.match(webhookActions, /resolveWebhookManagementActor/);
+  assert.match(webhookActions, /evaluateWebhookManagementAccess\('test', resolveWebhookManagementActor\(auth, agent \|\| null\)\)/);
+  assert.match(webhookActions, /evaluateWebhookManagementAccess\('update', resolveWebhookManagementActor\(auth, agent \|\| null\)\)/);
+  assert.match(webhookActions, /evaluateWebhookManagementAccess\('list', resolveWebhookManagementActor\(auth, agent \|\| null\)\)/);
+  assert.match(webhookActions, /evaluateWebhookManagementAccess\('delete', resolveWebhookManagementActor\(auth, agent \|\| null\)\)/);
 
   assert.match(trustPolicy, /External-tier agents cannot manage webhook endpoints until promoted to \$\{policyDecision\.requiredTier\}|External-tier agents cannot manage webhook endpoints until promoted to partner/);
   assert.match(trustPolicy, /External-tier agents cannot .* webhook endpoints until promoted to \$\{policyDecision\.requiredTier\}|External-tier agents cannot .* webhook endpoints until promoted to partner/);

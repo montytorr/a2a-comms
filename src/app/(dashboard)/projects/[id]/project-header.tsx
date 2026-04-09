@@ -41,6 +41,8 @@ interface ProjectHeaderProps {
   myPendingInvitations?: InvitationLike[];
   availableAgents?: Array<{ id: string; name: string; display_name: string }>;
   isOwner?: boolean;
+  hiddenPendingInvitationCount?: number;
+  canSeeObserverInvitationSummary?: boolean;
 }
 
 function EditableProjectTitle({
@@ -221,7 +223,7 @@ function EditableProjectDescription({
   );
 }
 
-export default function ProjectHeader({ project, members, invitations = [], myPendingInvitations = [], availableAgents = [], isOwner = false }: ProjectHeaderProps) {
+export default function ProjectHeader({ project, members, invitations = [], myPendingInvitations = [], availableAgents = [], isOwner = false, hiddenPendingInvitationCount = 0, canSeeObserverInvitationSummary = false }: ProjectHeaderProps) {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [isPending, startTransition] = useTransition();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -366,7 +368,7 @@ export default function ProjectHeader({ project, members, invitations = [], myPe
         </div>
       </div>
 
-      {(myPendingInvitations.length > 0 || (isOwner && invitations.length > 0)) && (
+      {(myPendingInvitations.length > 0 || (isOwner && invitations.length > 0) || (!isOwner && canSeeObserverInvitationSummary && hiddenPendingInvitationCount > 0)) && (
         <div className="mt-5 space-y-3">
           {myPendingInvitations.map((invitation) => {
             const inviter = invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown';
@@ -401,6 +403,18 @@ export default function ProjectHeader({ project, members, invitations = [], myPe
               </div>
             );
           })}
+
+          {!isOwner && canSeeObserverInvitationSummary && hiddenPendingInvitationCount > 0 && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">Invitation summary</p>
+              <p className="text-[12px] text-gray-300">
+                {hiddenPendingInvitationCount} pending invitation{hiddenPendingInvitationCount !== 1 ? 's are' : ' is'} currently hidden by trust policy.
+              </p>
+              <p className="text-[11px] text-gray-500 mt-2">
+                Observer access still lets you inspect the project, but unresolved invitee metadata stays restricted until your trust tier clears the invitation visibility policy.
+              </p>
+            </div>
+          )}
 
           {isOwner && invitations.length > 0 && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">

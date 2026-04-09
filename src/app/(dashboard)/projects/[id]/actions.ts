@@ -1,35 +1,21 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
 import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
+import { EMPTY_UUID, resolveProjectActorAccess } from '@/lib/dashboard-actor-helpers';
 
 async function requireProjectMembership(
   projectId: string,
   options?: { requireRole?: string }
 ) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
-  if (user.isSuperAdmin) return user;
+  const auth = await getAuthActorContext();
+  if (!auth) throw new Error('Unauthorized');
 
-  const supabase = createServerClient();
-  const { data: membership } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', projectId)
-    .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
-    .limit(1);
-
-  if (!membership || membership.length === 0) throw new Error('Forbidden');
-
-  if (options?.requireRole && membership[0].role !== options.requireRole) {
-    throw new Error('Forbidden');
-  }
-
-  return user;
+  return resolveProjectActorAccess(auth, projectId, options);
 }
 
 export async function updateProjectStatus(projectId: string, status: string) {
@@ -74,14 +60,20 @@ export async function updateSprintStatus(projectId: string, sprintId: string, st
 
 export async function inviteProjectMember(projectId: string, agentId: string) {
   const user = await requireProjectMembership(projectId, { requireRole: 'owner' });
+  const auth = await getAuthActorContext();
+  if (!auth) throw new Error('Unauthorized');
   const supabase = createServerClient();
+
+  const inviterLookupId = user.memberAgentId || auth.actingAgentId;
 
   const [{ data: project }, { data: existing }, { data: existingInvite }, { data: agent }, { data: inviterAgent }] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     supabase.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
     supabase.from('project_member_invitations').select('id, status').eq('project_id', projectId).eq('agent_id', agentId).single(),
     supabase.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', agentId).single(),
-    supabase.from('agents').select('id, name, owner_user_id, trust_tier').in('id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']).limit(1).maybeSingle(),
+    inviterLookupId
+      ? supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
+      : supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
   ]);
 
   if (!project) throw new Error('Project not found');
@@ -93,8 +85,8 @@ export async function inviteProjectMember(projectId: string, agentId: string) {
     if (!trustGate.allowed) throw new Error(trustGate.reason || 'Agent trust tier blocks project membership');
   }
 
-  const inviterAgentId = user.agentIds[0];
-  if (!inviterAgentId) throw new Error('No owned agent available to send invitation');
+  const inviterAgentId = user.memberAgentId || auth.actingAgentId;
+  if (!inviterAgentId) throw new Error('No acting agent available to send invitation');
 
   const { error } = await supabase.from('project_member_invitations').upsert({
     project_id: projectId,
@@ -127,8 +119,9 @@ export async function respondToProjectInvitation(
   invitationId: string,
   action: 'accept' | 'decline' | 'cancel'
 ) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) throw new Error('Unauthorized');
 
   const supabase = createServerClient();
   const { data: invitation } = await supabase
@@ -143,13 +136,13 @@ export async function respondToProjectInvitation(
     throw new Error(invitation.status === 'expired' ? 'Invitation has expired' : 'Invitation has already been resolved');
   }
 
-  const isInvitee = user.agentIds.includes(invitation.agent_id);
+  const isInvitee = auth.agentScope.includes(invitation.agent_id);
   const isOwner = user.isSuperAdmin || !!(await supabase
     .from('project_members')
     .select('id')
     .eq('project_id', projectId)
     .eq('role', 'owner')
-    .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+    .in('agent_id', auth.agentScope.length > 0 ? auth.agentScope : [EMPTY_UUID])
     .limit(1)).data?.length;
 
   if (action === 'cancel') {

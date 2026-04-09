@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import AnalyticsCharts from './charts';
@@ -11,8 +11,9 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ days?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
   const days = Math.min(90, Math.max(7, parseInt(params.days || '14', 10)));
@@ -27,7 +28,7 @@ export default async function AnalyticsPage({
   let scopedContractIds: string[] | null = null;
   let scopedProjectIds: string[] | null = null;
   if (!user.isSuperAdmin) {
-    const safeAgentIds = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+    const safeAgentIds = auth.agentScope;
     const { data: participantContracts } = await supabase
       .from('contract_participants')
       .select('contract_id')
@@ -189,7 +190,7 @@ export default async function AnalyticsPage({
     .gte('created_at', cutoffISO);
   if (!user.isSuperAdmin) {
     // Include counterparty agent names from shared contracts (not just owned agents)
-    const allWebhookAgentIds = new Set(user.agentIds);
+    const allWebhookAgentIds = new Set(auth.agentScope);
     if (scopedContractIds && scopedContractIds.length > 0) {
       const { data: allContractParticipants } = await supabase
         .from('contract_participants')

@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import type { AuthUser } from '@/lib/auth-context';
+import type { AuthActorContext } from '@/lib/auth-actor-context';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 
 export type NotificationKind =
@@ -77,9 +78,12 @@ type ApprovalRow = {
   created_at: string;
 };
 
-export async function getDashboardNotificationSummary(user: AuthUser): Promise<DashboardNotificationSummary> {
+export async function getDashboardNotificationSummary(context: AuthUser | AuthActorContext): Promise<DashboardNotificationSummary> {
   const supabase = createServerClient();
-  const agentScope = user.agentIds.length > 0 ? user.agentIds : [EMPTY_UUID];
+  const user = 'user' in context ? context.user : context;
+  const agentScope = 'agentScope' in context
+    ? context.agentScope.length > 0 ? context.agentScope : [EMPTY_UUID]
+    : user.agentIds.length > 0 ? user.agentIds : [EMPTY_UUID];
 
   const [contractInvitesRes, assignedTasksRes, projectInvitesRes, blockedTasksRes, approvalsRes] = await Promise.all([
     supabase

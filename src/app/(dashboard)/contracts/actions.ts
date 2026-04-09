@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { createServerClient } from '@/lib/supabase/server';
 import { createContractProposal, ContractProposalError } from '@/lib/contract-proposals';
 import type { ProposeContractRequest } from '@/lib/types';
@@ -18,12 +18,13 @@ function parseIntegerField(value: FormDataEntryValue | null) {
 }
 
 export async function proposeContractFromDashboard(formData: FormData) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) throw new Error('Unauthorized');
 
   const proposerAgentId = typeof formData.get('proposer_agent_id') === 'string' ? formData.get('proposer_agent_id') as string : '';
   if (!proposerAgentId) throw new Error('Choose a proposer agent');
-  if (!user.isSuperAdmin && !user.agentIds.includes(proposerAgentId)) throw new Error('Forbidden');
+  if (!user.isSuperAdmin && !auth.agentScope.includes(proposerAgentId)) throw new Error('Forbidden');
 
   const supabase = createServerClient();
   const { data: actor } = await supabase

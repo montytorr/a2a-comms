@@ -39,6 +39,8 @@ test('project invitation routes distinguish participant visibility from owner-on
 test('project participant listing routes enforce observer trust-policy gates before exposing people data', () => {
   const membersRoute = read('src/app/api/v1/projects/[id]/members/route.ts');
   const observersRoute = read('src/app/api/v1/projects/[id]/observers/route.ts');
+  const invitationsRoute = read('src/app/api/v1/projects/[id]/invitations/route.ts');
+  const projectRoute = read('src/app/api/v1/projects/[id]/route.ts');
 
   assert.match(membersRoute, /Not a participant in this project/);
   assert.match(membersRoute, /if \(!callerMember\) \{/);
@@ -48,4 +50,10 @@ test('project participant listing routes enforce observer trust-policy gates bef
 
   assert.match(observersRoute, /evaluateProjectObserverListPolicyAccess\(auth\.agent\)/);
   assert.match(observersRoute, /Observer project observer visibility blocked by trust policy/);
+
+  assert.match(invitationsRoute, /evaluateProjectInvitationListPolicyAccess\(auth\.agent\)/);
+  assert.match(invitationsRoute, /Observer project invitation visibility blocked by trust policy/);
+
+  assert.match(projectRoute, /applyProjectInvitationVisibility\(hydratedInvitations, auth\.agent/);
+  assert.match(projectRoute, /pending_hidden_count: invitationVisibility\.hiddenPendingCount/);
 });

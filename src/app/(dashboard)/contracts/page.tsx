@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
 import type { Contract, ContractStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
@@ -41,8 +41,9 @@ export default async function ContractsPage({
 }: {
   searchParams: Promise<{ status?: string; search?: string; sort?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
   const statusFilter = (params.status || 'all') as ContractStatus | 'all';
@@ -53,7 +54,7 @@ export default async function ContractsPage({
 
   const proposerScope = user.isSuperAdmin
     ? undefined
-    : (user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+    : auth.agentScope;
 
   const [{ data: proposerAgentsRaw }, { data: allAgentsRaw }] = await Promise.all([
     proposerScope
@@ -72,7 +73,7 @@ export default async function ContractsPage({
     const { data: participantContracts } = await supabase
       .from('contract_participants')
       .select('contract_id')
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+      .in('agent_id', auth.agentScope);
     scopedContractIds = (participantContracts || []).map(p => p.contract_id);
   }
 

@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect, notFound } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import { formatDate, formatDateTime } from '@/lib/format-date';
@@ -46,8 +46,9 @@ export default async function TaskDetailPage({
 }: {
   params: Promise<{ id: string; tid: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const { id: projectId, tid } = await params;
   const supabase = createServerClient();
@@ -63,7 +64,7 @@ export default async function TaskDetailPage({
 
   if (error || !task) notFound();
 
-  const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+  const agentScope = auth.agentScope;
 
   // Verify access: admin, project member, project observer, or invited agent.
   let hasReadOnlyObserverAccess = false;

@@ -1,8 +1,8 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { redirect, notFound } from 'next/navigation';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import KanbanBoard, { type TaskRow } from './kanban-board';
 import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
@@ -11,6 +11,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import type { ProjectInvitationStatus } from '@/lib/types';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
+import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -20,8 +21,9 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ sprint?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const { id } = await params;
   const { sprint: sprintFilter } = await searchParams;
@@ -37,7 +39,7 @@ export default async function ProjectDetailPage({
 
   if (error || !project) notFound();
 
-  const inviteeScopedQuery = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+  const inviteeScopedQuery = auth.agentScope;
 
   // Verify access: admin, member, observer, or invitee with an outstanding/resolved invitation.
   if (!user.isSuperAdmin) {
@@ -69,13 +71,19 @@ export default async function ProjectDetailPage({
 
   // Determine if user is project owner
   let isOwner = user.isSuperAdmin;
+  const isObserver = !user.isSuperAdmin && !isOwner && !!(await supabase
+    .from('project_observers')
+    .select('id')
+    .eq('project_id', id)
+    .in('agent_id', auth.agentScope)
+    .limit(1)).data?.length;
   if (!isOwner) {
     const { data: ownerCheck } = await supabase
       .from('project_members')
       .select('id, role')
       .eq('project_id', id)
       .eq('role', 'owner')
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+      .in('agent_id', auth.agentScope)
       .limit(1);
     isOwner = !!(ownerCheck && ownerCheck.length > 0);
   }
@@ -128,7 +136,15 @@ export default async function ProjectDetailPage({
   ]);
 
   const members = membersRes.data || [];
-  const invitations = await hydrateProjectInvitations(invitationsRes.data || []);
+  const hydratedInvitations = await hydrateProjectInvitations(invitationsRes.data || []);
+  const invitationVisibility = applyProjectInvitationVisibility(hydratedInvitations, {
+    trust_tier: auth.trustTier,
+    trust_policy: auth.trustPolicy,
+  }, {
+    treatAsObserver: isObserver,
+    includeObserverSummary: true,
+  });
+  const invitations = invitationVisibility.visibleInvitations;
   const observers = observersRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
@@ -153,7 +169,7 @@ export default async function ProjectDetailPage({
   const availableAgents = allAgents.filter((a: { id: string }) => !memberAgentIds.has(a.id) && !observerAgentIds.has(a.id) && !pendingInviteAgentIds.has(a.id));
 
   const myPendingInvitations = invitations.filter((inv: { agent_id: string; status: ProjectInvitationStatus }) => (
-    inv.status === 'pending' && user.agentIds.includes(inv.agent_id)
+    inv.status === 'pending' && auth.agentScope.includes(inv.agent_id)
   ));
 
   // Compute completion stats per sprint (excluding cancelled tasks)
@@ -217,6 +233,8 @@ export default async function ProjectDetailPage({
           myPendingInvitations={myPendingInvitations}
           availableAgents={availableAgents}
           isOwner={isOwner}
+          hiddenPendingInvitationCount={invitationVisibility.hiddenPendingCount}
+          canSeeObserverInvitationSummary={invitationVisibility.canSeeSummary}
         />
 
         {/* Sprint Selector */}

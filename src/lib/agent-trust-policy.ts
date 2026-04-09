@@ -1,7 +1,7 @@
 import type { ApiError, Agent } from '@/lib/types';
 import { normalizeAgentTrustTier, type AgentTrustTier } from './trust-tiers';
 
-export type AgentTrustPolicyScope = 'webhooks' | 'observer_project_access' | 'project_participants';
+export type AgentTrustPolicyScope = 'webhooks' | 'observer_project_access' | 'project_participants' | 'project_invitations';
 
 export interface WebhookTrustPolicyConfig {
   management: 'internal' | 'partner';
@@ -17,10 +17,15 @@ export interface ProjectParticipantTrustPolicyConfig {
   list_observers: 'internal' | 'partner';
 }
 
+export interface ProjectInvitationTrustPolicyConfig {
+  list_pending: 'internal' | 'partner';
+}
+
 export interface AgentTrustPolicyConfig {
   webhooks: WebhookTrustPolicyConfig;
   observer_project_access: ObserverProjectAccessTrustPolicyConfig;
   project_participants: ProjectParticipantTrustPolicyConfig;
+  project_invitations: ProjectInvitationTrustPolicyConfig;
 }
 
 export const DEFAULT_AGENT_TRUST_POLICY: AgentTrustPolicyConfig = {
@@ -34,6 +39,9 @@ export const DEFAULT_AGENT_TRUST_POLICY: AgentTrustPolicyConfig = {
   project_participants: {
     list_members: 'partner',
     list_observers: 'partner',
+  },
+  project_invitations: {
+    list_pending: 'internal',
   },
 };
 
@@ -49,6 +57,9 @@ export interface AgentTrustPolicyShape {
   project_participants?: {
     list_members?: unknown;
     list_observers?: unknown;
+  };
+  project_invitations?: {
+    list_pending?: unknown;
   };
 }
 
@@ -139,6 +150,12 @@ export function normalizeAgentTrustPolicy(raw: unknown): AgentTrustPolicyConfig 
         DEFAULT_AGENT_TRUST_POLICY.project_participants.list_observers,
       ),
     },
+    project_invitations: {
+      list_pending: clampWebhookManagementTier(
+        candidate.project_invitations?.list_pending,
+        DEFAULT_AGENT_TRUST_POLICY.project_invitations.list_pending,
+      ),
+    },
   };
 }
 
@@ -221,6 +238,15 @@ export function evaluateProjectObserverListPolicyAccess(context: TrustPolicyAcce
   );
 }
 
+export function evaluateProjectInvitationListPolicyAccess(context: TrustPolicyAccessContext): TrustPolicyDecision {
+  const policy = normalizeAgentTrustPolicy(context.trust_policy);
+  return evaluatePolicyTierAccess(
+    context,
+    policy.project_invitations.list_pending,
+    (callerTier, requiredTier) => `Observer project invitation visibility requires ${requiredTier}-tier trust. This agent is ${callerTier}-tier.`,
+  );
+}
+
 export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): AgentTrustPolicyConfig {
   if (trustTier === 'internal') {
     return {
@@ -234,6 +260,9 @@ export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): 
       project_participants: {
         list_members: 'partner',
         list_observers: 'partner',
+      },
+      project_invitations: {
+        list_pending: 'internal',
       },
     };
   }
@@ -251,6 +280,9 @@ export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): 
         list_members: 'partner',
         list_observers: 'partner',
       },
+      project_invitations: {
+        list_pending: 'internal',
+      },
     };
   }
 
@@ -265,6 +297,9 @@ export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): 
     project_participants: {
       list_members: 'partner',
       list_observers: 'partner',
+    },
+    project_invitations: {
+      list_pending: 'internal',
     },
   };
 }

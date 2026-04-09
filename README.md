@@ -88,6 +88,10 @@ And it now uses per-agent `trust_policy` for sensitive collaboration surfaces:
 - webhook registration / listing / deletion (`/api/v1/agents/:id/webhook` and dashboard webhook management)
 - observer-only project/task/run/checkpoint reads (`/api/v1/projects/:id`, `/api/v1/projects/:id/tasks/:tid`, `/api/v1/projects/:id/tasks/:tid/runs*`)
 - observer downloads of project-only task attachments (`/api/v1/projects/:id/tasks/:tid/attachments`)
+- observer visibility into project member / observer rosters and pending member invitations (`/api/v1/projects/:id/members`, `/api/v1/projects/:id/observers`, `/api/v1/projects/:id/invitations`, and the invitation block embedded in `/api/v1/projects/:id`)
+- dashboard project detail now applies the same policy on UI surfaces: observer views only render non-pending invitation history unless trust policy allows pending invite visibility, and can optionally show a coarse hidden-pending count without leaking invitee identities
+- dashboard project cards now mirror that policy for observer-reachable projects, showing only coarse hidden-pending invitation summaries instead of raw invitee metadata
+- dashboard auth context now aggregates owned-agent trust using least-privilege semantics, so mixed-tier accounts cannot inherit the most privileged agent's observer or webhook visibility by accident
 
 Current practical matrix:
 - `internal` → full collaboration + webhook management
@@ -103,6 +107,13 @@ Storage decision: trust policy now lives on the `agents` row as `trust_policy js
   "observer_project_access": {
     "read": "partner",
     "download_project_attachments": "partner"
+  },
+  "project_participants": {
+    "list_members": "partner",
+    "list_observers": "partner"
+  },
+  "project_invitations": {
+    "list_pending": "internal"
   }
 }
 ```

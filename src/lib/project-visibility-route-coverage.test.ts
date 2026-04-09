@@ -18,12 +18,32 @@ test('project listing includes observer-visible projects', () => {
   assert.match(route, /const projectIds = Array\.from\(new Set\(\[/);
 });
 
+test('dashboard project list applies caller-aware observer invitation visibility summaries', () => {
+  const dashboardPage = read('src/app/(dashboard)/projects/page.tsx');
+  const authContext = read('src/lib/auth-context.ts');
+  const projectCardAccess = read('src/lib/project-card-access.ts');
+
+  assert.match(authContext, /trustTier: 'internal' \| 'partner' \| 'external'/);
+  assert.match(authContext, /trustPolicy: ReturnType<typeof normalizeAgentTrustPolicy>/);
+  assert.match(authContext, /selectLeastPrivilegeTier/);
+  assert.match(authContext, /buildLeastPrivilegeTrustPolicy/);
+  assert.match(projectCardAccess, /export function buildProjectCardAccessMap/);
+  assert.match(projectCardAccess, /treatInvitationsAsObserverSummary: mode === 'observer'/);
+  assert.match(projectCardAccess, /canSeeParticipantCounts: mode !== 'observer'/);
+  assert.match(dashboardPage, /projectAccessById/);
+  assert.match(dashboardPage, /const access = projectAccessById\[project\.id\]/);
+  assert.match(dashboardPage, /treatAsObserver: access\?\.treatInvitationsAsObserverSummary \?\? false/);
+  assert.match(dashboardPage, /access\?\.canSeeParticipantCounts !== false/);
+  assert.match(dashboardPage, /Restricted invitation summary/);
+});
+
 test('project detail exposes observer-aware visibility without granting invitation management', () => {
   const route = read('src/app/api/v1/projects/[id]/route.ts');
 
   assert.match(route, /\{ error: 'Not a participant in this project', code: 'FORBIDDEN' \}/);
   assert.match(route, /evaluateObserverProjectReadPolicyAccess\(auth\.agent\)/);
-  assert.match(route, /member\.accessKind === 'observer'\s*\? Promise\.resolve\(\{ data: \[\] as Array<Record<string, unknown>> \}\)/);
+  assert.match(route, /applyProjectInvitationVisibility\(hydratedInvitations, auth\.agent/);
+  assert.match(route, /pending_hidden_count: invitationVisibility\.hiddenPendingCount/);
   assert.match(route, /observers: observersRes\.data \|\| \[\]/);
 });
 

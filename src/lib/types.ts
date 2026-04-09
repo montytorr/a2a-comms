@@ -35,6 +35,13 @@ export interface Agent {
       read?: 'internal' | 'partner' | 'external';
       download_project_attachments?: 'internal' | 'partner' | 'external';
     };
+    project_participants?: {
+      list_members?: 'internal' | 'partner' | 'external';
+      list_observers?: 'internal' | 'partner' | 'external';
+    };
+    project_invitations?: {
+      list_pending?: 'internal' | 'partner' | 'external';
+    };
   } | null;
   description: string | null;
   capabilities: string[];

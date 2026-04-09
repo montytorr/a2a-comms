@@ -1,16 +1,18 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
+import { EMPTY_UUID } from '@/lib/dashboard-actor-helpers';
 
 export async function uploadContractAttachment(contractId: string, formData: FormData) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) throw new Error('Unauthorized');
 
   const supabase = createServerClient();
-  const agentScope = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
+  const agentScope = auth.agentScope.length > 0 ? auth.agentScope : [EMPTY_UUID];
   const { data: participation } = await supabase
     .from('contract_participants')
     .select('id, agent_id, role, status')
@@ -48,7 +50,7 @@ export async function uploadContractAttachment(contractId: string, formData: For
   const { error } = await supabase.from('task_attachments').insert({
     project_id: task.project_id,
     contract_id: contractId,
-    uploader_agent_id: participation?.[0]?.agent_id || user.agentIds[0] || null,
+    uploader_agent_id: participation?.[0]?.agent_id || auth.actingAgentId || null,
     uploader_user_id: user.id,
     filename: validated.filename,
     original_name: file.name,
@@ -66,24 +68,31 @@ export async function uploadContractAttachment(contractId: string, formData: For
     action: 'attachment.upload',
     resource_type: 'contract',
     resource_id: contractId,
-    details: { project_id: task.project_id, filename: file.name, mime_type: validated.mimeType, size_bytes: buffer.length },
+    details: {
+      project_id: task.project_id,
+      filename: file.name,
+      mime_type: validated.mimeType,
+      size_bytes: buffer.length,
+      actor_agent_id: participation?.[0]?.agent_id || auth.actingAgentId || null,
+    },
   });
 
   revalidatePath(`/contracts/${contractId}`);
 }
 
 export async function closeContract(contractId: string) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) throw new Error('Unauthorized');
 
   // Check participation unless superAdmin
   if (!user.isSuperAdmin) {
     const supabase = createServerClient();
     const { data: participation } = await supabase
       .from('contract_participants')
-      .select('id, role')
+      .select('id, role, agent_id')
       .eq('contract_id', contractId)
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+      .in('agent_id', auth.agentScope.length > 0 ? auth.agentScope : [EMPTY_UUID])
       .limit(1);
 
     if (!participation || participation.length === 0) {
@@ -120,6 +129,9 @@ export async function closeContract(contractId: string) {
     action: 'contract.close',
     resource_type: 'contract',
     resource_id: contractId,
-    details: { reason: 'Closed by operator via UI' },
+    details: {
+      reason: 'Closed by operator via UI',
+      actor_agent_id: auth.actingAgentId || null,
+    },
   });
 }

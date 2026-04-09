@@ -6,6 +6,7 @@ import { hydrateProjectInvitations } from '../_helpers';
 import type { UpdateProjectRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
+import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -76,13 +77,11 @@ export async function GET(
       .select('*')
       .eq('project_id', id)
       .order('position', { ascending: true }),
-    member.accessKind === 'observer'
-      ? Promise.resolve({ data: [] as Array<Record<string, unknown>> })
-      : supabase
-          .from('project_member_invitations')
-          .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
-          .eq('project_id', id)
-          .order('created_at', { ascending: false }),
+    supabase
+      .from('project_member_invitations')
+      .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
     supabase
       .from('task_execution_runs')
       .select('id, task_id, status, checkpoint_count, updated_at, created_at')
@@ -94,13 +93,28 @@ export async function GET(
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter(t => t.status === 'done').length;
 
-  const invitations = await hydrateProjectInvitations(invitationsRes.data || []);
+  const hydratedInvitations = await hydrateProjectInvitations(invitationsRes.data || []);
+  const invitationVisibility = applyProjectInvitationVisibility(hydratedInvitations, auth.agent, {
+    treatAsObserver: member.accessKind === 'observer',
+    includeObserverSummary: true,
+  });
 
   return NextResponse.json({
     ...project,
     members: membersRes.data || [],
     observers: observersRes.data || [],
-    invitations,
+    invitations: invitationVisibility.visibleInvitations,
+    invitation_visibility: member.accessKind === 'observer'
+      ? {
+          pending_hidden_count: invitationVisibility.hiddenPendingCount,
+          can_list_pending: invitationVisibility.canListPending,
+          can_see_summary: invitationVisibility.canSeeSummary,
+        }
+      : {
+          pending_hidden_count: 0,
+          can_list_pending: true,
+          can_see_summary: true,
+        },
     sprints: sprintsRes.data || [],
     task_stats: { total: totalTasks, done: doneTasks },
     execution_runs: executionRunsRes.data || [],

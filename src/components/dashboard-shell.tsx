@@ -3,15 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from './sidebar';
 import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
+import { DashboardProvider, type DashboardContextValue } from '@/app/(dashboard)/dashboard-context';
+import ActingAgentSelector from '@/app/(dashboard)/acting-agent-selector';
 
-interface DashboardShellProps {
-  isSuperAdmin: boolean;
-  displayName?: string;
-  notificationCounts?: DashboardNotificationCounts;
+interface DashboardShellProps extends DashboardContextValue {
   children: React.ReactNode;
 }
 
-export default function DashboardShell({ isSuperAdmin, displayName, notificationCounts, children }: DashboardShellProps) {
+export default function DashboardShell({ isSuperAdmin, displayName, notificationCounts, actor, children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Lock body scroll when sidebar is open on mobile
@@ -29,7 +28,15 @@ export default function DashboardShell({ isSuperAdmin, displayName, notification
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
   const handleToggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
 
+  const dashboardContext: DashboardContextValue = {
+    isSuperAdmin,
+    displayName,
+    notificationCounts,
+    actor,
+  };
+
   return (
+    <DashboardProvider value={dashboardContext}>
     <div className="flex min-h-screen">
       {/* Mobile top bar — only visible below lg */}
       <div className="fixed top-0 left-0 right-0 h-14 bg-[#08080d]/95 backdrop-blur-2xl border-b border-white/[0.04] flex items-center px-4 z-40 lg:hidden">
@@ -87,8 +94,14 @@ export default function DashboardShell({ isSuperAdmin, displayName, notification
       <main className="flex-1 lg:ml-[240px] min-h-screen relative pt-14 lg:pt-0">
         {/* Subtle top gradient line */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent hidden lg:block" />
-        <div className="max-w-[1400px] mx-auto">{children}</div>
+        <div className="max-w-[1400px] mx-auto">
+          <div className="px-4 pt-4 sm:px-6 lg:px-10">
+            <ActingAgentSelector />
+          </div>
+          {children}
+        </div>
       </main>
     </div>
+    </DashboardProvider>
   );
 }

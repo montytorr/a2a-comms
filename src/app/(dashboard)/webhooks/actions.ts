@@ -1,12 +1,29 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { createHmac } from 'crypto';
 import { resolveAndValidateHost } from '@/lib/url-validator';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import { revalidatePath } from 'next/cache';
 import { evaluateWebhookManagementAccess } from '@/lib/webhook-trust-policy';
+
+function resolveWebhookManagementActor(
+  auth: NonNullable<Awaited<ReturnType<typeof getAuthActorContext>>>,
+  webhookAgent: { id?: string | null; trust_tier?: string | null; trust_policy?: unknown } | null,
+) {
+  if (auth.actingAgentId && webhookAgent?.id && auth.actingAgentId === webhookAgent.id) {
+    return {
+      trust_tier: auth.trustTier,
+      trust_policy: auth.trustPolicy,
+    };
+  }
+
+  return {
+    trust_tier: webhookAgent?.trust_tier,
+    trust_policy: webhookAgent?.trust_policy,
+  };
+}
 
 export interface WebhookTestResult {
   success: boolean;
@@ -17,12 +34,12 @@ export interface WebhookTestResult {
 }
 
 export async function testWebhook(webhookId: string): Promise<WebhookTestResult> {
-  const user = await getAuthUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) return { success: false, error: 'Not authenticated' };
 
   const supabase = createServerClient();
 
-  // Fetch webhook with its secret
   const { data: webhook, error: fetchError } = await supabase
     .from('webhooks')
     .select('id, url, secret, agent_id')
@@ -35,16 +52,15 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('owner_user_id, trust_tier')
+    .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
     .single();
 
-  // Verify ownership: user must own the agent or be admin
   if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) {
     return { success: false, error: 'You can only test webhooks for your own agents' };
   }
 
-  const trustGate = evaluateWebhookManagementAccess('test', agent || {});
+  const trustGate = evaluateWebhookManagementAccess('test', resolveWebhookManagementActor(auth, agent || null));
   if (!trustGate.allowed) {
     return { success: false, error: trustGate.body.error };
   }
@@ -55,12 +71,10 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
     data: { message: 'Test ping from A2A Comms dashboard' },
   });
 
-  // Sign with HMAC-SHA256
   const signature = createHmac('sha256', webhook.secret)
     .update(payload)
     .digest('hex');
 
-  // Validate resolved IPs at delivery time (same as production delivery)
   const dnsCheck = await resolveAndValidateHost(webhook.url);
   if (!dnsCheck.valid) {
     return { success: false, error: `URL validation failed: ${dnsCheck.error}` };
@@ -83,7 +97,6 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
 
     const responseTime = Date.now() - start;
 
-    // Block redirects (SSRF protection)
     if (response.status >= 300 && response.status < 400) {
       return {
         success: false,
@@ -116,8 +129,9 @@ export async function updateWebhook(
   webhookId: string,
   updates: { url?: string; events?: string[]; is_active?: boolean }
 ): Promise<{ error?: string }> {
-  const user = await getAuthUser();
-  if (!user) return { error: 'Not authenticated' };
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) return { error: 'Not authenticated' };
 
   const supabase = createServerClient();
 
@@ -131,21 +145,19 @@ export async function updateWebhook(
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('owner_user_id, trust_tier')
+    .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
     .single();
 
-  // Verify ownership
   if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) {
     return { error: 'You can only edit webhooks for your own agents' };
   }
 
-  const trustGate = evaluateWebhookManagementAccess('update', agent || {});
+  const trustGate = evaluateWebhookManagementAccess('update', resolveWebhookManagementActor(auth, agent || null));
   if (!trustGate.allowed) {
     return { error: trustGate.body.error };
   }
 
-  // Validate URL if changing
   if (updates.url) {
     const urlCheck = validateWebhookUrl(updates.url);
     if (!urlCheck.valid) return { error: urlCheck.error || 'Invalid webhook URL' };
@@ -156,7 +168,7 @@ export async function updateWebhook(
   if (updates.events !== undefined) patch.events = updates.events;
   if (updates.is_active !== undefined) {
     patch.is_active = updates.is_active;
-    if (updates.is_active) patch.failure_count = 0; // reset failures on re-enable
+    if (updates.is_active) patch.failure_count = 0;
   }
 
   const { error: updateError } = await supabase
@@ -192,8 +204,9 @@ export interface WebhookDelivery {
 }
 
 export async function getDeliveries(webhookId: string): Promise<{ data: WebhookDelivery[]; error?: string }> {
-  const user = await getAuthUser();
-  if (!user) return { data: [], error: 'Not authenticated' };
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) return { data: [], error: 'Not authenticated' };
 
   const supabase = createServerClient();
 
@@ -206,14 +219,13 @@ export async function getDeliveries(webhookId: string): Promise<{ data: WebhookD
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('owner_user_id, trust_tier')
+    .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
     .single();
 
-  // Verify ownership
   if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) return { data: [], error: 'Access denied' };
 
-  const trustGate = evaluateWebhookManagementAccess('list', agent || {});
+  const trustGate = evaluateWebhookManagementAccess('list', resolveWebhookManagementActor(auth, agent || null));
   if (!trustGate.allowed) return { data: [], error: trustGate.body.error };
 
   const { data, error } = await supabase
@@ -228,8 +240,9 @@ export async function getDeliveries(webhookId: string): Promise<{ data: WebhookD
 }
 
 export async function deleteWebhook(webhookId: string): Promise<{ error?: string }> {
-  const user = await getAuthUser();
-  if (!user) return { error: 'Not authenticated' };
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) return { error: 'Not authenticated' };
 
   const supabase = createServerClient();
 
@@ -243,19 +256,18 @@ export async function deleteWebhook(webhookId: string): Promise<{ error?: string
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('owner_user_id, trust_tier')
+    .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
     .single();
   if (!user.isSuperAdmin && (!agent || agent.owner_user_id !== user.id)) {
     return { error: 'You can only delete webhooks for your own agents' };
   }
 
-  const trustGate = evaluateWebhookManagementAccess('delete', agent || {});
+  const trustGate = evaluateWebhookManagementAccess('delete', resolveWebhookManagementActor(auth, agent || null));
   if (!trustGate.allowed) {
     return { error: trustGate.body.error };
   }
 
-  // Delete deliveries first (FK)
   await supabase.from('webhook_deliveries').delete().eq('webhook_id', webhookId);
 
   const { error: delError } = await supabase

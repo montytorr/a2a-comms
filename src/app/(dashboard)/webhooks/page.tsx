@@ -1,8 +1,8 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { redirect } from 'next/navigation';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { Webhook, Agent } from '@/lib/types';
 import WebhookCard from './webhook-card';
 import AutoRefresh from '@/components/auto-refresh';
@@ -12,8 +12,9 @@ export const dynamic = 'force-dynamic';
 type WebhookWithAgent = Webhook & { agents: Pick<Agent, 'id' | 'name' | 'display_name'> };
 
 export default async function WebhooksPage() {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const supabase = createServerClient();
   noStore();
@@ -36,7 +37,7 @@ export default async function WebhooksPage() {
 
   // Non-admin: only show webhooks for their agents
   if (!user.isSuperAdmin) {
-    query = query.in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+    query = query.in('agent_id', auth.agentScope);
   }
 
   const { data: webhooks } = await query;

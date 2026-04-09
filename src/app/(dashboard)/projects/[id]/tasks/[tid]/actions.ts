@@ -1,34 +1,22 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { notifyBlockerAction } from '@/lib/task-blocker-actions';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
-import { getProjectAccess } from '@/lib/project-access';
 import { buildObserverCommentMetadata, normalizeObserverCommentType } from '@/lib/observer-mode';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
+import { resolveProjectActorAccess } from '@/lib/dashboard-actor-helpers';
 
 async function requireProjectMembership(
   projectId: string,
   options?: { requireRole?: string; allowObserverCommentary?: boolean }
 ) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
-  if (user.isSuperAdmin) return { ...user, memberAgentId: user.agentIds[0] ?? null, projectRole: 'owner', accessKind: 'membership' as const };
+  const auth = await getAuthActorContext();
+  if (!auth) throw new Error('Unauthorized');
 
-  const scopedAgentIds = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
-  let access = null;
-  for (const agentId of scopedAgentIds) {
-    access = await getProjectAccess(projectId, agentId);
-    if (access) break;
-  }
-
-  if (!access) throw new Error('Forbidden');
-  if (options?.requireRole && access.role !== options.requireRole) throw new Error('Forbidden');
-  if (access.accessKind === 'observer' && !options?.allowObserverCommentary) throw new Error('Forbidden');
-
-  return { ...user, memberAgentId: access.agentId, projectRole: access.role, accessKind: access.accessKind };
+  return resolveProjectActorAccess(auth, projectId, options);
 }
 
 export async function updateTask(
@@ -156,7 +144,10 @@ export async function logBlockerFollowUp(projectId: string, taskId: string) {
 
   if (updateError) throw new Error(`Failed to log blocker follow-up: ${updateError.message}`);
 
-  const actorName = user.displayName || 'Dashboard User';
+  const { data: actorAgent } = user.memberAgentId
+    ? await supabase.from('agents').select('name, display_name').eq('id', user.memberAgentId).single()
+    : { data: null };
+  const actorName = actorAgent?.display_name || actorAgent?.name || user.displayName || 'Dashboard User';
   const blockerSummary = activeBlockers.map((blocker) => blocker.title).join(', ') || 'current blockers';
 
   const { error: commentError } = await supabase.from('task_comments').insert({
@@ -166,7 +157,14 @@ export async function logBlockerFollowUp(projectId: string, taskId: string) {
     author_name: actorName,
     content: `Logged blocker follow-up on ${blockerSummary}`,
     comment_type: 'system',
-    metadata: { action: 'blocker_follow_up', blocker_titles: activeBlockers.map((blocker) => blocker.title), acted_at: actionAt },
+    metadata: {
+      action: 'blocker_follow_up',
+      blocker_titles: activeBlockers.map((blocker) => blocker.title),
+      acted_at: actionAt,
+      actor_agent_id: user.memberAgentId ?? null,
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
   });
 
   if (commentError) throw new Error(`Failed to log blocker comment: ${commentError.message}`);
@@ -230,7 +228,10 @@ export async function escalateBlockedTask(projectId: string, taskId: string) {
 
   if (updateError) throw new Error(`Failed to escalate blocked task: ${updateError.message}`);
 
-  const actorName = user.displayName || 'Dashboard User';
+  const { data: actorAgent } = user.memberAgentId
+    ? await supabase.from('agents').select('name, display_name').eq('id', user.memberAgentId).single()
+    : { data: null };
+  const actorName = actorAgent?.display_name || actorAgent?.name || user.displayName || 'Dashboard User';
   const blockerSummary = activeBlockers.map((blocker) => blocker.title).join(', ') || 'current blockers';
 
   const { error: commentError } = await supabase.from('task_comments').insert({
@@ -240,7 +241,14 @@ export async function escalateBlockedTask(projectId: string, taskId: string) {
     author_name: actorName,
     content: `Escalated blocker on ${blockerSummary}`,
     comment_type: 'system',
-    metadata: { action: 'blocker_escalation', blocker_titles: activeBlockers.map((blocker) => blocker.title), acted_at: actionAt },
+    metadata: {
+      action: 'blocker_escalation',
+      blocker_titles: activeBlockers.map((blocker) => blocker.title),
+      acted_at: actionAt,
+      actor_agent_id: user.memberAgentId ?? null,
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
   });
 
   if (commentError) throw new Error(`Failed to log blocker escalation comment: ${commentError.message}`);
@@ -296,7 +304,15 @@ export async function uploadTaskAttachment(projectId: string, taskId: string, fo
     action: 'attachment.upload',
     resource_type: 'task',
     resource_id: taskId,
-    details: { project_id: projectId, filename: file.name, mime_type: validated.mimeType, size_bytes: buffer.length },
+    details: {
+      project_id: projectId,
+      filename: file.name,
+      mime_type: validated.mimeType,
+      size_bytes: buffer.length,
+      actor_agent_id: user.memberAgentId ?? null,
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
   });
 
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);

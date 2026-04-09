@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
 import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
@@ -138,8 +138,9 @@ export default async function ContractDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const supabase = createServerClient();
   noStore();
@@ -150,7 +151,7 @@ export default async function ContractDetailPage({
       .from('contract_participants')
       .select('id')
       .eq('contract_id', id)
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'])
+      .in('agent_id', auth.agentScope)
       .limit(1);
     if (!participation || participation.length === 0) {
       notFound();
@@ -190,7 +191,7 @@ export default async function ContractDetailPage({
   const { threadMessages, observerNotes } = splitContractMessagesByVisibility(messageList);
   const participants = (contract.contract_participants || []) as ContractParticipant[];
   const attachments = ((contract as Record<string, unknown>).attachments || []) as Array<Record<string, unknown>>;
-  const isObserverParticipant = participants.some((participant) => user.agentIds.includes(participant.agent?.id || '') && participant.role === 'observer');
+  const isObserverParticipant = participants.some((participant) => auth.agentScope.includes(participant.agent?.id || '') && participant.role === 'observer');
 
   return (
     <AutoRefresh intervalMs={10000}>

@@ -1,11 +1,12 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import StatusBadge from '@/components/status-badge';
 import AutoRefresh from '@/components/auto-refresh';
 import type { AuditLogEntry, Contract, SystemConfig } from '@/lib/types';
+import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 export const dynamic = 'force-dynamic';
 
 function timeAgo(dateStr: string): string {
@@ -47,15 +48,17 @@ function getAuditLink(entry: AuditLogEntry): string | null {
 }
 
 export default async function DashboardPage() {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const supabase = createServerClient();
   noStore();
 
   // Build scoped queries
   const isAdmin = user.isSuperAdmin;
-  const agentIds = user.agentIds;
+  const scope = await buildDashboardVisibilityScope(auth);
+  const agentIds = scope.agentIds;
 
   // Active contracts — scoped by user's agents as participant
   let contractsQuery = supabase
@@ -85,18 +88,10 @@ export default async function DashboardPage() {
   if (!isAdmin && agentIds.length > 0) {
     // For contracts, we need to check contract_participants for the user's agents
     // Get contract IDs where user's agents are participants
-    const { data: participantContracts } = await supabase
-      .from('contract_participants')
-      .select('contract_id')
-      .in('agent_id', agentIds);
-    const contractIds = (participantContracts || []).map(p => p.contract_id);
+    const contractIds = scope.contractIds;
 
     // Get project IDs where user's agents are members
-    const { data: memberProjects } = await supabase
-      .from('project_members')
-      .select('project_id')
-      .in('agent_id', agentIds);
-    scopedProjectIds = (memberProjects || []).map(p => p.project_id);
+    scopedProjectIds = scope.projectIds;
 
     if (contractIds.length > 0) {
       contractsQuery = supabase
@@ -132,12 +127,8 @@ export default async function DashboardPage() {
         .eq('contract_id', '00000000-0000-0000-0000-000000000000');
     }
 
-    // Scope audit to user's agent names
-    const { data: agentNames } = await supabase
-      .from('agents')
-      .select('name')
-      .in('id', agentIds);
-    const names = (agentNames || []).map(a => a.name);
+    // Scope audit to actors visible within the acting-agent dashboard context
+    const names = scope.contractActorNames;
     if (names.length > 0) {
       auditQuery = auditQuery.in('actor', names);
     }
@@ -201,8 +192,8 @@ export default async function DashboardPage() {
     .from('webhooks')
     .select('id', { count: 'exact', head: true })
     .gte('last_delivery_at', twentyFourHoursAgo);
-  if (!isAdmin && agentIds.length > 0) {
-    webhookDeliveriesQuery = webhookDeliveriesQuery.in('agent_id', agentIds);
+  if (!isAdmin && scope.webhookIds.length > 0) {
+    webhookDeliveriesQuery = webhookDeliveriesQuery.in('id', scope.webhookIds);
   } else if (!isAdmin) {
     webhookDeliveriesQuery = webhookDeliveriesQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
   }

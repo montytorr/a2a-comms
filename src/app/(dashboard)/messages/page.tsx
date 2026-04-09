@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import CompactMarkdownPreview from '@/components/compact-markdown-preview';
@@ -38,8 +38,9 @@ export default async function MessagesPage({
 }: {
   searchParams: Promise<{ agent?: string; type?: string; search?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
   const agentFilter = params.agent || 'all';
@@ -63,7 +64,7 @@ export default async function MessagesPage({
     const { data: participantContracts } = await supabase
       .from('contract_participants')
       .select('contract_id')
-      .in('agent_id', user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000']);
+      .in('agent_id', auth.agentScope);
     scopedContractIds = (participantContracts || []).map(p => p.contract_id);
   }
 

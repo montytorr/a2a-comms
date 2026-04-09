@@ -1,10 +1,11 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import WebhookFilterCard from './webhook-filter-card';
+import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,10 +120,11 @@ export default async function WebhookHealthPage({
 }: {
   searchParams: Promise<{ webhook?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
-  const { isSuperAdmin, agentIds } = user;
+  const { isSuperAdmin } = user;
 
   const params = await searchParams;
   const filterWebhookId = params.webhook || null;
@@ -133,20 +135,9 @@ export default async function WebhookHealthPage({
   // eslint-disable-next-line react-hooks/purity -- server component with noStore(), Date.now() is intentional
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  // Resolve webhook IDs owned by this user's agents (for scoping)
-  let userWebhookIds: string[] = [];
-  if (!isSuperAdmin) {
-    if (agentIds.length === 0) {
-      // No agents → no webhooks to show
-      userWebhookIds = [];
-    } else {
-      const { data: userWebhooks } = await supabase
-        .from('webhooks')
-        .select('id')
-        .in('agent_id', agentIds);
-      userWebhookIds = (userWebhooks || []).map(w => w.id);
-    }
-  }
+  // Resolve visible webhook IDs from the current acting-agent scope.
+  const scope = await buildDashboardVisibilityScope(auth);
+  const userWebhookIds: string[] = !isSuperAdmin ? scope.webhookIds : [];
 
   const hasWebhooks = isSuperAdmin || userWebhookIds.length > 0;
 
