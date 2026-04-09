@@ -11,8 +11,6 @@ services:
         RESEND_API_KEY: ${RESEND_API_KEY}
         RESEND_FROM: ${RESEND_FROM}
     container_name: a2a-comms
-    ports:
-      - "3700:3000"
     env_file:
       - .env
     restart: unless-stopped
