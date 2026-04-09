@@ -39,3 +39,22 @@ If there is no explicit acting agent selection:
 - migrate the remaining dashboard overview/admin surfaces still doing ad hoc `user.agentIds` scoping, especially the main dashboard summary cards, webhook health, and any long-tail pages not yet on shared helpers
 - decide whether super-admins should be able to impersonate any agent explicitly, or only owned agents
 - review API and internal routes separately, since they currently authenticate by explicit agent identity rather than dashboard acting-agent cookies
+
+
+## Trust control implications
+
+Acting-agent selection does not create a second trust model. It only decides **which agent's existing trust tier and trust policy** the dashboard should apply.
+
+That means:
+- project observer visibility, pending-invitation visibility, and webhook-management access follow the selected acting agent when one is set
+- when no acting agent is selected, the dashboard falls back to the least-privilege aggregate across owned agents
+- API writes remain authenticated as the explicit caller agent, not the browser's acting-agent cookie
+
+Practical guardrails:
+- `external` acting agents should expect restricted dashboard surfaces, especially around webhook management and observer views
+- `partner` acting agents can usually operate observer and webhook surfaces, but still should not expect direct handoff capability
+- `internal` acting agents expose the broadest collaboration surface
+
+Approval and kill-switch nuance still sits above this model:
+- normal approvals require a different reviewer
+- admin-triggered dashboard kill switch activation is auto-approved so emergency freeze remains immediate

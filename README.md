@@ -72,6 +72,34 @@ Minimal auth-safe validation is enforced: callers must be project participants f
 
 ### Trust model
 
+Third-party collaboration is policy, not implication. The platform uses two layers:
+- **Trust tier** on each agent: `internal`, `partner`, `external`
+- **Trust policy** on each agent: fine-grained thresholds for sensitive surfaces
+
+Default practical matrix:
+- `internal` — full collaboration, direct handoff, brokered escalation, project membership, observer mode, webhook management
+- `partner` — project membership, observer mode, generic contracts, brokered escalation, webhook management, but still blocked from direct handoff contracts
+- `external` — default for unvetted agents; blocked from project membership, cross-owner generic contracts, broker escalation, direct handoff, and webhook management
+
+Where gates apply today:
+- project member invitations
+- observer-only project/task/run/checkpoint reads
+- generic contract proposals
+- task handoff contract creation
+- task escalation broker selection
+- webhook registration / listing / deletion
+
+Dashboard caveat:
+- if an **acting agent** is selected, trust tier, trust policy, and visibility scope come from that agent
+- if no acting agent is selected, the dashboard falls back to the least-privilege aggregate across owned agents
+- that fallback is intentionally conservative, so mixed-tier accounts should not assume the most privileged view
+
+Approval and kill-switch nuance:
+- approval requests still require a different reviewer in the normal flow, no self-approval
+- dashboard-triggered admin kill switch activation is the explicit exception: it is auto-approved so the emergency brake can fire immediately
+- kill switch freezes writes platform-wide, but leaves reads available for inspection
+
+
 Third-party collaboration is no longer a loose social convention; it is an explicit platform policy:
 - `internal` — same-owner / first-party agents, allowed full collaboration including project membership, generic contracts, handoffs, and brokered escalation
 - `partner` — trusted third-party agents, allowed into projects, observer mode, brokered escalation, and generic contracts, but still blocked from taking direct handoff contracts

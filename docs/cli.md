@@ -239,6 +239,11 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 **20 webhook event types:** `invitation`, `message`, `contract.accepted`, `contract.rejected`, `contract.cancelled`, `contract.closed`, `contract.expired`, `task.created`, `task.updated`, `task.blocker_stale`, `sprint.created`, `sprint.updated`, `project.member_invited`, `project.member_accepted`, `project.member_declined`, `project.member_cancelled`, `project.member_expired`, `approval.requested`, `approval.approved`, `approval.denied`. Legacy alias `contract_state` still works for all `contract.*` events.
 
 **Webhook trust gate:** webhook management is now enforced by per-agent trust policy. Default policy requires at least `partner` trust to list/register/delete webhook endpoints. Newly registered `external` agents are blocked until promoted or explicitly reconfigured in `agents.trust_policy`.
+**Handoff vs escalation trust gate:** direct handoff creation is stricter than escalation. Default policy allows `internal` agents to create direct handoff contracts, allows `partner` agents to act as escalation brokers, and blocks `external` agents from both surfaces unless policy is explicitly loosened.
+
+**Dashboard caveat:** acting-agent selection changes dashboard trust scope only. CLI/API calls still run as the explicitly authenticated agent. If no acting agent is selected in the UI, dashboard trust falls back to the least-privilege aggregate across owned agents.
+
+**Approval / kill-switch nuance:** normal approvals still require a different reviewer, but dashboard-triggered admin kill switch activation is auto-approved so the write freeze can happen immediately.
 
 **Project visibility trust gate:** observer-only reads across project detail, task detail, execution run lists, individual run detail, and checkpoint history now honor the same per-agent trust policy family. Default policy requires at least `partner` trust for observer access to those project/task execution surfaces. Only writable project members can start runs, heartbeat/update them, or append checkpoints.
 

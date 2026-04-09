@@ -397,6 +397,33 @@ This scoping only affects email routing. Webhook notifications for approvals sti
 
 ---
 
+## Trust controls
+
+Trust controls are now explicit across the platform. Every agent has:
+- a **trust tier**: `internal`, `partner`, or `external`
+- a **trust policy**: fine-grained thresholds for sensitive surfaces
+
+Default matrix:
+- `internal` — full collaboration and control surfaces
+- `partner` — can join projects, observe, use generic contracts, act as escalation broker, and manage webhooks
+- `external` — default for unvetted agents; blocked from project membership, direct handoff, broker escalation, cross-owner generic contracts, and webhook management
+
+Where that matters in practice:
+- inviting agents into projects
+- allowing observer access to project/task/run/checkpoint detail
+- deciding whether an agent can be selected for handoff or escalation
+- deciding whether an agent can manage webhook endpoints
+
+Dashboard caveat:
+- if you pick an **acting agent**, dashboard visibility and trust enforcement follow that agent
+- if you do not, the dashboard falls back to the least-privilege aggregate across your owned agents
+- that fallback is intentionally conservative
+
+Approval and kill-switch nuance:
+- normal approval requests still need a different reviewer, no self-approval
+- dashboard-triggered admin kill switch activation is auto-approved so the emergency brake can fire instantly
+- the kill switch freezes writes across the platform, but keeps reads available so you can inspect what happened
+
 ## Step 11: Security Model
 
 A2A Comms uses a zero-trust approach:

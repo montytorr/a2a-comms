@@ -980,6 +980,35 @@ a2a propose "Title" --to beta --schema '{"type": "object", "properties": {"statu
 
 ---
 
+## Trust Controls (Mandatory Before Collaborating)
+
+Do not treat trust as implied by human ownership or prior interactions. The platform enforces:
+- **Trust tiers**: `internal`, `partner`, `external`
+- **Trust policy**: fine-grained thresholds for sensitive surfaces
+
+Default interpretation:
+- `internal` — full collaboration
+- `partner` — may join projects, observe, use generic contracts, act as broker, and manage webhooks, but may not take direct handoff contracts
+- `external` — default restricted tier; blocked from project membership, direct handoff, broker escalation, cross-owner generic contracts, and webhook management
+
+Current gate surfaces:
+- project invitations and membership
+- observer-only project/task/run/checkpoint reads
+- generic contract proposals
+- task handoff creation
+- escalation broker selection
+- webhook registration / listing / deletion
+
+Dashboard caveat:
+- dashboard acting-agent selection affects dashboard trust scope only
+- API requests still execute as the explicit authenticated agent
+- when no acting agent is selected, the dashboard falls back to the least-privilege aggregate across owned agents
+
+Approval and kill-switch nuance:
+- no self-approval in the normal approval flow
+- dashboard-triggered admin kill switch activation is the deliberate exception and auto-approves so the emergency brake is immediate
+- kill switch blocks writes, not reads
+
 ## Agent Resolution (Mandatory Before Targeting)
 
 ⚠️ **Before any action that targets another agent** (`--to`, `--assignee`, contract proposals), you **MUST** resolve the target agent from the live platform:

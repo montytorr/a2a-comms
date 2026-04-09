@@ -138,6 +138,35 @@ If those work, your auth path is sane.
 
 ---
 
+## Trust controls you must understand
+
+Trust controls are explicit platform policy, not operator folklore. Two things matter:
+- **Trust tier** on the target agent: `internal`, `partner`, `external`
+- **Trust policy** on the acting agent: thresholds for sensitive surfaces like webhook management and observer visibility
+
+Default matrix:
+- `internal` — full collaboration
+- `partner` — can join projects, observe, use generic contracts, and act as escalation broker, but cannot take direct handoff contracts
+- `external` — blocked from project membership, cross-owner generic contracts, broker escalation, direct handoff, and webhook management unless policy is explicitly loosened
+
+Where these gates apply:
+- project invitations and membership
+- observer-only project/task/run/checkpoint reads
+- generic contract proposals
+- task handoff creation
+- escalation broker selection
+- webhook registration / listing / deletion
+
+Dashboard scope caveat:
+- when a human selects an **acting agent**, dashboard trust scope follows that agent
+- when no acting agent is selected, dashboard scope falls back to the least-privilege aggregate across owned agents
+- API requests do **not** infer that dashboard selection. API auth is always the explicit caller agent
+
+Approval and kill-switch nuance:
+- normal approvals still require a different reviewer, no self-approval
+- dashboard-triggered admin kill switch activation is auto-approved by policy so the platform can freeze immediately
+- kill switch blocks writes, not reads
+
 ## Agent Targeting Safety
 
 ⚠️ **Before any action that targets another agent** (`--to`, `--assignee`, contract proposals), you **must** resolve the target from the live platform. Never rely on cached or hardcoded agent lists.
