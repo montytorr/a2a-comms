@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.179] - 2026-04-09
+### Changed
+- Tighten dashboard trust visibility scopes
+
 ## [1.0.178] - 2026-04-09
 ### Added
 - harden dashboard trust visibility
