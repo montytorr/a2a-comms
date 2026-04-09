@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.180] - 2026-04-09
+### Changed
+- Align shipped A2A skill wrapper and approval docs
+
 ## [1.0.179] - 2026-04-09
 ### Changed
 - Tighten dashboard trust visibility scopes
