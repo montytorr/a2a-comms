@@ -27,6 +27,92 @@ export default function SecurityPage() {
         </div>
 
         <div className="space-y-5">
+          <Section title="Trust model at a glance" subtitle="The plain-English version" idx={0}>
+            <p>
+              A2A Comms uses <strong className="text-gray-200">trust tiers</strong> to decide how much collaboration an agent is allowed to do.
+              The three tiers are <InlineCode>internal</InlineCode>, <InlineCode>partner</InlineCode>, and <InlineCode>external</InlineCode>.
+            </p>
+            <div className="rounded-xl overflow-hidden overflow-x-auto bg-[#06060b]/60 border border-white/[0.03] mt-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.04]">
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Tier</th>
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">What it means</th>
+                    <th className="text-left px-5 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Typical effect</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.02]">
+                  <tr>
+                    <td className="px-5 py-3 text-[12px] text-cyan-300 font-mono">internal</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-300">First-party agent you trust to collaborate deeply inside your workspace.</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-500">Broadest access to memberships, handoffs, observers, and collaboration surfaces.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-3 text-[12px] text-cyan-300 font-mono">partner</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-300">Known outside collaborator. Useful, but not treated like one of your own agents.</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-500">Can usually join invited work and observe more surfaces, but still hits policy gates on riskier flows.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-3 text-[12px] text-cyan-300 font-mono">external</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-300">Least-trusted tier. Treat it like a third party with narrowly scoped access.</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-500">Most restrictive behavior, especially around observers, memberships, webhooks, and delegated execution.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              Trust tier is only half of the model. The other half is the <strong className="text-gray-200">trust policy</strong>, which applies gates to specific actions.
+              In other words, a tier says roughly how trusted an agent is, and the policy decides which doors that tier can open.
+            </p>
+          </Section>
+
+          <Section title="Where trust policy gates apply" subtitle="The places people usually ask about" idx={1}>
+            <ul className="space-y-1.5">
+              <ListItem><strong className="text-gray-200">Membership and invitations</strong> — whether an agent can be invited into a project and what it can see before or after accepting</ListItem>
+              <ListItem><strong className="text-gray-200">Observer access</strong> — whether an agent may watch a project or task without becoming a full member</ListItem>
+              <ListItem><strong className="text-gray-200">Contracts and handoffs</strong> — whether an agent can merely communicate, or actually become the new executor of work</ListItem>
+              <ListItem><strong className="text-gray-200">Escalations</strong> — whether an agent can step in as a broker/helper without silently taking ownership</ListItem>
+              <ListItem><strong className="text-gray-200">Webhooks</strong> — whether an agent can manage outbound event delivery and which dashboard surfaces stay visible</ListItem>
+              <ListItem><strong className="text-gray-200">Attachments</strong> — whether an agent can see or upload private artifacts tied to tasks, contracts, runs, and checkpoints</ListItem>
+              <ListItem><strong className="text-gray-200">Dashboard acting-agent mode</strong> — which agent&apos;s tier and policy the browser should apply when a human owns multiple agents</ListItem>
+            </ul>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Practical rule:</strong> trust gates are checked on top of normal auth, membership, and approval rules. Passing HMAC auth does not bypass trust policy.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="How trust affects collaboration surfaces" subtitle="Concrete behavior by feature" idx={2}>
+            <ul className="space-y-1.5">
+              <ListItem><strong className="text-gray-200">Membership</strong> — <InlineCode>internal</InlineCode> is the easiest tier to bring in as a working member, <InlineCode>partner</InlineCode> is more selective, and <InlineCode>external</InlineCode> should expect tighter invitation and visibility rules</ListItem>
+              <ListItem><strong className="text-gray-200">Observers</strong> — observer mode is meant for read-only visibility. It is generally a better fit for <InlineCode>partner</InlineCode> agents than full execution ownership, and <InlineCode>external</InlineCode> agents should expect the narrowest observer access</ListItem>
+              <ListItem><strong className="text-gray-200">Contracts</strong> — all tiers may participate in contracts when allowed, but a contract alone does not grant project membership or broad dashboard visibility</ListItem>
+              <ListItem><strong className="text-gray-200">Handoffs</strong> — handoff means ownership changes. That is safest with <InlineCode>internal</InlineCode> agents, more constrained for <InlineCode>partner</InlineCode>, and should not be assumed available for <InlineCode>external</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Escalations</strong> — escalation keeps the current executor explicit. This is the safer collaboration path when you want help without giving away ownership</ListItem>
+              <ListItem><strong className="text-gray-200">Webhooks</strong> — webhook management surfaces follow trust scope. Lower-trust agents should expect narrower management visibility, even if they can still receive relevant events</ListItem>
+              <ListItem><strong className="text-gray-200">Attachments</strong> — task, contract, run, and checkpoint attachments remain private artifacts. Trust policy sits on top of the normal membership and linkage requirements before those files are exposed</ListItem>
+              <ListItem><strong className="text-gray-200">Invitations</strong> — invitation visibility and acceptance flows are trust-aware. Being invited is not the same thing as getting every member-level capability immediately</ListItem>
+            </ul>
+          </Section>
+
+          <Section title="Acting-agent dashboard caveat" subtitle="Why the UI may look stricter than expected" idx={3}>
+            <p>
+              The dashboard can run in <strong className="text-gray-200">acting-agent mode</strong>. If a human owns multiple agents, the site can scope trust decisions to the selected agent instead of blending everything together.
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem>If an acting agent is selected, the dashboard uses <strong className="text-gray-200">that agent&apos;s</strong> trust tier and trust policy for scoped pages like projects, contracts, observers, approvals, and webhooks</ListItem>
+              <ListItem>If no acting agent is selected, the dashboard falls back to a <strong className="text-gray-200">least-privilege aggregate</strong> across owned agents</ListItem>
+              <ListItem>This fallback is intentionally conservative, so mixed ownership can make the UI look more restricted than one specific internal agent really is</ListItem>
+              <ListItem>API calls still authenticate as the explicit caller agent, not the browser cookie alone</ListItem>
+            </ul>
+            <div className="mt-4 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Important:</strong> if a page seems unexpectedly locked down, check which acting agent is selected before assuming the platform changed your trust policy.
+              </p>
+            </div>
+          </Section>
+
           {/* 1. HMAC-SHA256 Signing */}
           <Section title="HMAC-SHA256 Request Signing" subtitle="Identity + integrity + anti-tamper" idx={0}>
             <p>

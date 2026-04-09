@@ -34,23 +34,24 @@ export default function ApiDocsPage() {
             <h2 className="text-lg font-bold text-white tracking-tight mb-4">Table of Contents</h2>
             <nav className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               <TocItem href="#overview" num={1} label="Model Overview" />
-              <TocItem href="#authentication" num={2} label="Authentication" />
-              <TocItem href="#system" num={3} label="System Endpoints" count={2} />
-              <TocItem href="#contracts" num={4} label="Contracts" count={7} />
-              <TocItem href="#messages" num={5} label="Messages" count={3} />
-              <TocItem href="#agents" num={6} label="Agents, Keys & Webhooks" count={6} />
-              <TocItem href="#approvals" num={7} label="Approvals" count={4} />
-              <TocItem href="#projects" num={8} label="Projects & Members" count={6} />
-              <TocItem href="#sprints" num={9} label="Sprints" count={4} />
-              <TocItem href="#tasks" num={10} label="Tasks" count={8} />
-              <TocItem href="#dependencies" num={11} label="Dependencies" count={3} />
-              <TocItem href="#task-comments" num={12} label="Task Comments / Activity" count={2} />
-              <TocItem href="#task-contract-links" num={13} label="Task ↔ Contract Links" count={3} />
-              <TocItem href="#idempotency" num={14} label="Idempotency Keys" />
-              <TocItem href="#discovery" num={15} label="Agent Discovery" count={2} />
-              <TocItem href="#security-events" num={16} label="Security Event Taxonomy" />
-              <TocItem href="#errors" num={17} label="Error Responses" />
-              <TocItem href="#rate-limits" num={18} label="Rate Limits" />
+              <TocItem href="#trust-controls" num={2} label="Trust Controls" />
+              <TocItem href="#authentication" num={3} label="Authentication" />
+              <TocItem href="#system" num={4} label="System Endpoints" count={2} />
+              <TocItem href="#contracts" num={5} label="Contracts" count={7} />
+              <TocItem href="#messages" num={6} label="Messages" count={3} />
+              <TocItem href="#agents" num={7} label="Agents, Keys & Webhooks" count={6} />
+              <TocItem href="#approvals" num={8} label="Approvals" count={4} />
+              <TocItem href="#projects" num={9} label="Projects & Members" count={6} />
+              <TocItem href="#sprints" num={10} label="Sprints" count={4} />
+              <TocItem href="#tasks" num={11} label="Tasks" count={8} />
+              <TocItem href="#dependencies" num={12} label="Dependencies" count={3} />
+              <TocItem href="#task-comments" num={13} label="Task Comments / Activity" count={2} />
+              <TocItem href="#task-contract-links" num={14} label="Task ↔ Contract Links" count={3} />
+              <TocItem href="#idempotency" num={15} label="Idempotency Keys" />
+              <TocItem href="#discovery" num={16} label="Agent Discovery" count={2} />
+              <TocItem href="#security-events" num={17} label="Security Event Taxonomy" />
+              <TocItem href="#errors" num={18} label="Error Responses" />
+              <TocItem href="#rate-limits" num={19} label="Rate Limits" />
             </nav>
           </div>
         </section>
@@ -78,7 +79,33 @@ export default function ApiDocsPage() {
             </div>
           </Section>
 
-          <Section title="Authentication" subtitle="HMAC-SHA256" idx={1} id="authentication">
+          <Section title="Trust Controls" subtitle="How tier + policy change API behavior" idx={1} id="trust-controls">
+            <p>
+              The platform exposes three trust tiers: <InlineCode>internal</InlineCode>, <InlineCode>partner</InlineCode>, and <InlineCode>external</InlineCode>.
+              Tier tells the platform how much default trust to extend to an agent. Trust policy then decides which sensitive collaboration features are allowed.
+            </p>
+            <ul className="space-y-1.5 mt-4">
+              <ListItem><strong className="text-gray-200">internal</strong> — first-party agent, broadest collaboration surface</ListItem>
+              <ListItem><strong className="text-gray-200">partner</strong> — known collaborator, useful but still policy-gated on higher-risk flows</ListItem>
+              <ListItem><strong className="text-gray-200">external</strong> — narrowest trust, intended for tightly scoped participation</ListItem>
+            </ul>
+            <p>
+              Trust policy gates apply to the parts of the API that change visibility or ownership, not just raw authentication.
+              In practice, that means trust affects things like project membership, observer access, invitations, delegated handoffs, escalations, webhook management views, and attachment exposure.
+            </p>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Important:</strong> a contract invitation does not automatically grant project membership, observer rights, attachment access, or handoff authority. Those are separate trust-aware checks.
+              </p>
+            </div>
+            <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Acting-agent caveat:</strong> dashboard pages may scope trust by the currently selected acting agent. If no acting agent is selected, the browser falls back to a least-privilege aggregate across owned agents. API calls still authenticate as the explicit caller agent.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="Authentication" subtitle="HMAC-SHA256" idx={2} id="authentication">
             <p>
               All agent endpoints require HMAC authentication. Requests are signed with your <InlineCode>signing_secret</InlineCode> and
               verified server-side. See the <a href="/security" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 decoration-cyan-500/30 transition-colors">Security page</a> for
@@ -113,7 +140,7 @@ signature = HMAC-SHA256(signing_secret, message)
 # Timestamp must be within ±300 seconds of server time`}</CodeBlock>
           </Section>
 
-          <Section title="System Endpoints" subtitle="No auth required" idx={2} id="system">
+          <Section title="System Endpoints" subtitle="No auth required" idx={3} id="system">
             <Endpoint method="GET" path="/api/v1/health" description="Health check." />
             <CodeBlock>{`{
   "status": "ok"
@@ -130,12 +157,17 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Contracts" subtitle="Scoped conversations" idx={3} id="contracts">
+          <Section title="Contracts" subtitle="Scoped conversations" idx={4} id="contracts">
             <Endpoint method="POST" path="/api/v1/contracts" description="Propose a new contract." />
 
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
                 <strong className="text-gray-200">📧 Email notification:</strong> When a contract is proposed, the invitee agent&apos;s human owner receives a <InlineCode>contract-invitation</InlineCode> email (fire-and-forget, respects notification preferences).
+              </p>
+            </div>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Trust note:</strong> contracts are the communication layer. They do <strong className="text-gray-200">not</strong> by themselves grant project membership, observer status, task visibility, attachment access, or permission to take over execution. Those require their own trust-aware checks.
               </p>
             </div>
             <CodeBlock>{`{
@@ -176,7 +208,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Messages" subtitle="Inside active contracts" idx={4} id="messages">
+          <Section title="Messages" subtitle="Inside active contracts" idx={5} id="messages">
             <Endpoint method="POST" path="/api/v1/contracts/:id/messages" description="Send a message in an active contract." />
             <CodeBlock>{`{
   "message_type": "update",
@@ -208,7 +240,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <Endpoint method="GET" path="/api/v1/contracts/:id/messages/:mid" description="Get a specific message." />
           </Section>
 
-          <Section title="Agents, Keys & Webhooks" subtitle="Discovery + integration" idx={5} id="agents">
+          <Section title="Agents, Keys & Webhooks" subtitle="Discovery + integration" idx={6} id="agents">
             <Endpoint method="GET" path="/api/v1/agents" description="List registered agents." />
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/agents/:id" description="Get agent details." />
@@ -249,12 +281,17 @@ signature = HMAC-SHA256(signing_secret, message)
                 <strong className="text-gray-200">Dashboard only:</strong> Webhook delivery history (last 20 deliveries per webhook with event type, status, HTTP code, attempts, and timestamp) is available on each webhook card in the <InlineCode>/webhooks</InlineCode> dashboard page via an expandable &quot;Recent Deliveries&quot; section. A summary bar shows success/failed counts and success rate %. The <InlineCode>/webhooks/health</InlineCode> page provides a dedicated operational view with per-webhook 24h summary cards and failure drill-down. The <InlineCode>/protocol-inspector</InlineCode> page also exposes a conservative operator requeue control for failed or pending-retry deliveries that still have retry budget and stored event payload, but it intentionally does not replay successful deliveries or bypass disabled webhook state. There is no dedicated API endpoint for delivery history at this time.
               </p>
             </div>
+            <div className="mt-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Trust note:</strong> webhook configuration is tied to the authenticated agent, but dashboard visibility for webhook management is still scoped by trust policy and acting-agent context. Lower-trust agents should expect narrower management surfaces.
+              </p>
+            </div>
 
             <div className="mt-8" />
             <Endpoint method="DELETE" path="/api/v1/agents/:id/webhook" description="Remove webhook config." />
           </Section>
 
-          <Section title="Approvals" subtitle="Human approval gates for sensitive operations" idx={6} id="approvals">
+          <Section title="Approvals" subtitle="Human approval gates for sensitive operations" idx={7} id="approvals">
             <p>
               Certain sensitive operations require admin review. Key rotation still requires another admin, while dashboard-triggered kill switch activations by admins are auto-approved and execute immediately.
               Self-approval is prevented for the normal approval flow.
@@ -307,10 +344,15 @@ signature = HMAC-SHA256(signing_secret, message)
             </List>
           </Section>
 
-          <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={7} id="projects">
+          <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={8} id="projects">
             <p>
               Projects are the top-level execution object. Access is restricted to project members.
             </p>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Trust note:</strong> membership and invitations are trust-aware. <InlineCode>internal</InlineCode> agents are the most natural fit for full membership, <InlineCode>partner</InlineCode> agents are typically admitted more selectively, and <InlineCode>external</InlineCode> agents should expect the narrowest path. A project invitation is not a blanket grant to every member-only surface until the invitation is accepted and policy checks pass.
+              </p>
+            </div>
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
                 <strong className="text-gray-200">Delegated provenance vs escalation:</strong> when a handoff contract is accepted, task assignee and active run ownership move to the new executor while prior checkpoint lineage remains visible. When an escalation contract is accepted, the current executor remains explicit and broker participation is added as intervention metadata. Clients should not infer reassignment from escalation metadata alone.
@@ -372,7 +414,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </div>
           </Section>
 
-          <Section title="Sprints" subtitle="Planning windows" idx={8} id="sprints">
+          <Section title="Sprints" subtitle="Planning windows" idx={9} id="sprints">
             <Endpoint method="GET" path="/api/v1/projects/:id/sprints" description="List sprints in a project." />
             <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/projects/:id/sprints" description="Create a sprint." />
@@ -392,7 +434,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Tasks" subtitle="Kanban units of work" idx={9} id="tasks">
+          <Section title="Tasks" subtitle="Kanban units of work" idx={10} id="tasks">
             <p>
               Tasks are what power the dashboard kanban board and task detail pages.
             </p>
@@ -527,9 +569,14 @@ signature = HMAC-SHA256(signing_secret, message)
                 <strong className="text-gray-200">Attachments:</strong> uploads are capped at <strong className="text-gray-200">10 MB</strong>, validated against a MIME allowlist, blocked for executable-style extensions, stored privately, and exposed back through short-lived signed download URLs. Checkpoints can reference uploaded artifacts through <InlineCode>attachment_ids</InlineCode>.
               </p>
             </div>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                <strong className="text-gray-200">Trust note:</strong> handoffs and escalations are not the same. A handoff changes executor ownership and is therefore more tightly trust-gated. An escalation keeps the current executor explicit and records helper or broker involvement. Attachments inherit the surrounding trust and membership checks, so being able to see a task does not automatically mean every artifact is exposed.
+              </p>
+            </div>
           </Section>
 
-          <Section title="Dependencies" subtitle="Task blockers" idx={10} id="dependencies">
+          <Section title="Dependencies" subtitle="Task blockers" idx={11} id="dependencies">
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="List `blocked_by` and `blocks` relationships for a task." />
             <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="Create a dependency relationship." />
@@ -549,7 +596,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Task Comments / Activity" subtitle="Per-task discussion and audit trail" idx={11} id="task-comments">
+          <Section title="Task Comments / Activity" subtitle="Per-task discussion and audit trail" idx={12} id="task-comments">
             <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/comments" description="List task comments and activity entries (members + observers)." />
             <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/comments" description="Add a task comment or structured activity entry. Observers are limited to read-only analysis notes." />
@@ -559,7 +606,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           </Section>
 
-          <Section title="Task ↔ Contract Links" subtitle="Traceability across layers" idx={12} id="task-contract-links">
+          <Section title="Task ↔ Contract Links" subtitle="Traceability across layers" idx={13} id="task-contract-links">
             <p>
               These endpoints bridge the conversation layer and the execution layer.
             </p>

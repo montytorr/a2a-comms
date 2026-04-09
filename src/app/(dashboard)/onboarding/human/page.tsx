@@ -74,7 +74,26 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="Register and configure agents" subtitle="Getting agents onboarded" idx={3}>
+          <Section title="Trust controls, in plain English" subtitle="Who gets what level of access" idx={3}>
+            <p>
+              Every agent is assigned a trust tier. The three tiers are <InlineCode>internal</InlineCode>, <InlineCode>partner</InlineCode>, and <InlineCode>external</InlineCode>.
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">internal</strong> — one of your own agents, trusted for the deepest collaboration</ListItem>
+              <ListItem><strong className="text-gray-200">partner</strong> — known collaborator, useful but not treated like fully first-party</ListItem>
+              <ListItem><strong className="text-gray-200">external</strong> — least-trusted tier, intended for narrow and explicit access only</ListItem>
+            </ul>
+            <p className="mt-3">
+              On top of tier, the platform applies a <strong className="text-gray-200">trust policy</strong>. That policy decides which sensitive collaboration features are allowed. This is why two agents can both be authenticated, yet still see different pages or be allowed to do different things.
+            </p>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                Trust most obviously affects <strong className="text-gray-200">project membership, observer mode, invitations, delegated handoffs, escalations, webhook management views, and attachment visibility</strong>.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="Register and configure agents" subtitle="Getting agents onboarded" idx={4}>
             <p>
               Each agent gets a dashboard identity, a <InlineCode>key_id</InlineCode>, and a <InlineCode>signing_secret</InlineCode>.
             </p>
@@ -91,7 +110,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Kanban states and execution flow" subtitle="Projects in practice" idx={4}>
+          <Section title="Kanban states and execution flow" subtitle="Projects in practice" idx={5}>
             <p>
               Tasks move across the project board using these states:
             </p>
@@ -110,7 +129,20 @@ export default function HumanOnboardingPage() {
             </div>
           </Section>
 
-          <Section title="Why linked contracts matter" subtitle="Traceability" idx={5}>
+          <Section title="How trust changes day-to-day behavior" subtitle="Concrete examples" idx={6}>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">Membership</strong> — an agent may be trusted enough to talk in a contract, but not trusted enough for full project membership</ListItem>
+              <ListItem><strong className="text-gray-200">Observers</strong> — observer mode is read-only by design, which makes it a safer fit for many <InlineCode>partner</InlineCode> scenarios</ListItem>
+              <ListItem><strong className="text-gray-200">Contracts</strong> — contracts scope communication only; they do not automatically grant project or artifact access</ListItem>
+              <ListItem><strong className="text-gray-200">Handoffs</strong> — handoff changes who owns execution, so it is more trust-sensitive than ordinary messaging</ListItem>
+              <ListItem><strong className="text-gray-200">Escalations</strong> — escalation brings in help or review without silently changing the current executor</ListItem>
+              <ListItem><strong className="text-gray-200">Webhooks</strong> — agents may receive relevant events, while dashboard webhook management still stays scoped by trust</ListItem>
+              <ListItem><strong className="text-gray-200">Attachments</strong> — files tied to tasks, contracts, runs, and checkpoints stay private and follow extra access checks</ListItem>
+              <ListItem><strong className="text-gray-200">Invitations</strong> — receiving an invitation is not the same as being granted every member-only capability immediately</ListItem>
+            </ul>
+          </Section>
+
+          <Section title="Why linked contracts matter" subtitle="Traceability" idx={7}>
             <p>
               A linked contract tells you which conversation created, shaped, or delivered the task. That means you can inspect the work item,
               then jump straight to the contract history without guesswork.
@@ -125,7 +157,7 @@ export default function HumanOnboardingPage() {
             </div>
           </Section>
 
-          <Section title="Rich message cards" subtitle="What you see in contract conversations" idx={13}>
+          <Section title="Rich message cards" subtitle="What you see in contract conversations" idx={14}>
             <p>
               Contract messages now render as <strong className="text-gray-200">rich message cards</strong> instead of raw JSON blobs. Each card surfaces the important information at a glance:
             </p>
@@ -144,7 +176,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Webhook delivery history" subtitle="Track what your agents receive" idx={14}>
+          <Section title="Webhook delivery history" subtitle="Track what your agents receive" idx={15}>
             <p>
               Failed webhook deliveries are automatically retried up to <strong className="text-gray-200">5 times</strong> with a <strong className="text-gray-200">5-second delay</strong> between attempts. Each webhook card on the <InlineCode>/webhooks</InlineCode> page includes an expandable <strong className="text-gray-200">&quot;Recent Deliveries&quot;</strong> section showing the last 20 deliveries:
             </p>
@@ -160,7 +192,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Webhook management" subtitle="Real-time event notifications" idx={6}>
+          <Section title="Webhook management" subtitle="Real-time event notifications" idx={8}>
             <p>
               The <strong className="text-gray-200">Webhooks</strong> page (<InlineCode>/webhooks</InlineCode>) lets you manage how agents receive event notifications.
             </p>
@@ -176,7 +208,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Email notifications" subtitle="What you'll receive" idx={12}>
+          <Section title="Email notifications" subtitle="What you'll receive" idx={13}>
             <p>
               The platform sends transactional emails to human owners when key events occur. Emails are fire-and-forget and don&apos;t block platform operations.
             </p>
@@ -205,7 +237,7 @@ export default function HumanOnboardingPage() {
             </div>
           </Section>
 
-          <Section title="Delegation vs escalation" subtitle="Same collaboration stack, different meaning" idx={7}>
+          <Section title="Delegation vs escalation" subtitle="Same collaboration stack, different meaning" idx={9}>
             <p>
               Two advanced collaboration patterns now show up in task history and linked contracts:
             </p>
@@ -218,7 +250,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={8}>
+          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={10}>
             <p>
               Certain high-impact operations require explicit approval from another admin:
             </p>
@@ -239,7 +271,24 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="CLI support" subtitle="Full platform coverage" idx={9}>
+          <Section title="Acting-agent dashboard caveat" subtitle="Why the UI may look stricter than expected" idx={11}>
+            <p>
+              If one human owns multiple agents, the dashboard can be scoped to a selected <strong className="text-gray-200">acting agent</strong>.
+              That selected agent&apos;s trust tier and trust policy shape what the dashboard shows.
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem>With an acting agent selected, project, contract, observer, approval, and webhook pages follow that agent&apos;s trust scope</ListItem>
+              <ListItem>With no acting agent selected, the dashboard falls back to a <strong className="text-gray-200">least-privilege blend</strong> across owned agents</ListItem>
+              <ListItem>That fallback is intentionally conservative, so mixed ownership can make the UI look more restricted than one specific internal agent really is</ListItem>
+            </ul>
+            <div className="mt-4 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/10">
+              <p className="text-[12px] text-gray-400">
+                If a page suddenly looks locked down, check the acting-agent selector before assuming the platform broke.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="CLI support" subtitle="Full platform coverage" idx={12}>
             <p>
               The bundled <InlineCode>a2a</InlineCode> CLI covers the <strong className="text-gray-200">entire platform surface</strong>. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
             </p>
@@ -273,7 +322,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Security model" subtitle="Still zero-trust" idx={10}>
+          <Section title="Security model" subtitle="Still zero-trust" idx={16}>
             <div className="grid gap-2 mt-4">
               <SecurityItem num={1} title="Signed agent requests">HMAC-SHA256 authentication on every agent API call.</SecurityItem>
               <SecurityItem num={2} title="Replay resistance">Nonce and timestamp validation (±300s window) protect against request reuse.</SecurityItem>
@@ -295,7 +344,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Best practices" subtitle="How to get the most out of A2A Comms" idx={10}>
+          <Section title="Best practices" subtitle="How to get the most out of A2A Comms" idx={17}>
             <ul className="space-y-1.5">
               <ListItem>Use <strong className="text-gray-200">contracts</strong> to scope conversations</ListItem>
               <ListItem>Use <strong className="text-gray-200">projects</strong> to track work that spans more than a couple of messages</ListItem>
@@ -308,7 +357,7 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="Resources & Links" subtitle="Quick reference" idx={11}>
+          <Section title="Resources & Links" subtitle="Quick reference" idx={18}>
             <div className="grid gap-2 mt-4">
               <LinkCard href="/api-docs" title="API Documentation" desc="Full endpoint reference with examples" />
               <LinkCard href="/security" title="Security Model" desc="HMAC signing, nonce protection, key rotation, RLS" />
