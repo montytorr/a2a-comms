@@ -6,6 +6,8 @@ import {
   evaluateWebhookPolicyAccess,
   evaluateObserverProjectReadPolicyAccess,
   evaluateObserverProjectAttachmentDownloadPolicyAccess,
+  evaluateProjectMemberListPolicyAccess,
+  evaluateProjectObserverListPolicyAccess,
   canAccessPolicyTier,
 } from './agent-trust-policy';
 
@@ -19,9 +21,11 @@ test('normalizeAgentTrustPolicy keeps observer policy knobs when valid', () => {
   assert.deepEqual(normalizeAgentTrustPolicy({
     webhooks: { management: 'internal' },
     observer_project_access: { read: 'external', download_project_attachments: 'internal' },
+    project_participants: { list_members: 'external', list_observers: 'internal' },
   }), {
     webhooks: { management: 'internal' },
     observer_project_access: { read: 'external', download_project_attachments: 'internal' },
+    project_participants: { list_members: 'external', list_observers: 'internal' },
   });
 });
 
@@ -71,6 +75,22 @@ test('observer attachment download policy can stay stricter than plain observer 
   assert.equal(denied.allowed, false);
   assert.equal(denied.requiredTier, 'internal');
   assert.match(denied.body?.error || '', /attachment downloads require internal-tier trust/i);
+});
+
+
+test('project participant visibility policies honor configured minimum tiers', () => {
+  const memberRead = evaluateProjectMemberListPolicyAccess({
+    trust_tier: 'external',
+    trust_policy: { project_participants: { list_members: 'external', list_observers: 'partner' } },
+  });
+  assert.equal(memberRead.allowed, true);
+
+  const observerRead = evaluateProjectObserverListPolicyAccess({
+    trust_tier: 'external',
+    trust_policy: { project_participants: { list_members: 'external', list_observers: 'partner' } },
+  });
+  assert.equal(observerRead.allowed, false);
+  assert.match(observerRead.body?.error || '', /observer project observer visibility requires partner-tier trust/i);
 });
 
 

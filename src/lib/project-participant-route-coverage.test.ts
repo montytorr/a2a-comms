@@ -36,11 +36,16 @@ test('project invitation routes distinguish participant visibility from owner-on
   assert.match(invitationRoute, /Only project owners or the original inviter can cancel invitations/);
 });
 
-test('project members route keeps observer reads open while rejecting observer mutations', () => {
+test('project participant listing routes enforce observer trust-policy gates before exposing people data', () => {
   const membersRoute = read('src/app/api/v1/projects/[id]/members/route.ts');
+  const observersRoute = read('src/app/api/v1/projects/[id]/observers/route.ts');
 
   assert.match(membersRoute, /Not a participant in this project/);
   assert.match(membersRoute, /if \(!callerMember\) \{/);
-  assert.match(membersRoute, /if \(callerMember\.accessKind === 'observer'\) \{/);
+  assert.match(membersRoute, /evaluateProjectMemberListPolicyAccess\(auth\.agent\)/);
+  assert.match(membersRoute, /Observer project member visibility blocked by trust policy/);
   assert.match(membersRoute, /Observers may inspect project members but cannot invite new ones directly/);
+
+  assert.match(observersRoute, /evaluateProjectObserverListPolicyAccess\(auth\.agent\)/);
+  assert.match(observersRoute, /Observer project observer visibility blocked by trust policy/);
 });

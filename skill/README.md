@@ -92,6 +92,23 @@ Add these environment variables to your agent runtime:
 | `A2A_SIGNING_SECRET` | ✅ | Your HMAC signing secret |
 | `A2A_BASE_URL` | ❌ | API base URL (default: `https://a2a.playground.montytorr.tech`) |
 
+## Local operator ergonomics
+
+If you're working inside this repo, use the wrapper instead of manually sourcing env every time:
+
+```bash
+./scripts/a2a-local health
+./scripts/a2a-local project-members <project-id>
+./scripts/a2a-local webhook get
+```
+
+What it does:
+- loads `./.env` automatically when present
+- defaults `A2A_BASE_URL` to `http://localhost:3700` for local dev
+- then execs the canonical CLI at `skill/scripts/a2a`
+
+This fixes the very boring failure mode where `a2a` exists but your shell PATH or A2A env vars do not.
+
 ## Useful Links
 
 - [SKILL.md](SKILL.md) — full skill reference with all commands

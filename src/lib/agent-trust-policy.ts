@@ -1,7 +1,7 @@
 import type { ApiError, Agent } from '@/lib/types';
 import { normalizeAgentTrustTier, type AgentTrustTier } from './trust-tiers';
 
-export type AgentTrustPolicyScope = 'webhooks' | 'observer_project_access';
+export type AgentTrustPolicyScope = 'webhooks' | 'observer_project_access' | 'project_participants';
 
 export interface WebhookTrustPolicyConfig {
   management: 'internal' | 'partner';
@@ -12,9 +12,15 @@ export interface ObserverProjectAccessTrustPolicyConfig {
   download_project_attachments: 'internal' | 'partner';
 }
 
+export interface ProjectParticipantTrustPolicyConfig {
+  list_members: 'internal' | 'partner' | 'external';
+  list_observers: 'internal' | 'partner';
+}
+
 export interface AgentTrustPolicyConfig {
   webhooks: WebhookTrustPolicyConfig;
   observer_project_access: ObserverProjectAccessTrustPolicyConfig;
+  project_participants: ProjectParticipantTrustPolicyConfig;
 }
 
 export const DEFAULT_AGENT_TRUST_POLICY: AgentTrustPolicyConfig = {
@@ -24,6 +30,10 @@ export const DEFAULT_AGENT_TRUST_POLICY: AgentTrustPolicyConfig = {
   observer_project_access: {
     read: 'partner',
     download_project_attachments: 'partner',
+  },
+  project_participants: {
+    list_members: 'partner',
+    list_observers: 'partner',
   },
 };
 
@@ -35,6 +45,10 @@ export interface AgentTrustPolicyShape {
   observer_project_access?: {
     read?: unknown;
     download_project_attachments?: unknown;
+  };
+  project_participants?: {
+    list_members?: unknown;
+    list_observers?: unknown;
   };
 }
 
@@ -65,12 +79,42 @@ function clampTier(value: unknown, fallback: AgentTrustTier): AgentTrustTier {
   return fallback;
 }
 
+function clampWebhookManagementTier(
+  value: unknown,
+  fallback: WebhookTrustPolicyConfig['management'],
+): WebhookTrustPolicyConfig['management'] {
+  if (value === 'internal' || value === 'partner') {
+    return value;
+  }
+  return fallback;
+}
+
+function clampAttachmentDownloadTier(
+  value: unknown,
+  fallback: ObserverProjectAccessTrustPolicyConfig['download_project_attachments'],
+): ObserverProjectAccessTrustPolicyConfig['download_project_attachments'] {
+  if (value === 'internal' || value === 'partner') {
+    return value;
+  }
+  return fallback;
+}
+
+function clampObserverListTier(
+  value: unknown,
+  fallback: ProjectParticipantTrustPolicyConfig['list_observers'],
+): ProjectParticipantTrustPolicyConfig['list_observers'] {
+  if (value === 'internal' || value === 'partner') {
+    return value;
+  }
+  return fallback;
+}
+
 export function normalizeAgentTrustPolicy(raw: unknown): AgentTrustPolicyConfig {
   const candidate = (raw && typeof raw === 'object' ? raw : {}) as AgentTrustPolicyShape;
 
   return {
     webhooks: {
-      management: clampTier(
+      management: clampWebhookManagementTier(
         candidate.webhooks?.management,
         DEFAULT_AGENT_TRUST_POLICY.webhooks.management,
       ),
@@ -80,9 +124,19 @@ export function normalizeAgentTrustPolicy(raw: unknown): AgentTrustPolicyConfig 
         candidate.observer_project_access?.read,
         DEFAULT_AGENT_TRUST_POLICY.observer_project_access.read,
       ),
-      download_project_attachments: clampTier(
+      download_project_attachments: clampAttachmentDownloadTier(
         candidate.observer_project_access?.download_project_attachments,
         DEFAULT_AGENT_TRUST_POLICY.observer_project_access.download_project_attachments,
+      ),
+    },
+    project_participants: {
+      list_members: clampTier(
+        candidate.project_participants?.list_members,
+        DEFAULT_AGENT_TRUST_POLICY.project_participants.list_members,
+      ),
+      list_observers: clampObserverListTier(
+        candidate.project_participants?.list_observers,
+        DEFAULT_AGENT_TRUST_POLICY.project_participants.list_observers,
       ),
     },
   };
@@ -149,6 +203,24 @@ export function evaluateObserverProjectAttachmentDownloadPolicyAccess(context: T
   );
 }
 
+export function evaluateProjectMemberListPolicyAccess(context: TrustPolicyAccessContext): TrustPolicyDecision {
+  const policy = normalizeAgentTrustPolicy(context.trust_policy);
+  return evaluatePolicyTierAccess(
+    context,
+    policy.project_participants.list_members,
+    (callerTier, requiredTier) => `Observer project member visibility requires ${requiredTier}-tier trust. This agent is ${callerTier}-tier.`,
+  );
+}
+
+export function evaluateProjectObserverListPolicyAccess(context: TrustPolicyAccessContext): TrustPolicyDecision {
+  const policy = normalizeAgentTrustPolicy(context.trust_policy);
+  return evaluatePolicyTierAccess(
+    context,
+    policy.project_participants.list_observers,
+    (callerTier, requiredTier) => `Observer project observer visibility requires ${requiredTier}-tier trust. This agent is ${callerTier}-tier.`,
+  );
+}
+
 export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): AgentTrustPolicyConfig {
   if (trustTier === 'internal') {
     return {
@@ -158,6 +230,10 @@ export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): 
       observer_project_access: {
         read: 'partner',
         download_project_attachments: 'partner',
+      },
+      project_participants: {
+        list_members: 'partner',
+        list_observers: 'partner',
       },
     };
   }
@@ -171,6 +247,10 @@ export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): 
         read: 'partner',
         download_project_attachments: 'partner',
       },
+      project_participants: {
+        list_members: 'partner',
+        list_observers: 'partner',
+      },
     };
   }
 
@@ -181,6 +261,10 @@ export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): 
     observer_project_access: {
       read: 'partner',
       download_project_attachments: 'partner',
+    },
+    project_participants: {
+      list_members: 'partner',
+      list_observers: 'partner',
     },
   };
 }

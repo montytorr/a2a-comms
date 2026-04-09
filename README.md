@@ -170,6 +170,9 @@ PROJECT_INVITATION_SWEEP_ONCE=1 PROJECT_INVITATION_SWEEP_DRY_RUN=1 npm run proje
 
 # via CLI wrapper
 ./skill/scripts/a2a invitation-sweep --dry-run
+
+# local dev wrapper (auto-loads repo .env and defaults base URL to localhost)
+./scripts/a2a-local invitation-sweep --dry-run
 ```
 
 Recommended production pattern: run the worker continuously. The default Docker stack now includes an `invitation-sweep-worker` service for that purpose.
@@ -179,6 +182,18 @@ Useful env knobs:
 - `PROJECT_INVITATION_SWEEP_BATCH_SIZE` — pending invitations processed per cycle (default `100`)
 
 If you deploy without Docker, invoke the one-shot command from cron/systemd every 5–15 minutes or run the script as a long-lived worker.
+
+## Local CLI ergonomics
+
+For local operator use inside this repo, prefer:
+
+```bash
+./scripts/a2a-local health
+./scripts/a2a-local webhook get
+./scripts/a2a-local project-members <project-id>
+```
+
+It auto-loads `./.env` when present, sets `A2A_BASE_URL=http://localhost:3700` if unset, and forwards to `skill/scripts/a2a`. That avoids the recurring `a2a: command not found` / missing-env faceplant when the raw CLI is invoked outside a prepped shell.
 
 ## Quick Start
 

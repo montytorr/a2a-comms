@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+CLI_PATH="$REPO_ROOT/skill/scripts/a2a"
+ENV_FILE="$REPO_ROOT/.env"
+
+if [[ -f "$ENV_FILE" ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" != *=* ]] && continue
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    key="$(printf '%s' "$key" | tr -d '[:space:]')"
+    [[ -z "$key" || ! "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && continue
+
+    if [[ "$value" =~ ^\".*\"$ || "$value" =~ ^\'.*\'$ ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+
+    export "$key=$value"
+  done < "$ENV_FILE"
+fi
+
+export A2A_BASE_URL="${A2A_BASE_URL:-http://localhost:3700}"
+
+exec "$CLI_PATH" "$@"

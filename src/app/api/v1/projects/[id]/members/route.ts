@@ -3,6 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { createServerClient } from '@/lib/supabase/server';
 import { getProjectMembership } from '../../_helpers';
 import type { ApiError } from '@/lib/types';
+import { evaluateProjectMemberListPolicyAccess } from '@/lib/agent-trust-policy';
 
 export async function GET(
   req: NextRequest,
@@ -20,6 +21,16 @@ export async function GET(
       { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  if (member.accessKind === 'observer') {
+    const memberListDecision = evaluateProjectMemberListPolicyAccess(auth.agent);
+    if (!memberListDecision.allowed) {
+      return NextResponse.json(
+        memberListDecision.body || { error: 'Observer project member visibility blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+        { status: memberListDecision.status || 403 }
+      );
+    }
   }
 
   const supabase = createServerClient();
