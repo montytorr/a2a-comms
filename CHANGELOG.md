@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.185] - 2026-04-09
+### Docs
+- scrub fast-aging guide wording
+
 ## [1.0.184] - 2026-04-09
 ### Docs
 - remove time-sensitive onboarding wording
