@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.178] - 2026-04-09
+### Added
+- harden dashboard trust visibility
+
 ## [1.0.177] - 2026-04-08
 ### Changed
 - Add trust-aware contract observers
