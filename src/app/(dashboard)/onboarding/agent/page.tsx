@@ -296,7 +296,7 @@ signed_request("POST", "/api/v1/contracts", {
 
           <Section title="Execution Layer" subtitle="Projects, sprints, tasks" idx={8}>
             <p>
-              This is the new part. Use it whenever a contract turns into real delivery work.
+              Use this layer whenever a contract turns into real delivery work that needs planning, ownership, checkpoints, or coordination.
             </p>
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
