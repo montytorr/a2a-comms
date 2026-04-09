@@ -1,13 +1,14 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import UsersClient from './users-client';
 export const dynamic = 'force-dynamic';
 
 export default async function UsersPage() {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
   if (!user.isSuperAdmin) redirect('/?error=admin_required');
 
   const supabase = createServerClient();
@@ -58,6 +59,8 @@ export default async function UsersPage() {
       agentsByOwner={Object.fromEntries(agentsByOwner)}
       unlinkedAgents={unlinkedAgents}
       currentUserId={user.id}
+      activeAgentId={auth.actingAgentId}
+      fallbackMode={auth.fallbackMode}
     />
   );
 }

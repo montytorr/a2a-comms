@@ -2,11 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 
 async function canOperateWebhook(
   webhookId: string,
-  user: NonNullable<Awaited<ReturnType<typeof getAuthUser>>>,
+  agentScope: string[],
+  isSuperAdmin: boolean,
 ) {
   const supabase = createServerClient();
 
@@ -17,16 +18,10 @@ async function canOperateWebhook(
     .maybeSingle();
 
   if (error || !webhook) return { ok: false, error: 'Webhook not found' } as const;
-  if (user.isSuperAdmin) return { ok: true, webhook, supabase } as const;
+  if (isSuperAdmin) return { ok: true, webhook, supabase } as const;
 
-  const { data: agent } = await supabase
-    .from('agents')
-    .select('owner_user_id')
-    .eq('id', webhook.agent_id)
-    .maybeSingle();
-
-  if (!agent || agent.owner_user_id !== user.id) {
-    return { ok: false, error: 'You can only operate webhooks for your own agents' } as const;
+  if (!agentScope.includes(webhook.agent_id)) {
+    return { ok: false, error: 'You can only operate webhooks for the active dashboard agent scope' } as const;
   }
 
   return { ok: true, webhook, supabase } as const;
@@ -38,10 +33,11 @@ export async function requeueWebhookDelivery(input: {
   contractId?: string | null;
   taskId?: string | null;
 }) {
-  const user = await getAuthUser();
-  if (!user) throw new Error('Unauthorized');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) throw new Error('Unauthorized');
 
-  const authz = await canOperateWebhook(input.webhookId, user);
+  const authz = await canOperateWebhook(input.webhookId, auth.agentScope, user.isSuperAdmin);
   if (!authz.ok) throw new Error(authz.error);
 
   const { supabase, webhook } = authz;

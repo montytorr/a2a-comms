@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import { getExecutionStatusLabel, getExecutionStatusTone, isExecutionStale } from '@/lib/task-execution-ui';
 import { loadProtocolInspector } from '@/lib/protocol-inspector';
@@ -165,8 +165,9 @@ export default async function ProtocolInspectorPage({
 }: {
   searchParams: Promise<{ contract?: string; task?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
   const contractId = (params.contract || '').trim();
@@ -176,7 +177,7 @@ export default async function ProtocolInspectorPage({
   const data = await loadProtocolInspector({
     contractId: contractId || null,
     taskId: taskId || null,
-    agentIds: user.agentIds,
+    agentIds: auth.agentScope,
     isSuperAdmin: user.isSuperAdmin,
   });
 

@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
+import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import { redirect } from 'next/navigation';
 import type { AuditLogEntry } from '@/lib/types';
 import AuditTable from './audit-table';
@@ -15,8 +16,9 @@ export default async function AuditPage({
 }: {
   searchParams: Promise<{ page?: string; actor?: string; action?: string; range?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page || '1', 10));
@@ -26,40 +28,8 @@ export default async function AuditPage({
   const supabase = createServerClient();
   noStore();
 
-  // For non-admin users, scope to their agent names + counterparty agents from shared contracts
-  let scopedActorNames: string[] | null = null;
-  if (!user.isSuperAdmin) {
-    const safeAgentIds = user.agentIds.length > 0 ? user.agentIds : ['00000000-0000-0000-0000-000000000000'];
-
-    // Get contract IDs the user participates in
-    const { data: participantContracts } = await supabase
-      .from('contract_participants')
-      .select('contract_id')
-      .in('agent_id', safeAgentIds);
-    const contractIds = (participantContracts || []).map(p => p.contract_id);
-
-    // Get ALL agent IDs from those contracts (includes counterparties)
-    const allScopedAgentIds = new Set(user.agentIds);
-    if (contractIds.length > 0) {
-      const { data: allParticipants } = await supabase
-        .from('contract_participants')
-        .select('agent_id')
-        .in('contract_id', contractIds);
-      for (const p of allParticipants || []) {
-        allScopedAgentIds.add(p.agent_id);
-      }
-    }
-
-    // Fetch names for all scoped agent IDs
-    const idsToQuery = allScopedAgentIds.size > 0 ? [...allScopedAgentIds] : ['00000000-0000-0000-0000-000000000000'];
-    const { data: agentNames } = await supabase
-      .from('agents')
-      .select('name')
-      .in('id', idsToQuery);
-    scopedActorNames = (agentNames || []).map(a => a.name);
-    // Also include the user's display name and 'dashboard' as actors
-    scopedActorNames.push(user.displayName, 'dashboard');
-  }
+  const scope = user.isSuperAdmin ? null : await buildDashboardVisibilityScope(auth);
+  const scopedActorNames = user.isSuperAdmin ? null : scope?.contractActorNames || [];
 
   // Build filtered query for count
   let countQuery = supabase

@@ -1,9 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import ApprovalList from './approval-list';
 import AutoRefresh from '@/components/auto-refresh';
+import { getDashboardApprovalVisibility } from '@/lib/approval-trust-policy';
 export const dynamic = 'force-dynamic';
 
 export default async function ApprovalsPage({
@@ -11,9 +12,12 @@ export default async function ApprovalsPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
-  if (!user.isSuperAdmin) redirect('/');
+  const auth = await getAuthActorContext();
+  const user = auth?.user ?? null;
+  if (!user || !auth) redirect('/login');
+
+  const visibility = await getDashboardApprovalVisibility(auth);
+  if (!visibility.canViewPage) redirect('/');
 
   const params = await searchParams;
   const filter = params.filter || 'pending';
@@ -26,6 +30,16 @@ export default async function ApprovalsPage({
     .select('*')
     .order('created_at', { ascending: false })
     .limit(50);
+
+  if (!user.isSuperAdmin) {
+    if (visibility.allowedApprovalIds && visibility.allowedApprovalIds.length > 0) {
+      query = query.in('id', visibility.allowedApprovalIds);
+    } else if (visibility.visibleActors.length > 0) {
+      query = query.in('actor', visibility.visibleActors);
+    } else {
+      query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+    }
+  }
 
   if (filter !== 'all') {
     query = query.eq('status', filter);
@@ -44,10 +58,22 @@ export default async function ApprovalsPage({
   }>;
 
   // Count pending for badge
-  const { count: pendingCount } = await supabase
+  let pendingCountQuery = supabase
     .from('pending_approvals')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending');
+
+  if (!user.isSuperAdmin) {
+    if (visibility.allowedApprovalIds && visibility.allowedApprovalIds.length > 0) {
+      pendingCountQuery = pendingCountQuery.in('id', visibility.allowedApprovalIds);
+    } else if (visibility.visibleActors.length > 0) {
+      pendingCountQuery = pendingCountQuery.in('actor', visibility.visibleActors);
+    } else {
+      pendingCountQuery = pendingCountQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+    }
+  }
+
+  const { count: pendingCount } = await pendingCountQuery;
 
   return (
     <AutoRefresh intervalMs={10000}>

@@ -27,6 +27,8 @@ interface UsersClientProps {
   agentsByOwner: Record<string, AgentInfo[]>;
   unlinkedAgents: AgentInfo[];
   currentUserId: string;
+  activeAgentId: string | null;
+  fallbackMode: 'selected-agent' | 'least-privilege';
 }
 
 export default function UsersClient({
@@ -34,6 +36,8 @@ export default function UsersClient({
   agentsByOwner,
   unlinkedAgents: initialUnlinked,
   currentUserId,
+  activeAgentId,
+  fallbackMode,
 }: UsersClientProps) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
@@ -121,6 +125,10 @@ export default function UsersClient({
             <h1 className="text-[32px] font-bold text-white tracking-tight">Users</h1>
             <p className="text-sm text-gray-600 mt-1">
               Manage user profiles and agent ownership
+            </p>
+            <p className="text-[11px] text-gray-500 mt-2">
+              Acting agent scope: {activeAgentId ? 'selected agent' : fallbackMode === 'least-privilege' ? 'least-privilege aggregate' : 'selected agent'}.
+              Admin controls remain global.
             </p>
           </div>
           <button
