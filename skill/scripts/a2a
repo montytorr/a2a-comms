@@ -42,16 +42,14 @@ Usage:
   Tasks:
   a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT] [--label LABEL]
   a2a task <project_id> <task_id>
-  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
-  a2a task-update <project_id> <task_id> [--title T] [--description D] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to BROKERS]
+  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D]
+  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
   a2a task-runs <project_id> <task_id>
   a2a task-run-start <project_id> <task_id> [--status STATUS] [--summary TEXT] [--metadata JSON]
   a2a task-run <project_id> <task_id> <run_id>
   a2a task-run-update <project_id> <task_id> <run_id> [--status STATUS] [--summary TEXT] [--error-message TEXT] [--metadata JSON] [--heartbeat]
   a2a checkpoints <project_id> <task_id> <run_id>
-  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON] [--attachment-id ID...]
-  a2a task-attach <project_id> <task_id> --file PATH [--note TEXT] [--checkpoint-id ID] [--run-id ID]
-  a2a contract-attach <contract_id> --file PATH [--note TEXT]
+  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON]
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -68,7 +66,6 @@ import argparse
 import hashlib
 import hmac
 import json
-import mimetypes
 import os
 import sys
 import time
@@ -82,9 +79,32 @@ BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech
 API_KEY = os.environ.get("A2A_API_KEY", "")
 SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
 
+# Canonical enums mirrored from current API/docs surfaces.
+TASK_STATUSES = {"backlog", "todo", "in-progress", "in-review", "done", "cancelled", "blocked"}
+TASK_PRIORITIES = {"urgent", "critical", "high", "medium", "low"}
 
-def canonical_json(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+def normalize_task_status(value: str | None) -> str | None:
+    """Normalize task status input for API compatibility while accepting legacy aliases."""
+    if not value:
+        return value
+    normalized = value.strip()
+    if not normalized:
+        return value
+    normalized = normalized.replace("_", "-")
+    if normalized in TASK_STATUSES:
+        return normalized
+    return value.strip()
+
+
+def normalize_task_priority(value: str | None) -> str | None:
+    """Normalize task priority input for API compatibility (legacy alias: critical -> urgent)."""
+    if not value:
+        return value
+    normalized = value.strip().lower()
+    if normalized == "critical":
+        return "urgent"
+    return normalized
 
 
 def sign_request(method: str, path: str, body: str = "") -> dict:
@@ -112,10 +132,12 @@ def api_request(method: str, path: str, body: dict | None = None) -> dict:
         print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
         sys.exit(1)
 
-    body_str = canonical_json(body) if body else ""
+    body_str = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False) if body else ""
     url = f"{BASE_URL}{path}"
-    # HMAC signs only the pathname (no query string) — must match server-side
-    sign_path = path.split("?")[0]
+    # HMAC signs a canonical path (pathname only, normalized).
+    sign_path = urllib.parse.urlparse(path).path or "/"
+    if sign_path != "/":
+        sign_path = sign_path.rstrip("/")
     headers = sign_request(method, sign_path, body_str)
 
     req = urllib.request.Request(
@@ -151,9 +173,17 @@ def resolve_agent_id(name_or_id: str) -> str:
         result = api_request("GET", "/api/v1/agents")
         agents = result.get("data", result) if isinstance(result, dict) else result
         for a in agents:
-            if a.get("name", "").lower() == name_or_id.lower():
-                return a["id"]
-            if a.get("display_name", "").lower() == name_or_id.lower():
+            if not isinstance(a, dict):
+                continue
+            agent_name = str(a.get("name", "")).strip().lower()
+            agent_display = str(a.get("display_name", "")).strip().lower()
+            agent_owner = str(a.get("owner", "")).strip().lower()
+            if (
+                agent_name == name_or_id.lower()
+                or agent_display == name_or_id.lower()
+                or agent_owner == name_or_id.lower()
+                or a.get("id", "") == name_or_id
+            ):
                 return a["id"]
     except Exception:
         pass
@@ -172,7 +202,15 @@ def format_contract(c: dict, verbose: bool = False) -> str:
     }
     icon = status_icons.get(c["status"], "❓")
     parts = c.get("participants", [])
-    agents = ", ".join(p["agent"]["display_name"] for p in parts)
+    agent_names = []
+    for p in parts:
+        if not isinstance(p, dict):
+            continue
+        participant_agent = p.get("agent") if isinstance(p.get("agent"), dict) else {}
+        name = participant_agent.get("display_name") or participant_agent.get("name") or p.get("agent_id")
+        if name:
+            agent_names.append(name)
+    agents = ", ".join(agent_names)
     turns = f"{c['current_turns']}/{c['max_turns']}"
 
     line = f"{icon} [{c['status'].upper()}] {c['title']}"
@@ -190,8 +228,12 @@ def format_contract(c: dict, verbose: bool = False) -> str:
 
         # Show participant statuses
         for p in parts:
-            pstatus = "✅" if p["status"] == "accepted" else ("❌" if p["status"] == "rejected" else "⏳")
-            line += f"\n   {pstatus} {p['agent']['display_name']} ({p['role']}) — {p['status']}"
+            if not isinstance(p, dict):
+                continue
+            pstatus = "✅" if p.get("status") == "accepted" else ("❌" if p.get("status") == "rejected" else "⏳")
+            p_agent = p.get("agent") if isinstance(p.get("agent"), dict) else {}
+            name = p_agent.get("display_name") or p_agent.get("name") or p.get("agent_id")
+            line += f"\n   {pstatus} {name} ({p.get('role', '?')}) — {p.get('status', '?')}"
 
     return line
 
@@ -294,6 +336,21 @@ def parse_json_arg(value: str, flag_name: str) -> dict:
     return parsed
 
 
+def _get_list_payload(payload: object, *keys: str) -> list:
+    """Extract a list payload from either a raw list or wrapped response."""
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, dict):
+        return []
+    if isinstance(payload.get("data"), list):
+        return payload.get("data", [])
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, list):
+            return value
+    return []
+
+
 def format_task(t: dict, verbose: bool = False) -> str:
     """Format a task for display."""
     status_icons = {
@@ -306,6 +363,7 @@ def format_task(t: dict, verbose: bool = False) -> str:
     }
     priority_icons = {
         "critical": "🔴",
+        "urgent": "🔴",
         "high": "🟠",
         "medium": "🟡",
         "low": "🟢",
@@ -351,10 +409,14 @@ def format_task(t: dict, verbose: bool = False) -> str:
             line += f"\n   Run completed: {t['execution_completed_at']}"
         if t.get("last_checkpoint_summary"):
             line += f"\n   Last checkpoint: {t['last_checkpoint_summary']}"
-        deps = t.get("dependencies", [])
-        if deps:
-            dep_ids = [d.get("blocking_task_id", d.get("id", "?")) for d in deps]
-            line += f"\n   Dependencies: {', '.join(dep_ids)}"
+        blocked_by = t.get("blocked_by", [])
+        blocks = t.get("blocks", [])
+        if blocked_by:
+            dep_ids = [d.get("id", d.get("blocking_task_id", "?")) for d in blocked_by]
+            line += f"\n   Blocked by: {', '.join(dep_ids)}"
+        if blocks:
+            dep_ids = [d.get("id", d.get("blocked_task_id", "?")) for d in blocks]
+            line += f"\n   Blocks: {', '.join(dep_ids)}"
         contracts = t.get("contracts", t.get("linked_contracts", []))
         if contracts:
             c_ids = [c.get("contract_id", c.get("id", "?")) for c in contracts]
@@ -403,7 +465,8 @@ def cmd_agents(_args):
 
 def cmd_agent(args):
     """Get agent details."""
-    data = api_request("GET", f"/api/v1/agents/{args.id}")
+    agent_id = resolve_agent_id(args.id)
+    data = api_request("GET", f"/api/v1/agents/{agent_id}")
     print(f"Agent: {data.get('display_name', '?')} ({data.get('name', '?')})")
     print(f"  ID:          {data.get('id', '?')}")
     print(f"  Owner:       {data.get('owner', '?')}")
@@ -414,6 +477,13 @@ def cmd_agent(args):
     protocols = data.get("protocols", [])
     print(f"  Protocols:    {', '.join(protocols) if protocols else '(none)'}")
     print(f"  Max concurrent contracts: {data.get('max_concurrent_contracts', '?')}")
+    if data.get('trust_tier') is not None:
+        print(f"  Trust tier:  {data.get('trust_tier', '?')}")
+    if data.get('trust_notes'):
+        print(f"  Trust notes: {data.get('trust_notes')}")
+    if data.get('trust_policy') is not None:
+        print("  Trust policy:")
+        print(json.dumps(data.get('trust_policy'), indent=2))
     print(f"  Created:     {data.get('created_at', '?')}")
     print(f"  Updated:     {data.get('updated_at', '?')}")
 
@@ -845,7 +915,7 @@ def cmd_tasks(args):
     if args.sprint:
         params.append(f"sprint_id={args.sprint}")
     if args.status:
-        params.append(f"status={args.status}")
+        params.append(f"status={normalize_task_status(args.status)}")
     if args.assignee:
         params.append(f"assignee_agent_id={resolve_agent_id(args.assignee)}")
     if args.label:
@@ -878,57 +948,16 @@ def cmd_task_create(args):
     if args.sprint_id:
         body["sprint_id"] = args.sprint_id
     if args.priority:
-        body["priority"] = args.priority
+        body["priority"] = normalize_task_priority(args.priority)
     if args.assignee:
         body["assignee_agent_id"] = resolve_agent_id(args.assignee)
     if args.labels:
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
-    if args.handoff_to and args.escalate_to:
-        print("Error: choose either --handoff-to or --escalate-to, not both", file=sys.stderr)
-        sys.exit(1)
-    if args.handoff_to:
-        invitees = [name.strip() for name in args.handoff_to.split(",") if name.strip()]
-        if not invitees:
-            print("Error: --handoff-to must include at least one agent name", file=sys.stderr)
-            sys.exit(1)
-        handoff = {"invitees": invitees}
-        if args.handoff_max_turns:
-            handoff["max_turns"] = args.handoff_max_turns
-        if args.handoff_expires_hours:
-            handoff["expires_in_hours"] = args.handoff_expires_hours
-        if args.handoff_title:
-            handoff["title"] = args.handoff_title
-        if args.handoff_description:
-            handoff["description"] = args.handoff_description
-        body["handoff_contract"] = handoff
-    if args.escalate_to:
-        brokers = [name.strip() for name in args.escalate_to.split(",") if name.strip()]
-        if not brokers:
-            print("Error: --escalate-to must include at least one broker agent name", file=sys.stderr)
-            sys.exit(1)
-        escalation = {"brokers": brokers}
-        if args.escalation_max_turns:
-            escalation["max_turns"] = args.escalation_max_turns
-        if args.escalation_expires_hours:
-            escalation["expires_in_hours"] = args.escalation_expires_hours
-        if args.escalation_title:
-            escalation["title"] = args.escalation_title
-        if args.escalation_description:
-            escalation["description"] = args.escalation_description
-        if args.escalation_reason:
-            escalation["escalation_reason"] = args.escalation_reason
-        if args.requested_intervention:
-            escalation["requested_intervention"] = args.requested_intervention
-        body["escalation_contract"] = escalation
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks", body)
     print("✅ Task created!")
     print(format_task(data, verbose=True))
-    if data.get("handoff_contract"):
-        print(f"\n🤝 Handoff contract: {data['handoff_contract']['id']}")
-    if data.get("escalation_contract"):
-        print(f"\n🚨 Escalation contract: {data['escalation_contract']['id']}")
 
 
 def cmd_task_update(args):
@@ -939,64 +968,23 @@ def cmd_task_update(args):
     if args.description:
         body["description"] = args.description
     if args.status:
-        body["status"] = args.status
+        body["status"] = normalize_task_status(args.status)
     if args.assignee:
         body["assignee_agent_id"] = resolve_agent_id(args.assignee)
     if args.sprint_id:
         body["sprint_id"] = args.sprint_id
     if args.priority:
-        body["priority"] = args.priority
+        body["priority"] = normalize_task_priority(args.priority)
     if args.labels:
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
-    if args.handoff_to and args.escalate_to:
-        print("Error: choose either --handoff-to or --escalate-to, not both", file=sys.stderr)
-        sys.exit(1)
-    if args.handoff_to:
-        invitees = [name.strip() for name in args.handoff_to.split(",") if name.strip()]
-        if not invitees:
-            print("Error: --handoff-to must include at least one agent name", file=sys.stderr)
-            sys.exit(1)
-        handoff = {"invitees": invitees}
-        if args.handoff_max_turns:
-            handoff["max_turns"] = args.handoff_max_turns
-        if args.handoff_expires_hours:
-            handoff["expires_in_hours"] = args.handoff_expires_hours
-        if args.handoff_title:
-            handoff["title"] = args.handoff_title
-        if args.handoff_description:
-            handoff["description"] = args.handoff_description
-        body["handoff_contract"] = handoff
-    if args.escalate_to:
-        brokers = [name.strip() for name in args.escalate_to.split(",") if name.strip()]
-        if not brokers:
-            print("Error: --escalate-to must include at least one broker agent name", file=sys.stderr)
-            sys.exit(1)
-        escalation = {"brokers": brokers}
-        if args.escalation_max_turns:
-            escalation["max_turns"] = args.escalation_max_turns
-        if args.escalation_expires_hours:
-            escalation["expires_in_hours"] = args.escalation_expires_hours
-        if args.escalation_title:
-            escalation["title"] = args.escalation_title
-        if args.escalation_description:
-            escalation["description"] = args.escalation_description
-        if args.escalation_reason:
-            escalation["escalation_reason"] = args.escalation_reason
-        if args.requested_intervention:
-            escalation["requested_intervention"] = args.requested_intervention
-        body["escalation_contract"] = escalation
     if not body:
         print("Error: provide at least one field to update", file=sys.stderr)
         sys.exit(1)
     data = api_request("PATCH", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}", body)
     print("✅ Task updated!")
     print(format_task(data, verbose=True))
-    if data.get("handoff_contract"):
-        print(f"\n🤝 Handoff contract: {data['handoff_contract']['id']}")
-    if data.get("escalation_contract"):
-        print(f"\n🚨 Escalation contract: {data['escalation_contract']['id']}")
 
 
 def cmd_task_runs(args):
@@ -1082,74 +1070,8 @@ def cmd_checkpoint(args):
         body["summary"] = args.summary
     if args.payload:
         body["payload"] = parse_json_arg(args.payload, "--payload")
-    if args.attachment_id:
-        body["attachment_ids"] = args.attachment_id
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}/checkpoints", body)
     print("✅ Checkpoint appended!")
-    print(json.dumps(data, indent=2))
-
-
-def multipart_request(path: str, file_path: str, fields: dict[str, str] | None = None) -> dict:
-    if not API_KEY or not SIGNING_SECRET:
-        print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
-        sys.exit(1)
-    boundary = f"----a2a-{uuid.uuid4().hex}"
-    fields = fields or {}
-    with open(file_path, 'rb') as fh:
-        file_bytes = fh.read()
-    filename = os.path.basename(file_path)
-    mime_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
-    body = bytearray()
-    for key, value in fields.items():
-        body.extend(f"--{boundary}\r\n".encode())
-        body.extend(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
-        body.extend(str(value).encode())
-        body.extend(b"\r\n")
-    body.extend(f"--{boundary}\r\n".encode())
-    body.extend(f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode())
-    body.extend(f'Content-Type: {mime_type}\r\n\r\n'.encode())
-    body.extend(file_bytes)
-    body.extend(b"\r\n")
-    body.extend(f"--{boundary}--\r\n".encode())
-
-    url = f"{BASE_URL}{path}"
-    sign_path = path.split('?')[0]
-    signing_body = canonical_json(fields) if fields else ''
-    headers = sign_request('POST', sign_path, signing_body)
-    headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
-    req = urllib.request.Request(url, data=bytes(body), headers=headers, method='POST')
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        try:
-            err = json.loads(e.read().decode())
-            print(f"Error {e.code}: {err.get('error', 'Unknown error')}", file=sys.stderr)
-        except Exception:
-            print(f"Error {e.code}: {e.reason}", file=sys.stderr)
-        sys.exit(1)
-
-
-def cmd_task_attach(args):
-    fields = {}
-    if args.note:
-        fields['note'] = args.note
-    if args.checkpoint_id:
-        fields['checkpoint_id'] = args.checkpoint_id
-    if args.run_id:
-        fields['run_id'] = args.run_id
-    data = multipart_request(f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/attachments", args.file, fields)
-    print("✅ Task attachment uploaded!")
-    print(json.dumps(data, indent=2))
-
-
-def cmd_contract_attach(args):
-    fields = {}
-    if args.note:
-        fields['note'] = args.note
-    data = multipart_request(f"/api/v1/contracts/{args.contract_id}/attachments", args.file, fields)
-    print("✅ Contract attachment uploaded!")
     print(json.dumps(data, indent=2))
 
 
@@ -1158,18 +1080,32 @@ def cmd_contract_attach(args):
 def cmd_deps(args):
     """List dependencies for a task."""
     data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies")
-    deps = data.get("data", data) if isinstance(data, dict) else data
-    if isinstance(deps, dict):
-        deps = [deps]
+    blocked_by = _get_list_payload(data, "blocked_by")
+    blocks = _get_list_payload(data, "blocks")
+    # Compatibility for older response shape
+    extra = _get_list_payload(data, "dependencies")
+
+    deps = []
+    deps.extend(blocked_by)
+    deps.extend(blocks)
+    deps.extend(extra)
+
     if not deps:
         print("No dependencies found.")
         return
+
     print(f"Dependencies ({len(deps)}):\n")
     for d in deps:
         blocking = d.get("blocking_task_id", d.get("id", "?"))
+        blocked = d.get("blocked_task_id")
         blocking_title = d.get("blocking_task", {}).get("title", "")
         dep_type = d.get("dependency_type", "blocks")
+
+        if not blocking_title and blocked:
+            blocking_title = d.get("blocked_task", {}).get("title", "")
         label = f"  🔗 {blocking}"
+        if blocked and dep_type == "blocks":
+            label = f"  🔗 {blocked}"
         if blocking_title:
             label += f" ({blocking_title})"
         label += f" — {dep_type}"
@@ -1185,7 +1121,31 @@ def cmd_dep_add(args):
 
 def cmd_dep_remove(args):
     """Remove a dependency from a task."""
-    api_request("DELETE", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies?blocking_task_id={args.blocks}")
+    dep_id = args.blocks
+    # Dependency deletion expects dependency_id; resolve user-provided task IDs via listing.
+    data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies")
+    candidates = []
+    candidates.extend(_get_list_payload(data, "blocked_by"))
+    candidates.extend(_get_list_payload(data, "blocks"))
+    for d in candidates:
+        if not isinstance(d, dict):
+            continue
+        if d.get("id") == args.blocks:
+            dep_id = d.get("id")
+            break
+        if d.get("blocking_task_id") == args.blocks or d.get("blocked_task_id") == args.blocks:
+            dep_id = d.get("id")
+            break
+
+    if not dep_id:
+        print("Error: failed to resolve dependency id from provided task reference", file=sys.stderr)
+        sys.exit(1)
+
+    api_request(
+        "DELETE",
+        f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies",
+        {"dependency_id": dep_id},
+    )
     print(f"✅ Dependency removed: {args.task_id} no longer blocked by {args.blocks}")
 
 
@@ -1222,7 +1182,11 @@ def cmd_task_link(args):
 
 def cmd_task_unlink(args):
     """Unlink a contract from a task."""
-    api_request("DELETE", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/contracts?contract_id={args.contract}")
+    api_request(
+        "DELETE",
+        f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/contracts",
+        {"contract_id": args.contract},
+    )
     print(f"✅ Contract {args.contract} unlinked from task {args.task_id}")
 
 
@@ -1260,13 +1224,7 @@ def cmd_comments(args):
 
 def cmd_comment(args):
     """Add a comment to a task."""
-    content = args.content
-    if content is None:
-        content = sys.stdin.read()
-    if content is None or not str(content).strip():
-        print("Error: provide --content or pipe comment text on stdin", file=sys.stderr)
-        sys.exit(1)
-    body = {"content": content.strip()}
+    body = {"content": args.content}
     if args.type:
         body["comment_type"] = args.type
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/comments", body)
@@ -1587,7 +1545,11 @@ def main():
     p = sub.add_parser("tasks", help="List tasks for a project")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("--sprint", help="Filter by sprint ID")
-    p.add_argument("--status", help="Filter by status (backlog, todo, in-progress, in-review, done, cancelled)")
+    p.add_argument(
+        "--status",
+        choices=["backlog", "todo", "in-progress", "in_review", "in-review", "done", "cancelled"],
+        help="Filter by status (backlog, todo, in-progress, in-review, done, cancelled)",
+    )
     p.add_argument("--assignee", help="Filter by assignee agent name or UUID")
     p.add_argument("--label", help="Filter by label")
 
@@ -1602,22 +1564,10 @@ def main():
     p.add_argument("title", help="Task title")
     p.add_argument("--description", help="Task description")
     p.add_argument("--sprint-id", help="Sprint ID to assign to")
-    p.add_argument("--priority", choices=["urgent", "high", "medium", "low"], help="Task priority")
+    p.add_argument("--priority", choices=["critical", "urgent", "high", "medium", "low"], help="Task priority")
     p.add_argument("--assignee", help="Assignee agent name or UUID")
     p.add_argument("--labels", nargs="+", help="Task labels")
     p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
-    p.add_argument("--handoff-to", help="Comma-separated agent names to invite into a new handoff contract")
-    p.add_argument("--handoff-title", help="Optional handoff contract title override")
-    p.add_argument("--handoff-description", help="Optional handoff contract description override")
-    p.add_argument("--handoff-max-turns", type=int, help="Optional max turns for generated handoff contract")
-    p.add_argument("--handoff-expires-hours", type=int, help="Optional expiration window for generated handoff contract")
-    p.add_argument("--escalate-to", help="Comma-separated broker agent names to invite into a new escalation contract")
-    p.add_argument("--escalation-title", help="Optional escalation contract title override")
-    p.add_argument("--escalation-description", help="Optional escalation contract description override")
-    p.add_argument("--escalation-max-turns", type=int, help="Optional max turns for generated escalation contract")
-    p.add_argument("--escalation-expires-hours", type=int, help="Optional expiration window for generated escalation contract")
-    p.add_argument("--escalation-reason", help="Why brokered escalation is needed")
-    p.add_argument("--requested-intervention", help="What the broker should do once engaged")
 
     # task-update
     p = sub.add_parser("task-update", help="Update a task")
@@ -1625,24 +1575,16 @@ def main():
     p.add_argument("task_id", help="Task ID")
     p.add_argument("--title", help="New title")
     p.add_argument("--description", help="New description")
-    p.add_argument("--status", help="New status")
+    p.add_argument(
+        "--status",
+        choices=["backlog", "todo", "in-progress", "in_review", "in-review", "done", "cancelled"],
+        help="New status",
+    )
     p.add_argument("--assignee", help="New assignee agent name or UUID")
     p.add_argument("--sprint-id", help="New sprint ID")
-    p.add_argument("--priority", choices=["urgent", "high", "medium", "low"], help="New priority")
+    p.add_argument("--priority", choices=["critical", "urgent", "high", "medium", "low"], help="New priority")
     p.add_argument("--labels", nargs="+", help="New labels")
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
-    p.add_argument("--handoff-to", help="Comma-separated agent names to invite into a new handoff contract")
-    p.add_argument("--handoff-title", help="Optional handoff contract title override")
-    p.add_argument("--handoff-description", help="Optional handoff contract description override")
-    p.add_argument("--handoff-max-turns", type=int, help="Optional max turns for generated handoff contract")
-    p.add_argument("--handoff-expires-hours", type=int, help="Optional expiration window for generated handoff contract")
-    p.add_argument("--escalate-to", help="Comma-separated broker agent names to invite into a new escalation contract")
-    p.add_argument("--escalation-title", help="Optional escalation contract title override")
-    p.add_argument("--escalation-description", help="Optional escalation contract description override")
-    p.add_argument("--escalation-max-turns", type=int, help="Optional max turns for generated escalation contract")
-    p.add_argument("--escalation-expires-hours", type=int, help="Optional expiration window for generated escalation contract")
-    p.add_argument("--escalation-reason", help="Why brokered escalation is needed")
-    p.add_argument("--requested-intervention", help="What the broker should do once engaged")
 
     # task-runs
     p = sub.add_parser("task-runs", help="List execution runs for a task")
@@ -1653,7 +1595,7 @@ def main():
     p = sub.add_parser("task-run-start", help="Start a new execution run for a task")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--status", choices=["queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="Initial execution run status")
+    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="Initial execution run status")
     p.add_argument("--summary", help="Run summary")
     p.add_argument("--metadata", help="JSON object metadata")
 
@@ -1668,7 +1610,7 @@ def main():
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
     p.add_argument("run_id", help="Execution run ID")
-    p.add_argument("--status", choices=["queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="New execution run status")
+    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="New execution run status")
     p.add_argument("--summary", help="Run summary")
     p.add_argument("--error-message", help="Failure/cancellation detail")
     p.add_argument("--metadata", help="JSON object metadata")
@@ -1688,20 +1630,6 @@ def main():
     p.add_argument("--key", required=True, help="Checkpoint key")
     p.add_argument("--summary", help="Checkpoint summary")
     p.add_argument("--payload", help="JSON object payload")
-    p.add_argument("--attachment-id", action="append", help="Attachment ID to associate with this checkpoint (repeatable)")
-
-    p = sub.add_parser("task-attach", help="Upload an attachment to a task")
-    p.add_argument("project_id", help="Project ID")
-    p.add_argument("task_id", help="Task ID")
-    p.add_argument("--file", required=True, help="Path to file")
-    p.add_argument("--note", help="Optional note")
-    p.add_argument("--checkpoint-id", help="Optional checkpoint to associate")
-    p.add_argument("--run-id", help="Optional execution run to associate")
-
-    p = sub.add_parser("contract-attach", help="Upload an attachment to a contract")
-    p.add_argument("contract_id", help="Contract ID")
-    p.add_argument("--file", required=True, help="Path to file")
-    p.add_argument("--note", help="Optional note")
 
     # ── Dependencies ──────────────────────────────────────
 
@@ -1751,7 +1679,7 @@ def main():
     p = sub.add_parser("comment", help="Add a comment to a task")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--content", required=False, help="Comment content (markdown). If omitted, stdin is used.")
+    p.add_argument("--content", required=True, help="Comment content (markdown)")
     p.add_argument("--type", choices=["comment", "status_change", "assignment", "system"], default=None, help="Comment type")
 
     args = parser.parse_args()
@@ -1806,8 +1734,6 @@ def main():
         "task-run-update": cmd_task_run_update,
         "checkpoints": cmd_checkpoints,
         "checkpoint": cmd_checkpoint,
-        "task-attach": cmd_task_attach,
-        "contract-attach": cmd_contract_attach,
         # Dependencies
         "deps": cmd_deps,
         "dep-add": cmd_dep_add,

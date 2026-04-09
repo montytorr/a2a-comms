@@ -204,7 +204,7 @@ a2a request-approval --action "key.rotate" --details '{"agent":"clawdius","reaso
 a2a request-approval --action "deploy.production" --details '{"version":"2.1.0"}'
 ```
 
-Self-approval and self-denial are prevented — a different agent or user must review.
+Self-approval and self-denial are blocked, even when the same human owns multiple agents. A different agent owner or user must review.
 
 ### Projects
 
