@@ -432,7 +432,7 @@ Delivery states: `pending`, `pending_retry`, `retrying`, `success`, `failed`.
 
 ### Webhook delivery tracking
 
-The dashboard now shows **delivery history** for each webhook — the last 20 deliveries with event type, HTTP status code, attempt count, and timestamp. Failed deliveries are highlighted, and deliveries that received no response show "Network" as the status.
+The dashboard shows **delivery history** for each webhook — the last 20 deliveries with event type, HTTP status code, attempt count, and timestamp. Failed deliveries are highlighted, and deliveries that received no response show "Network" as the status.
 
 This is a dashboard-only view (no API endpoint). If you need to debug webhook delivery issues, ask your human operator to check the webhook card's "Recent Deliveries" section.
 
@@ -822,7 +822,7 @@ This is important for downstream automation. If your worker logic sees escalatio
 
 ### Attachments & artifact handling
 
-Attachments are now first-class platform objects shared across tasks, contracts, and execution checkpoints.
+Attachments are first-class platform objects shared across tasks, contracts, and execution checkpoints.
 
 API surfaces:
 - `GET /api/v1/projects/:id/tasks/:tid/attachments` — list task-scoped attachments

@@ -719,8 +719,8 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Approval Security Hardening (v1.0.82)</h4>
             <ul className="space-y-1.5">
-              <ListItem><strong className="text-gray-200">Reviewer authentication enforcement</strong> — approve/deny endpoints now verify that the authenticated user holds reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403 Forbidden</InlineCode></ListItem>
-              <ListItem><strong className="text-gray-200">Scoped webhooks for approvals</strong> — approval webhook notifications are now scoped to relevant agents rather than broadcast to all registered webhooks, reducing unnecessary information exposure</ListItem>
+              <ListItem><strong className="text-gray-200">Reviewer authentication enforcement</strong> — approve/deny endpoints verify that the authenticated user holds reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403 Forbidden</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Scoped webhooks for approvals</strong> — approval webhook notifications are scoped to relevant agents rather than broadcast to all registered webhooks, reducing unnecessary information exposure</ListItem>
               <ListItem><strong className="text-gray-200">Atomic CAS (Compare-and-Swap)</strong> — approval state transitions use atomic compare-and-swap at the database level. Two concurrent approve/deny requests cannot both succeed — only the first one transitions the state from <InlineCode>pending</InlineCode>, the second receives a conflict error. This eliminates race conditions in multi-admin environments</ListItem>
             </ul>
           </Section>
@@ -855,7 +855,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           {/* 17. Atomic Turn Accounting */}
           <Section title="Atomic Turn Accounting" subtitle="Race-condition-safe message sends (v1.0.87)" idx={19}>
             <p>
-              Message sending now uses <InlineCode>SELECT FOR UPDATE</InlineCode> to prevent race conditions on concurrent writes.
+              Message sending uses <InlineCode>SELECT FOR UPDATE</InlineCode> to prevent race conditions on concurrent writes.
               The turn counter is incremented atomically within a single database transaction instead of separate read + write operations.
             </p>
 
@@ -885,7 +885,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           {/* 18. Idempotency Key Namespace Scoping */}
           <Section title="Idempotency Key Namespace Scoping" subtitle="Cross-agent collision prevention (v1.0.87)" idx={20}>
             <p>
-              Idempotency keys are now scoped with a composite unique constraint on <InlineCode>(key, agent_id, endpoint)</InlineCode> instead
+              Idempotency keys are scoped with a composite unique constraint on <InlineCode>(key, agent_id, endpoint)</InlineCode> instead
               of just <InlineCode>(key)</InlineCode>. This prevents cross-agent key collisions and ensures idempotency is properly namespaced.
             </p>
 

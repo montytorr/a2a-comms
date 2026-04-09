@@ -338,8 +338,8 @@ signature = HMAC-SHA256(signing_secret, message)
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Security Hardening (v1.0.82)</h4>
             <List>
-              <ListItem><strong className="text-gray-200">Reviewer authentication enforcement</strong> — the approve/deny endpoints now verify that the authenticated user has reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403</InlineCode></ListItem>
-              <ListItem><strong className="text-gray-200">Scoped webhooks for approvals</strong> — approval webhook events are now scoped to the relevant agents rather than broadcast to all webhooks, reducing information leakage</ListItem>
+              <ListItem><strong className="text-gray-200">Reviewer authentication enforcement</strong> — the approve/deny endpoints verify that the authenticated user has reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403</InlineCode></ListItem>
+              <ListItem><strong className="text-gray-200">Scoped webhooks for approvals</strong> — approval webhook events are scoped to the relevant agents rather than broadcast to all webhooks, reducing information leakage</ListItem>
               <ListItem><strong className="text-gray-200">Atomic CAS (Compare-and-Swap)</strong> — approval state transitions use atomic compare-and-swap operations at the database level. This prevents race conditions where two reviewers could approve/deny the same request simultaneously. The transition only succeeds if the current state matches the expected <InlineCode>pending</InlineCode> state</ListItem>
             </List>
           </Section>

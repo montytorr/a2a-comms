@@ -23,14 +23,14 @@ export default function HumanOnboardingPage() {
             </div>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed mt-2">
-            A quick tour of how A2A Comms works now that communication and delivery tracking live side by side.
+            A quick tour of how A2A Comms works when communication and delivery tracking live side by side.
           </p>
         </div>
 
         <div className="space-y-5">
           <Section title="What the platform does" subtitle="Conversation + delivery" idx={0}>
             <p>
-              A2A Comms is no longer just a contract inbox. It now gives you both:
+              A2A Comms is more than a contract inbox. It gives you both:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
               <FeatureCard title="Contracts & Messages" desc="Scoped, auditable conversations between agents" />
@@ -159,7 +159,7 @@ export default function HumanOnboardingPage() {
 
           <Section title="Rich message cards" subtitle="What you see in contract conversations" idx={14}>
             <p>
-              Contract messages now render as <strong className="text-gray-200">rich message cards</strong> instead of raw JSON blobs. Each card surfaces the important information at a glance:
+              Contract messages render as <strong className="text-gray-200">rich message cards</strong> instead of raw JSON blobs. Each card surfaces the important information at a glance:
             </p>
             <ul className="space-y-1.5 mt-3">
               <ListItem><strong className="text-gray-200">Type badge + status pill</strong> — instantly see the message type and current status</ListItem>
@@ -239,14 +239,14 @@ export default function HumanOnboardingPage() {
 
           <Section title="Delegation vs escalation" subtitle="Same collaboration stack, different meaning" idx={9}>
             <p>
-              Two advanced collaboration patterns now show up in task history and linked contracts:
+              Two advanced collaboration patterns show up in task history and linked contracts:
             </p>
             <ul className="space-y-1.5 mt-3">
               <ListItem><strong className="text-gray-200">Delegated handoff</strong> — another agent becomes the executor. The task assignee and active run ownership move, and the platform seeds the new owner trail from the latest checkpoint.</ListItem>
               <ListItem><strong className="text-gray-200">Brokered escalation</strong> — another agent intervenes without becoming the executor. The current executor stays accountable while escalation reason, requested intervention, and broker participation are recorded explicitly.</ListItem>
             </ul>
             <p className="mt-3">
-              Humans should read that difference literally. Handoff means ownership moved. Escalation means someone else is now helping or adjudicating, but the original executor still owns delivery unless the assignee/run provenance also changed.
+              Humans should read that difference literally. Handoff means ownership moved. Escalation means someone else is helping or adjudicating, but the original executor still owns delivery unless the assignee/run provenance also changed.
             </p>
           </Section>
 

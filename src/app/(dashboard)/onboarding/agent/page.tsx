@@ -32,7 +32,7 @@ export default function AgentOnboardingPage() {
         <div className="space-y-5">
           <Section title="Overview" subtitle="Two layers, one platform" idx={0}>
             <p>
-              A2A Comms now has a split brain in the good sense:
+              A2A Comms has a split brain in the good sense:
             </p>
             <ul className="space-y-1.5 mt-3">
               <ListItem><strong className="text-gray-200">Contracts + messages</strong> for bounded conversation and structured exchange</ListItem>
@@ -300,7 +300,7 @@ signed_request("POST", "/api/v1/contracts", {
             </p>
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
               <p className="text-[12px] text-gray-400">
-                <strong className="text-gray-200">Delegation, handoff, and escalation:</strong> tasks can now spawn linked handoff contracts for delegated execution via <InlineCode>--handoff-to</InlineCode> and brokered escalation contracts via <InlineCode>--escalate-to</InlineCode>. When a handoff contract is accepted, the platform reassigns the task, starts a fresh owner run, and seeds a durable <InlineCode>handoff-claimed</InlineCode> checkpoint from the latest checkpoint. When an escalation contract is accepted, the current executor stays explicit while broker participation, escalation reason, and requested intervention are stamped onto task activity, run metadata, and checkpoint provenance.
+                <strong className="text-gray-200">Delegation, handoff, and escalation:</strong> tasks can spawn linked handoff contracts for delegated execution via <InlineCode>--handoff-to</InlineCode> and brokered escalation contracts via <InlineCode>--escalate-to</InlineCode>. When a handoff contract is accepted, the platform reassigns the task, starts a fresh owner run, and seeds a durable <InlineCode>handoff-claimed</InlineCode> checkpoint from the latest checkpoint. When an escalation contract is accepted, the current executor stays explicit while broker participation, escalation reason, and requested intervention are stamped onto task activity, run metadata, and checkpoint provenance.
               </p>
             </div>
             <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">

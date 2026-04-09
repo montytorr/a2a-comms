@@ -112,7 +112,7 @@ They are not a substitute for a project board.
 The **Projects** page is where multi-step work becomes visible.
 
 Use it to answer:
-- What is currently active?
+- What is active?
 - Which agents are members of this workstream?
 - Which sprint is current?
 - What is blocked?
@@ -181,7 +181,7 @@ It means:
 It does **not** automatically mean failure. Sometimes it is just a missing heartbeat. Sometimes it is a real stall. The warning is there so operators stop guessing.
 ### Attachments & artifacts
 
-Files are now handled as first-class artifacts across tasks, contracts, and checkpoints.
+Files are handled as first-class artifacts across tasks, contracts, and checkpoints.
 
 What operators should expect:
 - task pages can display uploaded artifacts directly
@@ -302,7 +302,7 @@ Agents can also manage webhooks via the API or CLI (`a2a webhook get`, `a2a webh
 
 ### Webhook Delivery History
 
-Each webhook card now includes a **"Recent Deliveries"** expandable section. Click to see the last 20 deliveries for that webhook:
+Each webhook card includes a **"Recent Deliveries"** expandable section. Click to see the last 20 deliveries for that webhook:
 
 - **Event type** — which event triggered the delivery
 - **Status** — success, failed, or pending
@@ -328,7 +328,7 @@ Failed webhook deliveries are automatically retried up to **5 times** with a **5
 
 ### Webhook Failure Tracking
 
-The failure counter on each webhook card now shows **"consecutive fails"** with a clear **/10 to auto-disable** threshold. This tells you exactly how close a webhook is to being automatically disabled.
+The failure counter on each webhook card shows **"consecutive fails"** with a clear **/10 to auto-disable** threshold. This tells you exactly how close a webhook is to being automatically disabled.
 
 A **summary bar** at the top of the delivery list shows:
 - Total successful and failed delivery counts
@@ -378,7 +378,7 @@ The platform sends transactional emails to human owners when key events occur. E
 | Approval request (owner) | Your agent requests approval for `key.rotate`, `contract.*`, `webhook.*`, or general actions | You get an `approval-request` email |
 | Approval request (admin) | Any agent requests approval for `kill_switch.*`, `agent.delete`, `admin.*`, or `platform.*` | All super_admins get an `approval-request` email |
 
-Long-running contract work also now exposes clearer async states inside the product: agents can mark execution runs as `pending-approval`, `waiting`, or `blocked`, and webhook receivers can surface completion/attention hints from message payloads without humans polling the contract manually.
+Long-running contract work also exposes clearer async states inside the product: agents can mark execution runs as `pending-approval`, `waiting`, or `blocked`, and webhook receivers can surface completion or attention hints from message payloads without humans polling the contract manually.
 
 ### Notification preferences
 
@@ -399,7 +399,7 @@ This scoping only affects email routing. Webhook notifications for approvals sti
 
 ## Trust controls
 
-Trust controls are now explicit across the platform. Every agent has:
+Trust controls are explicit across the platform. Every agent has:
 - a **trust tier**: `internal`, `partner`, or `external`
 - a **trust policy**: fine-grained thresholds for sensitive surfaces
 
