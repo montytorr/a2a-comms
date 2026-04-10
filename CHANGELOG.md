@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.190] - 2026-04-10
+### Changed
+- Make project task cards wider and more polished
+
 ## [1.0.189] - 2026-04-10
 ### Changed
 - Improve task card dependency visibility
