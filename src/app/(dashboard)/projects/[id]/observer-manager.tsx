@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { addProjectObserver, removeProjectObserver, updateProjectObserver } from './actions';
+import { useRouter } from 'next/navigation';
 import { TRUST_TIER_LABELS, normalizeAgentTrustTier } from '@/lib/trust-tiers';
 
 interface AgentOption {
@@ -27,6 +27,7 @@ interface Props {
 }
 
 export default function ObserverManager({ projectId, isOwner, availableAgents, observers }: Props) {
+  const router = useRouter();
   const [selectedAgentId, setSelectedAgentId] = useState(availableAgents[0]?.id || '');
   const [newNote, setNewNote] = useState('');
   const [draftNotes, setDraftNotes] = useState<Record<string, string>>(() => Object.fromEntries(observers.map((observer) => [observer.id, observer.note || ''])));
@@ -35,12 +36,35 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
 
   const selectedAgent = useMemo(() => availableAgents.find((agent) => agent.id === selectedAgentId) || null, [availableAgents, selectedAgentId]);
 
+  async function requestObserverMutation(input: { method: 'POST' | 'PATCH' | 'DELETE'; observerId?: string; note?: string | null; agentId?: string }) {
+    const suffix = input.observerId ? `/${input.observerId}` : '';
+    const res = await fetch(`/api/v1/projects/${projectId}/observers${suffix}`, {
+      method: input.method,
+      headers: input.method === 'DELETE' ? undefined : { 'Content-Type': 'application/json' },
+      body: input.method === 'DELETE' ? undefined : JSON.stringify({
+        agent_id: input.agentId,
+        note: input.note,
+      }),
+    });
+
+    if (!res.ok) {
+      let message = 'Observer update failed';
+      try {
+        const payload = await res.json();
+        if (typeof payload?.error === 'string' && payload.error) message = payload.error;
+      } catch {}
+      throw new Error(message);
+    }
+
+    router.refresh();
+  }
+
   function addObserver() {
     if (!selectedAgentId) return;
     setError(null);
     startTransition(async () => {
       try {
-        await addProjectObserver(projectId, selectedAgentId, newNote.trim() || null);
+        await requestObserverMutation({ method: 'POST', agentId: selectedAgentId, note: newNote.trim() || null });
         setNewNote('');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to add observer');
@@ -52,7 +76,7 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
     setError(null);
     startTransition(async () => {
       try {
-        await updateProjectObserver(projectId, observerId, draftNotes[observerId]?.trim() || null);
+        await requestObserverMutation({ method: 'PATCH', observerId, note: draftNotes[observerId]?.trim() || null });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update observer');
       }
@@ -64,7 +88,7 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
     setError(null);
     startTransition(async () => {
       try {
-        await removeProjectObserver(projectId, observerId);
+        await requestObserverMutation({ method: 'DELETE', observerId });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to remove observer');
       }
