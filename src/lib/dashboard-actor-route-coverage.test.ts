@@ -18,6 +18,10 @@ test('project and contract dashboard actions use acting-agent aware auth helpers
   assert.match(projectActions, /return resolveProjectActorAccess\(auth, projectId, options\);/);
   assert.match(projectActions, /const inviterAgentId = user\.memberAgentId \|\| auth\.actingAgentId;/);
   assert.match(projectActions, /const isInvitee = auth\.agentScope\.includes\(invitation\.agent_id\);/);
+  assert.match(projectActions, /export async function addProjectObserver\(projectId: string, agentId: string, note\?: string \| null\)/);
+  assert.match(projectActions, /await requireProjectMembership\(projectId, \{ requireRole: 'owner' \}\);/);
+  assert.match(projectActions, /export async function updateProjectObserver\(projectId: string, observerId: string, note\?: string \| null\)/);
+  assert.match(projectActions, /export async function removeProjectObserver\(projectId: string, observerId: string\)/);
 
   assert.match(taskActions, /return resolveProjectActorAccess\(auth, projectId, options\);/);
   assert.match(taskActions, /actor_agent_id: user\.memberAgentId \?\? null/);

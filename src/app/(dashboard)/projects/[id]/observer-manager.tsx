@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { addProjectObserver, removeProjectObserver, updateProjectObserver } from './actions';
 import { TRUST_TIER_LABELS, normalizeAgentTrustTier } from '@/lib/trust-tiers';
 
 interface AgentOption {
@@ -27,7 +27,6 @@ interface Props {
 }
 
 export default function ObserverManager({ projectId, isOwner, availableAgents, observers }: Props) {
-  const router = useRouter();
   const [selectedAgentId, setSelectedAgentId] = useState(availableAgents[0]?.id || '');
   const [newNote, setNewNote] = useState('');
   const [draftNotes, setDraftNotes] = useState<Record<string, string>>(() => Object.fromEntries(observers.map((observer) => [observer.id, observer.note || ''])));
@@ -36,30 +35,13 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
 
   const selectedAgent = useMemo(() => availableAgents.find((agent) => agent.id === selectedAgentId) || null, [availableAgents, selectedAgentId]);
 
-  async function callJson(url: string, init: RequestInit) {
-    const res = await fetch(url, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init.headers || {}),
-      },
-    });
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(payload?.error || 'Request failed');
-    return payload;
-  }
-
   function addObserver() {
     if (!selectedAgentId) return;
     setError(null);
     startTransition(async () => {
       try {
-        await callJson(`/api/v1/projects/${projectId}/observers`, {
-          method: 'POST',
-          body: JSON.stringify({ agent_id: selectedAgentId, note: newNote.trim() || null }),
-        });
+        await addProjectObserver(projectId, selectedAgentId, newNote.trim() || null);
         setNewNote('');
-        router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to add observer');
       }
@@ -70,11 +52,7 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
     setError(null);
     startTransition(async () => {
       try {
-        await callJson(`/api/v1/projects/${projectId}/observers/${observerId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ note: draftNotes[observerId]?.trim() || null }),
-        });
-        router.refresh();
+        await updateProjectObserver(projectId, observerId, draftNotes[observerId]?.trim() || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update observer');
       }
@@ -86,8 +64,7 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
     setError(null);
     startTransition(async () => {
       try {
-        await callJson(`/api/v1/projects/${projectId}/observers/${observerId}`, { method: 'DELETE' });
-        router.refresh();
+        await removeProjectObserver(projectId, observerId);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to remove observer');
       }

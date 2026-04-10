@@ -187,6 +187,78 @@ export async function respondToProjectInvitation(
   revalidatePath(`/projects/${projectId}`);
 }
 
+export async function addProjectObserver(projectId: string, agentId: string, note?: string | null) {
+  const user = await requireProjectMembership(projectId, { requireRole: 'owner' });
+  const auth = await getAuthActorContext();
+  if (!auth) throw new Error('Unauthorized');
+  const supabase = createServerClient();
+
+  const inviterLookupId = user.memberAgentId || auth.actingAgentId;
+
+  const [{ data: project }, { data: existingMember }, { data: existingObserver }, { data: agent }, { data: inviterAgent }] = await Promise.all([
+    supabase.from('projects').select('id').eq('id', projectId).single(),
+    supabase.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    supabase.from('project_observers').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    supabase.from('agents').select('id, name, display_name, trust_tier').eq('id', agentId).single(),
+    inviterLookupId
+      ? supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
+      : supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
+  ]);
+
+  if (!project) throw new Error('Project not found');
+  if (!agent) throw new Error('Agent not found');
+  if (existingMember) throw new Error('Agent is already a member of this project');
+  if (existingObserver) throw new Error('Agent is already an observer on this project');
+  if (inviterAgent) {
+    const trustGate = evaluateProjectMemberInvite(inviterAgent, agent);
+    if (!trustGate.allowed) throw new Error(trustGate.reason || 'Agent trust tier blocks observer access');
+  }
+
+  const inviterAgentId = user.memberAgentId || auth.actingAgentId;
+  if (!inviterAgentId) throw new Error('No acting agent available to add observer');
+
+  const { error } = await supabase.from('project_observers').insert({
+    project_id: projectId,
+    agent_id: agentId,
+    invited_by_agent_id: inviterAgentId,
+    note: note?.trim() || null,
+  });
+
+  if (error) throw new Error(`Failed to add observer: ${error.message}`);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectObserver(projectId: string, observerId: string, note?: string | null) {
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from('project_observers')
+    .update({ note: note?.trim() || null, updated_at: new Date().toISOString() })
+    .eq('id', observerId)
+    .eq('project_id', projectId);
+
+  if (error) throw new Error(`Failed to update observer: ${error.message}`);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function removeProjectObserver(projectId: string, observerId: string) {
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from('project_observers')
+    .delete()
+    .eq('id', observerId)
+    .eq('project_id', projectId);
+
+  if (error) throw new Error(`Failed to remove observer: ${error.message}`);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
 export async function removeProjectMember(projectId: string, memberId: string) {
   await requireProjectMembership(projectId, { requireRole: 'owner' });
 
