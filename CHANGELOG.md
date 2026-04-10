@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.201] - 2026-04-10
+### Changed
+- Refine task detail page layout
+
 ## [1.0.200] - 2026-04-10
 ### Changed
 - Refine task detail right rail layout
