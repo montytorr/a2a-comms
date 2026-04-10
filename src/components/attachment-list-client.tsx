@@ -25,8 +25,16 @@ function isTextAttachment(attachment: TaskAttachment) {
   return attachment.mime_type.startsWith('text/') || ['md', 'markdown', 'txt', 'json', 'log', 'yaml', 'yml', 'csv'].includes(ext);
 }
 
+function isPreviewableDocument(attachment: TaskAttachment) {
+  const ext = extensionOf(attachment.original_name || attachment.filename || '');
+  return isTextAttachment(attachment)
+    || attachment.mime_type === 'application/pdf'
+    || ['pdf', 'md', 'markdown', 'txt', 'json', 'log', 'yaml', 'yml', 'csv'].includes(ext);
+}
+
 function typeLabel(attachment: TaskAttachment) {
   if (isImageAttachment(attachment)) return 'Image';
+  if (attachment.mime_type === 'application/pdf') return 'PDF';
   if (isTextAttachment(attachment)) return 'Text';
   return 'File';
 }
@@ -45,6 +53,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
         {sorted.map((attachment) => {
           const isImage = isImageAttachment(attachment);
           const isText = isTextAttachment(attachment);
+          const isPreviewable = isPreviewableDocument(attachment);
           const href = attachment.download_url;
 
           return (
@@ -88,7 +97,25 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
                     {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
                       <p className="text-[11px] text-cyan-300/80 mt-2">Observer note: {attachment.metadata.observer_note}</p>
                     )}
-                    {!isImage && isText ? (
+                    {!isImage && isPreviewable ? (
+                      <div className="mt-3 rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.08] via-sky-500/[0.04] to-transparent px-3 py-2">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/90">Preview available</p>
+                            <p className="mt-1 text-[11px] text-gray-300">Open this {attachment.mime_type === 'application/pdf' ? 'PDF' : 'document'} in a new tab to preview it.</p>
+                          </div>
+                          {href ? (
+                            <Link
+                              href={href}
+                              target="_blank"
+                              className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200 hover:bg-cyan-400/20"
+                            >
+                              Preview / Open
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : !isImage && isText ? (
                       <p className="mt-2 text-[11px] text-gray-500">Best for notes, markdown, logs, and structured text artifacts.</p>
                     ) : null}
                   </div>
@@ -108,7 +135,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
                         target="_blank"
                         className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300 hover:bg-cyan-500/[0.14]"
                       >
-                        {isText ? 'Open file' : 'Download'}
+                        {isPreviewable ? 'Open in new tab' : 'Download'}
                       </Link>
                     </div>
                   ) : null}
