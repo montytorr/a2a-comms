@@ -121,28 +121,28 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
   return (
     <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-5">
         {columns.map((col) => {
           const colTasks = tasksByStatus[col.id] || [];
           const sc = statusColors[col.id];
 
           return (
-            <div key={col.id} className="min-w-0">
+            <div key={col.id} className="min-w-0 rounded-2xl border border-white/[0.04] bg-white/[0.015] p-3 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
               {/* Column Header */}
-              <div className="flex items-center justify-between mb-3 px-1">
+              <div className="mb-4 flex items-center justify-between px-1.5">
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${sc.dot} ${sc.glow}`} />
                   <span className={`text-[11px] font-semibold tracking-wide uppercase ${sc.header}`}>
                     {col.label}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono text-gray-600 bg-white/[0.03] px-1.5 py-0.5 rounded">
+                <span className="rounded-full border border-white/[0.05] bg-white/[0.03] px-2 py-0.5 text-[10px] font-mono text-gray-500">
                   {colTasks.length}
                 </span>
               </div>
 
               {/* Cards */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {colTasks.length === 0 && (
                   <div className="rounded-xl border border-dashed border-white/[0.06] py-8 text-center">
                     <p className="text-[10px] text-gray-700">No tasks</p>
@@ -167,10 +167,10 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                     <Link
                       key={task.id}
                       href={`/projects/${projectId}/tasks/${task.id}`}
-                      className="group block min-h-[280px] rounded-2xl glass-card-hover p-4"
+                      className="group block min-h-[320px] rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.05] via-white/[0.025] to-transparent p-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.12] hover:shadow-[0_22px_70px_rgba(0,0,0,0.34)]"
                     >
                       <div className="flex h-full flex-col">
-                        <div className="mb-3 flex items-start justify-between gap-2">
+                        <div className="mb-4 flex items-start justify-between gap-2">
                           <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-bold tracking-[0.18em] uppercase ${pc.bg} ${pc.text}`}>
                             {pc.label}
                           </span>
@@ -181,7 +181,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                           )}
                         </div>
 
-                        <h4 className="mb-3 min-h-[3.9rem] text-[13px] font-semibold leading-5 text-gray-200 transition-colors group-hover:text-white line-clamp-3">
+                        <h4 className="mb-4 min-h-[4.4rem] text-[15px] font-semibold leading-6 text-gray-100 transition-colors group-hover:text-white line-clamp-3">
                           {task.title}
                         </h4>
 
@@ -202,9 +202,9 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                         )}
 
                         {hasDependencyContext && (
-                          <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+                          <div className="mb-4 rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.05] to-black/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                             <div className="mb-2 flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
                                 Dependency context
                               </span>
                               <span className="text-[9px] text-gray-600">
@@ -212,13 +212,13 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                               </span>
                             </div>
 
-                            <div className="mb-3 flex flex-wrap gap-1.5">
+                            <div className="mb-3 flex flex-wrap gap-2">
                               {activeDependencyGroups.map((group) => {
                                 const config = dependencyTypeConfig[group.key];
                                 return (
                                   <span
                                     key={group.key}
-                                    className={`inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold ${config.tone}`}
+                                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[9px] font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)] ${config.tone}`}
                                   >
                                     {config.label} {group.items.length}
                                   </span>
@@ -226,22 +226,22 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                               })}
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                               {activeDependencyGroups.slice(0, 3).map((group) => {
                                 const config = dependencyTypeConfig[group.key];
                                 const overflow = group.items.length - 2;
                                 return (
                                   <div
                                     key={group.key}
-                                    className={`rounded-lg border-l-2 bg-black/10 px-2.5 py-2 ${config.previewTone}`}
+                                    className={`rounded-xl border border-white/[0.05] border-l-2 bg-black/15 px-3 py-2.5 ${config.previewTone}`}
                                   >
                                     <div className="mb-1 flex items-center justify-between gap-2">
-                                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                                         {config.label}
                                       </span>
                                       <span className="text-[9px] text-gray-600">{group.items.length}</span>
                                     </div>
-                                    <p className="text-[11px] leading-4 line-clamp-2">
+                                    <p className="text-[11px] leading-5 line-clamp-3">
                                       {config.previewLabel} {renderDependencyPreview(group.items)}
                                       {overflow > 0 ? ` +${overflow} more` : ''}
                                     </p>
