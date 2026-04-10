@@ -293,7 +293,7 @@ export default async function ProjectDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div className="mx-auto w-full max-w-[2160px] p-4 sm:p-6 lg:p-10">
+      <div className="mx-auto w-full max-w-[2240px] p-4 sm:p-6 lg:p-10">
         {/* Project Header */}
         <ProjectHeader
           project={project}
