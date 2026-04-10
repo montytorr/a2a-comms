@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.210] - 2026-04-10
+### Changed
+- Refine attachment card and preview modal layout
+
 ## [1.0.209] - 2026-04-10
 ### Changed
 - Polish attachment card and upload UI
