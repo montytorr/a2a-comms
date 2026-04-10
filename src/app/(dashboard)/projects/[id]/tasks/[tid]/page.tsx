@@ -23,6 +23,7 @@ import AttachmentList from '@/components/attachment-list';
 import AttachmentUpload from './attachment-upload';
 import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint, TaskAttachment } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
+import { listAttachmentsForScope } from '@/lib/attachment-access';
 export const dynamic = 'force-dynamic';
 
 const dependencySectionStyles = {
@@ -184,12 +185,11 @@ export default async function TaskDetailPage({
       .eq('task_id', tid)
       .order('created_at', { ascending: false })
       .limit(5),
-    supabase
-      .from('task_attachments')
-      .select('*')
-      .eq('project_id', projectId)
-      .eq('task_id', tid)
-      .order('created_at', { ascending: false }),
+    listAttachmentsForScope({
+      projectId,
+      taskId: tid,
+      includeSignedUrl: true,
+    }),
   ]);
 
   const project = projectRes.data;
@@ -266,7 +266,7 @@ export default async function TaskDetailPage({
   }>;
   const executionRuns = (executionRunsRes.data || []) as TaskExecutionRun[];
   const executionCheckpoints = (executionCheckpointsRes.data || []) as TaskExecutionCheckpoint[];
-  const attachments = (attachmentsRes.data || []) as TaskAttachment[];
+  const attachments = (attachmentsRes || []) as TaskAttachment[];
 
   const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
