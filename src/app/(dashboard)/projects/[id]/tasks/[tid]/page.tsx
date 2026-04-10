@@ -87,7 +87,6 @@ export default async function TaskDetailPage({
   const supabase = createServerClient();
   noStore();
 
-  // Fetch task
   const { data: task, error } = await supabase
     .from('tasks')
     .select('*')
@@ -99,7 +98,6 @@ export default async function TaskDetailPage({
 
   const agentScope = auth.agentScope;
 
-  // Verify access: admin, project member, project observer, or invited agent.
   let hasReadOnlyObserverAccess = false;
   if (!user.isSuperAdmin) {
     const [{ data: membership }, { data: observerAccess }, { data: invitationAccess }] = await Promise.all([
@@ -130,7 +128,6 @@ export default async function TaskDetailPage({
     }
   }
 
-  // Fetch related data in parallel
   const [
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
@@ -241,7 +238,6 @@ export default async function TaskDetailPage({
     { key: 'related', config: dependencySectionStyles.related, items: relatedTasks },
   ].filter((section) => section.items.length > 0);
 
-  // Filter linked contracts by participation unless superAdmin
   let visibleContracts = linkedContracts;
   if (!user.isSuperAdmin && linkedContracts.length > 0) {
     const contractIds = linkedContracts.map((lc) => lc.contract?.id).filter(Boolean) as string[];
@@ -286,316 +282,330 @@ export default async function TaskDetailPage({
       })
     : null;
 
+  const detailItems = [
+    {
+      label: 'Assignee',
+      value: hasReadOnlyObserverAccess ? (
+        <span className="text-[13px] text-gray-300 font-medium">{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
+      ) : (
+        <AssigneePicker
+          currentId={task.assignee_agent_id}
+          members={members as unknown as Array<{ agent: { id: string; name: string; display_name: string } | null }>}
+          projectId={projectId}
+          taskId={tid}
+        />
+      ),
+    },
+    {
+      label: 'Sprint',
+      value: hasReadOnlyObserverAccess ? (
+        <span className="text-[13px] text-gray-300 font-medium">{_sprint ? _sprint.title : 'Backlog'}</span>
+      ) : (
+        <SprintPicker currentSprintId={task.sprint_id} sprints={sprints} projectId={projectId} taskId={tid} />
+      ),
+    },
+    {
+      label: 'Priority',
+      value: hasReadOnlyObserverAccess ? (
+        <span className="text-[13px] text-gray-300 font-medium">{task.priority}</span>
+      ) : (
+        <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
+      ),
+    },
+    {
+      label: 'Due date',
+      value: hasReadOnlyObserverAccess ? (
+        <span className="text-[13px] text-gray-300 font-medium">{task.due_date || 'None'}</span>
+      ) : (
+        <DueDatePicker value={task.due_date} projectId={projectId} taskId={tid} isOverdue={!!isOverdue} />
+      ),
+    },
+    {
+      label: 'Reporter',
+      value: reporter ? (
+        <span className="text-[13px] text-gray-300 font-medium">{reporter.display_name || reporter.name}</span>
+      ) : (
+        <span className="text-[12px] text-gray-600 italic">Unknown</span>
+      ),
+    },
+    {
+      label: 'Created',
+      value: <span className="text-[11px] text-gray-500 font-mono tabular-nums">{formatDate(task.created_at)}</span>,
+    },
+    {
+      label: 'Last updated',
+      value: <span className="text-[11px] text-gray-500 font-mono tabular-nums">{formatDateTime(task.updated_at)}</span>,
+    },
+  ];
+
   return (
     <AutoRefresh intervalMs={15000}>
-    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-6 animate-fade-in">
-        <Link href="/projects" className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">Projects</Link>
-        <span className="text-gray-700 text-[10px]">›</span>
-        <Link href={`/projects/${projectId}`} className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">
-          {project?.title || 'Project'}
-        </Link>
-        <span className="text-gray-700 text-[10px]">›</span>
-        <span className="text-[11px] text-gray-400">Task</span>
-      </div>
+      <div className="mx-auto max-w-[1500px] px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+        <div className="flex items-center gap-2 mb-6 animate-fade-in">
+          <Link href="/projects" className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">Projects</Link>
+          <span className="text-gray-700 text-[10px]">›</span>
+          <Link href={`/projects/${projectId}`} className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">
+            {project?.title || 'Project'}
+          </Link>
+          <span className="text-gray-700 text-[10px]">›</span>
+          <span className="text-[11px] text-gray-400">Task</span>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Title + Status */}
-          <div className="animate-fade-in">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-1">
-                {hasReadOnlyObserverAccess ? (
-                  <h1 className="text-[28px] font-bold text-white tracking-tight">{task.title}</h1>
-                ) : (
-                  <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
-                )}
-                <div className="flex items-center gap-3 flex-wrap">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)] 2xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.9fr)]">
+          <div className="space-y-6">
+            <section className="rounded-2xl glass-card p-6 animate-fade-in">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0 flex-1">
                   {hasReadOnlyObserverAccess ? (
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${statusConfig[task.status as TaskStatus]?.bg || statusConfig.backlog.bg} ${statusConfig[task.status as TaskStatus]?.text || statusConfig.backlog.text}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[task.status as TaskStatus]?.dot || statusConfig.backlog.dot}`} />
-                      {task.status}
-                    </span>
+                    <h1 className="text-[28px] font-bold text-white tracking-tight sm:text-[32px]">{task.title}</h1>
                   ) : (
-                    <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
+                    <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
                   )}
-                  {!hasReadOnlyObserverAccess && <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />}
-                  {isOverdue && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 bg-red-500/[0.1] border border-red-500/20">
-                      ⚠ Overdue
+                  <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                    {hasReadOnlyObserverAccess ? (
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${statusConfig[task.status as TaskStatus]?.bg || statusConfig.backlog.bg} ${statusConfig[task.status as TaskStatus]?.text || statusConfig.backlog.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[task.status as TaskStatus]?.dot || statusConfig.backlog.dot}`} />
+                        {task.status}
+                      </span>
+                    ) : (
+                      <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
+                    )}
+                    {!hasReadOnlyObserverAccess && <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />}
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${_pc.bg} ${_pc.text}`}>
+                      <span>{_pc.icon}</span>
+                      {task.priority}
                     </span>
-                  )}
-                  {blockerState && (
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
-                      {blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
-                    </span>
-                  )}
+                    {isOverdue && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 bg-red-500/[0.1] border border-red-500/20">
+                        ⚠ Overdue
+                      </span>
+                    )}
+                    {blockerState && (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                        {blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Description */}
-          <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">Description</p>
-            {hasReadOnlyObserverAccess ? (
-              <div className="text-[13px] text-gray-400 leading-relaxed whitespace-pre-wrap">{task.description || 'No description yet.'}</div>
-            ) : (
-              <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
-            )}
-          </div>
-
-          <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} attachments={attachments} />
-
-          {hasReadOnlyObserverAccess && (
-            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.08] px-4 py-3 animate-fade-in" style={{ animationDelay: '0.085s' }}>
-              <p className="text-[11px] font-semibold text-cyan-200 uppercase tracking-[0.15em]">Observer mode</p>
-              <p className="text-[12px] text-cyan-100/80 mt-2">
-                You can inspect execution state, checkpoints, attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state.
-              </p>
-            </div>
-          )}
-
-          <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.09s' }}>
-            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Attachments</p>
-                <p className="text-[12px] text-gray-400 mt-2">Artifacts tied directly to this task.</p>
-              </div>
-            </div>
-            {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
-            {hasReadOnlyObserverAccess && (
-              <p className="text-[11px] text-gray-500">Observers can inspect attachments but cannot upload new artifacts.</p>
-            )}
-            <div className="mt-4">
-              <AttachmentList attachments={attachments} />
-            </div>
-          </div>
-
-          {/* Dependencies */}
-          {dependencySections.length > 0 && (
-            <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-                <div>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task links and dependency graph</p>
-                  <p className="text-[12px] text-gray-400 mt-2">
-                    Full visibility into blocker, downstream, sequencing, and related-task context for this task.
-                  </p>
-                  {blockerState && <p className="text-[12px] text-gray-500 mt-2">{blockerState.meta}</p>}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {dependencySections.map((section) => (
-                    <span
-                      key={section.key}
-                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${section.config.pill}`}
-                    >
-                      {section.config.label} · {section.items.length}
-                    </span>
+                <div className="grid min-w-full grid-cols-2 gap-3 sm:min-w-[360px] xl:max-w-[420px]">
+                  {detailItems.map((item) => (
+                    <div key={item.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 mb-1.5">{item.label}</p>
+                      <div className="min-h-[20px]">{item.value}</div>
+                    </div>
                   ))}
-                  {blockerState && (
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
-                      {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
-                    </span>
-                  )}
                 </div>
               </div>
 
-              {blockerState && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-[11px]">
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                      <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Blocked since</p>
-                      <p className="text-gray-300">{formatDateTime(blockerState.blockedSince)}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                      <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Last follow-up</p>
-                      <p className="text-gray-300">{blockerState.blockerFollowedThroughAt ? formatDateTime(blockerState.blockerFollowedThroughAt) : 'None logged'}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                      <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Escalation</p>
-                      <p className="text-gray-300">{blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated'}</p>
+              <div className="mt-5 border-t border-white/[0.06] pt-5">
+                <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+                  <div>
+                    <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Description</p>
+                    <p className="text-[12px] text-gray-500 mt-2">Keep the brief close to the task metadata instead of pushing it further down the page.</p>
+                  </div>
+                </div>
+                {hasReadOnlyObserverAccess ? (
+                  <div className="text-[13px] text-gray-400 leading-relaxed whitespace-pre-wrap">{task.description || 'No description yet.'}</div>
+                ) : (
+                  <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
+                )}
+              </div>
+            </section>
+
+            {hasReadOnlyObserverAccess && (
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.08] px-4 py-3 animate-fade-in" style={{ animationDelay: '0.04s' }}>
+                <p className="text-[11px] font-semibold text-cyan-200 uppercase tracking-[0.15em]">Observer mode</p>
+                <p className="text-[12px] text-cyan-100/80 mt-2">
+                  You can inspect execution state, checkpoints, attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state.
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
+              <div className="space-y-6">
+                <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} attachments={attachments} />
+
+                <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                  <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+                    <div>
+                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Attachments</p>
+                      <p className="text-[12px] text-gray-400 mt-2">Artifacts tied directly to this task.</p>
                     </div>
                   </div>
-                  {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} />}
-                </>
-              )}
+                  {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
+                  {hasReadOnlyObserverAccess && (
+                    <p className="text-[11px] text-gray-500">Observers can inspect attachments but cannot upload new artifacts.</p>
+                  )}
+                  <div className="mt-4">
+                    <AttachmentList attachments={attachments} />
+                  </div>
+                </div>
+              </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
-                {dependencySections.map((section) => (
-                  <div key={section.key} className={`rounded-xl border p-4 ${section.config.card}`}>
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <p className={`text-[11px] font-medium ${section.config.accent}`}>{section.config.label}</p>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-semibold ${section.config.pill}`}>
-                        {section.items.length}
-                      </span>
+              <div className="space-y-6">
+                <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.06s' }}>
+                  <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+                    <div>
+                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Labels</p>
+                      <p className="text-[12px] text-gray-500 mt-2">Compact taxonomy for filtering, routing, and context.</p>
                     </div>
-                    <div className="space-y-2">
-                      {section.items.map((dep) => {
-                        const t = dep.tasks;
-                        if (!t) return null;
-                        const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                  </div>
+                  {hasReadOnlyObserverAccess ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(task.labels || []).length
+                        ? (task.labels || []).map((label: string) => (
+                            <span key={label} className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-gray-300">
+                              {label}
+                            </span>
+                          ))
+                        : <span className="text-[12px] text-gray-500 italic">No labels</span>}
+                    </div>
+                  ) : (
+                    <LabelsEditor labels={task.labels || []} projectId={projectId} taskId={tid} />
+                  )}
+                </div>
+
+                {visibleContracts.length > 0 && (
+                  <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.08s' }}>
+                    <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Linked Contracts</p>
+                    <div className="space-y-1.5">
+                      {visibleContracts.map((lc) => {
+                        const c = lc.contract;
+                        if (!c) return null;
                         return (
                           <Link
-                            key={`${section.key}-${dep.id}-${t.id}`}
-                            href={`/projects/${t.project_id}/tasks/${t.id}`}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/20 hover:bg-white/[0.04] transition-colors"
+                            key={lc.id}
+                            href={`/contracts/${c.id}`}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
                           >
-                            <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                            <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                            <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400/60">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <path d="M14 2v6h6" />
+                            </svg>
+                            <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{c.title}</span>
+                            <span className="text-[9px] font-semibold uppercase text-gray-500 ml-auto">{c.status}</span>
                           </Link>
                         );
                       })}
                     </div>
                   </div>
+                )}
+
+                {!hasReadOnlyObserverAccess && (
+                  <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                    <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Task controls</p>
+                    <p className="text-[12px] text-gray-500 mb-4">Destructive actions stay tucked into the rail to keep the main flow focused.</p>
+                    <DeleteTaskButton projectId={projectId} taskId={tid} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {dependencySections.length > 0 && (
+              <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.12s' }}>
+                <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+                  <div>
+                    <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task links and dependency graph</p>
+                    <p className="text-[12px] text-gray-400 mt-2">
+                      Full visibility into blocker, downstream, sequencing, and related-task context for this task.
+                    </p>
+                    {blockerState && <p className="text-[12px] text-gray-500 mt-2">{blockerState.meta}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {dependencySections.map((section) => (
+                      <span
+                        key={section.key}
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${section.config.pill}`}
+                      >
+                        {section.config.label} · {section.items.length}
+                      </span>
+                    ))}
+                    {blockerState && (
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                        {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {blockerState && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-[11px]">
+                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                        <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Blocked since</p>
+                        <p className="text-gray-300">{formatDateTime(blockerState.blockedSince)}</p>
+                      </div>
+                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                        <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Last follow-up</p>
+                        <p className="text-gray-300">{blockerState.blockerFollowedThroughAt ? formatDateTime(blockerState.blockerFollowedThroughAt) : 'None logged'}</p>
+                      </div>
+                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                        <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Escalation</p>
+                        <p className="text-gray-300">{blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated'}</p>
+                      </div>
+                    </div>
+                    {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} />}
+                  </>
+                )}
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
+                  {dependencySections.map((section) => (
+                    <div key={section.key} className={`rounded-xl border p-4 ${section.config.card}`}>
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <p className={`text-[11px] font-medium ${section.config.accent}`}>{section.config.label}</p>
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-semibold ${section.config.pill}`}>
+                          {section.items.length}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {section.items.map((dep) => {
+                          const t = dep.tasks;
+                          if (!t) return null;
+                          const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                          return (
+                            <Link
+                              key={`${section.key}-${dep.id}-${t.id}`}
+                              href={`/projects/${t.project_id}/tasks/${t.id}`}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/20 hover:bg-white/[0.04] transition-colors"
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
+                              <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
+                              <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <TaskComments comments={comments} projectId={projectId} taskId={tid} />
+          </div>
+
+          <aside className="space-y-6">
+            <div className="rounded-2xl glass-card p-5 animate-fade-in xl:sticky xl:top-6" style={{ animationDelay: '0.05s' }}>
+              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+                <div>
+                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task snapshot</p>
+                  <p className="text-[12px] text-gray-500 mt-2">A compact rail for the metadata you revisit most while scanning the task.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                {detailItems.map((item) => (
+                  <div key={`rail-${item.label}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 mb-1.5">{item.label}</p>
+                    <div className="min-h-[20px]">{item.value}</div>
+                  </div>
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Linked Contracts */}
-          {visibleContracts.length > 0 && (
-            <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Linked Contracts</p>
-              <div className="space-y-1.5">
-                {visibleContracts.map((lc) => {
-                  const c = lc.contract;
-                  if (!c) return null;
-                  return (
-                    <Link
-                      key={lc.id}
-                      href={`/contracts/${c.id}`}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400/60">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <path d="M14 2v6h6" />
-                      </svg>
-                      <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{c.title}</span>
-                      <span className="text-[9px] font-semibold uppercase text-gray-500 ml-auto">{c.status}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <TaskComments comments={comments} projectId={projectId} taskId={tid} />
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Details Card */}
-          <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Details</p>
-
-            <div className="space-y-4">
-              {/* Assignee */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Assignee</p>
-                {hasReadOnlyObserverAccess ? (
-                  <span className="text-[13px] text-gray-300 font-medium">{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
-                ) : (
-                  <AssigneePicker
-                    currentId={task.assignee_agent_id}
-                    members={members as unknown as Array<{ agent: { id: string; name: string; display_name: string } | null }>}
-                    projectId={projectId}
-                    taskId={tid}
-                  />
-                )}
-              </div>
-
-              {/* Reporter */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Reporter</p>
-                {reporter ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[13px] text-gray-300 font-medium">{reporter.display_name || reporter.name}</span>
-                  </div>
-                ) : (
-                  <span className="text-[12px] text-gray-600 italic">Unknown</span>
-                )}
-              </div>
-
-              {/* Sprint */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Sprint</p>
-                {hasReadOnlyObserverAccess ? (
-                  <span className="text-[13px] text-gray-300 font-medium">{_sprint ? _sprint.title : 'Backlog'}</span>
-                ) : (
-                  <SprintPicker
-                    currentSprintId={task.sprint_id}
-                    sprints={sprints}
-                    projectId={projectId}
-                    taskId={tid}
-                  />
-                )}
-              </div>
-
-              {/* Priority */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Priority</p>
-                {hasReadOnlyObserverAccess ? (
-                  <span className="text-[13px] text-gray-300 font-medium">{task.priority}</span>
-                ) : (
-                  <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
-                )}
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Due Date</p>
-                {hasReadOnlyObserverAccess ? (
-                  <span className="text-[13px] text-gray-300 font-medium">{task.due_date || 'None'}</span>
-                ) : (
-                  <DueDatePicker
-                    value={task.due_date}
-                    projectId={projectId}
-                    taskId={tid}
-                    isOverdue={!!isOverdue}
-                  />
-                )}
-              </div>
-
-              {/* Labels */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-2">Labels</p>
-                {hasReadOnlyObserverAccess ? (
-                  <div className="flex flex-wrap gap-1.5">{(task.labels || []).length ? (task.labels || []).map((label: string) => <span key={label} className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-gray-300">{label}</span>) : <span className="text-[12px] text-gray-500 italic">No labels</span>}</div>
-                ) : (
-                  <LabelsEditor
-                    labels={task.labels || []}
-                    projectId={projectId}
-                    taskId={tid}
-                  />
-                )}
-              </div>
-
-              {/* Created */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Created</p>
-                <span className="text-[11px] text-gray-500 font-mono tabular-nums">
-                  {formatDate(task.created_at)}
-                </span>
-              </div>
-
-              {/* Updated */}
-              <div>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.1em] mb-1.5">Last Updated</p>
-                <span className="text-[11px] text-gray-500 font-mono tabular-nums">
-                  {formatDateTime(task.updated_at)}
-                </span>
-              </div>
-            </div>
-
-            {/* Delete Task */}
-            {!hasReadOnlyObserverAccess && <DeleteTaskButton projectId={projectId} taskId={tid} />}
-          </div>
+          </aside>
         </div>
       </div>
-    </div>
     </AutoRefresh>
   );
 }
