@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.193] - 2026-04-10
+### Changed
+- Polish project kanban UI
+
 ## [1.0.192] - 2026-04-10
 ### Docs
 - align task dependency guides
