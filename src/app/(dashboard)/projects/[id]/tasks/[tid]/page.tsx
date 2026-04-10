@@ -305,14 +305,6 @@ export default async function TaskDetailPage({
       ),
     },
     {
-      label: 'Priority',
-      value: hasReadOnlyObserverAccess ? (
-        <span className="text-[13px] text-gray-300 font-medium">{task.priority}</span>
-      ) : (
-        <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
-      ),
-    },
-    {
       label: 'Due date',
       value: hasReadOnlyObserverAccess ? (
         <span className="text-[13px] text-gray-300 font-medium">{task.due_date || 'None'}</span>
@@ -496,6 +488,8 @@ export default async function TaskDetailPage({
                   </div>
                 </div>
               )}
+
+              <TaskComments comments={comments} projectId={projectId} taskId={tid} />
             </div>
           </div>
 
@@ -504,7 +498,7 @@ export default async function TaskDetailPage({
               <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
                 <div>
                   <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task snapshot</p>
-                  <p className="text-[12px] text-gray-500 mt-2">Fast controls and ownership context that matter while reading execution progress.</p>
+                  <p className="text-[12px] text-gray-500 mt-2">Fast ownership and scheduling context while reading the task.</p>
                 </div>
               </div>
 
@@ -544,7 +538,7 @@ export default async function TaskDetailPage({
               <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
                 <div>
                   <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Attachments</p>
-                  <p className="text-[12px] text-gray-400 mt-2">Task artifacts stay visible alongside comments and links.</p>
+                  <p className="text-[12px] text-gray-400 mt-2">Task artifacts stay handy in the supporting rail.</p>
                 </div>
               </div>
               {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
@@ -593,8 +587,6 @@ export default async function TaskDetailPage({
                 ))}
               </div>
             </div>
-
-            <TaskComments comments={comments} projectId={projectId} taskId={tid} compact />
 
             {!hasReadOnlyObserverAccess && (
               <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.14s' }}>

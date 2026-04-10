@@ -133,12 +133,10 @@ export default function TaskComments({
   comments,
   projectId,
   taskId,
-  compact = false,
 }: {
   comments: Comment[];
   projectId: string;
   taskId: string;
-  compact?: boolean;
 }) {
   const [content, setContent] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -159,10 +157,10 @@ export default function TaskComments({
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  const visibleComments = compact ? sorted.slice(-6) : sorted;
+  const visibleComments = sorted;
 
   return (
-    <div className={`rounded-2xl glass-card animate-fade-in ${compact ? 'p-5' : 'p-6'}`} style={{ animationDelay: '0.25s' }}>
+    <div className="rounded-2xl glass-card animate-fade-in p-6" style={{ animationDelay: '0.25s' }}>
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">
           Activity & Comments
@@ -172,9 +170,7 @@ export default function TaskComments({
             </span>
           )}
         </p>
-        {compact && comments.length > visibleComments.length && (
-          <span className="text-[10px] text-gray-500">Showing latest {visibleComments.length}</span>
-        )}
+        <span className="text-[10px] text-gray-500">Chronological feed</span>
       </div>
 
       {visibleComments.length > 0 ? (
