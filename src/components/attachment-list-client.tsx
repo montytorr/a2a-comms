@@ -67,41 +67,35 @@ function fileKindLabel(attachment: TaskAttachment) {
 
 function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
   const href = attachment.download_url;
+  const isText = isTextAttachment(attachment);
   const [textContent, setTextContent] = useState<string>('');
   const [textError, setTextError] = useState<string | null>(null);
-  const [loadingText, setLoadingText] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    if (!href || !isTextAttachment(attachment)) {
-      setTextContent('');
-      setTextError(null);
-      setLoadingText(false);
+    if (!href || !isText) {
       return;
     }
 
-    setLoadingText(true);
-    setTextError(null);
+    let cancelled = false;
     fetch(href)
       .then(async (res) => {
         if (!res.ok) throw new Error('Unable to load preview');
         const text = await res.text();
         if (cancelled) return;
         const normalized = text.replace(/\r\n/g, '\n');
+        setTextError(null);
         setTextContent(normalized.length > 8000 ? `${normalized.slice(0, 8000)}\n\n… Preview truncated` : normalized);
       })
       .catch((err) => {
         if (cancelled) return;
+        setTextContent('');
         setTextError(err instanceof Error ? err.message : 'Unable to load preview');
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingText(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [attachment, href]);
+  }, [href, isText]);
 
   if (!href) {
     return <p className="text-sm text-gray-400">Preview unavailable for this file.</p>;
@@ -149,11 +143,11 @@ function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
   }
 
   if (isTextAttachment(attachment)) {
-    if (loadingText) return <p className="text-sm text-gray-400">Loading text preview…</p>;
     if (textError) return <p className="text-sm text-red-200">{textError}</p>;
+    if (!textContent) return <p className="text-sm text-gray-400">Loading text preview…</p>;
     return (
       <pre className="h-[72vh] w-full overflow-auto rounded-[24px] border border-white/[0.08] bg-[#05070d] p-5 text-[12px] leading-6 text-gray-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] whitespace-pre-wrap break-words">
-        {textContent || 'File is empty.'}
+        {textContent}
       </pre>
     );
   }
