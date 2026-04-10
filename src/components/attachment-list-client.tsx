@@ -145,43 +145,95 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
       </div>
 
       {preview && preview.download_url ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md" onClick={() => setPreview(null)}>
+        <div className="fixed inset-0 z-[80] bg-black/90 p-3 backdrop-blur-md sm:p-5" onClick={() => setPreview(null)}>
           <div
-            className="flex max-h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#090910] shadow-2xl shadow-black/60"
+            className="mx-auto grid h-full max-h-[92vh] w-full max-w-7xl overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#07070c] shadow-[0_32px_90px_rgba(0,0,0,0.62)] lg:grid-cols-[minmax(0,1fr),320px]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex flex-col gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300/80">Image preview</p>
-                  <p className="mt-1 text-[14px] font-medium leading-5 text-gray-100 break-words sm:text-[15px]">{preview.original_name}</p>
-                  <p className="mt-1 text-[11px] text-gray-500">{humanSize(preview.size_bytes)} <span className="text-gray-600">•</span> {formatDateTime(preview.created_at)}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreview(null)}
-                  className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-200 hover:bg-white/[0.08]"
-                  aria-label="Close image preview"
-                >
-                  Close
-                </button>
-              </div>
-              <div>
-                <Link
-                  href={preview.download_url}
-                  target="_blank"
-                  className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300 hover:bg-cyan-500/[0.14]"
-                >
-                  Open full image
-                </Link>
-              </div>
-            </div>
-            <div className="flex-1 overflow-auto bg-[#05050a] p-2.5 sm:p-4">
-              <div className="flex min-h-full items-center justify-center bg-black/10 p-0 sm:p-2">
+            <div className="relative flex min-h-[320px] flex-1 items-center justify-center overflow-hidden border-b border-white/[0.06] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_34%),linear-gradient(180deg,_rgba(11,15,24,0.96),_rgba(5,5,10,1))] p-4 sm:p-6 lg:min-h-0 lg:border-b-0 lg:border-r lg:border-white/[0.06] lg:p-10">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06)_0%,transparent_24%,transparent_76%,rgba(255,255,255,0.04)_100%)]" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/35 to-transparent" />
+              <div className="relative flex h-full max-h-full w-full items-center justify-center rounded-[24px] border border-white/[0.08] bg-black/25 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-4 lg:p-6">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={preview.download_url} alt={preview.original_name} className="h-auto max-h-[74vh] w-auto max-w-full rounded-[16px]" />
+                <img
+                  src={preview.download_url}
+                  alt={preview.original_name}
+                  className="h-auto max-h-[72vh] w-auto max-w-full rounded-[18px] object-contain shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+                />
               </div>
             </div>
+
+            <aside className="flex min-h-0 flex-col bg-[#0b0c12]">
+              <div className="border-b border-white/[0.06] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-300/85">Attachment preview</p>
+                    <p className="mt-2 text-base font-semibold leading-6 text-white break-words">{preview.original_name}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPreview(null)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-gray-200 transition hover:bg-white/[0.1]"
+                    aria-label="Close image preview"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Type</p>
+                      <p className="mt-2 text-sm font-medium text-gray-100">{typeLabel(preview)}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Size</p>
+                      <p className="mt-2 text-sm font-medium text-gray-100">{humanSize(preview.size_bytes)}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Added</p>
+                    <p className="mt-2 text-sm leading-6 text-gray-200">{formatDateTime(preview.created_at)}</p>
+                  </div>
+
+                  {typeof preview.metadata?.note === 'string' && preview.metadata.note.length > 0 ? (
+                    <div className="rounded-2xl border border-cyan-400/12 bg-cyan-400/[0.05] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-200/80">Attachment note</p>
+                      <p className="mt-2 text-sm leading-6 text-gray-100 whitespace-pre-wrap">{preview.metadata.note}</p>
+                    </div>
+                  ) : null}
+
+                  {typeof preview.metadata?.observer_note === 'string' && preview.metadata.observer_note.length > 0 ? (
+                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Observer note</p>
+                      <p className="mt-2 text-sm leading-6 text-cyan-100/90 whitespace-pre-wrap">{preview.metadata.observer_note}</p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="border-t border-white/[0.06] p-4 sm:p-5 lg:p-6">
+                <div className="flex flex-col gap-2.5">
+                  <Link
+                    href={preview.download_url}
+                    target="_blank"
+                    className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.12] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-400/[0.18]"
+                  >
+                    Open full image
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPreview(null)}
+                    className="inline-flex items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200 transition hover:bg-white/[0.08]"
+                  >
+                    Back to attachments
+                  </button>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       ) : null}
