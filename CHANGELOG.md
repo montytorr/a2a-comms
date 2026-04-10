@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.191] - 2026-04-10
+### Changed
+- Remove redundant project task graph block
+
 ## [1.0.190] - 2026-04-10
 ### Changed
 - Make project task cards wider and more polished
