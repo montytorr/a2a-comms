@@ -166,7 +166,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
   return (
     <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-flow-col xl:auto-cols-[minmax(320px,1fr)] xl:overflow-x-auto xl:pb-2">
         {columns.map((col) => {
           const colTasks = tasksByStatus[col.id] || [];
           const sc = statusColors[col.id];
