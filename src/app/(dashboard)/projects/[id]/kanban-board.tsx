@@ -39,12 +39,49 @@ const avatarGradients = [
   'from-amber-500 to-yellow-600',
 ];
 
+const dependencyTypeConfig = {
+  blockedBy: {
+    label: 'Blocked by',
+    tone: 'border-red-500/20 bg-red-500/[0.08] text-red-300',
+    previewTone: 'border-l-red-400/50 text-gray-300',
+    previewLabel: 'Waiting on',
+  },
+  blocks: {
+    label: 'Blocking',
+    tone: 'border-amber-500/20 bg-amber-500/[0.08] text-amber-300',
+    previewTone: 'border-l-amber-400/50 text-gray-300',
+    previewLabel: 'Blocking',
+  },
+  sequenceAfter: {
+    label: 'After',
+    tone: 'border-indigo-500/20 bg-indigo-500/[0.08] text-indigo-300',
+    previewTone: 'border-l-indigo-400/50 text-gray-300',
+    previewLabel: 'Follows',
+  },
+  sequenceBefore: {
+    label: 'Before',
+    tone: 'border-sky-500/20 bg-sky-500/[0.08] text-sky-300',
+    previewTone: 'border-l-sky-400/50 text-gray-300',
+    previewLabel: 'Leads into',
+  },
+  related: {
+    label: 'Related',
+    tone: 'border-violet-500/20 bg-violet-500/[0.08] text-violet-300',
+    previewTone: 'border-l-violet-400/50 text-gray-300',
+    previewLabel: 'Related to',
+  },
+} as const;
+
 function getAvatarIndex(name: string): number {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return Math.abs(hash) % avatarGradients.length;
+}
+
+function renderDependencyPreview(items: Array<{ id: string; title: string; status: string }>, maxItems = 2) {
+  return items.slice(0, maxItems).map((item) => item.title).join(', ');
 }
 
 export interface TaskRow {
@@ -84,7 +121,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
   return (
     <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
         {columns.map((col) => {
           const colTasks = tasksByStatus[col.id] || [];
           const sc = statusColors[col.id];
@@ -112,122 +149,130 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   </div>
                 )}
                 {colTasks.map((task) => {
-                    const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
-                    const assigneeName = task.assignee?.display_name || task.assignee?.name;
-                    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
-                    const dependencySummary = task.dependencySummary;
-                    const blockedByCount = dependencySummary?.blockedBy?.length || 0;
-                    const blocksCount = dependencySummary?.blocks?.length || 0;
-                    const sequenceAfterCount = dependencySummary?.sequenceAfter?.length || 0;
-                    const sequenceBeforeCount = dependencySummary?.sequenceBefore?.length || 0;
-                    const relatedCount = dependencySummary?.related?.length || 0;
-                    const hasDependencyContext = blockedByCount + blocksCount + sequenceAfterCount + sequenceBeforeCount + relatedCount > 0;
+                  const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
+                  const assigneeName = task.assignee?.display_name || task.assignee?.name;
+                  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+                  const dependencySummary = task.dependencySummary;
+                  const dependencyGroups = [
+                    { key: 'blockedBy', items: dependencySummary?.blockedBy || [] },
+                    { key: 'blocks', items: dependencySummary?.blocks || [] },
+                    { key: 'sequenceAfter', items: dependencySummary?.sequenceAfter || [] },
+                    { key: 'sequenceBefore', items: dependencySummary?.sequenceBefore || [] },
+                    { key: 'related', items: dependencySummary?.related || [] },
+                  ] as const;
+                  const activeDependencyGroups = dependencyGroups.filter((group) => group.items.length > 0);
+                  const hasDependencyContext = activeDependencyGroups.length > 0;
 
-                    return (
-                      <Link
-                        key={task.id}
-                        href={`/projects/${projectId}/tasks/${task.id}`}
-                        className="block rounded-xl glass-card-hover p-3 group"
-                      >
-                        {/* Priority Badge */}
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ${pc.bg} ${pc.text}`}>
+                  return (
+                    <Link
+                      key={task.id}
+                      href={`/projects/${projectId}/tasks/${task.id}`}
+                      className="group block min-h-[280px] rounded-2xl glass-card-hover p-4"
+                    >
+                      <div className="flex h-full flex-col">
+                        <div className="mb-3 flex items-start justify-between gap-2">
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-bold tracking-[0.18em] uppercase ${pc.bg} ${pc.text}`}>
                             {pc.label}
                           </span>
                           {isOverdue && (
-                            <span className="text-[9px] font-bold text-red-400 bg-red-500/[0.1] px-1.5 py-0.5 rounded">
+                            <span className="rounded-md bg-red-500/[0.1] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-red-400">
                               Overdue
                             </span>
                           )}
                         </div>
 
-                        {/* Title */}
-                        <h4 className="text-[12px] font-medium text-gray-300 group-hover:text-white transition-colors leading-snug mb-2 line-clamp-2">
+                        <h4 className="mb-3 min-h-[3.9rem] text-[13px] font-semibold leading-5 text-gray-200 transition-colors group-hover:text-white line-clamp-3">
                           {task.title}
                         </h4>
 
-                        {/* Labels */}
                         {task.labels && task.labels.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {task.labels.slice(0, 3).map((label) => (
+                          <div className="mb-3 flex flex-wrap gap-1.5">
+                            {task.labels.slice(0, 4).map((label) => (
                               <span
                                 key={label}
-                                className="text-[9px] font-medium text-violet-400 bg-violet-500/[0.08] px-1.5 py-0.5 rounded-full border border-violet-500/10"
+                                className="rounded-full border border-violet-500/10 bg-violet-500/[0.08] px-2 py-0.5 text-[9px] font-medium text-violet-300"
                               >
                                 {label}
                               </span>
                             ))}
-                            {task.labels.length > 3 && (
-                              <span className="text-[9px] text-gray-600">+{task.labels.length - 3}</span>
+                            {task.labels.length > 4 && (
+                              <span className="px-1 text-[9px] text-gray-500">+{task.labels.length - 4}</span>
                             )}
                           </div>
                         )}
 
                         {hasDependencyContext && (
-                          <div className="mb-2 space-y-1.5 rounded-lg border border-white/[0.05] bg-white/[0.02] px-2 py-2">
-                            <div className="flex flex-wrap gap-1">
-                              {blockedByCount > 0 && (
-                                <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-red-300">
-                                  Blocked by {blockedByCount}
-                                </span>
-                              )}
-                              {blocksCount > 0 && (
-                                <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-amber-300">
-                                  Blocking {blocksCount}
-                                </span>
-                              )}
-                              {sequenceAfterCount > 0 && (
-                                <span className="inline-flex items-center rounded-full border border-indigo-500/20 bg-indigo-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-indigo-300">
-                                  After {sequenceAfterCount}
-                                </span>
-                              )}
-                              {sequenceBeforeCount > 0 && (
-                                <span className="inline-flex items-center rounded-full border border-sky-500/20 bg-sky-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-sky-300">
-                                  Before {sequenceBeforeCount}
-                                </span>
-                              )}
-                              {relatedCount > 0 && (
-                                <span className="inline-flex items-center rounded-full border border-violet-500/20 bg-violet-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
-                                  Related {relatedCount}
-                                </span>
-                              )}
+                          <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                                Dependency context
+                              </span>
+                              <span className="text-[9px] text-gray-600">
+                                {activeDependencyGroups.length} lane{activeDependencyGroups.length === 1 ? '' : 's'}
+                              </span>
                             </div>
-                            <div className="space-y-1">
-                              {blockedByCount > 0 && (
-                                <p className="text-[10px] text-gray-400 line-clamp-2">
-                                  Waiting on {dependencySummary?.blockedBy?.slice(0, 2).map((item) => item.title).join(', ')}{blockedByCount > 2 ? ` +${blockedByCount - 2}` : ''}
-                                </p>
-                              )}
-                              {blocksCount > 0 && (
-                                <p className="text-[10px] text-gray-500 line-clamp-2">
-                                  Blocking {dependencySummary?.blocks?.slice(0, 2).map((item) => item.title).join(', ')}{blocksCount > 2 ? ` +${blocksCount - 2}` : ''}
-                                </p>
-                              )}
+
+                            <div className="mb-3 flex flex-wrap gap-1.5">
+                              {activeDependencyGroups.map((group) => {
+                                const config = dependencyTypeConfig[group.key];
+                                return (
+                                  <span
+                                    key={group.key}
+                                    className={`inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-semibold ${config.tone}`}
+                                  >
+                                    {config.label} {group.items.length}
+                                  </span>
+                                );
+                              })}
+                            </div>
+
+                            <div className="space-y-2">
+                              {activeDependencyGroups.slice(0, 3).map((group) => {
+                                const config = dependencyTypeConfig[group.key];
+                                const overflow = group.items.length - 2;
+                                return (
+                                  <div
+                                    key={group.key}
+                                    className={`rounded-lg border-l-2 bg-black/10 px-2.5 py-2 ${config.previewTone}`}
+                                  >
+                                    <div className="mb-1 flex items-center justify-between gap-2">
+                                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                                        {config.label}
+                                      </span>
+                                      <span className="text-[9px] text-gray-600">{group.items.length}</span>
+                                    </div>
+                                    <p className="text-[11px] leading-4 line-clamp-2">
+                                      {config.previewLabel} {renderDependencyPreview(group.items)}
+                                      {overflow > 0 ? ` +${overflow} more` : ''}
+                                    </p>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
 
-                        {/* Footer: assignee + due date */}
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.03]">
+                        <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/[0.04] pt-3">
                           {assigneeName ? (
-                            <div className="flex items-center gap-1.5" title={assigneeName}>
-                              <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${avatarGradients[getAvatarIndex(assigneeName)]} flex items-center justify-center text-[8px] font-bold text-white`}>
+                            <div className="flex min-w-0 items-center gap-2" title={assigneeName}>
+                              <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${avatarGradients[getAvatarIndex(assigneeName)]} text-[9px] font-bold text-white`}>
                                 {assigneeName[0]?.toUpperCase()}
                               </div>
-                              <span className="text-[10px] text-gray-500 truncate max-w-[80px]">{assigneeName}</span>
+                              <span className="truncate text-[10px] text-gray-400">{assigneeName}</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] text-gray-700 italic">Unassigned</span>
+                            <span className="text-[10px] italic text-gray-600">Unassigned</span>
                           )}
                           {task.due_date && (
-                            <span className={`text-[9px] font-mono tabular-nums ${isOverdue ? 'text-red-400' : 'text-gray-600'}`}>
+                            <span className={`text-[10px] font-mono tabular-nums ${isOverdue ? 'text-red-400' : 'text-gray-500'}`}>
                               {formatDate(task.due_date)}
                             </span>
                           )}
                         </div>
-                      </Link>
-                    );
-                  })}
+                      </div>
+                    </Link>
+                  );
+                })}
                 <QuickTaskForm projectId={projectId} status={col.id} sprintId={sprintId} members={members} />
               </div>
             </div>
