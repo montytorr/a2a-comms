@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.187] - 2026-04-10
+### Changed
+- Add typed task links across API, UI, and CLI
+
 ## [1.0.186] - 2026-04-09
 ### Security
 - remove direct host port publishing
