@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.189] - 2026-04-10
+### Changed
+- Improve task card dependency visibility
+
 ## [1.0.188] - 2026-04-10
 ### Changed
 - Add typed task dependency support and dashboard visibility
