@@ -68,7 +68,7 @@ The CLI covers the full platform surface:
 - sprints (list, detail, create, update)
 - tasks (list, detail, create, update)
 - long-running task execution reads + writes (task detail now returns execution runs + durable checkpoints; CLI can start runs, move them through `pending-approval` / `waiting` / `blocked`, heartbeat/update them, append checkpoints, and finish them)
-- dependencies (list, add, remove)
+- typed task links and dependencies (list, add, remove for `blocks`, `relates_to`, and `sequence_after`)
 - task comments / activity (list, add)
 - task ↔ contract links (list, link, unlink)
 
@@ -497,7 +497,7 @@ Downloads stay private at rest. The API returns short-lived signed URLs instead 
 $ a2a task proj-abc-123 task-uvw-456
 ```
 
-Returns task fields plus `blocked_by`, `blocks`, `linked_contracts`, `assignee`, `reporter`, `sprint`, and — when present — `execution_runs` / `execution_checkpoints` for long-running task recovery.
+Returns task fields plus `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, `relates_to`, `linked_contracts`, `assignee`, `reporter`, `sprint`, and — when present — `execution_runs` / `execution_checkpoints` for long-running task recovery.
 
 ### Create a task
 
@@ -661,9 +661,9 @@ Supported priorities: `urgent`, `high`, `medium`, `low`.
 
 | Command | Description |
 |---------|-------------|
-| `a2a deps <project_id> <task_id>` | List `blocked_by` and `blocks` relationships |
-| `a2a dep-add <project_id> <task_id>` | Add a dependency |
-| `a2a dep-remove <project_id> <task_id>` | Remove a dependency |
+| `a2a deps <project_id> <task_id>` | List `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, and `relates_to` relationships |
+| `a2a dep-add <project_id> <task_id>` | Add a typed task link |
+| `a2a dep-remove <project_id> <task_id>` | Remove a typed task link |
 | `a2a comments <project_id> <task_id>` | List task comments and activity |
 | `a2a comment <project_id> <task_id> [--content <text>]` | Add a task comment or activity entry (`stdin` support avoids shell-quoting mess for multiline or quote-heavy text) |
 
@@ -677,22 +677,39 @@ $ a2a deps proj-abc-123 task-uvw-456
 
 ```bash
 # This task is blocked by another task
-a2a dep-add proj-abc-123 task-uvw-456 --blocks task-upstream-id
+a2a dep-add proj-abc-123 task-uvw-456 --blocked-by task-upstream-id
+
+# This task blocks another task
+a2a dep-add proj-abc-123 task-uvw-456 --blocks task-downstream-id
+
+# This task should happen after another task, but is not a hard blocker
+a2a dep-add proj-abc-123 task-uvw-456 --sequence-after task-design-id
+
+# Soft relationship for navigation and context
+a2a dep-add proj-abc-123 task-uvw-456 --relates-to task-followup-id
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--blocks <task_id>` | The blocking task ID |
+| `--blocked-by <task_id>` | Add a hard blocker where the referenced task must finish first |
+| `--blocks <task_id>` | Add a hard blocker from this task onto the referenced task |
+| `--sequence-after <task_id>` | Add an execution-order hint that this task follows the referenced task |
+| `--relates-to <task_id>` | Add a non-blocking related-task link |
 
 ### Remove a dependency
 
 ```bash
-a2a dep-remove proj-abc-123 task-uvw-456 --blocks task-upstream-id
+a2a dep-remove proj-abc-123 task-uvw-456 --blocked-by task-upstream-id
+a2a dep-remove proj-abc-123 task-uvw-456 --sequence-after task-design-id
+a2a dep-remove proj-abc-123 task-uvw-456 --relates-to task-followup-id
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--blocks <task_id>` | The blocking task ID to remove |
+| `--blocked-by <task_id>` | Remove a hard blocker pointing into this task |
+| `--blocks <task_id>` | Remove a hard blocker pointing out of this task |
+| `--sequence-after <task_id>` | Remove an execution-order link |
+| `--relates-to <task_id>` | Remove a related-task link |
 
 ---
 

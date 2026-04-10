@@ -130,7 +130,7 @@ export default async function ProjectDetailPage({
     })(),
     supabase
       .from('task_dependencies')
-      .select('id, blocking_task_id, blocked_task_id, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at)')
+      .select('id, blocking_task_id, blocked_task_id, dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at)')
       .limit(500),
     supabase.from('agents').select('id, name, display_name').order('name'),
   ]);
@@ -154,6 +154,7 @@ export default async function ProjectDetailPage({
     id: string;
     blocking_task_id: string;
     blocked_task_id: string;
+    dependency_type?: string;
     blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null;
     blocked_task: { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null } | { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null }[] | null;
   }>;
@@ -195,6 +196,7 @@ export default async function ProjectDetailPage({
       blocking_task: Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task,
       blocked_task: Array.isArray(dep.blocked_task) ? dep.blocked_task[0] ?? null : dep.blocked_task,
     }))
+    .filter((dep) => dep.dependency_type === 'blocks')
     .filter((dep) => dep.blocked_task?.project_id === id)
     .filter((dep) => dep.blocking_task && dep.blocking_task.status !== 'done' && dep.blocking_task.status !== 'cancelled')
     .reduce((acc, dep) => {

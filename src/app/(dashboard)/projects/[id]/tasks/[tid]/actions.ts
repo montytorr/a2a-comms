@@ -125,8 +125,9 @@ export async function logBlockerFollowUp(projectId: string, taskId: string) {
 
   const { data: blockedBy } = await supabase
     .from('task_dependencies')
-    .select('blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
-    .eq('blocked_task_id', taskId);
+    .select('dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+    .eq('blocked_task_id', taskId)
+    .eq('dependency_type', 'blocks');
 
   const activeBlockers = (blockedBy || [])
     .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
@@ -208,8 +209,9 @@ export async function escalateBlockedTask(projectId: string, taskId: string) {
 
   const { data: blockedBy } = await supabase
     .from('task_dependencies')
-    .select('blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
-    .eq('blocked_task_id', taskId);
+    .select('dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
+    .eq('blocked_task_id', taskId)
+    .eq('dependency_type', 'blocks');
 
   const activeBlockers = (blockedBy || [])
     .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)

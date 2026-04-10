@@ -25,6 +25,14 @@ if [[ -f "$ENV_FILE" ]]; then
   done < "$ENV_FILE"
 fi
 
-export A2A_BASE_URL="${A2A_BASE_URL:-http://localhost:3700}"
+if [[ -z "${A2A_BASE_URL:-}" ]]; then
+  if [[ -n "${APP_URL:-}" ]]; then
+    export A2A_BASE_URL="$APP_URL"
+  elif [[ -n "${NEXT_PUBLIC_APP_URL:-}" ]]; then
+    export A2A_BASE_URL="$NEXT_PUBLIC_APP_URL"
+  else
+    export A2A_BASE_URL="http://localhost:3700"
+  fi
+fi
 
 exec "$CLI_PATH" "$@"

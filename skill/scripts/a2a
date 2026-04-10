@@ -53,8 +53,8 @@ Usage:
 
   Dependencies:
   a2a deps <project_id> <task_id>
-  a2a dep-add <project_id> <task_id> --blocks <blocking_task_id>
-  a2a dep-remove <project_id> <task_id> --blocks <blocking_task_id>
+  a2a dep-add <project_id> <task_id> [--type TYPE] (--blocks <task_id> | --blocked-by <task_id> | --relates-to <task_id> | --sequence-after <task_id>)
+  a2a dep-remove <project_id> <task_id> [--type TYPE] (--blocks <task_id> | --blocked-by <task_id> | --relates-to <task_id> | --sequence-after <task_id>)
 
   Task-Contract Links:
   a2a task-contracts <project_id> <task_id>
@@ -1077,76 +1077,80 @@ def cmd_checkpoint(args):
 
 # ── Dependency Commands ───────────────────────────────────
 
+def _resolve_dependency_target(args):
+    selected = [("blocks", args.blocks), ("blocked-by", getattr(args, 'blocked_by', None)), ("relates_to", getattr(args, 'relates_to', None)), ("sequence_after", getattr(args, 'sequence_after', None))]
+    chosen = [(kind, value) for kind, value in selected if value]
+    if len(chosen) != 1:
+        print("Error: choose exactly one dependency target flag", file=sys.stderr)
+        sys.exit(1)
+    kind, value = chosen[0]
+    if kind == 'blocks':
+        return {"blocked_task_id": value, "dependency_type": getattr(args, 'type', None) or 'blocks'}, value, 'blocks'
+    if kind == 'blocked-by':
+        return {"blocking_task_id": value, "dependency_type": getattr(args, 'type', None) or 'blocks'}, value, 'blocked-by'
+    if kind == 'relates_to':
+        return {"blocked_task_id": value, "dependency_type": 'relates_to'}, value, 'relates_to'
+    return {"blocking_task_id": value, "dependency_type": 'sequence_after'}, value, 'sequence_after'
+
+
 def cmd_deps(args):
     """List dependencies for a task."""
     data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies")
-    blocked_by = _get_list_payload(data, "blocked_by")
-    blocks = _get_list_payload(data, "blocks")
-    # Compatibility for older response shape
-    extra = _get_list_payload(data, "dependencies")
-
-    deps = []
-    deps.extend(blocked_by)
-    deps.extend(blocks)
-    deps.extend(extra)
-
-    if not deps:
+    sections = [
+        ("Blocked by", _get_list_payload(data, "blocked_by"), "blocking_task"),
+        ("Blocks", _get_list_payload(data, "blocks"), "blocked_task"),
+        ("Sequence after", _get_list_payload(data, "sequence_after"), "blocking_task"),
+        ("Sequence before", _get_list_payload(data, "sequence_before"), "blocked_task"),
+        ("Related tasks", _get_list_payload(data, "relates_to"), "blocking_task"),
+    ]
+    total = sum(len(items) for _, items, _ in sections)
+    if not total:
         print("No dependencies found.")
         return
-
-    print(f"Dependencies ({len(deps)}):\n")
-    for d in deps:
-        blocking = d.get("blocking_task_id", d.get("id", "?"))
-        blocked = d.get("blocked_task_id")
-        blocking_title = d.get("blocking_task", {}).get("title", "")
-        dep_type = d.get("dependency_type", "blocks")
-
-        if not blocking_title and blocked:
-            blocking_title = d.get("blocked_task", {}).get("title", "")
-        label = f"  🔗 {blocking}"
-        if blocked and dep_type == "blocks":
-            label = f"  🔗 {blocked}"
-        if blocking_title:
-            label += f" ({blocking_title})"
-        label += f" — {dep_type}"
-        print(label)
+    print(f"Dependencies ({total}):\n")
+    for title, items, joined_key in sections:
+        if not items:
+            continue
+        print(f"{title}:")
+        for d in items:
+            joined = d.get(joined_key) or d.get('blocked_task') or d.get('blocking_task') or {}
+            if isinstance(joined, list):
+                joined = joined[0] if joined else {}
+            print(f"  • {joined.get('title', '?')} ({joined.get('id', '?')}) — {d.get('dependency_type', 'blocks')}")
+        print()
 
 
 def cmd_dep_add(args):
     """Add a dependency to a task."""
-    body = {"blocking_task_id": args.blocks}
-    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies", body)
-    print(f"✅ Dependency added: {args.task_id} is blocked by {args.blocks}")
+    body, target, rel = _resolve_dependency_target(args)
+    api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies", body)
+    print(f"✅ Dependency added: {args.task_id} -> {target} ({body['dependency_type'] if rel in ['blocks', 'blocked-by'] else rel})")
 
 
 def cmd_dep_remove(args):
     """Remove a dependency from a task."""
-    dep_id = args.blocks
-    # Dependency deletion expects dependency_id; resolve user-provided task IDs via listing.
+    body, target, rel = _resolve_dependency_target(args)
     data = api_request("GET", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies")
     candidates = []
-    candidates.extend(_get_list_payload(data, "blocked_by"))
-    candidates.extend(_get_list_payload(data, "blocks"))
+    for key in ["blocked_by", "blocks", "sequence_after", "sequence_before", "relates_to"]:
+        candidates.extend(_get_list_payload(data, key))
+    dep_id = None
     for d in candidates:
         if not isinstance(d, dict):
             continue
-        if d.get("id") == args.blocks:
-            dep_id = d.get("id")
+        if body.get('dependency_type') and d.get('dependency_type') != body.get('dependency_type'):
+            continue
+        if d.get('id') == target:
+            dep_id = d.get('id')
             break
-        if d.get("blocking_task_id") == args.blocks or d.get("blocked_task_id") == args.blocks:
-            dep_id = d.get("id")
+        if d.get('blocking_task_id') == target or d.get('blocked_task_id') == target:
+            dep_id = d.get('id')
             break
-
     if not dep_id:
         print("Error: failed to resolve dependency id from provided task reference", file=sys.stderr)
         sys.exit(1)
-
-    api_request(
-        "DELETE",
-        f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies",
-        {"dependency_id": dep_id},
-    )
-    print(f"✅ Dependency removed: {args.task_id} no longer blocked by {args.blocks}")
+    api_request("DELETE", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/dependencies", {"dependency_id": dep_id})
+    print(f"✅ Dependency removed: {args.task_id} x {target} ({body.get('dependency_type') or rel})")
 
 
 # ── Task-Contract Link Commands ───────────────────────────
@@ -1642,13 +1646,21 @@ def main():
     p = sub.add_parser("dep-add", help="Add task dependency")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--blocks", required=True, help="Blocking task ID")
+    p.add_argument("--type", choices=["blocks", "relates_to", "sequence_after"], help="Explicit dependency type override for directional forms")
+    p.add_argument("--blocks", help="Current task blocks this task ID")
+    p.add_argument("--blocked-by", dest="blocked_by", help="Current task is blocked by this task ID")
+    p.add_argument("--relates-to", dest="relates_to", help="Current task relates to this task ID")
+    p.add_argument("--sequence-after", dest="sequence_after", help="Current task should happen after this task ID")
 
     # dep-remove
     p = sub.add_parser("dep-remove", help="Remove task dependency")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--blocks", required=True, help="Blocking task ID to remove")
+    p.add_argument("--type", choices=["blocks", "relates_to", "sequence_after"], help="Explicit dependency type override for directional forms")
+    p.add_argument("--blocks", help="Current task blocks this task ID")
+    p.add_argument("--blocked-by", dest="blocked_by", help="Current task is blocked by this task ID")
+    p.add_argument("--relates-to", dest="relates_to", help="Current task relates to this task ID")
+    p.add_argument("--sequence-after", dest="sequence_after", help="Current task should happen after this task ID")
 
     # ── Task-Contract Links ───────────────────────────────
 

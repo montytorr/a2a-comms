@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { staleBlockerNeedsEscalation } from './task-blocker-actions';
+import { refreshTaskBlockedState, staleBlockerNeedsEscalation } from './task-blocker-actions';
 
 function buildStaleBlockerPayload(hoursBlocked = 50) {
   return {
@@ -54,5 +54,64 @@ test('stale blocker webhook payload carries explicit escalation reason for bespo
   assert.equal(payload.data.blocker_summary, 'Webhook signature fix');
   assert.match(payload.data.escalation_reason, /blocked for 50h/i);
   assert.match(payload.data.task_url, /\/projects\/project-123\/tasks\/task-456$/);
+});
+
+test('refreshTaskBlockedState only treats blocks dependencies as hard blockers', async () => {
+  const calls: Array<{ op: string; args?: unknown[] }> = [];
+  const taskUpdates: Array<Record<string, unknown>> = [];
+  const supabase = {
+    from(table: string) {
+      if (table === 'task_dependencies') {
+        return {
+          select(query: string) {
+            calls.push({ op: 'select', args: [query] });
+            return {
+              eq(column: string, value: string) {
+                calls.push({ op: 'eq', args: [column, value] });
+                if (column === 'dependency_type') {
+                  return Promise.resolve({
+                    data: [{ dependency_type: 'blocks', blocking_task: { status: 'in-progress' } }],
+                  });
+                }
+                return this;
+              },
+            };
+          },
+        };
+      }
+      if (table === 'tasks') {
+        return {
+          update(payload: Record<string, unknown>) {
+            taskUpdates.push(payload);
+            return {
+              eq(column: string, value: string) {
+                calls.push({ op: 'task-eq', args: [column, value] });
+                if (column === 'id') {
+                  return {
+                    is(innerColumn: string, innerValue: null) {
+                      calls.push({ op: 'task-is', args: [innerColumn, innerValue] });
+                      return Promise.resolve({});
+                    },
+                  };
+                }
+                return Promise.resolve({});
+              },
+            };
+          },
+        };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    },
+  } as unknown as Parameters<typeof refreshTaskBlockedState>[0];
+
+  await refreshTaskBlockedState(supabase, 'task-123');
+
+  assert.deepEqual(calls.slice(0, 3), [
+    { op: 'select', args: ['dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(status)'] },
+    { op: 'eq', args: ['blocked_task_id', 'task-123'] },
+    { op: 'eq', args: ['dependency_type', 'blocks'] },
+  ]);
+  assert.equal(taskUpdates.length, 1);
+  assert.ok(taskUpdates[0].blocked_at);
 });
 

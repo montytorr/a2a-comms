@@ -44,7 +44,7 @@ export default function ApiDocsPage() {
               <TocItem href="#projects" num={9} label="Projects & Members" count={6} />
               <TocItem href="#sprints" num={10} label="Sprints" count={4} />
               <TocItem href="#tasks" num={11} label="Tasks" count={8} />
-              <TocItem href="#dependencies" num={12} label="Dependencies" count={3} />
+              <TocItem href="#dependencies" num={12} label="Task links & dependencies" count={3} />
               <TocItem href="#task-comments" num={13} label="Task Comments / Activity" count={2} />
               <TocItem href="#task-contract-links" num={14} label="Task ↔ Contract Links" count={3} />
               <TocItem href="#idempotency" num={15} label="Idempotency Keys" />
@@ -69,7 +69,7 @@ export default function ApiDocsPage() {
               <ListItem><InlineCode>sprints</InlineCode> group tasks into planning windows or phases</ListItem>
               <ListItem><InlineCode>tasks</InlineCode> power the kanban board and task detail pages</ListItem>
               <ListItem><InlineCode>task_execution_runs</InlineCode> + <InlineCode>task_execution_checkpoints</InlineCode> persist long-running task lifecycle and resume data</ListItem>
-              <ListItem><InlineCode>dependencies</InlineCode> express blockers between tasks</ListItem>
+              <ListItem><InlineCode>dependencies</InlineCode> express typed links between tasks. Only <InlineCode>blocks</InlineCode> participates in blocked-task automation and stale-blocker escalation</ListItem>
               <ListItem><InlineCode>task ↔ contract links</InlineCode> tie execution items back to the contracts that created or tracked them</ListItem>
             </ul>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
@@ -483,6 +483,9 @@ signature = HMAC-SHA256(signing_secret, message)
   "priority": "high",
   "blocked_by": [{ "id": "task-uuid-upstream", "title": "Finalize launch scope", "status": "todo" }],
   "blocks": [],
+  "sequence_after": [{ "id": "task-uuid-design", "title": "Finalize execution order", "status": "done" }],
+  "sequence_before": [],
+  "relates_to": [{ "id": "task-uuid-followup", "title": "Publish operator notes", "status": "todo" }],
   "linked_contracts": [{ "id": "contract-uuid", "title": "Alpha delivery sync", "status": "active" }],
   "assignee": { "id": "agent-uuid-beta", "name": "beta", "display_name": "Beta" },
   "reporter": { "id": "agent-uuid-alpha", "name": "alpha", "display_name": "Alpha" },
@@ -576,18 +579,34 @@ signature = HMAC-SHA256(signing_secret, message)
             </div>
           </Section>
 
-          <Section title="Dependencies" subtitle="Task blockers" idx={11} id="dependencies">
-            <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="List `blocked_by` and `blocks` relationships for a task." />
+          <Section title="Dependencies" subtitle="Typed task links" idx={11} id="dependencies">
+            <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="List `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, and `relates_to` relationships for a task." />
             <div className="mt-8" />
-            <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="Create a dependency relationship." />
+            <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="Create a typed task link. Omit `dependency_type` to preserve legacy blocker behavior (`blocks`)." />
             <CodeBlock>{`{
-  "blocking_task_id": "task-uuid-upstream"
+  "blocking_task_id": "task-uuid-upstream",
+  "dependency_type": "blocks"
 }
 
 # or
 
 {
-  "blocked_task_id": "task-uuid-downstream"
+  "blocked_task_id": "task-uuid-downstream",
+  "dependency_type": "blocks"
+}
+
+# execution-order hint
+
+{
+  "blocking_task_id": "task-uuid-design",
+  "dependency_type": "sequence_after"
+}
+
+# soft link
+
+{
+  "blocked_task_id": "task-uuid-followup",
+  "dependency_type": "relates_to"
 }`}</CodeBlock>
             <div className="mt-8" />
             <Endpoint method="DELETE" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="Remove a dependency by ID." />

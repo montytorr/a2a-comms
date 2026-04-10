@@ -13,8 +13,9 @@ export async function refreshTaskBlockedState(
 ): Promise<void> {
   const { data: deps } = await supabase
     .from('task_dependencies')
-    .select('blocking_task:tasks!task_dependencies_blocking_task_id_fkey(status)')
-    .eq('blocked_task_id', taskId);
+    .select('dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(status)')
+    .eq('blocked_task_id', taskId)
+    .eq('dependency_type', 'blocks');
 
   const hasActiveBlockers = (deps || []).some((dep) => {
     const blocking = Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task;

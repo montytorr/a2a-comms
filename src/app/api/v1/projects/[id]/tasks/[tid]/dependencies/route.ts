@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
-import type { ApiError } from '@/lib/types';
+import type { ApiError, TaskDependencyType } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 
 async function verifyMembership(projectId: string, agentId: string) {
@@ -48,7 +48,7 @@ export async function GET(
 
   const supabase = createServerClient();
 
-  const [blockedByRes, blocksRes] = await Promise.all([
+  const [incomingRes, outgoingRes] = await Promise.all([
     supabase
       .from('task_dependencies')
       .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
@@ -65,16 +65,22 @@ export async function GET(
   };
 
   // Filter to only deps where the joined task belongs to this project
-  const filteredBlockedBy = ((blockedByRes.data || []) as TaskDependencyWithJoin[]).filter(
+  const filteredIncoming = ((incomingRes.data || []) as TaskDependencyWithJoin[]).filter(
     (dep) => dep.blocking_task?.project_id === id
   );
-  const filteredBlocks = ((blocksRes.data || []) as TaskDependencyWithJoin[]).filter(
+  const filteredOutgoing = ((outgoingRes.data || []) as TaskDependencyWithJoin[]).filter(
     (dep) => dep.blocked_task?.project_id === id
   );
 
   return NextResponse.json({
-    blocked_by: filteredBlockedBy,
-    blocks: filteredBlocks,
+    blocked_by: filteredIncoming.filter((dep: TaskDependencyWithJoin & { dependency_type?: string }) => dep.dependency_type === 'blocks'),
+    blocks: filteredOutgoing.filter((dep: TaskDependencyWithJoin & { dependency_type?: string }) => dep.dependency_type === 'blocks'),
+    sequence_after: filteredIncoming.filter((dep: TaskDependencyWithJoin & { dependency_type?: string }) => dep.dependency_type === 'sequence_after'),
+    sequence_before: filteredOutgoing.filter((dep: TaskDependencyWithJoin & { dependency_type?: string }) => dep.dependency_type === 'sequence_after'),
+    relates_to: [
+      ...filteredIncoming.filter((dep: TaskDependencyWithJoin & { dependency_type?: string }) => dep.dependency_type === 'relates_to'),
+      ...filteredOutgoing.filter((dep: TaskDependencyWithJoin & { dependency_type?: string }) => dep.dependency_type === 'relates_to'),
+    ],
   });
 }
 
@@ -103,7 +109,7 @@ export async function POST(
     );
   }
 
-  let parsed: { blocking_task_id?: string; blocked_task_id?: string };
+  let parsed: { blocking_task_id?: string; blocked_task_id?: string; dependency_type?: TaskDependencyType };
   try {
     parsed = JSON.parse(body);
   } catch {
@@ -116,6 +122,14 @@ export async function POST(
   // Determine relationship: either this task blocks another, or is blocked by another
   let blockingId: string;
   let blockedId: string;
+  const dependencyType: TaskDependencyType = parsed.dependency_type || 'blocks';
+
+  if (!['blocks', 'relates_to', 'sequence_after'].includes(dependencyType)) {
+    return NextResponse.json(
+      { error: 'Invalid dependency_type. Must be one of: blocks, relates_to, sequence_after', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
 
   if (parsed.blocking_task_id) {
     // This task is blocked by blocking_task_id
@@ -157,6 +171,7 @@ export async function POST(
     .insert({
       blocking_task_id: blockingId,
       blocked_task_id: blockedId,
+      dependency_type: dependencyType,
     })
     .select()
     .single();
@@ -179,7 +194,7 @@ export async function POST(
     action: 'task.dependency_add',
     resourceType: 'task',
     resourceId: tid,
-    details: { blocking_task_id: blockingId, blocked_task_id: blockedId },
+    details: { blocking_task_id: blockingId, blocked_task_id: blockedId, dependency_type: dependencyType },
     ipAddress: getClientIp(req),
   });
 

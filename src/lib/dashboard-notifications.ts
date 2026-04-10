@@ -136,6 +136,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
         project_id,
         project:projects(id, title),
         blocked_by:task_dependencies!task_dependencies_blocked_task_id_fkey(
+          dependency_type,
           blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)
         )
       `)
@@ -170,10 +171,11 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       ...row,
       project: Array.isArray(row.project) ? row.project[0] ?? null : row.project,
       blocked_by: (row.blocked_by || []).map((dep) => ({
+        dependency_type: (dep as { dependency_type?: string }).dependency_type,
         blocking_task: Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task,
       })),
     }))
-    .filter((row) => (row.blocked_by || []).some((dep) => dep.blocking_task && dep.blocking_task.status !== 'done' && dep.blocking_task.status !== 'cancelled'));
+    .filter((row) => (row.blocked_by || []).some((dep) => dep.dependency_type === 'blocks' && dep.blocking_task && dep.blocking_task.status !== 'done' && dep.blocking_task.status !== 'cancelled'));
   const approvals = (approvalsRes.data || []) as unknown as ApprovalRow[];
 
   const contractItems: DashboardNotificationItem[] = contractInvites
@@ -201,6 +203,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
   const blockerItems: DashboardNotificationItem[] = blockedTasks.map((row) => {
     const activeBlockers = (row.blocked_by || [])
       .map((dep) => dep.blocking_task)
+      .filter((_task, index) => (row.blocked_by || [])[index]?.dependency_type === 'blocks')
       .filter((task): task is { id: string; title: string; status: string } => !!task && task.status !== 'done' && task.status !== 'cancelled');
     const blockerState = getBlockedTaskNotificationState({
       updatedAt: row.updated_at,

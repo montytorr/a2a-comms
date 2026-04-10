@@ -116,11 +116,11 @@ export default async function TaskDetailPage({
       : Promise.resolve({ data: null }),
     supabase
       .from('task_dependencies')
-      .select('id, blocking_task_id, tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
+      .select('id, blocking_task_id, dependency_type, tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
     supabase
       .from('task_dependencies')
-      .select('id, blocked_task_id, tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
+      .select('id, blocked_task_id, dependency_type, tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
     supabase
       .from('task_contracts')
@@ -179,12 +179,26 @@ export default async function TaskDetailPage({
     id: string;
     contract: { id: string; title: string; status: string } | null;
   }
-  const blockedBy = ((blockedByRes.data || []) as unknown as TaskDep[]).filter(
-    (dep) => dep.tasks?.project_id === projectId
+  const blockedBy = ((blockedByRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
+    (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'blocks'
   );
-  const blocks = ((blocksRes.data || []) as unknown as TaskDep[]).filter(
-    (dep) => dep.tasks?.project_id === projectId
+  const blocks = ((blocksRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
+    (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'blocks'
   );
+  const sequenceAfter = ((blockedByRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
+    (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'sequence_after'
+  );
+  const sequenceBefore = ((blocksRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
+    (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'sequence_after'
+  );
+  const relatedTasks = [
+    ...((blockedByRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
+      (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'relates_to'
+    ),
+    ...((blocksRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
+      (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'relates_to'
+    ),
+  ];
   const linkedContracts = (contractsRes.data || []) as unknown as LinkedContract[];
 
   // Filter linked contracts by participation unless superAdmin
@@ -321,7 +335,7 @@ export default async function TaskDetailPage({
           </div>
 
           {/* Dependencies */}
-          {(blockedBy.length > 0 || blocks.length > 0) && (
+          {(blockedBy.length > 0 || blocks.length > 0 || sequenceAfter.length > 0 || sequenceBefore.length > 0 || relatedTasks.length > 0) && (
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
@@ -380,7 +394,7 @@ export default async function TaskDetailPage({
               )}
 
               {blocks.length > 0 && (
-                <div>
+                <div className="mb-4">
                   <p className="text-[11px] font-medium text-amber-400/80 mb-2">Blocks</p>
                   <div className="space-y-1.5">
                     {blocks.map((dep) => {
@@ -393,6 +407,66 @@ export default async function TaskDetailPage({
                           href={`/projects/${t.project_id}/tasks/${t.id}`}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
                         >
+                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
+                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
+                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {sequenceAfter.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[11px] font-medium text-indigo-300/80 mb-2">Sequence after</p>
+                  <div className="space-y-1.5">
+                    {sequenceAfter.map((dep) => {
+                      const t = dep.tasks;
+                      if (!t) return null;
+                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                      return (
+                        <Link key={dep.id} href={`/projects/${t.project_id}/tasks/${t.id}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
+                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
+                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {sequenceBefore.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[11px] font-medium text-sky-300/80 mb-2">Sequence before</p>
+                  <div className="space-y-1.5">
+                    {sequenceBefore.map((dep) => {
+                      const t = dep.tasks;
+                      if (!t) return null;
+                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                      return (
+                        <Link key={dep.id} href={`/projects/${t.project_id}/tasks/${t.id}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
+                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
+                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {relatedTasks.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium text-violet-300/80 mb-2">Related tasks</p>
+                  <div className="space-y-1.5">
+                    {relatedTasks.map((dep) => {
+                      const t = dep.tasks;
+                      if (!t) return null;
+                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                      return (
+                        <Link key={`${dep.id}-${t.id}`} href={`/projects/${t.project_id}/tasks/${t.id}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
                           <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
                           <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
                           <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>

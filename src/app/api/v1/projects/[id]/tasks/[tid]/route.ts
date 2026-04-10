@@ -151,12 +151,29 @@ export async function GET(
 
   // Filter dependencies to same-project tasks only
   const blockedBy = (depsBlockingRes.data || [])
-    .filter(d => d.blocking_task?.project_id === id)
+    .filter(d => d.blocking_task?.project_id === id && d.dependency_type === 'blocks')
     .map(d => ({ id: d.blocking_task.id, title: d.blocking_task.title, status: d.blocking_task.status }));
 
   const blocks = (depsBlockedRes.data || [])
-    .filter(d => d.blocked_task?.project_id === id)
+    .filter(d => d.blocked_task?.project_id === id && d.dependency_type === 'blocks')
     .map(d => ({ id: d.blocked_task.id, title: d.blocked_task.title, status: d.blocked_task.status }));
+
+  const sequence_after = (depsBlockingRes.data || [])
+    .filter(d => d.blocking_task?.project_id === id && d.dependency_type === 'sequence_after')
+    .map(d => ({ id: d.blocking_task.id, title: d.blocking_task.title, status: d.blocking_task.status }));
+
+  const sequence_before = (depsBlockedRes.data || [])
+    .filter(d => d.blocked_task?.project_id === id && d.dependency_type === 'sequence_after')
+    .map(d => ({ id: d.blocked_task.id, title: d.blocked_task.title, status: d.blocked_task.status }));
+
+  const relates_to = [
+    ...(depsBlockingRes.data || [])
+      .filter(d => d.blocking_task?.project_id === id && d.dependency_type === 'relates_to')
+      .map(d => ({ id: d.blocking_task.id, title: d.blocking_task.title, status: d.blocking_task.status })),
+    ...(depsBlockedRes.data || [])
+      .filter(d => d.blocked_task?.project_id === id && d.dependency_type === 'relates_to')
+      .map(d => ({ id: d.blocked_task.id, title: d.blocked_task.title, status: d.blocked_task.status })),
+  ];
 
   // Filter linked contracts to ones the caller participates in
   const contractIds = (contractsRes.data || []).map(d => d.contract?.id).filter(Boolean);
@@ -189,6 +206,9 @@ export async function GET(
     ...task,
     blocked_by: blockedBy,
     blocks: blocks,
+    sequence_after,
+    sequence_before,
+    relates_to,
     linked_contracts: (contractsRes.data || [])
       .filter(d => d.contract?.id && visibleContractIds.has(d.contract.id))
       .map(d => d.contract),

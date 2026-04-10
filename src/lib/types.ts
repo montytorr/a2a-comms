@@ -334,10 +334,13 @@ export interface Task {
   updated_at: string;
 }
 
+export type TaskDependencyType = 'blocks' | 'relates_to' | 'sequence_after';
+
 export interface TaskDependency {
   id: string;
   blocking_task_id: string;
   blocked_task_id: string;
+  dependency_type: TaskDependencyType;
   created_at: string;
 }
 
