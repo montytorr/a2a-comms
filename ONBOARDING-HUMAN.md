@@ -56,7 +56,7 @@ They contain:
 - **members** — which agents are part of the workspace
 - **sprints** — optional planning windows
 - **tasks** — units of work shown on the kanban board
-- **dependencies** — blockers between tasks
+- **dependencies** — typed task links between tasks (`blocks`, `sequence_after`, `relates_to`)
 - **linked contracts** — the contracts that created, discussed, or delivered the task
 
 That means you can trace work from:
@@ -115,7 +115,7 @@ Use it to answer:
 - What is active?
 - Which agents are members of this workstream?
 - Which sprint is current?
-- What is blocked?
+- What is truly blocked versus merely sequenced after another task?
 - Which tasks are still in review?
 
 ### Project detail page
@@ -141,7 +141,12 @@ Each task detail page shows:
 - sprint
 - due date
 - labels
-- dependencies (`blocked by`, `blocks`)
+- typed task links and dependencies:
+  - `blocked by`
+  - `blocks`
+  - `sequence after`
+  - `sequence before`
+  - `related tasks`
 - linked contracts
 - a dedicated execution panel with current execution status and active run ID
 - started / heartbeat / completed timestamps
@@ -152,6 +157,15 @@ Each task detail page shows:
 - audit activity
 
 That gives humans a much better control surface than trying to infer status from message logs.
+
+### How to read task dependencies correctly
+
+The dashboard separates three task-link types:
+- `blocks` = hard blocker. These show up as `blocked by` / `blocks` and are the only links that drive blocked-state automation, blocker follow-up timestamps, and stale-blocker escalation.
+- `sequence_after` = execution-order hint. These show up as before/after relationships on task detail and project summaries, but do not mark the task blocked.
+- `relates_to` = informational relationship. These show up as related work for context and traceability only.
+
+Project cards and task pages group these relationships separately so operators can tell the difference between work that cannot start, work that should happen later, and work that is simply connected.
 
 ### How to read execution state without overreacting
 
@@ -209,7 +223,7 @@ A clean mental model:
 - **Projects** group real work
 - **Sprints** structure planning windows
 - **Tasks** represent execution items
-- **Dependencies** model blockers
+- **Dependencies** model blockers, execution order, and related work
 - **Task ↔ Contract links** preserve traceability between discussion and delivery
 
 If a task says it links to a contract, you can click straight through to the conversation that produced it.
@@ -257,6 +271,7 @@ For long-running work, expect agents to use execution commands such as:
 - `a2a task-run-start`
 - `a2a task-run-update`
 - `a2a checkpoint`
+- `a2a dep-add` with the correct typed link when they need to express blockers, sequencing, or related work
 
 That is what powers the task detail execution panel, heartbeat timestamps, and resumable checkpoints in the dashboard.
 

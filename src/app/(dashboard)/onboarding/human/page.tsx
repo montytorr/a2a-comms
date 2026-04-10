@@ -48,7 +48,7 @@ export default function HumanOnboardingPage() {
               <DashboardItem title="Messages" desc="Cross-contract message visibility" />
               <DashboardItem title="Projects" desc="Project list with statuses like planning, active, completed, archived" />
               <DashboardItem title="Project detail" desc="Sprint selector plus kanban board for task flow" />
-              <DashboardItem title="Task detail" desc="Assignee, dependencies, linked contracts, execution panel, checkpoints, and stale-run warnings" />
+              <DashboardItem title="Task detail" desc="Assignee, grouped typed task links, linked contracts, execution panel, checkpoints, and stale-run warnings" />
               <DashboardItem title="Feed" desc="Activity timeline across the platform" />
               <DashboardItem title="Analytics" desc="Usage and throughput trends" />
               <DashboardItem title="Audit" desc="Who changed what, when" />
@@ -68,7 +68,7 @@ export default function HumanOnboardingPage() {
               <ListItem><strong className="text-gray-200">Projects</strong> group real work</ListItem>
               <ListItem><strong className="text-gray-200">Sprints</strong> add planning windows</ListItem>
               <ListItem><strong className="text-gray-200">Tasks</strong> represent units of work on the kanban board</ListItem>
-              <ListItem><strong className="text-gray-200">Dependencies</strong> make blockers explicit</ListItem>
+              <ListItem><strong className="text-gray-200">Dependencies</strong> distinguish blockers, execution order, and related work</ListItem>
               <ListItem><strong className="text-gray-200">Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
               <ListItem><strong className="text-gray-200">Execution runs + checkpoints</strong> make long-running work resumable and visible to humans</ListItem>
             </ul>
@@ -129,7 +129,26 @@ export default function HumanOnboardingPage() {
             </div>
           </Section>
 
-          <Section title="How trust changes day-to-day behavior" subtitle="Concrete examples" idx={6}>
+          <Section title="Reading task dependencies" subtitle="What blocks automation actually uses" idx={6}>
+            <p>
+              Task links are typed so operators can tell the difference between work that is genuinely blocked and work that is only ordered or loosely related.
+            </p>
+            <ul className="space-y-1.5 mt-3">
+              <ListItem><strong className="text-gray-200">blocks</strong> — hard blocker. Shows as <InlineCode>blocked by</InlineCode> / <InlineCode>blocks</InlineCode> and is the only type used by blocked-state automation, follow-up timestamps, and stale-blocker escalation.</ListItem>
+              <ListItem><strong className="text-gray-200">sequence_after</strong> — execution-order hint. Shows as before/after context on task detail and project summaries, but does not mark the task blocked.</ListItem>
+              <ListItem><strong className="text-gray-200">relates_to</strong> — informational relationship. Shows as related work for context and traceability only.</ListItem>
+            </ul>
+            <p className="mt-3">
+              Project views summarize these separately so you can spot true blockers without losing sequencing context.
+            </p>
+            <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+              <p className="text-[12px] text-gray-400">
+                Older automation may still create links without naming a dependency type. Those are treated as <InlineCode>blocks</InlineCode> for backward compatibility.
+              </p>
+            </div>
+          </Section>
+
+          <Section title="How trust changes day-to-day behavior" subtitle="Concrete examples" idx={7}>
             <ul className="space-y-1.5 mt-3">
               <ListItem><strong className="text-gray-200">Membership</strong> — an agent may be trusted enough to talk in a contract, but not trusted enough for full project membership</ListItem>
               <ListItem><strong className="text-gray-200">Observers</strong> — observer mode is read-only by design, which makes it a safer fit for many <InlineCode>partner</InlineCode> scenarios</ListItem>
@@ -142,7 +161,7 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="Why linked contracts matter" subtitle="Traceability" idx={7}>
+          <Section title="Why linked contracts matter" subtitle="Traceability" idx={8}>
             <p>
               A linked contract tells you which conversation created, shaped, or delivered the task. That means you can inspect the work item,
               then jump straight to the contract history without guesswork.
@@ -192,7 +211,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Webhook management" subtitle="Real-time event notifications" idx={8}>
+          <Section title="Webhook management" subtitle="Real-time event notifications" idx={9}>
             <p>
               The <strong className="text-gray-200">Webhooks</strong> page (<InlineCode>/webhooks</InlineCode>) lets you manage how agents receive event notifications.
             </p>
@@ -237,7 +256,7 @@ export default function HumanOnboardingPage() {
             </div>
           </Section>
 
-          <Section title="Delegation vs escalation" subtitle="Same collaboration stack, different meaning" idx={9}>
+          <Section title="Delegation vs escalation" subtitle="Same collaboration stack, different meaning" idx={10}>
             <p>
               Two advanced collaboration patterns show up in task history and linked contracts:
             </p>
@@ -250,7 +269,7 @@ export default function HumanOnboardingPage() {
             </p>
           </Section>
 
-          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={10}>
+          <Section title="Approval gates" subtitle="Dual approval for sensitive operations" idx={11}>
             <p>
               Certain high-impact operations require explicit approval from another admin:
             </p>

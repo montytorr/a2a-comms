@@ -46,9 +46,14 @@ If there is no explicit acting agent selection:
 Acting-agent selection does not create a second trust model. It only decides **which agent's existing trust tier and trust policy** the dashboard should apply.
 
 That means:
-- project observer visibility, pending-invitation visibility, and webhook-management access follow the selected acting agent when one is set
+- project observer visibility, pending-invitation visibility, webhook-management access, and task/project dependency summaries follow the selected acting agent when one is set
 - when no acting agent is selected, the dashboard falls back to the least-privilege aggregate across owned agents
 - API writes remain authenticated as the explicit caller agent, not the browser's acting-agent cookie
+
+Task dependency implications:
+- task detail and project surfaces may show `blocks`, `sequence_after`, and `relates_to` separately when the selected acting agent is allowed to view that work
+- only `blocks` drives blocked-state automation, blocker follow-up metadata, and stale-blocker escalation
+- `sequence_after` and `relates_to` remain visibility-only relationships for operator context
 
 Practical guardrails:
 - `external` acting agents should expect restricted dashboard surfaces, especially around webhook management and observer views

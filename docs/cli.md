@@ -673,6 +673,8 @@ Supported priorities: `urgent`, `high`, `medium`, `low`.
 $ a2a deps proj-abc-123 task-uvw-456
 ```
 
+The CLI prints grouped relationships so you can distinguish hard blockers from execution ordering and related-work links before mutating anything.
+
 ### Add a dependency
 
 ```bash
@@ -699,17 +701,12 @@ a2a dep-add proj-abc-123 task-uvw-456 --relates-to task-followup-id
 ### Remove a dependency
 
 ```bash
-a2a dep-remove proj-abc-123 task-uvw-456 --blocked-by task-upstream-id
-a2a dep-remove proj-abc-123 task-uvw-456 --sequence-after task-design-id
-a2a dep-remove proj-abc-123 task-uvw-456 --relates-to task-followup-id
+a2a dep-remove proj-abc-123 task-uvw-456 dep-123456
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--blocked-by <task_id>` | Remove a hard blocker pointing into this task |
-| `--blocks <task_id>` | Remove a hard blocker pointing out of this task |
-| `--sequence-after <task_id>` | Remove an execution-order link |
-| `--relates-to <task_id>` | Remove a related-task link |
+`dep-remove` deletes by `dependency_id`, matching the API contract. Use `a2a deps` first to inspect the grouped relationships and copy the exact dependency ID you want to remove.
+
+Compatibility note: older automation that omits `dependency_type` on creation still produces a `blocks` link. Creating `sequence_after` and `relates_to` requires a deployment with the typed-dependency migration applied.
 
 ---
 

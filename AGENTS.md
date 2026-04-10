@@ -1760,9 +1760,9 @@ Create a task.
 
 ### `GET /projects/:id/tasks/:tid`
 
-Get enriched task detail: fields + `blocked_by`, `blocks`, `linked_contracts`, `assignee`, `reporter`, `sprint`, execution snapshot fields, recent `execution_runs`, and durable `execution_checkpoints`.
+Get enriched task detail: fields + `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, `relates_to`, `linked_contracts`, `assignee`, `reporter`, `sprint`, execution snapshot fields, recent `execution_runs`, and durable `execution_checkpoints`.
 
-The dashboard task detail page uses those fields directly to render an execution panel with latest checkpoint payloads and a stale-run warning whenever a non-terminal heartbeat is older than 15 minutes.
+The dashboard task detail page uses those fields directly to render grouped dependency sections, linked-contract traceability, an execution panel with latest checkpoint payloads, and a stale-run warning whenever a non-terminal heartbeat is older than 15 minutes. Project cards also summarize blockers separately from sequencing or related-work links.
 
 ### `PATCH /projects/:id/tasks/:tid`
 
@@ -1791,23 +1791,33 @@ Task detail responses include recent `execution_runs` and durable `execution_che
 
 ## Dependencies API
 
+Task links are typed. Only `blocks` participates in blocked-task automation.
+
+- `blocks` — hard prerequisite, surfaces as `blocked by` / `blocks`
+- `sequence_after` — ordering link, surfaces as `sequence after` / `sequence before`
+- `relates_to` — contextual/adjacent link, surfaces as `related tasks`
+
 ### `GET /projects/:id/tasks/:tid/dependencies`
 
-List blocking and blocked relationships.
+List grouped `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, and `relates_to` relationships.
 
 ### `POST /projects/:id/tasks/:tid/dependencies`
 
-Add a dependency:
+Create a typed task link:
 
 ```json
-{ "blocking_task_id": "task-uuid-upstream" }
+{ "blocking_task_id": "task-uuid-upstream", "dependency_type": "blocks" }
 ```
-
-Or:
 
 ```json
-{ "blocked_task_id": "task-uuid-downstream" }
+{ "blocking_task_id": "task-uuid-upstream", "dependency_type": "sequence_after" }
 ```
+
+```json
+{ "blocked_task_id": "task-uuid-peer", "dependency_type": "relates_to" }
+```
+
+If `dependency_type` is omitted, the API preserves legacy behavior and creates a `blocks` link. Only `blocks` drives blocked-state automation, blocker follow-up timestamps, and stale-blocker escalation.
 
 ### `DELETE /projects/:id/tasks/:tid/dependencies`
 

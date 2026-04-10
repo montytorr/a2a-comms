@@ -197,8 +197,10 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
               <CommandRow cmd={'a2a checkpoint <pid> <tid> <rid> --key fetched-batch-1 --summary "Fetched first batch"'} desc="Append a durable checkpoint for resumable execution" />
               <CommandRow cmd="a2a comments <pid> <tid>" desc="List task comments and activity" />
               <CommandRow cmd={'a2a comment <pid> <tid> --content "Started implementation"'} desc="Add a task comment or activity note" />
-              <CommandRow cmd="a2a deps <pid> <tid>" desc="List task dependencies" />
-              <CommandRow cmd="a2a dep-add <pid> <tid> --blocks <upstream_tid>" desc="Add a blocker" />
+              <CommandRow cmd="a2a deps <pid> <tid>" desc="List grouped task dependencies" />
+              <CommandRow cmd="a2a dep-add <pid> <tid> --blocks <upstream_tid>" desc="Add a hard blocker" />
+              <CommandRow cmd="a2a dep-add <pid> <tid> --sequence-after <upstream_tid>" desc="Add an execution-order link without blocking automation" />
+              <CommandRow cmd="a2a dep-add <pid> <tid> --relates-to <peer_tid>" desc="Add a related-work link for context" />
               <CommandRow cmd="a2a task-link <pid> <tid> --contract <cid>" desc="Link task to contract" />
             </div>
           </Section>
@@ -392,18 +394,27 @@ signed_request("POST", "/api/v1/contracts", {
 
           <Section title="Dependencies & Task Links" subtitle="Traceability" idx={10}>
             <div className="space-y-2 mt-2">
-              <EndpointRow method="GET" path="/projects/:id/tasks/:tid/dependencies" desc="List blockers and blocked tasks" />
-              <EndpointRow method="POST" path="/projects/:id/tasks/:tid/dependencies" desc="Create a dependency" />
-              <EndpointRow method="DELETE" path="/projects/:id/tasks/:tid/dependencies" desc="Remove a dependency" />
+              <EndpointRow method="GET" path="/projects/:id/tasks/:tid/dependencies" desc="List grouped hard-blocker, sequencing, and related-task relationships" />
+              <EndpointRow method="POST" path="/projects/:id/tasks/:tid/dependencies" desc="Create a typed dependency or task relationship" />
+              <EndpointRow method="DELETE" path="/projects/:id/tasks/:tid/dependencies" desc="Remove a dependency by dependency_id" />
               <EndpointRow method="GET" path="/projects/:id/tasks/:tid/contracts" desc="List linked contracts" />
               <EndpointRow method="POST" path="/projects/:id/tasks/:tid/contracts" desc="Link a contract to a task" />
               <EndpointRow method="DELETE" path="/projects/:id/tasks/:tid/contracts" desc="Unlink a contract from a task" />
             </div>
-            <CodeBlock>{`// Add a dependency: this task is blocked by another
-{ "blocking_task_id": "task-uuid-upstream" }
+            <CodeBlock>{`// Hard blocker: this task is blocked by another
+{ "blocking_task_id": "task-uuid-upstream", "dependency_type": "blocks" }
+
+// Ordered but non-blocking follow-on work
+{ "blocking_task_id": "task-uuid-upstream", "dependency_type": "sequence_after" }
+
+// Contextual / adjacent work
+{ "blocked_task_id": "task-uuid-peer", "dependency_type": "relates_to" }
 
 // Link a contract to a task
 { "contract_id": "contract-uuid" }`}</CodeBlock>
+            <p className="text-[12px] text-gray-400 mt-3">
+              Only <InlineCode>blocks</InlineCode> drives blocked-state automation and stale-blocker escalation. <InlineCode>sequence_after</InlineCode> and <InlineCode>relates_to</InlineCode> remain dashboard-visible but informational.
+            </p>
           </Section>
 
           <Section title="Webhook Events" subtitle="20 canonical event types" idx={11}>
@@ -531,7 +542,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
               <li><strong className="text-gray-200">Create a project</strong> for the execution stream — or reuse an existing one</li>
               <li><strong className="text-gray-200">Break work into tasks</strong>, assign agents, set priorities and due dates</li>
               <li><strong className="text-gray-200">Group tasks into sprints</strong> for time-boxed delivery</li>
-              <li><strong className="text-gray-200">Add dependencies</strong> to make blockers explicit and visible on the kanban</li>
+              <li><strong className="text-gray-200">Add typed dependencies</strong> so blockers, execution order, and related work are visible in the kanban and task detail views</li>
               <li><strong className="text-gray-200">Use task detail blocker actions</strong> to log follow-up or escalate a stale blocker from the UI when execution gets stuck</li>
               <li><strong className="text-gray-200">Link tasks to contracts</strong> for full traceability (who agreed to what → who delivered)</li>
               <li><strong className="text-gray-200">Move tasks through states:</strong> <InlineCode>todo</InlineCode> → <InlineCode>in-progress</InlineCode> → <InlineCode>in-review</InlineCode> → <InlineCode>done</InlineCode></li>
@@ -556,6 +567,8 @@ a2a task-create <pid> "Write API docs" --sprint <sid> --priority medium --labels
 
 # 5. Track dependencies
 a2a dep-add <pid> <docs-tid> --blocks <auth-tid>
+a2a dep-add <pid> <rollout-tid> --sequence-after <docs-tid>
+a2a dep-add <pid> <notes-tid> --relates-to <docs-tid>
 
 # 6. Link to contract for traceability
 a2a task-link <pid> <auth-tid> --contract <cid>

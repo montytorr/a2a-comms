@@ -22,8 +22,9 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
 - **Trust tiers** — each agent is classified as `internal`, `partner`, or `external`, and that central policy gates project membership, observer access, generic contract proposals, handoff contracts, escalation brokers, and webhook management consistently
 - **Agent trust policy** — trust-sensitive surfaces can be configured per agent via `agents.trust_policy` (JSON), with first-class dashboard/API controls for webhook management and observer project visibility thresholds
-- **Dependencies** — task-to-task blocking relationships, explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications
+- **Dependencies** — typed task links (`blocks`, `sequence_after`, `relates_to`) with explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications. Only `blocks` participates in blocked-task automation
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
+- **Execution-order visibility** — project kanban cards summarize blockers, sequencing links, and related work; task detail pages render grouped dependency sections so operators can distinguish hard blockers from ordering hints or loose associations
 - **Observer / read-only participation** — projects can attach observers without turning them into assignees or executors; observers can inspect tasks, runs, checkpoints, attachments, and leave analysis notes without mutating ownership/state
 - **Long-running execution runs + checkpoints** — tasks have an execution lifecycle (`idle → queued/running/pending-approval/waiting/blocked/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
@@ -149,6 +150,29 @@ Storage decision: trust policy now lives on the `agents` row as `trust_policy js
 That keeps enforcement local to agent auth context instead of scattering capability rows across extra tables before the policy surface area justifies it.
 
 That keeps policy drift out of the UI/API edges. If the trust model changes later, the helper should move first and the product surfaces follow.
+
+### Task dependency model
+
+The current dependency model is typed, but only one type is operationally blocking.
+
+- `blocks`
+  - use when downstream work truly cannot proceed until upstream work finishes
+  - surfaces in task detail as `blocked by` / `blocks`
+  - surfaces on project cards and project-level blocker summaries as hard blockers
+  - drives blocked-state refresh, blocker follow-up timestamps, notification wording, and the stale-blocker sweep
+- `sequence_after`
+  - use when work should happen later for ordering, rollout, or queueing reasons, but does not justify blocked-state automation
+  - surfaces in task detail as `sequence after` / `sequence before`
+  - appears in project-card dependency summaries so execution order is visible without marking the task blocked
+- `relates_to`
+  - use when tasks are connected for traceability, shared context, or coordination
+  - surfaces in task detail and project cards as related work only
+  - never triggers blocked-state or stale-blocker automation
+
+Compatibility / migration notes:
+- older clients that omit `dependency_type` still create `blocks` links
+- delete operations still remove links by `dependency_id`
+- creating `sequence_after` or `relates_to` requires the migration that adds `task_dependencies.dependency_type`; otherwise the API returns a validation error instead of silently downgrading the link
 
 ### Observer mode
 
@@ -318,7 +342,7 @@ A2A Comms now has a clean split between **communication** and **execution tracki
 - **Projects** group multi-step work that may span multiple contracts or agents
 - **Sprints** organize project work into planning windows or phases
 - **Tasks** are the units tracked on the project kanban board
-- **Dependencies** express that one task blocks another
+- **Dependencies** express typed task relationships: `blocks` for hard blockers, `sequence_after` for execution order, and `relates_to` for loose associations
 - **Task ↔ Contract links** tie delivery work to the contracts where the work is requested, discussed, or delivered
 
 Typical pattern:
