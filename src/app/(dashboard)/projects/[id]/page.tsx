@@ -117,7 +117,7 @@ export default async function ProjectDetailPage({
     (() => {
       let q = supabase
         .from('tasks')
-        .select('*, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
+        .select('id, project_id, title, status, priority, labels, assignee_agent_id, due_date, position, sprint_id, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
         .eq('project_id', id);
 
       if (sprintFilter && sprintFilter !== 'backlog') {
@@ -148,7 +148,10 @@ export default async function ProjectDetailPage({
   const observers = observersRes.data || [];
   const sprints = sprintsRes.data || [];
   const allTasks = allTasksRes.data || [];
-  const tasks = (tasksRes.data || []) as TaskRow[];
+  const tasks = ((tasksRes.data || []) as Array<Record<string, unknown>>).map((task) => ({
+    ...task,
+    assignee: Array.isArray(task.assignee) ? (task.assignee[0] ?? null) : task.assignee,
+  })) as TaskRow[];
   const allAgents = allAgentsRes.data || [];
   const dependencyRows = (depsRes.data || []) as Array<{
     id: string;
@@ -189,6 +192,71 @@ export default async function ProjectDetailPage({
   // Get active sprint
   const activeSprint = sprints.find(s => s.status === 'active') || null;
   const currentSprintId = sprintFilter || (activeSprint?.id ?? 'all');
+
+  const projectDependencySummary = dependencyRows
+    .map((dep) => ({
+      ...dep,
+      blocking_task: Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task,
+      blocked_task: Array.isArray(dep.blocked_task) ? dep.blocked_task[0] ?? null : dep.blocked_task,
+    }))
+    .filter((dep) => dep.blocked_task?.project_id === id)
+    .reduce((acc, dep) => {
+      const blocked = dep.blocked_task;
+      const blocking = dep.blocking_task;
+      if (!blocked || !blocking) return acc;
+      const existing = acc.get(blocked.id) || {
+        blockedBy: [] as Array<{ id: string; title: string; status: string }>,
+        blocks: [] as Array<{ id: string; title: string; status: string }>,
+        sequenceAfter: [] as Array<{ id: string; title: string; status: string }>,
+        sequenceBefore: [] as Array<{ id: string; title: string; status: string }>,
+        related: [] as Array<{ id: string; title: string; status: string }>,
+      };
+
+      if (dep.dependency_type === 'blocks') {
+        if (blocking.status !== 'done' && blocking.status !== 'cancelled') {
+          existing.blockedBy.push({ id: blocking.id, title: blocking.title, status: blocking.status });
+        }
+        const blockingExisting = acc.get(blocking.id) || {
+          blockedBy: [] as Array<{ id: string; title: string; status: string }>,
+          blocks: [] as Array<{ id: string; title: string; status: string }>,
+          sequenceAfter: [] as Array<{ id: string; title: string; status: string }>,
+          sequenceBefore: [] as Array<{ id: string; title: string; status: string }>,
+          related: [] as Array<{ id: string; title: string; status: string }>,
+        };
+        blockingExisting.blocks.push({ id: blocked.id, title: blocked.title, status: blocked.status });
+        acc.set(blocking.id, blockingExisting);
+      } else if (dep.dependency_type === 'sequence_after') {
+        existing.sequenceAfter.push({ id: blocking.id, title: blocking.title, status: blocking.status });
+        const blockingExisting = acc.get(blocking.id) || {
+          blockedBy: [] as Array<{ id: string; title: string; status: string }>,
+          blocks: [] as Array<{ id: string; title: string; status: string }>,
+          sequenceAfter: [] as Array<{ id: string; title: string; status: string }>,
+          sequenceBefore: [] as Array<{ id: string; title: string; status: string }>,
+          related: [] as Array<{ id: string; title: string; status: string }>,
+        };
+        blockingExisting.sequenceBefore.push({ id: blocked.id, title: blocked.title, status: blocked.status });
+        acc.set(blocking.id, blockingExisting);
+      } else if (dep.dependency_type === 'relates_to') {
+        existing.related.push({ id: blocking.id, title: blocking.title, status: blocking.status });
+        const blockingExisting = acc.get(blocking.id) || {
+          blockedBy: [] as Array<{ id: string; title: string; status: string }>,
+          blocks: [] as Array<{ id: string; title: string; status: string }>,
+          sequenceAfter: [] as Array<{ id: string; title: string; status: string }>,
+          sequenceBefore: [] as Array<{ id: string; title: string; status: string }>,
+          related: [] as Array<{ id: string; title: string; status: string }>,
+        };
+        blockingExisting.related.push({ id: blocked.id, title: blocked.title, status: blocked.status });
+        acc.set(blocking.id, blockingExisting);
+      }
+
+      acc.set(blocked.id, existing);
+      return acc;
+    }, new Map<string, { blockedBy: Array<{ id: string; title: string; status: string }>; blocks: Array<{ id: string; title: string; status: string }>; sequenceAfter: Array<{ id: string; title: string; status: string }>; sequenceBefore: Array<{ id: string; title: string; status: string }>; related: Array<{ id: string; title: string; status: string }> }>());
+
+  const tasksWithDependencySummary = tasks.map((task) => ({
+    ...task,
+    dependencySummary: projectDependencySummary.get(task.id) || undefined,
+  }));
 
   const blockedTaskCardMap = dependencyRows
     .map((dep) => ({
@@ -311,9 +379,63 @@ export default async function ProjectDetailPage({
           </div>
         )}
 
+        {tasksWithDependencySummary.some((task) => task.dependencySummary) && (
+          <div className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 animate-fade-in">
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <div>
+                <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-[0.2em]">Task graph context</p>
+                <h2 className="text-lg font-semibold text-white mt-1">Dependency lanes across visible tasks</h2>
+                <p className="text-[12px] text-gray-400 mt-1">Operators can scan who is waiting, what each task is blocking, and where sequence or related links exist before opening cards.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+              {tasksWithDependencySummary
+                .filter((task) => task.dependencySummary)
+                .slice(0, 10)
+                .map((task) => {
+                  const summary = task.dependencySummary!;
+                  const sections = [
+                    { label: 'Blocked by', items: summary.blockedBy, tone: 'text-red-300' },
+                    { label: 'Blocks', items: summary.blocks, tone: 'text-amber-300' },
+                    { label: 'After', items: summary.sequenceAfter, tone: 'text-indigo-300' },
+                    { label: 'Before', items: summary.sequenceBefore, tone: 'text-sky-300' },
+                    { label: 'Related', items: summary.related, tone: 'text-violet-300' },
+                  ].filter((section) => (section.items?.length || 0) > 0);
+
+                  return (
+                    <Link
+                      key={task.id}
+                      href={`/projects/${id}/tasks/${task.id}`}
+                      className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3 hover:bg-white/[0.04] transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div>
+                          <p className="text-sm font-semibold text-white">{task.title}</p>
+                          <p className="text-[11px] text-gray-500 mt-1">{task.status}</p>
+                        </div>
+                        <span className="text-[11px] text-cyan-400 shrink-0">Open →</span>
+                      </div>
+                      <div className="space-y-2">
+                        {sections.map((section) => (
+                          <div key={section.label}>
+                            <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${section.tone}`}>{section.label}</p>
+                            <p className="text-[12px] text-gray-400 mt-1 line-clamp-2">
+                              {section.items?.slice(0, 3).map((item) => item.title).join(', ')}
+                              {(section.items?.length || 0) > 3 ? ` +${(section.items?.length || 0) - 3}` : ''}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         {/* Kanban Board */}
         <KanbanBoard
-          tasks={tasks}
+          tasks={tasksWithDependencySummary}
           projectId={id}
           sprintId={sprintFilter && sprintFilter !== 'all' && sprintFilter !== 'backlog' ? sprintFilter : undefined}
           members={members}

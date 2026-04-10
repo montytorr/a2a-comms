@@ -56,6 +56,13 @@ export interface TaskRow {
   assignee_agent_id?: string | null;
   assignee?: { id: string; name: string; display_name: string } | null;
   due_date: string | null;
+  dependencySummary?: {
+    blockedBy?: Array<{ id: string; title: string; status: string }>;
+    blocks?: Array<{ id: string; title: string; status: string }>;
+    sequenceAfter?: Array<{ id: string; title: string; status: string }>;
+    sequenceBefore?: Array<{ id: string; title: string; status: string }>;
+    related?: Array<{ id: string; title: string; status: string }>;
+  };
 }
 
 interface KanbanBoardProps {
@@ -108,6 +115,13 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                     const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
                     const assigneeName = task.assignee?.display_name || task.assignee?.name;
                     const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+                    const dependencySummary = task.dependencySummary;
+                    const blockedByCount = dependencySummary?.blockedBy?.length || 0;
+                    const blocksCount = dependencySummary?.blocks?.length || 0;
+                    const sequenceAfterCount = dependencySummary?.sequenceAfter?.length || 0;
+                    const sequenceBeforeCount = dependencySummary?.sequenceBefore?.length || 0;
+                    const relatedCount = dependencySummary?.related?.length || 0;
+                    const hasDependencyContext = blockedByCount + blocksCount + sequenceAfterCount + sequenceBeforeCount + relatedCount > 0;
 
                     return (
                       <Link
@@ -146,6 +160,50 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                             {task.labels.length > 3 && (
                               <span className="text-[9px] text-gray-600">+{task.labels.length - 3}</span>
                             )}
+                          </div>
+                        )}
+
+                        {hasDependencyContext && (
+                          <div className="mb-2 space-y-1.5 rounded-lg border border-white/[0.05] bg-white/[0.02] px-2 py-2">
+                            <div className="flex flex-wrap gap-1">
+                              {blockedByCount > 0 && (
+                                <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-red-300">
+                                  Blocked by {blockedByCount}
+                                </span>
+                              )}
+                              {blocksCount > 0 && (
+                                <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-amber-300">
+                                  Blocking {blocksCount}
+                                </span>
+                              )}
+                              {sequenceAfterCount > 0 && (
+                                <span className="inline-flex items-center rounded-full border border-indigo-500/20 bg-indigo-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-indigo-300">
+                                  After {sequenceAfterCount}
+                                </span>
+                              )}
+                              {sequenceBeforeCount > 0 && (
+                                <span className="inline-flex items-center rounded-full border border-sky-500/20 bg-sky-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-sky-300">
+                                  Before {sequenceBeforeCount}
+                                </span>
+                              )}
+                              {relatedCount > 0 && (
+                                <span className="inline-flex items-center rounded-full border border-violet-500/20 bg-violet-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
+                                  Related {relatedCount}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              {blockedByCount > 0 && (
+                                <p className="text-[10px] text-gray-400 line-clamp-2">
+                                  Waiting on {dependencySummary?.blockedBy?.slice(0, 2).map((item) => item.title).join(', ')}{blockedByCount > 2 ? ` +${blockedByCount - 2}` : ''}
+                                </p>
+                              )}
+                              {blocksCount > 0 && (
+                                <p className="text-[10px] text-gray-500 line-clamp-2">
+                                  Blocking {dependencySummary?.blocks?.slice(0, 2).map((item) => item.title).join(', ')}{blocksCount > 2 ? ` +${blocksCount - 2}` : ''}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         )}
 

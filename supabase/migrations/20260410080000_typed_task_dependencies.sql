@@ -24,11 +24,12 @@ WHERE td.dependency_type = 'relates_to'
 
 DROP INDEX IF EXISTS idx_task_deps_blocking;
 DROP INDEX IF EXISTS idx_task_deps_blocked;
-DROP INDEX IF EXISTS task_dependencies_blocking_task_id_blocked_task_id_key;
+
+ALTER TABLE task_dependencies
+  DROP CONSTRAINT IF EXISTS task_dependencies_blocking_task_id_blocked_task_id_key;
 
 CREATE UNIQUE INDEX IF NOT EXISTS task_dependencies_unique_directed
-  ON task_dependencies (blocking_task_id, blocked_task_id, dependency_type)
-  WHERE dependency_type IN ('blocks', 'sequence_after');
+  ON task_dependencies (blocking_task_id, blocked_task_id, dependency_type);
 
 CREATE UNIQUE INDEX IF NOT EXISTS task_dependencies_unique_relates_pair
   ON task_dependencies (

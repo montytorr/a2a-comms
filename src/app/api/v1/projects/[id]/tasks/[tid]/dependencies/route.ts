@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, TaskDependencyType } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
+import { isMissingDependencyTypeColumn } from '@/lib/task-dependency-schema';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -166,15 +167,41 @@ export async function POST(
 
   const supabase = createServerClient();
 
-  const { data: dep, error } = await supabase
+  const insertPayload = {
+    blocking_task_id: blockingId,
+    blocked_task_id: blockedId,
+    dependency_type: dependencyType,
+  };
+
+  let { data: dep, error } = await supabase
     .from('task_dependencies')
-    .insert({
-      blocking_task_id: blockingId,
-      blocked_task_id: blockedId,
-      dependency_type: dependencyType,
-    })
+    .insert(insertPayload)
     .select()
     .single();
+
+  if (error && isMissingDependencyTypeColumn(error)) {
+    if (dependencyType !== 'blocks') {
+      return NextResponse.json(
+        {
+          error: 'Typed task dependencies require the latest database migration before relates_to or sequence_after can be created',
+          code: 'FEATURE_NOT_READY',
+        } satisfies ApiError,
+        { status: 503 }
+      );
+    }
+
+    const legacyInsert = await supabase
+      .from('task_dependencies')
+      .insert({
+        blocking_task_id: blockingId,
+        blocked_task_id: blockedId,
+      })
+      .select()
+      .single();
+
+    dep = legacyInsert.data;
+    error = legacyInsert.error;
+  }
 
   if (error) {
     if (error.code === '23505') {

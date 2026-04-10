@@ -61,6 +61,9 @@ test('task and sprint visibility routes allow observers to read but block mutati
   assert.match(tasksRoute, /return getProjectAccess\(projectId, agentId\);/);
   assert.match(tasksRoute, /Observers may inspect project tasks but cannot create new ones/);
   assert.match(depsRoute, /Observers may inspect task dependencies but cannot edit them/);
+  assert.match(depsRoute, /isMissingDependencyTypeColumn/);
+  assert.match(depsRoute, /dependencyType !== 'blocks'/);
+  assert.match(depsRoute, /FEATURE_NOT_READY/);
   assert.match(contractsRoute, /Observers may inspect linked contracts but cannot change task-contract links/);
   assert.match(runsRoute, /getProjectAccess\(projectId, auth\.agent\.id\)/);
   assert.match(runsRoute, /evaluateObserverProjectReadPolicyAccess\(auth\.agent\)/);

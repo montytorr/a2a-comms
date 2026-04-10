@@ -25,6 +25,39 @@ import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoin
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 export const dynamic = 'force-dynamic';
 
+const dependencySectionStyles = {
+  blockedBy: {
+    label: 'Blocked by',
+    accent: 'text-red-400/80',
+    pill: 'text-red-300 bg-red-500/[0.08] border-red-500/20',
+    card: 'border-red-500/10 bg-red-500/[0.03]',
+  },
+  blocks: {
+    label: 'Blocks',
+    accent: 'text-amber-400/80',
+    pill: 'text-amber-300 bg-amber-500/[0.08] border-amber-500/20',
+    card: 'border-amber-500/10 bg-amber-500/[0.03]',
+  },
+  sequenceAfter: {
+    label: 'Sequence after',
+    accent: 'text-indigo-300/80',
+    pill: 'text-indigo-200 bg-indigo-500/[0.08] border-indigo-500/20',
+    card: 'border-indigo-500/10 bg-indigo-500/[0.03]',
+  },
+  sequenceBefore: {
+    label: 'Sequence before',
+    accent: 'text-sky-300/80',
+    pill: 'text-sky-200 bg-sky-500/[0.08] border-sky-500/20',
+    card: 'border-sky-500/10 bg-sky-500/[0.03]',
+  },
+  related: {
+    label: 'Related tasks',
+    accent: 'text-violet-300/80',
+    pill: 'text-violet-200 bg-violet-500/[0.08] border-violet-500/20',
+    card: 'border-violet-500/10 bg-violet-500/[0.03]',
+  },
+} as const;
+
 const statusConfig: Record<TaskStatus, { bg: string; text: string; dot: string }> = {
   backlog: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', dot: 'bg-gray-500' },
   todo: { bg: 'bg-blue-500/[0.08]', text: 'text-blue-400', dot: 'bg-blue-400' },
@@ -200,6 +233,13 @@ export default async function TaskDetailPage({
     ),
   ];
   const linkedContracts = (contractsRes.data || []) as unknown as LinkedContract[];
+  const dependencySections = [
+    { key: 'blockedBy', config: dependencySectionStyles.blockedBy, items: blockedBy },
+    { key: 'blocks', config: dependencySectionStyles.blocks, items: blocks },
+    { key: 'sequenceAfter', config: dependencySectionStyles.sequenceAfter, items: sequenceAfter },
+    { key: 'sequenceBefore', config: dependencySectionStyles.sequenceBefore, items: sequenceBefore },
+    { key: 'related', config: dependencySectionStyles.related, items: relatedTasks },
+  ].filter((section) => section.items.length > 0);
 
   // Filter linked contracts by participation unless superAdmin
   let visibleContracts = linkedContracts;
@@ -335,18 +375,31 @@ export default async function TaskDetailPage({
           </div>
 
           {/* Dependencies */}
-          {(blockedBy.length > 0 || blocks.length > 0 || sequenceAfter.length > 0 || sequenceBefore.length > 0 || relatedTasks.length > 0) && (
+          {dependencySections.length > 0 && (
             <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
                 <div>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Dependencies</p>
-                  {blockerState && <p className="text-[12px] text-gray-400 mt-2">{blockerState.meta}</p>}
+                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task links and dependency graph</p>
+                  <p className="text-[12px] text-gray-400 mt-2">
+                    Full visibility into blocker, downstream, sequencing, and related-task context for this task.
+                  </p>
+                  {blockerState && <p className="text-[12px] text-gray-500 mt-2">{blockerState.meta}</p>}
                 </div>
-                {blockerState && (
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
-                    {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
-                  </span>
-                )}
+                <div className="flex flex-wrap gap-2">
+                  {dependencySections.map((section) => (
+                    <span
+                      key={section.key}
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${section.config.pill}`}
+                    >
+                      {section.config.label} · {section.items.length}
+                    </span>
+                  ))}
+                  {blockerState && (
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                      {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {blockerState && (
@@ -369,113 +422,36 @@ export default async function TaskDetailPage({
                 </>
               )}
 
-              {blockedBy.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[11px] font-medium text-red-400/80 mb-2">Blocked by</p>
-                  <div className="space-y-1.5">
-                    {blockedBy.map((dep) => {
-                      const t = dep.tasks;
-                      if (!t) return null;
-                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
-                      return (
-                        <Link
-                          key={dep.id}
-                          href={`/projects/${t.project_id}/tasks/${t.id}`}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
-                        </Link>
-                      );
-                    })}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
+                {dependencySections.map((section) => (
+                  <div key={section.key} className={`rounded-xl border p-4 ${section.config.card}`}>
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <p className={`text-[11px] font-medium ${section.config.accent}`}>{section.config.label}</p>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-semibold ${section.config.pill}`}>
+                        {section.items.length}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {section.items.map((dep) => {
+                        const t = dep.tasks;
+                        if (!t) return null;
+                        const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                        return (
+                          <Link
+                            key={`${section.key}-${dep.id}-${t.id}`}
+                            href={`/projects/${t.project_id}/tasks/${t.id}`}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/20 hover:bg-white/[0.04] transition-colors"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
+                            <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
+                            <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {blocks.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[11px] font-medium text-amber-400/80 mb-2">Blocks</p>
-                  <div className="space-y-1.5">
-                    {blocks.map((dep) => {
-                      const t = dep.tasks;
-                      if (!t) return null;
-                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
-                      return (
-                        <Link
-                          key={dep.id}
-                          href={`/projects/${t.project_id}/tasks/${t.id}`}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {sequenceAfter.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[11px] font-medium text-indigo-300/80 mb-2">Sequence after</p>
-                  <div className="space-y-1.5">
-                    {sequenceAfter.map((dep) => {
-                      const t = dep.tasks;
-                      if (!t) return null;
-                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
-                      return (
-                        <Link key={dep.id} href={`/projects/${t.project_id}/tasks/${t.id}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {sequenceBefore.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[11px] font-medium text-sky-300/80 mb-2">Sequence before</p>
-                  <div className="space-y-1.5">
-                    {sequenceBefore.map((dep) => {
-                      const t = dep.tasks;
-                      if (!t) return null;
-                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
-                      return (
-                        <Link key={dep.id} href={`/projects/${t.project_id}/tasks/${t.id}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {relatedTasks.length > 0 && (
-                <div>
-                  <p className="text-[11px] font-medium text-violet-300/80 mb-2">Related tasks</p>
-                  <div className="space-y-1.5">
-                    {relatedTasks.map((dep) => {
-                      const t = dep.tasks;
-                      if (!t) return null;
-                      const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
-                      return (
-                        <Link key={`${dep.id}-${t.id}`} href={`/projects/${t.project_id}/tasks/${t.id}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                          <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                          <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                          <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           )}
 
