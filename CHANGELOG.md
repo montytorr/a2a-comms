@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.206] - 2026-04-10
+### Changed
+- Make attachment preview actions explicit
+
 ## [1.0.205] - 2026-04-10
 ### Changed
 - Improve task attachment document preview affordance
