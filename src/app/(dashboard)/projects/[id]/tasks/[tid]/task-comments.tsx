@@ -133,10 +133,12 @@ export default function TaskComments({
   comments,
   projectId,
   taskId,
+  compact = false,
 }: {
   comments: Comment[];
   projectId: string;
   taskId: string;
+  compact?: boolean;
 }) {
   const [content, setContent] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -157,21 +159,27 @@ export default function TaskComments({
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  return (
-    <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.25s' }}>
-      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">
-        Activity & Comments
-        {comments.length > 0 && (
-          <span className="ml-2 text-gray-700 normal-case tracking-normal font-normal">
-            ({comments.length})
-          </span>
-        )}
-      </p>
+  const visibleComments = compact ? sorted.slice(-6) : sorted;
 
-      {/* Comment list */}
-      {sorted.length > 0 ? (
+  return (
+    <div className={`rounded-2xl glass-card animate-fade-in ${compact ? 'p-5' : 'p-6'}`} style={{ animationDelay: '0.25s' }}>
+      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+        <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">
+          Activity & Comments
+          {comments.length > 0 && (
+            <span className="ml-2 text-gray-700 normal-case tracking-normal font-normal">
+              ({comments.length})
+            </span>
+          )}
+        </p>
+        {compact && comments.length > visibleComments.length && (
+          <span className="text-[10px] text-gray-500">Showing latest {visibleComments.length}</span>
+        )}
+      </div>
+
+      {visibleComments.length > 0 ? (
         <div className="space-y-0 divide-y divide-white/[0.04] mb-4">
-          {sorted.map((c) => (
+          {visibleComments.map((c) => (
             <CommentItem key={c.id} comment={c} />
           ))}
         </div>
@@ -179,7 +187,6 @@ export default function TaskComments({
         <p className="text-[12px] text-gray-600 italic mb-4">No activity yet.</p>
       )}
 
-      {/* Comment form */}
       <div className="border-t border-white/[0.06] pt-4">
         <textarea
           ref={textareaRef}
