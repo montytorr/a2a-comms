@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.208] - 2026-04-10
+### Fixed
+- include Next standalone runtime metadata
+
 ## [1.0.207] - 2026-04-10
 ### Changed
 - Fix signed URLs for task attachments
