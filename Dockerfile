@@ -67,6 +67,10 @@ RUN chown nextjs:nodejs .next
 # Standalone output — includes minimal node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Next 16 standalone server still reads root .next metadata like required-server-files.json at runtime.
+COPY --from=builder --chown=nextjs:nodejs /app/.next/required-server-files.json ./.next/required-server-files.json
+COPY --from=builder --chown=nextjs:nodejs /app/.next/routes-manifest.json ./.next/routes-manifest.json
+COPY --from=builder --chown=nextjs:nodejs /app/.next/BUILD_ID ./.next/BUILD_ID
 COPY --from=builder --chown=nextjs:nodejs /app/CHANGELOG.md ./CHANGELOG.md
 
 # Force-install resend + deps (standalone trace has incomplete pnpm artifacts)
