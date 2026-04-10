@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import type { TaskAttachment } from '@/lib/types';
 import { formatDateTime } from '@/lib/format-date';
 
@@ -8,40 +11,151 @@ function humanSize(size: number) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function extensionOf(name: string) {
+  const parts = name.toLowerCase().split('.');
+  return parts.length > 1 ? parts.pop() || '' : '';
+}
+
+function isImageAttachment(attachment: TaskAttachment) {
+  return attachment.mime_type.startsWith('image/');
+}
+
+function isTextAttachment(attachment: TaskAttachment) {
+  const ext = extensionOf(attachment.original_name || attachment.filename || '');
+  return attachment.mime_type.startsWith('text/') || ['md', 'markdown', 'txt', 'json', 'log', 'yaml', 'yml', 'csv'].includes(ext);
+}
+
+function typeLabel(attachment: TaskAttachment) {
+  if (isImageAttachment(attachment)) return 'Image';
+  if (isTextAttachment(attachment)) return 'Text';
+  return 'File';
+}
+
 export default function AttachmentList({ attachments, emptyLabel = 'No attachments yet.' }: { attachments: TaskAttachment[]; emptyLabel?: string }) {
-  if (!attachments.length) {
+  const [preview, setPreview] = useState<TaskAttachment | null>(null);
+
+  const sorted = useMemo(() => [...attachments].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)), [attachments]);
+
+  if (!sorted.length) {
     return <p className="text-[11px] text-gray-500">{emptyLabel}</p>;
   }
 
   return (
-    <div className="space-y-2">
-      {attachments.map((attachment) => (
-        <div key={attachment.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <p className="text-[12px] font-medium text-gray-200 break-all">{attachment.original_name}</p>
-              <p className="text-[10px] text-gray-500 mt-1">
-                {attachment.mime_type} · {humanSize(attachment.size_bytes)} · {formatDateTime(attachment.created_at)}
-              </p>
-              {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
-                <p className="text-[11px] text-gray-400 mt-2">{attachment.metadata.note}</p>
-              )}
-              {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
-                <p className="text-[11px] text-cyan-300/80 mt-2">Observer note: {attachment.metadata.observer_note}</p>
-              )}
+    <>
+      <div className="space-y-3">
+        {sorted.map((attachment) => {
+          const isImage = isImageAttachment(attachment);
+          const isText = isTextAttachment(attachment);
+          const href = attachment.download_url;
+
+          return (
+            <div key={attachment.id} className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+              {isImage && href ? (
+                <button
+                  type="button"
+                  onClick={() => setPreview(attachment)}
+                  className="group block w-full border-b border-white/[0.06] bg-[#0b0b12] text-left"
+                >
+                  <div className="relative h-40 w-full overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={href}
+                      alt={attachment.original_name}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                    <div className="absolute bottom-3 right-3 rounded-full border border-white/10 bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/90 backdrop-blur">
+                      Open image
+                    </div>
+                  </div>
+                </button>
+              ) : null}
+
+              <div className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-300">
+                        {typeLabel(attachment)}
+                      </span>
+                      <p className="text-[12px] font-medium text-gray-200 break-all">{attachment.original_name}</p>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      {attachment.mime_type} · {humanSize(attachment.size_bytes)} · {formatDateTime(attachment.created_at)}
+                    </p>
+                    {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
+                      <p className="text-[11px] text-gray-400 mt-2 whitespace-pre-wrap">{attachment.metadata.note}</p>
+                    )}
+                    {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
+                      <p className="text-[11px] text-cyan-300/80 mt-2">Observer note: {attachment.metadata.observer_note}</p>
+                    )}
+                    {!isImage && isText ? (
+                      <p className="mt-2 text-[11px] text-gray-500">Best for notes, markdown, logs, and structured text artifacts.</p>
+                    ) : null}
+                  </div>
+                  {href ? (
+                    <div className="flex items-center gap-2">
+                      {isImage ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreview(attachment)}
+                          className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-200 hover:bg-white/[0.08]"
+                        >
+                          View
+                        </button>
+                      ) : null}
+                      <Link
+                        href={href}
+                        target="_blank"
+                        className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300 hover:bg-cyan-500/[0.14]"
+                      >
+                        {isText ? 'Open file' : 'Download'}
+                      </Link>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
-            {attachment.download_url ? (
-              <Link
-                href={attachment.download_url}
-                target="_blank"
-                className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300 hover:bg-cyan-500/[0.14]"
-              >
-                Download
-              </Link>
-            ) : null}
+          );
+        })}
+      </div>
+
+      {preview && preview.download_url ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setPreview(null)}>
+          <div
+            className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/[0.08] bg-[#090910] shadow-2xl shadow-black/60"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium text-gray-100">{preview.original_name}</p>
+                <p className="text-[10px] text-gray-500">{preview.mime_type} · {humanSize(preview.size_bytes)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={preview.download_url}
+                  target="_blank"
+                  className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300 hover:bg-cyan-500/[0.14]"
+                >
+                  Open in new tab
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setPreview(null)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-gray-300 hover:bg-white/[0.08]"
+                  aria-label="Close image preview"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="max-h-[80vh] overflow-auto bg-[#05050a]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview.download_url} alt={preview.original_name} className="mx-auto h-auto max-h-[80vh] w-auto max-w-full" />
+            </div>
           </div>
         </div>
-      ))}
-    </div>
+      ) : null}
+    </>
   );
 }
