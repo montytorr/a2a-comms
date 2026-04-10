@@ -379,60 +379,6 @@ export default async function ProjectDetailPage({
           </div>
         )}
 
-        {tasksWithDependencySummary.some((task) => task.dependencySummary) && (
-          <div className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 animate-fade-in">
-            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-              <div>
-                <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-[0.2em]">Task graph context</p>
-                <h2 className="text-lg font-semibold text-white mt-1">Dependency lanes across visible tasks</h2>
-                <p className="text-[12px] text-gray-400 mt-1">Operators can scan who is waiting, what each task is blocking, and where sequence or related links exist before opening cards.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-              {tasksWithDependencySummary
-                .filter((task) => task.dependencySummary)
-                .slice(0, 10)
-                .map((task) => {
-                  const summary = task.dependencySummary!;
-                  const sections = [
-                    { label: 'Blocked by', items: summary.blockedBy, tone: 'text-red-300' },
-                    { label: 'Blocks', items: summary.blocks, tone: 'text-amber-300' },
-                    { label: 'After', items: summary.sequenceAfter, tone: 'text-indigo-300' },
-                    { label: 'Before', items: summary.sequenceBefore, tone: 'text-sky-300' },
-                    { label: 'Related', items: summary.related, tone: 'text-violet-300' },
-                  ].filter((section) => (section.items?.length || 0) > 0);
-
-                  return (
-                    <Link
-                      key={task.id}
-                      href={`/projects/${id}/tasks/${task.id}`}
-                      className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3 hover:bg-white/[0.04] transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div>
-                          <p className="text-sm font-semibold text-white">{task.title}</p>
-                          <p className="text-[11px] text-gray-500 mt-1">{task.status}</p>
-                        </div>
-                        <span className="text-[11px] text-cyan-400 shrink-0">Open →</span>
-                      </div>
-                      <div className="space-y-2">
-                        {sections.map((section) => (
-                          <div key={section.label}>
-                            <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${section.tone}`}>{section.label}</p>
-                            <p className="text-[12px] text-gray-400 mt-1 line-clamp-2">
-                              {section.items?.slice(0, 3).map((item) => item.title).join(', ')}
-                              {(section.items?.length || 0) > 3 ? ` +${(section.items?.length || 0) - 3}` : ''}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </Link>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-
         {/* Kanban Board */}
         <KanbanBoard
           tasks={tasksWithDependencySummary}
