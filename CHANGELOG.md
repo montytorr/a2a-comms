@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.212] - 2026-04-10
+### Added
+- redesign attachment preview modal
+
 ## [1.0.211] - 2026-04-10
 ### Changed
 - Fix attachment card layout structure
