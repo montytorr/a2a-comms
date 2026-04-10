@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.198] - 2026-04-10
+### Changed
+- Fix project kanban horizontal scrolling
+
 ## [1.0.197] - 2026-04-10
 ### Changed
 - Adjust project kanban lane width
