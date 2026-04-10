@@ -166,13 +166,13 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
   return (
     <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {columns.map((col) => {
           const colTasks = tasksByStatus[col.id] || [];
           const sc = statusColors[col.id];
 
           return (
-            <div key={col.id} className={`min-w-0 rounded-[22px] border border-white/[0.06] bg-gradient-to-b ${sc.panel} p-2.5 shadow-[0_14px_36px_rgba(0,0,0,0.26)] ring-1 ring-inset ring-white/[0.02]`}>
+            <div key={col.id} className={`min-w-0 rounded-[22px] border border-white/[0.06] bg-gradient-to-b ${sc.panel} p-2.5 shadow-[0_14px_36px_rgba(0,0,0,0.26)] ring-1 ring-inset ring-white/[0.02] lg:h-[720px] lg:max-h-[720px] flex flex-col`}>
               <div className="mb-3 flex items-center justify-between gap-2 rounded-2xl border border-white/[0.05] bg-black/20 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${sc.dot} ${sc.glow}`} />
@@ -185,7 +185,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                 </span>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 overflow-y-auto pr-1 lg:flex-1 lg:min-h-0">
                 {colTasks.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-white/[0.07] bg-black/10 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-gray-600">No tasks</p>

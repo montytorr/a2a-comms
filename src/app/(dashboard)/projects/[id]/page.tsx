@@ -6,7 +6,6 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import KanbanBoard, { type TaskRow } from './kanban-board';
 import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
-import ObserverManager from './observer-manager';
 import AutoRefresh from '@/components/auto-refresh';
 import type { ProjectInvitationStatus } from '@/lib/types';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
@@ -294,7 +293,7 @@ export default async function ProjectDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div className="p-4 sm:p-6 lg:p-10">
+      <div className="mx-auto w-full max-w-[1920px] p-4 sm:p-6 lg:p-10">
         {/* Project Header */}
         <ProjectHeader
           project={project}
@@ -302,6 +301,7 @@ export default async function ProjectDetailPage({
           invitations={invitations}
           myPendingInvitations={myPendingInvitations}
           availableAgents={availableAgents}
+          observers={observers as never[]}
           isOwner={isOwner}
           hiddenPendingInvitationCount={invitationVisibility.hiddenPendingCount}
           canSeeObserverInvitationSummary={invitationVisibility.canSeeSummary}
@@ -314,15 +314,6 @@ export default async function ProjectDetailPage({
           projectId={id}
           sprintStats={sprintStats}
         />
-
-        <div className="mb-6">
-          <ObserverManager
-            projectId={id}
-            isOwner={isOwner}
-            availableAgents={availableAgents}
-            observers={observers as never[]}
-          />
-        </div>
 
         {blockedTaskCards.length > 0 && (
           <div className="mb-6 rounded-2xl border border-red-500/15 bg-gradient-to-br from-red-500/[0.08] via-amber-500/[0.04] to-transparent p-5 animate-fade-in">
