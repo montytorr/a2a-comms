@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.202] - 2026-04-10
+### Changed
+- Improve task attachment detail UX
+
 ## [1.0.201] - 2026-04-10
 ### Changed
 - Refine task detail page layout
