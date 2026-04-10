@@ -63,7 +63,7 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
           setDragActive(false);
         }}
         onDrop={handleDrop}
-        className={`block cursor-pointer rounded-2xl border px-4 py-4 transition ${dragActive ? 'border-cyan-400/60 bg-cyan-500/[0.10] shadow-[0_0_0_1px_rgba(34,211,238,0.18)]' : 'border-white/[0.08] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.05]'}`}
+        className={`block cursor-pointer rounded-2xl border px-4 py-3.5 transition ${dragActive ? 'border-cyan-400/55 bg-cyan-500/[0.08] shadow-[0_0_0_1px_rgba(34,211,238,0.14)]' : 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'}`}
       >
         <input
           ref={fileInputRef}
@@ -74,7 +74,7 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
           className="sr-only"
         />
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.08] p-2 text-cyan-300">
+          <div className="mt-0.5 rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.06] p-2 text-cyan-300">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 3v12" />
               <path d="m7 8 5-5 5 5" />
@@ -82,29 +82,37 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-medium text-gray-200">Drop an attachment here or click to browse</p>
-            <p className="mt-1 text-[11px] text-gray-500">Works well for screenshots, markdown, notes, logs, and other task artifacts.</p>
-            <p className="mt-2 text-[11px] text-cyan-200/90">{selectedFileName || 'No file selected yet'}</p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-[12px] font-medium text-gray-200">Drop an attachment or click to browse</p>
+              {selectedFileName ? (
+                <span className="inline-flex max-w-full items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] text-gray-300">
+                  <span className="truncate">{selectedFileName}</span>
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500">Screenshots, markdown, notes, logs, and other small task artifacts.</p>
           </div>
         </div>
       </label>
 
-      <input
-        name="note"
-        type="text"
-        placeholder="Optional note about this artifact"
-        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[12px] text-gray-200 outline-none focus:border-cyan-500/30"
-      />
-      {error ? <p className="text-[11px] text-red-300">{error}</p> : null}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          name="note"
+          type="text"
+          placeholder="Optional note"
+          className="min-w-0 flex-1 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[12px] text-gray-200 outline-none focus:border-cyan-500/30"
+        />
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-300 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300 disabled:opacity-50"
         >
-          {pending ? 'Uploading…' : 'Upload attachment'}
+          {pending ? 'Uploading…' : 'Upload'}
         </button>
-        <span className="text-[10px] text-gray-500">Private, signed downloads only.</span>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {error ? <p className="text-[11px] text-red-300">{error}</p> : <span className="text-[10px] text-gray-500">Private, signed downloads only.</span>}
       </div>
     </form>
   );
