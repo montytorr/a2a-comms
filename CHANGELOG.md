@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.196] - 2026-04-10
+### Changed
+- Fix project board layout regression
+
 ## [1.0.195] - 2026-04-10
 ### Changed
 - Adjust project page width and restore lane sizing
