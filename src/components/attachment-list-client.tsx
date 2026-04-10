@@ -80,66 +80,64 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
               ) : null}
 
               <div className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-300">
-                        {typeLabel(attachment)}
-                      </span>
-                      <p className="text-[12px] font-medium text-gray-200 break-all">{attachment.original_name}</p>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      {attachment.mime_type} · {humanSize(attachment.size_bytes)} · {formatDateTime(attachment.created_at)}
-                    </p>
-                    {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
-                      <p className="text-[11px] text-gray-400 mt-2 whitespace-pre-wrap">{attachment.metadata.note}</p>
-                    )}
-                    {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
-                      <p className="text-[11px] text-cyan-300/80 mt-2">Observer note: {attachment.metadata.observer_note}</p>
-                    )}
-                    {!isImage && isPreviewable ? (
-                      <div className="mt-3 rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.08] via-sky-500/[0.04] to-transparent px-3 py-2">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/90">Preview available</p>
-                            <p className="mt-1 text-[11px] text-gray-300">Open this {attachment.mime_type === 'application/pdf' ? 'PDF' : 'document'} in a new tab to preview it.</p>
-                          </div>
-                          {href ? (
-                            <Link
-                              href={href}
-                              target="_blank"
-                              className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200 hover:bg-cyan-400/20"
-                            >
-                              Preview / Open
-                            </Link>
-                          ) : null}
-                        </div>
-                      </div>
-                    ) : !isImage && isText ? (
-                      <p className="mt-2 text-[11px] text-gray-500">Best for notes, markdown, logs, and structured text artifacts.</p>
-                    ) : null}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-300">
+                      {typeLabel(attachment)}
+                    </span>
+                    <p className="text-[12px] font-medium text-gray-200 break-all">{attachment.original_name}</p>
                   </div>
-                  {href ? (
-                    <div className="flex items-center gap-2">
-                      {isImage ? (
-                        <button
-                          type="button"
-                          onClick={() => setPreview(attachment)}
-                          className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-200 hover:bg-white/[0.08]"
-                        >
-                          View
-                        </button>
-                      ) : null}
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {attachment.mime_type} · {humanSize(attachment.size_bytes)} · {formatDateTime(attachment.created_at)}
+                  </p>
+                  {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
+                    <p className="text-[11px] text-gray-400 mt-2 whitespace-pre-wrap">{attachment.metadata.note}</p>
+                  )}
+                  {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
+                    <p className="text-[11px] text-cyan-300/80 mt-2">Observer note: {attachment.metadata.observer_note}</p>
+                  )}
+                  {isPreviewable ? (
+                    <div className="mt-3 rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.08] via-sky-500/[0.04] to-transparent px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/90">Preview available</p>
+                      <p className="mt-1 text-[11px] text-gray-300">
+                        {isImage
+                          ? 'Use the preview button below to open this image in the inline viewer, or open it in a new tab.'
+                          : `Open this ${attachment.mime_type === 'application/pdf' ? 'PDF' : 'document'} in a new tab to preview it.`}
+                      </p>
+                    </div>
+                  ) : !isImage && isText ? (
+                    <p className="mt-2 text-[11px] text-gray-500">Best for notes, markdown, logs, and structured text artifacts.</p>
+                  ) : null}
+                </div>
+
+                {href ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
+                    {isImage ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreview(attachment)}
+                        className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200 hover:bg-cyan-400/20"
+                      >
+                        Preview image
+                      </button>
+                    ) : isPreviewable ? (
                       <Link
                         href={href}
                         target="_blank"
-                        className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300 hover:bg-cyan-500/[0.14]"
+                        className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200 hover:bg-cyan-400/20"
                       >
-                        {isPreviewable ? 'Open in new tab' : 'Download'}
+                        Preview / Open
                       </Link>
-                    </div>
-                  ) : null}
-                </div>
+                    ) : null}
+                    <Link
+                      href={href}
+                      target="_blank"
+                      className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-200 hover:bg-white/[0.08]"
+                    >
+                      {isPreviewable ? 'Open in new tab' : 'Download'}
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             </div>
           );
