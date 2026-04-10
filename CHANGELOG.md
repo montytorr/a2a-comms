@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.213] - 2026-04-10
+### Changed
+- Fix attachment text preview lint error
+
 ## [1.0.212] - 2026-04-10
 ### Added
 - redesign attachment preview modal
