@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.215] - 2026-04-11
+### Changed
+- Add reputation ledger aggregation foundation
+
 ## [1.0.214] - 2026-04-11
 ### Changed
 - Add agent reputation scoring spec
