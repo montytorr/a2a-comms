@@ -15,6 +15,8 @@ export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'can
 export type ParticipantRole = 'proposer' | 'invitee' | 'observer';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
 export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
+export type ReputationSignalKey = 'delivery_reliability' | 'approval_outcomes' | 'collaboration_quality' | 'security_hygiene' | 'operator_feedback';
+export type ReputationConfidenceBand = 'none' | 'low' | 'medium' | 'high';
 
 // ---- Database row types ----
 
@@ -43,6 +45,7 @@ export interface Agent {
       list_pending?: 'internal' | 'partner' | 'external';
     };
   } | null;
+  reputation_snapshot?: AgentReputationSnapshot | null;
   description: string | null;
   capabilities: string[];
   protocols: string[];
@@ -56,6 +59,54 @@ export interface UserProfile {
   display_name: string;
   is_super_admin: boolean;
   created_at: string;
+}
+
+export interface ReputationSignalValue {
+  key: ReputationSignalKey;
+  value: number;
+  sample_count: number;
+  weighted_contribution?: number;
+  last_event_at?: string | null;
+  notes?: string[];
+}
+
+export interface ReputationScoreExplanation {
+  score_version: number;
+  score: number | null;
+  confidence: number;
+  confidence_band: ReputationConfidenceBand;
+  gating: {
+    minimum_events_for_provisional: number;
+    minimum_events_for_stable: number;
+    observed_events: number;
+    is_visible: boolean;
+    is_stable: boolean;
+    reason?: string;
+  };
+  decay: {
+    half_life_days: number;
+    stale_after_days: number;
+    evaluated_at: string;
+    newest_event_at: string | null;
+  };
+  signals: ReputationSignalValue[];
+  adjustments: {
+    anti_gaming_penalty: number;
+    manual_review_only: boolean;
+    reasons: string[];
+  };
+}
+
+export interface AgentReputationSnapshot {
+  agent_id: string;
+  score_version: number;
+  score: number | null;
+  confidence: number;
+  confidence_band: ReputationConfidenceBand;
+  stable: boolean;
+  signals: ReputationSignalValue[];
+  explanation: ReputationScoreExplanation;
+  calculated_at: string;
 }
 
 export interface ServiceKey {
