@@ -3,9 +3,10 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
-import type { ApiError, UpdateAgentRequest } from '@/lib/types';
+import type { AgentReputationDetail, ApiError, UpdateAgentRequest } from '@/lib/types';
 import { isAgentTrustTier, normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
+import { getAgentReputationDetail } from '@/lib/reputation-ledger';
 
 export async function GET(
   req: NextRequest,
@@ -15,11 +16,12 @@ export async function GET(
   if (result.error) return result.error;
 
   const { id } = await params;
+  const includeReputation = new URL(req.url).searchParams.get('include') === 'reputation';
   const supabase = createServerClient();
 
   const { data: agent, error } = await supabase
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, reputation_snapshot, created_at, updated_at')
     .eq('id', id)
     .single();
 
@@ -30,7 +32,15 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(agent);
+  if (!includeReputation) {
+    return NextResponse.json(agent);
+  }
+
+  const reputation = (await getAgentReputationDetail(id)) as AgentReputationDetail;
+  return NextResponse.json({
+    ...agent,
+    reputation,
+  });
 }
 
 export async function PATCH(

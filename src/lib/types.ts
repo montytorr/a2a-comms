@@ -17,6 +17,7 @@ export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
 export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
 export type ReputationSignalKey = 'delivery_reliability' | 'approval_outcomes' | 'collaboration_quality' | 'security_hygiene' | 'operator_feedback';
 export type ReputationConfidenceBand = 'none' | 'low' | 'medium' | 'high';
+export type ReputationEventSourceType = 'task_run' | 'approval' | 'operator_review' | 'security_incident' | 'handoff' | 'system';
 
 // ---- Database row types ----
 
@@ -107,6 +108,28 @@ export interface AgentReputationSnapshot {
   signals: ReputationSignalValue[];
   explanation: ReputationScoreExplanation;
   calculated_at: string;
+}
+
+export interface ReputationLedgerEvent {
+  id: string;
+  agent_id: string;
+  occurred_at: string;
+  recorded_at: string;
+  source_type: ReputationEventSourceType;
+  signal_key: ReputationSignalKey;
+  value: number;
+  weight_hint: number | null;
+  source_id: string | null;
+  project_id: string | null;
+  task_id: string | null;
+  contract_id: string | null;
+  reviewer_agent_id: string | null;
+  reviewer_user_id: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface AgentReputationDetail extends AgentReputationSnapshot {
+  ledger_events: ReputationLedgerEvent[];
 }
 
 export interface ServiceKey {

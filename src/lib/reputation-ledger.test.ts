@@ -1,0 +1,108 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { aggregateReputationLedger, detectBurstPenalty } from './reputation-ledger';
+import type { ReputationLedgerEvent } from './types';
+
+function buildEvent(overrides: Partial<ReputationLedgerEvent>): ReputationLedgerEvent {
+  return {
+    id: overrides.id ?? crypto.randomUUID(),
+    agent_id: overrides.agent_id ?? 'agent-1',
+    occurred_at: overrides.occurred_at ?? '2026-04-10T12:00:00.000Z',
+    recorded_at: overrides.recorded_at ?? overrides.occurred_at ?? '2026-04-10T12:00:00.000Z',
+    source_type: overrides.source_type ?? 'task_run',
+    signal_key: overrides.signal_key ?? 'delivery_reliability',
+    value: overrides.value ?? 0.8,
+    weight_hint: overrides.weight_hint ?? null,
+    source_id: overrides.source_id ?? null,
+    project_id: overrides.project_id ?? null,
+    task_id: overrides.task_id ?? null,
+    contract_id: overrides.contract_id ?? null,
+    reviewer_agent_id: overrides.reviewer_agent_id ?? null,
+    reviewer_user_id: overrides.reviewer_user_id ?? null,
+    metadata: overrides.metadata ?? {},
+  };
+}
+
+test('aggregateReputationLedger hides score when too few events exist', () => {
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events: [
+      buildEvent({ id: 'e1', signal_key: 'delivery_reliability', value: 0.8 }),
+      buildEvent({ id: 'e2', signal_key: 'approval_outcomes', value: 0.5, occurred_at: '2026-04-09T06:00:00.000Z' }),
+    ],
+  });
+
+  assert.equal(snapshot.score, null);
+  assert.equal(snapshot.confidence_band, 'none');
+  assert.equal(snapshot.explanation.gating.is_visible, false);
+});
+
+test('aggregateReputationLedger computes stable score and signal breakdown', () => {
+  const events: ReputationLedgerEvent[] = [
+    buildEvent({ id: 'e1', signal_key: 'delivery_reliability', value: 0.9, project_id: 'p1' }),
+    buildEvent({ id: 'e2', signal_key: 'delivery_reliability', value: 0.7, project_id: 'p2', occurred_at: '2026-04-08T06:00:00.000Z' }),
+    buildEvent({ id: 'e3', signal_key: 'approval_outcomes', value: 0.8, reviewer_user_id: 'u1' }),
+    buildEvent({ id: 'e4', signal_key: 'approval_outcomes', value: 0.6, reviewer_user_id: 'u2', occurred_at: '2026-04-07T06:00:00.000Z' }),
+    buildEvent({ id: 'e5', signal_key: 'collaboration_quality', value: 0.9, contract_id: 'c1' }),
+    buildEvent({ id: 'e6', signal_key: 'collaboration_quality', value: 0.7, contract_id: 'c2', occurred_at: '2026-04-06T06:00:00.000Z' }),
+    buildEvent({ id: 'e7', signal_key: 'security_hygiene', value: -0.2, source_type: 'security_incident' }),
+    buildEvent({ id: 'e8', signal_key: 'security_hygiene', value: 0.4, source_type: 'security_incident', occurred_at: '2026-04-05T06:00:00.000Z' }),
+    buildEvent({ id: 'e9', signal_key: 'operator_feedback', value: 1, source_type: 'operator_review', reviewer_user_id: 'u3' }),
+    buildEvent({ id: 'e10', signal_key: 'operator_feedback', value: 0.6, source_type: 'operator_review', reviewer_user_id: 'u4', occurred_at: '2026-04-04T06:00:00.000Z' }),
+    buildEvent({ id: 'e11', signal_key: 'delivery_reliability', value: 0.8, project_id: 'p3', occurred_at: '2026-04-03T06:00:00.000Z' }),
+    buildEvent({ id: 'e12', signal_key: 'collaboration_quality', value: 0.8, contract_id: 'c3', occurred_at: '2026-04-02T06:00:00.000Z' }),
+  ];
+
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.ok(snapshot.score !== null);
+  assert.equal(snapshot.explanation.gating.is_visible, true);
+  assert.equal(snapshot.explanation.gating.is_stable, true);
+  assert.equal(snapshot.signals.length, 5);
+  assert.ok(snapshot.confidence >= 0.3);
+  assert.match(JSON.stringify(snapshot.explanation), /delivery_reliability/);
+});
+
+test('aggregateReputationLedger applies burst penalty and manual review hold for repeated severe security events', () => {
+  const events: ReputationLedgerEvent[] = Array.from({ length: 4 }, (_, index) =>
+    buildEvent({
+      id: `s${index}`,
+      signal_key: 'security_hygiene',
+      source_type: 'security_incident',
+      value: -1,
+      source_id: `incident-burst-${index}`,
+      occurred_at: `2026-04-10T0${index}:00:00.000Z`,
+    })
+  ).concat(
+    Array.from({ length: 8 }, (_, index) =>
+      buildEvent({
+        id: `d${index}`,
+        signal_key: 'delivery_reliability',
+        value: 1,
+        source_id: `run-burst-${index}`,
+        occurred_at: `2026-04-10T1${index % 10}:00:00.000Z`,
+      })
+    )
+  );
+
+  const adjustment = detectBurstPenalty(events, '2026-04-11T06:00:00.000Z');
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.ok(adjustment.antiGamingPenalty > 0);
+  assert.deepEqual(snapshot.explanation.adjustments, {
+    anti_gaming_penalty: adjustment.antiGamingPenalty,
+    manual_review_only: adjustment.manualReviewOnly,
+    reasons: adjustment.reasons,
+  });
+  assert.equal(adjustment.manualReviewOnly, true);
+  assert.ok(snapshot.score !== null && snapshot.score < 0.6);
+});
