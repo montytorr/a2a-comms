@@ -18,6 +18,7 @@ import type {
   ReputationScoreExplanation,
   ReputationSignalValue,
 } from '@/lib/types';
+import { buildReputationPolicyGuidance } from '@/lib/reputation-policy-guidance';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 export const REPUTATION_EVENT_SOURCE_TYPES = [
@@ -457,9 +458,14 @@ export async function getAgentReputationSnapshot(agentId: string, options: Reput
 
 export async function getAgentReputationDetail(agentId: string, options: ReputationAggregationOptions = {}) {
   const result = await recomputeAgentReputation(agentId, options);
-  return {
+  const detail = {
     ...result.snapshot,
     ledger_events: result.events,
     explanation_contract: toExplanationContract(result.snapshot.explanation),
+  };
+
+  return {
+    ...detail,
+    policy_guidance: buildReputationPolicyGuidance(detail),
   };
 }

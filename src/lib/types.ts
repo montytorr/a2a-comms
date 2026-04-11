@@ -130,6 +130,27 @@ export interface ReputationLedgerEvent {
 
 export interface AgentReputationDetail extends AgentReputationSnapshot {
   ledger_events: ReputationLedgerEvent[];
+  policy_guidance?: ReputationPolicyGuidance;
+}
+
+export interface ReputationPolicyGuidanceItem {
+  id: string;
+  severity: 'info' | 'warning' | 'elevated';
+  title: string;
+  summary: string;
+  recommendation: string;
+  rationale?: string;
+}
+
+export interface ReputationPolicyGuidance {
+  advisory_only: true;
+  generated_at: string;
+  stable_enough: boolean;
+  visible_score: boolean;
+  score: number | null;
+  confidence_band: ReputationConfidenceBand;
+  recommended_posture: 'standard' | 'caution' | 'manual-review';
+  items: ReputationPolicyGuidanceItem[];
 }
 
 export interface ServiceKey {

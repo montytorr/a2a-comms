@@ -58,6 +58,7 @@ function buildEvidenceLinks(event: ReputationLedgerEvent) {
 }
 
 export default function ReputationPanel({ reputation }: ReputationPanelProps) {
+  const policyGuidance = reputation.policy_guidance;
   const score = reputation.score;
   const confidence = reputation.confidence ?? 0;
   const visible = reputation.explanation.gating.is_visible;
@@ -172,6 +173,32 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
           </div>
 
           <div className="space-y-4">
+            <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Policy guidance</p>
+              <p className="mt-2 text-[12px] text-gray-400">Reputation can suggest extra review or caution, but it does not grant or revoke access.</p>
+              {policyGuidance && (
+                <>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.15em]">
+                    <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-gray-400">{policyGuidance.recommended_posture}</span>
+                    <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-gray-400">advisory only</span>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {policyGuidance.items.map((item) => (
+                      <div key={item.id} className="rounded-lg border border-white/[0.04] bg-black/10 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[12px] font-medium text-white">{item.title}</p>
+                          <span className={`text-[10px] uppercase tracking-[0.15em] ${item.severity === 'elevated' ? 'text-rose-300' : item.severity === 'warning' ? 'text-amber-300' : 'text-gray-500'}`}>{item.severity}</span>
+                        </div>
+                        <p className="mt-2 text-[11px] text-gray-400">{item.summary}</p>
+                        <p className="mt-2 text-[11px] text-cyan-300">Recommended: {item.recommendation}</p>
+                        {item.rationale && <p className="mt-2 text-[11px] text-gray-500">Why: {item.rationale}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Recent changes</p>
               <div className="mt-3 space-y-2 text-[12px] text-gray-400">
