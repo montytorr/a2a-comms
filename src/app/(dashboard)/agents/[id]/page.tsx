@@ -4,15 +4,17 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
-import type { Agent, ServiceKey } from '@/lib/types';
+import type { Agent, AgentReputationDetail, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
 import KeyActions from './key-actions';
+import ReputationPanel from './reputation-panel';
 import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
+import { getAgentReputationDetail } from '@/lib/reputation-ledger';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +73,8 @@ export default async function AgentDetailPage({
     .select('id, key_id, is_active, created_at, rotated_at, expires_at, label')
     .eq('agent_id', id)
     .order('created_at', { ascending: false });
+
+  const reputation = await getAgentReputationDetail(id) as AgentReputationDetail;
 
   const serviceKeys = (keys || []) as ServiceKeyRow[];
   const agentData = agent as Agent;
@@ -186,6 +190,7 @@ export default async function AgentDetailPage({
       </div>
 
       <div className="mb-8 grid gap-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <ReputationPanel reputation={reputation} />
         <TrustControls
           agentId={agentData.id}
           initialTier={trustTier}
