@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.218] - 2026-04-11
+### Changed
+- Fix kanban task ordering
+
 ## [1.0.217] - 2026-04-11
 ### Changed
 - Add advisory-only reputation policy guidance
