@@ -116,7 +116,7 @@ export default async function ProjectDetailPage({
     (() => {
       let q = supabase
         .from('tasks')
-        .select('id, project_id, title, status, priority, labels, assignee_agent_id, due_date, position, sprint_id, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
+        .select('id, project_id, title, status, priority, labels, assignee_agent_id, due_date, position, sprint_id, created_at, updated_at, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
         .eq('project_id', id);
 
       if (sprintFilter && sprintFilter !== 'backlog') {

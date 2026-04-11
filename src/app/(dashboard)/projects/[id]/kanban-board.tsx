@@ -138,6 +138,8 @@ export interface TaskRow {
   assignee_agent_id?: string | null;
   assignee?: { id: string; name: string; display_name: string } | null;
   due_date: string | null;
+  created_at?: string;
+  updated_at?: string;
   dependencySummary?: {
     blockedBy?: Array<{ id: string; title: string; status: string }>;
     blocks?: Array<{ id: string; title: string; status: string }>;
@@ -158,9 +160,27 @@ interface KanbanBoardProps {
   }>;
 }
 
+function timestampOrZero(value?: string) {
+  if (!value) return 0;
+  const ts = new Date(value).getTime();
+  return Number.isNaN(ts) ? 0 : ts;
+}
+
+function sortTasksForColumn(tasks: TaskRow[], status: TaskStatus) {
+  const sorted = [...tasks];
+
+  if (status === 'backlog' || status === 'todo') {
+    sorted.sort((a, b) => timestampOrZero(b.created_at) - timestampOrZero(a.created_at));
+    return sorted;
+  }
+
+  sorted.sort((a, b) => timestampOrZero(b.updated_at) - timestampOrZero(a.updated_at));
+  return sorted;
+}
+
 export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }: KanbanBoardProps) {
   const tasksByStatus = columns.reduce((acc, col) => {
-    acc[col.id] = tasks.filter(t => t.status === col.id);
+    acc[col.id] = sortTasksForColumn(tasks.filter(t => t.status === col.id), col.id);
     return acc;
   }, {} as Record<string, TaskRow[]>);
 
