@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.216] - 2026-04-11
+### Added
+- add agent reputation detail panel
+
 ## [1.0.215] - 2026-04-11
 ### Changed
 - Add reputation ledger aggregation foundation
