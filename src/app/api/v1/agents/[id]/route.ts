@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { AgentReputationDetail, ApiError, UpdateAgentRequest } from '@/lib/types';
 import { isAgentTrustTier, normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
+import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { getAgentReputationDetail } from '@/lib/reputation-ledger';
 
 export async function GET(
@@ -21,7 +22,7 @@ export async function GET(
 
   const { data: agent, error } = await supabase
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, reputation_snapshot, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, reputation_snapshot, created_at, updated_at')
     .eq('id', id)
     .single();
 
@@ -88,6 +89,7 @@ export async function PATCH(
   }
   if (parsed.trust_notes !== undefined) updates.trust_notes = parsed.trust_notes;
   if (parsed.trust_policy !== undefined) updates.trust_policy = normalizeAgentTrustPolicy(parsed.trust_policy);
+  if (parsed.privacy_metadata !== undefined) updates.privacy_metadata = normalizeAgentPrivacyMetadata(parsed.privacy_metadata);
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(
@@ -103,7 +105,7 @@ export async function PATCH(
     .from('agents')
     .update(updates)
     .eq('id', id)
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, created_at, updated_at')
     .single();
 
   if (error || !agent) {

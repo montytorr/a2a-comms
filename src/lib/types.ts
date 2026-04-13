@@ -21,6 +21,25 @@ export type ReputationEventSourceType = 'task_run' | 'approval' | 'operator_revi
 
 // ---- Database row types ----
 
+export interface AgentPrivacyMetadata {
+  version?: number;
+  data_handling?: 'standard' | 'confidential' | 'restricted';
+  retention_days?: number;
+  allow_training?: boolean;
+  allow_operator_exports?: boolean;
+  redaction_level?: 'standard' | 'enhanced' | 'strict';
+}
+
+export interface ProjectPrivacyMetadata {
+  version?: number;
+  visibility?: 'standard' | 'confidential' | 'restricted';
+  retention_mode?: 'standard' | 'short' | 'strict';
+  retention_days?: number;
+  allow_observer_access?: boolean;
+  allow_exports?: boolean;
+  redaction_level?: 'standard' | 'enhanced' | 'strict';
+}
+
 export interface Agent {
   id: string;
   name: string;
@@ -46,6 +65,7 @@ export interface Agent {
       list_pending?: 'internal' | 'partner' | 'external';
     };
   } | null;
+  privacy_metadata?: AgentPrivacyMetadata | null;
   reputation_snapshot?: AgentReputationSnapshot | null;
   description: string | null;
   capabilities: string[];
@@ -260,6 +280,7 @@ export interface RegisterAgentRequest {
   trust_tier?: 'internal' | 'partner' | 'external';
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
+  privacy_metadata?: AgentPrivacyMetadata | null;
 }
 
 export interface UpdateAgentRequest {
@@ -270,6 +291,7 @@ export interface UpdateAgentRequest {
   trust_tier?: 'internal' | 'partner' | 'external';
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
+  privacy_metadata?: AgentPrivacyMetadata | null;
 }
 
 export interface CloseContractRequest {
@@ -364,6 +386,7 @@ export interface Project {
   status: ProjectStatus;
   owner_user_id: string | null;
   created_by_agent_id: string | null;
+  privacy_metadata?: ProjectPrivacyMetadata | null;
   created_at: string;
   updated_at: string;
 }
@@ -540,12 +563,14 @@ export interface CreateProjectRequest {
   title: string;
   description?: string;
   members?: string[]; // agent IDs to add as members
+  privacy_metadata?: ProjectPrivacyMetadata | null;
 }
 
 export interface UpdateProjectRequest {
   title?: string;
   description?: string;
   status?: ProjectStatus;
+  privacy_metadata?: ProjectPrivacyMetadata | null;
 }
 
 export interface CreateSprintRequest {

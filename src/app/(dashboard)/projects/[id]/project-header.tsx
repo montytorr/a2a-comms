@@ -32,6 +32,13 @@ interface ProjectHeaderProps {
     title: string;
     description: string | null;
     status: string;
+    privacy_metadata?: {
+      visibility?: string;
+      retention_days?: number;
+      redaction_level?: string;
+      allow_observer_access?: boolean;
+      allow_exports?: boolean;
+    } | null;
   };
   members: Array<{
     id: string;
@@ -290,6 +297,29 @@ export default function ProjectHeader({ project, members, invitations = [], myPe
               <div className="max-w-2xl">
                 <EditableProjectDescription value={project.description} projectId={project.id} isOwner={isOwner} />
               </div>
+              {project.privacy_metadata && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-fuchsia-500/20 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-fuchsia-200">
+                    {project.privacy_metadata.visibility || 'standard'} visibility
+                  </span>
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-gray-300">
+                    {project.privacy_metadata.retention_days || 90}d retention
+                  </span>
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-gray-300">
+                    {project.privacy_metadata.redaction_level || 'standard'} redaction
+                  </span>
+                  {!project.privacy_metadata.allow_observer_access && (
+                    <span className="rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-amber-200">
+                      observers restricted
+                    </span>
+                  )}
+                  {!project.privacy_metadata.allow_exports && (
+                    <span className="rounded-full border border-red-500/20 bg-red-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-red-200">
+                      exports restricted
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Member Avatars */}

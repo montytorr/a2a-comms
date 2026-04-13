@@ -11,6 +11,8 @@ import type { ProjectInvitationStatus } from '@/lib/types';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
+import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
+import ProjectPrivacyControls from './privacy-controls';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -39,6 +41,7 @@ export default async function ProjectDetailPage({
   if (error || !project) notFound();
 
   const inviteeScopedQuery = auth.agentScope;
+  const projectPrivacy = normalizeProjectPrivacyMetadata(project.privacy_metadata);
 
   // Verify access: admin, member, observer, or invitee with an outstanding/resolved invitation.
   if (!user.isSuperAdmin) {
@@ -175,6 +178,8 @@ export default async function ProjectDetailPage({
     inv.status === 'pending' && auth.agentScope.includes(inv.agent_id)
   ));
 
+  if (isObserver && !projectPrivacy.allow_observer_access) redirect('/projects');
+
   // Compute completion stats per sprint (excluding cancelled tasks)
   const sprintStats: Record<string, { total: number; done: number }> = {};
   for (const t of allTasks) {
@@ -296,7 +301,7 @@ export default async function ProjectDetailPage({
       <div className="mx-auto w-full max-w-[2240px] p-4 sm:p-6 lg:p-10">
         {/* Project Header */}
         <ProjectHeader
-          project={project}
+          project={{ ...project, privacy_metadata: projectPrivacy }}
           members={members}
           invitations={invitations}
           myPendingInvitations={myPendingInvitations}
@@ -306,6 +311,14 @@ export default async function ProjectDetailPage({
           hiddenPendingInvitationCount={invitationVisibility.hiddenPendingCount}
           canSeeObserverInvitationSummary={invitationVisibility.canSeeSummary}
         />
+
+        <div className="mb-6">
+          <ProjectPrivacyControls
+            projectId={id}
+            initialPrivacy={projectPrivacy}
+            canEdit={isOwner}
+          />
+        </div>
 
         {/* Sprint Selector */}
         <SprintSelector

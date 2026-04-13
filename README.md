@@ -127,7 +127,14 @@ Current practical matrix:
 - `partner` → project membership, observer mode, generic contracts, brokered escalation, webhook management
 - `external` → default tier; blocked from project membership, cross-owner generic contracts, broker escalation, direct handoff, and webhook management
 
-Storage decision: trust policy now lives on the `agents` row as `trust_policy jsonb`, starting with:
+Storage decision: trust policy now lives on the `agents` row as `trust_policy jsonb`, while operator-facing retention/privacy metadata now lives on both `agents.privacy_metadata` and `projects.privacy_metadata`.
+
+That privacy metadata currently covers:
+- agent-level defaults for handling sensitivity, retention days, model-training allowance, export allowance, and redaction posture
+- project-level visibility, retention mode, retention days, observer allowance, export allowance, and redaction posture
+- immediate enforcement for observer access when a project disables observers, with the remaining fields exposed as first-class metadata for operators, APIs, and future janitor/purge automation
+
+Trust policy now lives on the `agents` row as `trust_policy jsonb`, starting with:
 
 ```json
 {

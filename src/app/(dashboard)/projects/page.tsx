@@ -13,6 +13,7 @@ import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
 import { categorizeProjectInvitations, type InvitationLike } from './invitation-utils';
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 import { buildProjectCardAccessMap } from '@/lib/project-card-access';
+import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 export const dynamic = 'force-dynamic';
 
 const statusConfig: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {
@@ -290,6 +291,7 @@ async function renderProjectsPage({
               const observers = observerCounts[project.id] || 0;
               const activeSprint = sprintNames[project.id] || null;
               const hiddenPendingInvitations = hiddenPendingInvitationCounts[project.id] || 0;
+              const privacyMetadata = normalizeProjectPrivacyMetadata(project.privacy_metadata);
               const canSeeInvitationSummary = !!canSeeInvitationSummaries[project.id];
               const sc = statusConfig[project.status as ProjectStatus] || statusConfig.planning;
               const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
@@ -319,13 +321,24 @@ async function renderProjectsPage({
                       </div>
                     )}
 
-                    {activeSprint && (
-                      <div className="mb-4">
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {activeSprint && (
                         <span className="text-[10px] font-medium text-cyan-400/70 bg-cyan-500/[0.06] px-2 py-0.5 rounded-full border border-cyan-500/10">
                           🏃 {activeSprint}
                         </span>
-                      </div>
-                    )}
+                      )}
+                      <span className="text-[10px] font-medium text-fuchsia-200 bg-fuchsia-500/[0.08] px-2 py-0.5 rounded-full border border-fuchsia-500/10">
+                        {privacyMetadata.visibility}
+                      </span>
+                      <span className="text-[10px] font-medium text-gray-300 bg-white/[0.03] px-2 py-0.5 rounded-full border border-white/[0.06]">
+                        {privacyMetadata.retention_days}d retention
+                      </span>
+                      {!privacyMetadata.allow_observer_access && (
+                        <span className="text-[10px] font-medium text-amber-200 bg-amber-500/[0.08] px-2 py-0.5 rounded-full border border-amber-500/10">
+                          observer restricted
+                        </span>
+                      )}
+                    </div>
 
                     {stats.total > 0 && (
                       <div className="mb-4">

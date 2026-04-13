@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { normalizeAgentTrustPolicy, type AgentTrustPolicyConfig } from '@/lib/agent-trust-policy';
 import { normalizeAgentTrustTier, type AgentTrustTier } from '@/lib/trust-tiers';
+import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 
 export interface AuthUserAgent {
   id: string;
@@ -10,6 +11,7 @@ export interface AuthUserAgent {
   displayName: string;
   trustTier: AgentTrustTier;
   trustPolicy: ReturnType<typeof normalizeAgentTrustPolicy>;
+  privacyMetadata: ReturnType<typeof normalizeAgentPrivacyMetadata>;
 }
 
 export interface AuthUser {
@@ -104,7 +106,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
 
   const [profileRes, agentsRes] = await Promise.all([
     adminClient.from('user_profiles').select('*').eq('id', user.id).single(),
-    adminClient.from('agents').select('id, name, display_name, trust_tier, trust_policy').eq('owner_user_id', user.id),
+    adminClient.from('agents').select('id, name, display_name, trust_tier, trust_policy, privacy_metadata').eq('owner_user_id', user.id),
   ]);
 
   const normalizedAgents = (agentsRes.data || []).map((agent) => ({
@@ -115,6 +117,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
       : (typeof agent.name === 'string' && agent.name.trim().length > 0 ? agent.name : agent.id),
     trustTier: normalizeAgentTrustTier(agent.trust_tier),
     trustPolicy: normalizeAgentTrustPolicy(agent.trust_policy ?? null),
+    privacyMetadata: normalizeAgentPrivacyMetadata(agent.privacy_metadata ?? null),
   }));
 
   const normalizedTrustTier = normalizedAgents.length > 0

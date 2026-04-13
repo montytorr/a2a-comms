@@ -9,6 +9,7 @@ import MarkdownPreview from '@/components/markdown-preview';
 import { formatDate } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
+import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 export const dynamic = 'force-dynamic';
 
 const avatarGradients = [
@@ -110,6 +111,7 @@ export default async function AgentsPage() {
             const trustTier = normalizeAgentTrustTier(agent.trust_tier);
             const trustStyle = TRUST_TIER_STYLES[trustTier];
             const trustPolicy = normalizeAgentTrustPolicy(agent.trust_policy);
+            const privacyMetadata = normalizeAgentPrivacyMetadata(agent.privacy_metadata);
             return (
               <Link
                 key={agent.id}
@@ -192,6 +194,12 @@ export default async function AgentsPage() {
                     </p>
                     <p>
                       Observer attachments: <span className="text-gray-200">{trustPolicy.observer_project_access.download_project_attachments}+</span>
+                    </p>
+                    <p>
+                      Retention: <span className="text-gray-200">{privacyMetadata.retention_days}d</span>
+                    </p>
+                    <p>
+                      Handling: <span className="text-gray-200">{privacyMetadata.data_handling}</span>
                     </p>
                   </div>
 

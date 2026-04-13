@@ -7,6 +7,7 @@ import type { UpdateProjectRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
+import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -52,6 +53,15 @@ export async function GET(
     return NextResponse.json(
       { error: 'Project not found', code: 'NOT_FOUND' } satisfies ApiError,
       { status: 404 }
+    );
+  }
+
+  const normalizedPrivacy = normalizeProjectPrivacyMetadata(project.privacy_metadata ?? null);
+
+  if (member.accessKind === 'observer' && !normalizedPrivacy.allow_observer_access) {
+    return NextResponse.json(
+      { error: 'Observer access is disabled by this project privacy policy', code: 'PRIVACY_POLICY_BLOCKED' } satisfies ApiError,
+      { status: 403 }
     );
   }
 
@@ -101,6 +111,7 @@ export async function GET(
 
   return NextResponse.json({
     ...project,
+    privacy_metadata: normalizedPrivacy,
     members: membersRes.data || [],
     observers: observersRes.data || [],
     invitations: invitationVisibility.visibleInvitations,
@@ -170,6 +181,7 @@ export async function PATCH(
     }
     updates.status = parsed.status;
   }
+  if (parsed.privacy_metadata !== undefined) updates.privacy_metadata = normalizeProjectPrivacyMetadata(parsed.privacy_metadata);
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(

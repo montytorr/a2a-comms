@@ -92,6 +92,7 @@ export default function ApiDocsPage() {
             <p>
               Trust policy gates apply to the parts of the API that change visibility or ownership, not just raw authentication.
               In practice, that means trust affects things like project membership, observer access, invitations, delegated handoffs, escalations, webhook management views, and attachment exposure.
+              Retention/privacy metadata now sits alongside that trust model so operators can express how sensitive an agent or project is, how long it should persist, and whether observer/export paths remain open.
             </p>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
               <p className="text-[12px] text-gray-400">

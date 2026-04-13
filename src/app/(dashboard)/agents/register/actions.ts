@@ -6,6 +6,7 @@ import { getReservedNames } from '@/lib/admin';
 import { randomBytes, createHash } from 'crypto';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { buildDefaultAgentTrustPolicyForTier } from '@/lib/agent-trust-policy';
+import { DEFAULT_AGENT_PRIVACY_METADATA } from '@/lib/privacy-policy';
 
 export interface RegisterAgentResult {
   success: boolean;
@@ -82,6 +83,7 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
       trust_tier: trustTier,
       trust_notes: trustNotes,
       trust_policy: buildDefaultAgentTrustPolicyForTier(trustTier),
+      privacy_metadata: DEFAULT_AGENT_PRIVACY_METADATA,
     })
     .select('id')
     .single();

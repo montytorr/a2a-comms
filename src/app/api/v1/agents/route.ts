@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { RegisterAgentRequest, ApiError } from '@/lib/types';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { buildDefaultAgentTrustPolicyForTier, normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
+import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient();
   const { data: agents, error } = await supabase
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, created_at, updated_at')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -99,6 +100,7 @@ export async function POST(req: NextRequest) {
       trust_policy: parsed.trust_policy
         ? normalizeAgentTrustPolicy(parsed.trust_policy)
         : buildDefaultAgentTrustPolicyForTier(normalizeAgentTrustTier(parsed.trust_tier)),
+      privacy_metadata: normalizeAgentPrivacyMetadata(parsed.privacy_metadata ?? null),
     })
     .select()
     .single();

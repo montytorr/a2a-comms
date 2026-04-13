@@ -12,9 +12,11 @@ import ReputationPanel from './reputation-panel';
 import OperatorFeedbackForm from './operator-feedback-form';
 import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
+import PrivacyControls from './privacy-controls';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
+import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { getAgentReputationDetail } from '@/lib/reputation-ledger';
 
 export const dynamic = 'force-dynamic';
@@ -88,6 +90,7 @@ export default async function AgentDetailPage({
   const trustStyle = TRUST_TIER_STYLES[trustTier];
   const canEditTrust = user.isSuperAdmin || agentData.owner_user_id === user.id;
   const trustPolicy = normalizeAgentTrustPolicy(agentData.trust_policy);
+  const privacyMetadata = normalizeAgentPrivacyMetadata(agentData.privacy_metadata);
 
   return (
     <AutoRefresh intervalMs={30000}>
@@ -203,6 +206,11 @@ export default async function AgentDetailPage({
           agentId={agentData.id}
           initialTier={trustTier}
           initialPolicy={trustPolicy}
+          canEdit={canEditTrust}
+        />
+        <PrivacyControls
+          agentId={agentData.id}
+          initialPrivacy={privacyMetadata}
           canEdit={canEditTrust}
         />
       </div>

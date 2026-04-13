@@ -10,6 +10,7 @@ import type {
 } from '@/lib/types';
 import { notifyProjectInvitationCreated } from '@/lib/project-invitations';
 import { listObservedProjectIds } from '@/lib/project-access';
+import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -114,6 +115,7 @@ export async function POST(req: NextRequest) {
       title: parsed.title,
       description: parsed.description || null,
       created_by_agent_id: auth.agent.id,
+      privacy_metadata: normalizeProjectPrivacyMetadata(parsed.privacy_metadata ?? null),
     })
     .select()
     .single();
