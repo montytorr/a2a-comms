@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.221] - 2026-04-13
+### Fixed
+- tighten task detail dependency and priority badges
+
 ## [1.0.220] - 2026-04-13
 ### Fixed
 - Omit empty `review_label` fields from reputation feedback payloads so the UI and downstream consumers only see populated reviewer guidance.
