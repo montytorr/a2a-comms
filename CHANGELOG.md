@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.222] - 2026-04-13
+### Changed
+- Add retention and privacy policy controls
+
 ## [1.0.221] - 2026-04-13
 ### Fixed
 - tighten task detail dependency and priority badges
