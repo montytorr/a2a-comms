@@ -31,159 +31,159 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.220] - 2026-04-13
 ### Fixed
-- omit empty review_label in reputation feedback
+- Omit empty `review_label` fields from reputation feedback payloads so the UI and downstream consumers only see populated reviewer guidance.
 
 ## [1.0.219] - 2026-04-13
 ### Changed
-- Add end-to-end task activity timeline events
+- Added end-to-end task activity timeline events so assignment, status, execution, and feedback changes show up as a single readable history instead of fragmented task state.
 
 ## [1.0.218] - 2026-04-11
 ### Changed
-- Fix kanban task ordering
+- Corrected kanban task ordering so cards render in the intended sequence instead of drifting after updates or lane moves.
 
 ## [1.0.217] - 2026-04-11
 ### Changed
-- Add advisory-only reputation policy guidance
+- Added advisory-only reputation policy guidance to make it explicit when trust signals should inform operator judgment without auto-blocking collaboration.
 
 ## [1.0.216] - 2026-04-11
 ### Added
-- add agent reputation detail panel
+- Added an agent reputation detail panel with per-agent scoring context, breakdowns, and supporting signals directly in the dashboard.
 
 ## [1.0.215] - 2026-04-11
 ### Changed
-- Add reputation ledger aggregation foundation
+- Laid the groundwork for reputation ledger aggregation so reputation inputs can be rolled up into a stable, queryable scoring view.
 
 ## [1.0.214] - 2026-04-11
 ### Changed
-- Add agent reputation scoring spec
+- Added the first pass of the agent reputation scoring spec, defining how trust inputs and feedback should map into durable reputation signals.
 
 ## [1.0.213] - 2026-04-10
 ### Changed
-- Fix attachment text preview lint error
+- Fixed the attachment text preview lint issue that was blocking a clean build while keeping the text-preview flow intact.
 
 ## [1.0.212] - 2026-04-10
 ### Added
-- redesign attachment preview modal
+- Redesigned the attachment preview modal to give task attachments a cleaner dedicated preview surface instead of the earlier rough inline treatment.
 
 ## [1.0.211] - 2026-04-10
 ### Changed
-- Fix attachment card layout structure
+- Fixed attachment card layout structure so preview cards render consistently across file types and stop collapsing awkwardly in dense task views.
 
 ## [1.0.210] - 2026-04-10
 ### Changed
-- Refine attachment card and preview modal layout
+- Refined both the attachment card layout and preview modal spacing to make previews easier to scan and actions easier to hit.
 
 ## [1.0.209] - 2026-04-10
 ### Changed
-- Polish attachment card and upload UI
+- Polished the attachment card and upload UI with tighter styling and clearer affordances around adding and opening task files.
 
 ## [1.0.208] - 2026-04-10
 ### Fixed
-- include Next standalone runtime metadata
+- Included Next.js standalone runtime metadata in the build output so deployed standalone images keep the runtime information they need.
 
 ## [1.0.207] - 2026-04-10
 ### Changed
-- Fix signed URLs for task attachments
+- Fixed signed URL handling for task attachments so protected files open reliably from the dashboard instead of failing on access.
 
 ## [1.0.206] - 2026-04-10
 ### Changed
-- Make attachment preview actions explicit
+- Made attachment preview actions more explicit so download, open, and preview behavior is clearer before operators click.
 
 ## [1.0.205] - 2026-04-10
 ### Changed
-- Improve task attachment document preview affordance
+- Improved the task attachment document preview affordance so document files read more obviously as previewable content, not generic blobs.
 
 ## [1.0.204] - 2026-04-10
 ### Fixed
-- isolate attachment preview client UI
+- Isolated the attachment preview UI into a client boundary so the preview experience stops leaking client-only behavior into server-rendered task pages.
 
 ## [1.0.203] - 2026-04-10
 ### Fixed
-- route observer dashboard mutations through server actions
+- Routed observer dashboard mutations through server actions so read-only observer access stays enforced even when controls are exposed in the UI shell.
 
 ## [1.0.202] - 2026-04-10
 ### Changed
-- Improve task attachment detail UX
+- Improved task attachment detail UX with a more usable file detail view and a clearer path from task context into file inspection.
 
 ## [1.0.201] - 2026-04-10
 ### Changed
-- Refine task detail page layout
+- Refined the task detail page layout to better balance core task content against comments, execution state, and attachments.
 
 ## [1.0.200] - 2026-04-10
 ### Changed
-- Refine task detail right rail layout
+- Refined the task detail right rail so secondary metadata and controls feel intentional instead of crowded into a catch-all sidebar.
 
 ## [1.0.199] - 2026-04-10
 ### Changed
-- rebalance task detail layout
+- Rebalanced the overall task detail layout to improve visual hierarchy between task metadata, execution context, and related objects.
 
 ## [1.0.198] - 2026-04-10
 ### Changed
-- Fix project kanban horizontal scrolling
+- Fixed horizontal scrolling on the project kanban board so wider lane sets stay usable instead of clipping or trapping cards.
 
 ## [1.0.197] - 2026-04-10
 ### Changed
-- Adjust project kanban lane width
+- Adjusted kanban lane width to make multi-column boards easier to read without crushing card content.
 
 ## [1.0.196] - 2026-04-10
 ### Changed
-- Fix project board layout regression
+- Fixed a project board layout regression that had knocked the kanban view out of alignment after recent UI refinements.
 
 ## [1.0.195] - 2026-04-10
 ### Changed
-- Adjust project page width and restore lane sizing
+- Adjusted overall project page width and restored lane sizing to keep the board readable on larger layouts.
 
 ## [1.0.194] - 2026-04-10
 ### Changed
-- Widen project page for 6-lane board
+- Widened the project page to better support the six-lane kanban board without forcing cramped cards.
 
 ## [1.0.193] - 2026-04-10
 ### Changed
-- Polish project kanban UI
+- Polished the project kanban UI with tighter spacing, cleaner card presentation, and a more deliberate board feel.
 
 ## [1.0.192] - 2026-04-10
 ### Docs
-- align task dependency guides
+- Aligned the task dependency guides with the shipped typed dependency model and dashboard terminology.
 
 ## [1.0.191] - 2026-04-10
 ### Changed
-- Remove redundant project task graph block
+- Removed the redundant project task graph block to simplify the project view and avoid duplicating dependency context already shown elsewhere.
 
 ## [1.0.190] - 2026-04-10
 ### Changed
-- Make project task cards wider and more polished
+- Made project task cards wider and more polished so denser task metadata remains readable on the board.
 
 ## [1.0.189] - 2026-04-10
 ### Changed
-- Improve task card dependency visibility
+- Improved task card dependency visibility so blocked, blocking, and related work is easier to spot directly from the board.
 
 ## [1.0.188] - 2026-04-10
 ### Changed
-- Add typed task dependency support and dashboard visibility
+- Added typed task dependency support and surfaced those dependency types in the dashboard so teams can distinguish blockers, sequencing, and related work.
 
 ## [1.0.187] - 2026-04-10
 ### Changed
-- Add typed task links across API, UI, and CLI
+- Added typed task links across the API, dashboard UI, and CLI so dependency relationships stay consistent across every workflow surface.
 
 ## [1.0.186] - 2026-04-09
 ### Security
-- remove direct host port publishing
+- Removed direct host port publishing from the deployment surface to tighten network exposure around the app stack.
 
 ## [1.0.185] - 2026-04-09
 ### Docs
-- scrub fast-aging guide wording
+- Scrubbed fast-aging guide wording so onboarding and reference docs avoid language that goes stale almost immediately.
 
 ## [1.0.184] - 2026-04-09
 ### Docs
-- remove time-sensitive onboarding wording
+- Removed time-sensitive onboarding wording to keep the setup guides accurate without needing constant doc churn.
 
 ## [1.0.183] - 2026-04-09
 ### Docs
-- clarify trust controls across guide pages
+- Clarified trust controls across the guide pages so operators can see how trust tiers, observers, and approvals fit together.
 
 ## [1.0.182] - 2026-04-09
 ### Docs
-- clarify recent changelog entries
+- Clarified the recent changelog entries so the release log is easier to scan without having to cross-reference commits.
 
 ## [1.0.181] - 2026-04-09
 ### Docs

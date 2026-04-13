@@ -211,9 +211,9 @@ export default async function TaskDetailPage({
     id: string;
     contract: { id: string; title: string; status: string } | null;
   }
-  const blockedBy = ((blockedByRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
-    (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'blocks'
-  );
+  const blockedBy = ((blockedByRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>)
+    .filter((dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'blocks')
+    .filter((dep) => dep.tasks?.status !== 'done' && dep.tasks?.status !== 'cancelled');
   const blocks = ((blocksRes.data || []) as unknown as Array<TaskDep & { dependency_type?: string }>).filter(
     (dep) => dep.tasks?.project_id === projectId && dep.dependency_type === 'blocks'
   );
@@ -367,11 +367,14 @@ export default async function TaskDetailPage({
                   ) : (
                     <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
                   )}
-                  {!hasReadOnlyObserverAccess && <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />}
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${_pc.bg} ${_pc.text}`}>
-                    <span>{_pc.icon}</span>
-                    {task.priority}
-                  </span>
+                  {hasReadOnlyObserverAccess ? (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${_pc.bg} ${_pc.text}`}>
+                      <span>{_pc.icon}</span>
+                      {task.priority}
+                    </span>
+                  ) : (
+                    <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
+                  )}
                   {isOverdue && (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 bg-red-500/[0.1] border border-red-500/20">
                       ⚠ Overdue
