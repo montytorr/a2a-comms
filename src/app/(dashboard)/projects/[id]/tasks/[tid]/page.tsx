@@ -21,9 +21,10 @@ import BlockerActions from './blocker-actions';
 import ExecutionPanel from './execution-panel';
 import AttachmentList from '@/components/attachment-list';
 import AttachmentUpload from './attachment-upload';
-import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint, TaskAttachment } from '@/lib/types';
+import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint, TaskAttachment, TaskActivityEvent } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
+import { listTaskActivityEvents } from '@/lib/task-activity';
 export const dynamic = 'force-dynamic';
 
 const dependencySectionStyles = {
@@ -133,7 +134,7 @@ export default async function TaskDetailPage({
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
     membersRes, sprintsRes, commentsRes,
-    executionRunsRes, executionCheckpointsRes, attachmentsRes,
+    executionRunsRes, executionCheckpointsRes, attachmentsRes, activityRes,
   ] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -190,6 +191,7 @@ export default async function TaskDetailPage({
       taskId: tid,
       includeSignedUrl: true,
     }),
+    listTaskActivityEvents(tid).catch(() => []),
   ]);
 
   const project = projectRes.data;
@@ -267,6 +269,7 @@ export default async function TaskDetailPage({
   const executionRuns = (executionRunsRes.data || []) as TaskExecutionRun[];
   const executionCheckpoints = (executionCheckpointsRes.data || []) as TaskExecutionCheckpoint[];
   const attachments = (attachmentsRes || []) as TaskAttachment[];
+  const taskActivity = (activityRes || []) as TaskActivityEvent[];
 
   const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
@@ -578,13 +581,30 @@ export default async function TaskDetailPage({
 
             <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.12s' }}>
               <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Timeline</p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1 mb-4">
                 {secondaryDetailItems.map((item) => (
                   <div key={`secondary-${item.label}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 mb-1.5">{item.label}</p>
                     <div className="min-h-[20px]">{item.value}</div>
                   </div>
                 ))}
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 mb-3">Activity feed</p>
+                {taskActivity.length === 0 ? (
+                  <p className="text-[12px] text-gray-500">No activity events captured yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {taskActivity.map((event) => (
+                      <div key={event.id} className="border-l border-cyan-500/20 pl-3">
+                        <p className="text-[12px] text-gray-200">{event.summary}</p>
+                        <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-gray-600">
+                          {event.actor_agent?.display_name || event.actor_agent?.name || event.actor_user?.display_name || 'System'} · {formatDateTime(event.created_at)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

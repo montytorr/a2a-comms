@@ -14,6 +14,7 @@ import {
 } from '@/lib/reputation-score';
 import type {
   AgentReputationSnapshot,
+  OperatorFeedbackInput,
   ReputationConfidenceBand,
   ReputationScoreExplanation,
   ReputationSignalValue,
@@ -454,6 +455,43 @@ export async function getAgentReputationSnapshot(agentId: string, options: Reput
   if (snapshot) return snapshot;
 
   return (await recomputeAgentReputation(agentId, options)).snapshot;
+}
+
+export async function recordOperatorFeedback(params: {
+  agentId: string;
+  reviewerAgentId?: string | null;
+  reviewerUserId?: string | null;
+  input: OperatorFeedbackInput;
+}) {
+  const normalizedScore = Number(clamp(params.input.score, -1, 1).toFixed(4));
+  const event = await appendReputationLedgerEvent({
+    agentId: params.agentId,
+    sourceType: 'operator_review',
+    signalKey: 'operator_feedback',
+    value: normalizedScore,
+    weightHint: params.input.weight_hint ?? null,
+    projectId: params.input.related_project_id ?? null,
+    taskId: params.input.related_task_id ?? null,
+    contractId: params.input.related_contract_id ?? null,
+    reviewerAgentId: params.reviewerAgentId ?? null,
+    reviewerUserId: params.reviewerUserId ?? null,
+    metadata: {
+      summary: params.input.summary,
+      notes: params.input.notes ?? null,
+      review_label: params.input.review_label ?? null,
+      source: 'operator-feedback',
+      ...(params.input.metadata ?? {}),
+    },
+  });
+
+  const recomputed = await recomputeAndPersistAgentReputation(params.agentId, {
+    includeEvents: undefined,
+  });
+
+  return {
+    event,
+    snapshot: recomputed.snapshot,
+  };
 }
 
 export async function getAgentReputationDetail(agentId: string, options: ReputationAggregationOptions = {}) {

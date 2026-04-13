@@ -133,6 +133,18 @@ export interface AgentReputationDetail extends AgentReputationSnapshot {
   policy_guidance?: ReputationPolicyGuidance;
 }
 
+export interface OperatorFeedbackInput {
+  score: number;
+  summary: string;
+  notes?: string | null;
+  review_label?: 'positive' | 'neutral' | 'negative' | 'manual-review';
+  related_task_id?: string | null;
+  related_project_id?: string | null;
+  related_contract_id?: string | null;
+  weight_hint?: number | null;
+  metadata?: Record<string, unknown>;
+}
+
 export interface ReputationPolicyGuidanceItem {
   id: string;
   severity: 'info' | 'warning' | 'elevated';
@@ -506,6 +518,20 @@ export interface TaskExecutionCheckpoint {
   observer_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   broker_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
   created_at: string;
+}
+
+export interface TaskActivityEvent {
+  id: string;
+  project_id: string;
+  task_id: string;
+  actor_agent_id: string | null;
+  actor_user_id: string | null;
+  event_type: string;
+  summary: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  actor_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
+  actor_user?: Pick<UserProfile, 'id' | 'display_name'> | null;
 }
 
 // ---- Projects & Tasks API request types ----

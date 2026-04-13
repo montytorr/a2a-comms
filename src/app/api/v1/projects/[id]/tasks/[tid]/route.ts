@@ -7,12 +7,13 @@ import { getProjectVisibleAgentIds } from '../../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
-import { appendTaskCheckpoint, listTaskExecutionCheckpoints, listTaskExecutionRuns, updateTaskExecutionRun } from '@/lib/task-execution';
+import { appendTaskCheckpoint, createTaskExecutionRun, listTaskExecutionCheckpoints, listTaskExecutionRuns, updateTaskExecutionRun, type TaskExecutionRunRow } from '@/lib/task-execution';
 import type { TaskExecutionCheckpointRow } from '@/lib/task-execution';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract, type HandoffContractSummary } from '@/lib/handoff-contracts';
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle, getEscalationBrokerageProvenance, isLikelyBrokerContract, type BrokerContractSummary } from '@/lib/escalation-brokerage';
-import type { UpdateTaskRequest, ApiError } from '@/lib/types';
+import { appendTaskActivityEvent, listTaskActivityEvents } from '@/lib/task-activity';
+import type { UpdateTaskRequest, ApiError, TaskStatus } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
@@ -63,6 +64,156 @@ async function notifyAssigneeOwner(
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
+}
+
+function isTerminalRunStatus(status: string | null | undefined) {
+  return status === 'succeeded' || status === 'failed' || status === 'cancelled';
+}
+
+function mapTaskStatusToRunStatus(status: TaskStatus): 'running' | 'waiting' | 'succeeded' | 'cancelled' {
+  switch (status) {
+    case 'in-progress':
+      return 'running';
+    case 'in-review':
+      return 'waiting';
+    case 'done':
+      return 'succeeded';
+    case 'cancelled':
+      return 'cancelled';
+    default:
+      return 'running';
+  }
+}
+
+function buildStatusCheckpoint(status: TaskStatus) {
+  switch (status) {
+    case 'in-progress':
+      return {
+        checkpointKey: 'task-status-in-progress',
+        summary: 'Task moved to in-progress',
+      };
+    case 'in-review':
+      return {
+        checkpointKey: 'task-status-in-review',
+        summary: 'Task moved to in-review',
+      };
+    case 'done':
+      return {
+        checkpointKey: 'task-status-done',
+        summary: 'Task marked done',
+      };
+    case 'cancelled':
+      return {
+        checkpointKey: 'task-status-cancelled',
+        summary: 'Task cancelled',
+      };
+    default:
+      return {
+        checkpointKey: 'task-status-updated',
+        summary: `Task status updated to ${status}`,
+      };
+  };
+}
+
+async function syncTaskExecutionForStatusChange(params: {
+  taskId: string;
+  projectId: string;
+  oldTask: { status: string | null; active_run_id?: string | null } | null;
+  task: { id: string; title: string; status: string | null; active_run_id?: string | null };
+  actor: { id: string; name: string; display_name?: string | null };
+}) {
+  const nextStatus = params.task.status;
+  const previousStatus = params.oldTask?.status ?? null;
+  if (!nextStatus || previousStatus === nextStatus) return;
+  if (!['in-progress', 'in-review', 'done', 'cancelled'].includes(nextStatus)) return;
+
+  const runs = await listTaskExecutionRuns(params.taskId).catch(() => []);
+  let activeRun: TaskExecutionRunRow | null = null;
+  const preferredRunId = params.task.active_run_id || params.oldTask?.active_run_id || null;
+  if (preferredRunId) {
+    activeRun = runs.find((run) => run.id === preferredRunId) ?? null;
+  }
+  if (!activeRun) {
+    activeRun = runs.find((run) => !isTerminalRunStatus(run.status)) ?? null;
+  }
+
+  const checkpoint = buildStatusCheckpoint(nextStatus as TaskStatus);
+  const checkpointPayload = {
+    old_status: previousStatus,
+    new_status: nextStatus,
+    source: 'task.patch',
+    task_title: params.task.title,
+  };
+
+  if (nextStatus === 'in-progress') {
+    if (!activeRun || isTerminalRunStatus(activeRun.status)) {
+      const attempt = Math.max(0, ...runs.map((run) => run.attempt || 0)) + 1;
+      activeRun = await createTaskExecutionRun({
+        taskId: params.taskId,
+        projectId: params.projectId,
+        agentId: params.actor.id,
+        status: 'running',
+        attempt,
+        summary: checkpoint.summary,
+        metadata: {
+          source: 'task.patch',
+          status_transition: { from: previousStatus, to: nextStatus },
+        },
+      }).catch(() => null);
+    } else if (activeRun.status !== 'running') {
+      activeRun = await updateTaskExecutionRun({
+        runId: activeRun.id,
+        taskId: params.taskId,
+        status: 'running',
+        summary: checkpoint.summary,
+        metadata: {
+          ...activeRun.metadata,
+          source: 'task.patch',
+          status_transition: { from: previousStatus, to: nextStatus },
+        },
+      }).catch(() => activeRun);
+    }
+  } else if (nextStatus === 'in-review') {
+    if (activeRun && !isTerminalRunStatus(activeRun.status)) {
+      activeRun = await updateTaskExecutionRun({
+        runId: activeRun.id,
+        taskId: params.taskId,
+        status: mapTaskStatusToRunStatus(nextStatus as TaskStatus),
+        summary: checkpoint.summary,
+        metadata: {
+          ...activeRun.metadata,
+          source: 'task.patch',
+          status_transition: { from: previousStatus, to: nextStatus },
+        },
+      }).catch(() => activeRun);
+    }
+  } else if (nextStatus === 'done' || nextStatus === 'cancelled') {
+    if (activeRun && !isTerminalRunStatus(activeRun.status)) {
+      activeRun = await updateTaskExecutionRun({
+        runId: activeRun.id,
+        taskId: params.taskId,
+        status: mapTaskStatusToRunStatus(nextStatus as TaskStatus),
+        summary: checkpoint.summary,
+        metadata: {
+          ...activeRun.metadata,
+          source: 'task.patch',
+          status_transition: { from: previousStatus, to: nextStatus },
+        },
+      }).catch(() => activeRun);
+    }
+  }
+
+  if (activeRun) {
+    await appendTaskCheckpoint({
+      runId: activeRun.id,
+      taskId: params.taskId,
+      projectId: params.projectId,
+      agentId: params.actor.id,
+      checkpointKey: checkpoint.checkpointKey,
+      summary: checkpoint.summary,
+      payload: checkpointPayload,
+    }).catch(() => {});
+  }
 }
 
 export async function GET(
@@ -236,6 +387,7 @@ export async function GET(
       })(),
       broker_agent: hydrateBrokerAgent((checkpoint.payload || {}) as Record<string, unknown>),
     })),
+    task_activity: await listTaskActivityEvents(tid).catch(() => []),
     attachments,
   });
 }
@@ -804,6 +956,14 @@ export async function PATCH(
     }).catch(() => {});
   }
 
+  await syncTaskExecutionForStatusChange({
+    taskId: tid,
+    projectId: id,
+    oldTask: oldTask || null,
+    task,
+    actor: auth.agent,
+  });
+
   await auditLog({
     actor: auth.agent.name,
     action: 'task.update',
@@ -812,6 +972,8 @@ export async function PATCH(
     details: { project_id: id, ...updates, handoff_contract_id: handoffContract?.id || null, escalation_contract_id: escalationContract?.id || null },
     ipAddress: getClientIp(req),
   });
+
+  const taskActivityWrites: Promise<unknown>[] = [];
 
   // Auto-generate activity comments for notable changes
   if (oldTask) {
@@ -824,6 +986,16 @@ export async function PATCH(
         comment_type: 'status_change',
         metadata: { old_status: oldTask.status, new_status: updates.status },
       });
+      taskActivityWrites.push(
+        appendTaskActivityEvent({
+          projectId: id,
+          taskId: tid,
+          actorAgentId: auth.agent.id,
+          eventType: 'status_change',
+          summary: `Status changed from ${oldTask.status} to ${updates.status}`,
+          metadata: { old_status: oldTask.status, new_status: updates.status },
+        })
+      );
     }
 
     if ('assignee_agent_id' in updates && updates.assignee_agent_id !== oldTask.assignee_agent_id) {
@@ -840,12 +1012,32 @@ export async function PATCH(
           comment_type: 'assignment',
           metadata: { old_assignee: oldTask.assignee_agent_id, new_assignee: updates.assignee_agent_id },
         });
+        taskActivityWrites.push(
+          appendTaskActivityEvent({
+            projectId: id,
+            taskId: tid,
+            actorAgentId: auth.agent.id,
+            eventType: 'assignment',
+            summary: `Assigned to ${assigneeName}`,
+            metadata: { old_assignee: oldTask.assignee_agent_id, new_assignee: updates.assignee_agent_id },
+          })
+        );
       } else {
         activityComments.push({
           content: 'Assignee removed',
           comment_type: 'assignment',
           metadata: { old_assignee: oldTask.assignee_agent_id, new_assignee: null },
         });
+        taskActivityWrites.push(
+          appendTaskActivityEvent({
+            projectId: id,
+            taskId: tid,
+            actorAgentId: auth.agent.id,
+            eventType: 'assignment',
+            summary: 'Assignee removed',
+            metadata: { old_assignee: oldTask.assignee_agent_id, new_assignee: null },
+          })
+        );
       }
     }
 
@@ -855,6 +1047,16 @@ export async function PATCH(
         comment_type: 'system',
         metadata: { old_priority: oldTask.priority, new_priority: updates.priority },
       });
+      taskActivityWrites.push(
+        appendTaskActivityEvent({
+          projectId: id,
+          taskId: tid,
+          actorAgentId: auth.agent.id,
+          eventType: 'priority_change',
+          summary: `Priority changed to ${updates.priority}`,
+          metadata: { old_priority: oldTask.priority, new_priority: updates.priority },
+        })
+      );
     }
 
     if (activityComments.length > 0) {
@@ -868,6 +1070,34 @@ export async function PATCH(
       await supabase.from('task_comments').insert(rows);
     }
   }
+
+  if (handoffContract) {
+    taskActivityWrites.push(
+      appendTaskActivityEvent({
+        projectId: id,
+        taskId: tid,
+        actorAgentId: auth.agent.id,
+        eventType: 'handoff_contract',
+        summary: `Handoff contract ${handoffContract.id} proposed`,
+        metadata: { handoff_contract_id: handoffContract.id },
+      })
+    );
+  }
+
+  if (escalationContract) {
+    taskActivityWrites.push(
+      appendTaskActivityEvent({
+        projectId: id,
+        taskId: tid,
+        actorAgentId: auth.agent.id,
+        eventType: 'escalation_contract',
+        summary: `Escalation contract ${escalationContract.id} proposed`,
+        metadata: { escalation_contract_id: escalationContract.id },
+      })
+    );
+  }
+
+  await Promise.all(taskActivityWrites.map((p) => p.catch(() => null)));
 
   // Deliver webhook notifications to all project members (fire-and-forget)
   getProjectVisibleAgentIds(id).then(memberIds => {

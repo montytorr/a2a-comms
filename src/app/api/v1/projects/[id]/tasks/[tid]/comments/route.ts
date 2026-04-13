@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { buildObserverCommentMetadata, isObserverCommentTypeAllowed, normalizeObserverCommentType } from '@/lib/observer-mode';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -195,6 +196,20 @@ export async function POST(
     details: { project_id: projectId, comment_type: normalizedCommentType, participant_role: member.role },
     ipAddress: getClientIp(req),
   });
+
+  await appendTaskActivityEvent({
+    projectId,
+    taskId: tid,
+    actorAgentId: auth.agent.id,
+    eventType: normalizedCommentType,
+    summary: normalizedCommentType === 'analysis' ? 'Analysis note added' : 'Comment added',
+    metadata: {
+      comment_id: comment.id,
+      comment_type: normalizedCommentType,
+      participant_role: member.role,
+      participant_access_kind: member.accessKind,
+    },
+  }).catch(() => {});
 
   return NextResponse.json(comment, { status: 201 });
 }
