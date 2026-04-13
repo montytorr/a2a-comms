@@ -8,6 +8,7 @@ import {
   type TaskExecutionRunRow,
 } from '@/lib/task-execution';
 import type { Contract } from '@/lib/types';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 export interface HandoffTaskContext {
   taskId: string;
@@ -186,6 +187,34 @@ export async function claimAcceptedHandoff(params: {
         executor_agent_id: params.acceptedByAgentId,
       },
     },
+  ]);
+
+  await Promise.all([
+    appendTaskActivityEvent({
+      projectId: task.projectId,
+      taskId: task.taskId,
+      actorAgentId: params.acceptedByAgentId,
+      eventType: 'handoff_claimed',
+      summary: `Claimed delegated execution from contract ${params.contract.id}`,
+      metadata: {
+        handoff_contract_id: params.contract.id,
+        resumed_run_id: newRun.id,
+        resumed_from_run_id: task.activeRunId,
+        resumed_from_checkpoint_id: latestCheckpoint?.id ?? null,
+      },
+    }).catch(() => null),
+    appendTaskActivityEvent({
+      projectId: task.projectId,
+      taskId: task.taskId,
+      actorAgentId: params.acceptedByAgentId,
+      eventType: 'assignment',
+      summary: `Assigned to ${actorLabel} as executor via delegated execution`,
+      metadata: {
+        old_assignee: task.assigneeAgentId,
+        new_assignee: params.acceptedByAgentId,
+        handoff_contract_id: params.contract.id,
+      },
+    }).catch(() => null),
   ]);
 
   return {

@@ -6,6 +6,7 @@ import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { isTaskExecutionRunStatus, updateTaskExecutionRun } from '@/lib/task-execution';
 import type { ApiError, UpdateTaskExecutionRunRequest } from '@/lib/types';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function getTaskAndRun(projectId: string, taskId: string, runId: string) {
   const supabase = createServerClient();
@@ -167,6 +168,32 @@ export async function PATCH(
     },
     ipAddress: getClientIp(req),
   });
+
+  const isHeartbeatOnly = parsed.heartbeat === true
+    && parsed.summary === undefined
+    && parsed.error_message === undefined
+    && parsed.metadata === undefined
+    && !parsed.status;
+
+  if (!isHeartbeatOnly) {
+    await appendTaskActivityEvent({
+      projectId,
+      taskId,
+      actorAgentId: auth.agent.id,
+      eventType: 'execution_run_updated',
+      summary: parsed.status
+        ? `Execution run ${parsed.status}`
+        : (parsed.error_message ? 'Execution run error updated' : 'Execution run updated'),
+      metadata: {
+        run_id: runId,
+        previous_status: run.status,
+        status: updated.status,
+        summary: updated.summary,
+        error_message: updated.error_message,
+        heartbeat: parsed.heartbeat === true,
+      },
+    }).catch(() => {});
+  }
 
   return NextResponse.json(updated);
 }

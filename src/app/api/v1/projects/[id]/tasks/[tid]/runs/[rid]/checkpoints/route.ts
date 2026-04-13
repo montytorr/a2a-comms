@@ -7,6 +7,7 @@ import { appendTaskCheckpoint, listTaskExecutionCheckpoints } from '@/lib/task-e
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import type { ApiError, CreateTaskExecutionCheckpointRequest } from '@/lib/types';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function getTaskAndRun(projectId: string, taskId: string, runId: string) {
   const supabase = createServerClient();
@@ -156,6 +157,21 @@ export async function POST(
     details: { project_id: projectId, run_id: runId, checkpoint_id: checkpoint.id, checkpoint_key: checkpoint.checkpoint_key, attachment_ids: parsed.attachment_ids ?? [] },
     ipAddress: getClientIp(req),
   });
+
+  await appendTaskActivityEvent({
+    projectId,
+    taskId,
+    actorAgentId: auth.agent.id,
+    eventType: 'execution_checkpoint_created',
+    summary: checkpoint.summary || `Checkpoint added: ${checkpoint.checkpoint_key}`,
+    metadata: {
+      run_id: runId,
+      checkpoint_id: checkpoint.id,
+      checkpoint_key: checkpoint.checkpoint_key,
+      sequence: checkpoint.sequence,
+      attachment_ids: parsed.attachment_ids ?? [],
+    },
+  }).catch(() => {});
 
   await storeIdempotencyResponse(idempotency.key, auth, endpoint, 201, checkpoint);
   return NextResponse.json(checkpoint, { status: 201 });

@@ -8,6 +8,7 @@ import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput
 import { buildObserverCommentMetadata, normalizeObserverCommentType } from '@/lib/observer-mode';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { resolveProjectActorAccess } from '@/lib/dashboard-actor-helpers';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function requireProjectMembership(
   projectId: string,
@@ -32,9 +33,16 @@ export async function updateTask(
     sprint_id?: string | null;
   },
 ) {
-  await requireProjectMembership(projectId);
+  const user = await requireProjectMembership(projectId);
 
   const supabase = createServerClient();
+  const { data: previousTask } = await supabase
+    .from('tasks')
+    .select('title, description, priority, assignee_agent_id, labels, due_date, sprint_id')
+    .eq('id', taskId)
+    .eq('project_id', projectId)
+    .single();
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (data.title !== undefined) updates.title = data.title;
@@ -52,6 +60,30 @@ export async function updateTask(
     .eq('project_id', projectId);
 
   if (error) throw new Error(`Failed to update task: ${error.message}`);
+
+  const activityWrites: Promise<unknown>[] = [];
+  if (data.title !== undefined && data.title !== previousTask?.title) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'title_updated', summary: 'Task title updated', metadata: { old_title: previousTask?.title ?? null, new_title: data.title } }));
+  }
+  if (data.description !== undefined && data.description !== previousTask?.description) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'description_updated', summary: 'Task description updated', metadata: { had_description: !!previousTask?.description, has_description: !!data.description } }));
+  }
+  if (data.priority !== undefined && data.priority !== previousTask?.priority) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'priority_change', summary: `Priority changed to ${data.priority}`, metadata: { old_priority: previousTask?.priority ?? null, new_priority: data.priority } }));
+  }
+  if (data.assignee_agent_id !== undefined && data.assignee_agent_id !== previousTask?.assignee_agent_id) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'assignment', summary: data.assignee_agent_id ? 'Task reassigned' : 'Assignee removed', metadata: { old_assignee: previousTask?.assignee_agent_id ?? null, new_assignee: data.assignee_agent_id ?? null } }));
+  }
+  if (data.labels !== undefined && JSON.stringify(data.labels ?? []) !== JSON.stringify(previousTask?.labels ?? [])) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'labels_updated', summary: 'Task labels updated', metadata: { old_labels: previousTask?.labels ?? [], new_labels: data.labels ?? [] } }));
+  }
+  if (data.due_date !== undefined && data.due_date !== previousTask?.due_date) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'due_date_updated', summary: data.due_date ? 'Due date updated' : 'Due date cleared', metadata: { old_due_date: previousTask?.due_date ?? null, new_due_date: data.due_date ?? null } }));
+  }
+  if (data.sprint_id !== undefined && data.sprint_id !== previousTask?.sprint_id) {
+    activityWrites.push(appendTaskActivityEvent({ projectId, taskId, actorAgentId: user.memberAgentId ?? null, actorUserId: user.id, eventType: 'sprint_updated', summary: data.sprint_id ? 'Task moved to sprint' : 'Task removed from sprint', metadata: { old_sprint_id: previousTask?.sprint_id ?? null, new_sprint_id: data.sprint_id ?? null } }));
+  }
+  await Promise.all(activityWrites.map((p) => p.catch(() => null)));
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
   revalidatePath(`/projects/${projectId}`);
 }
@@ -99,6 +131,20 @@ export async function addComment(
     });
 
   if (error) throw new Error(`Failed to add comment: ${error.message}`);
+
+  await appendTaskActivityEvent({
+    projectId,
+    taskId,
+    actorAgentId: authorAgentId,
+    actorUserId: user.id,
+    eventType: user.accessKind === 'observer' ? 'analysis' : 'comment',
+    summary: user.accessKind === 'observer' ? 'Analysis note added' : 'Comment added',
+    metadata: {
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
+  }).catch(() => {});
+
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
 }
 
@@ -169,6 +215,21 @@ export async function logBlockerFollowUp(projectId: string, taskId: string) {
   });
 
   if (commentError) throw new Error(`Failed to log blocker comment: ${commentError.message}`);
+
+  await appendTaskActivityEvent({
+    projectId,
+    taskId,
+    actorAgentId: user.memberAgentId ?? null,
+    actorUserId: user.id,
+    eventType: 'blocker_follow_up',
+    summary: `Logged blocker follow-up on ${blockerSummary}`,
+    metadata: {
+      blocker_titles: activeBlockers.map((blocker) => blocker.title),
+      acted_at: actionAt,
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
+  }).catch(() => {});
 
   await notifyBlockerAction(supabase, {
     projectId,
@@ -255,6 +316,21 @@ export async function escalateBlockedTask(projectId: string, taskId: string) {
 
   if (commentError) throw new Error(`Failed to log blocker escalation comment: ${commentError.message}`);
 
+  await appendTaskActivityEvent({
+    projectId,
+    taskId,
+    actorAgentId: user.memberAgentId ?? null,
+    actorUserId: user.id,
+    eventType: 'blocker_escalation',
+    summary: `Escalated blocker on ${blockerSummary}`,
+    metadata: {
+      blocker_titles: activeBlockers.map((blocker) => blocker.title),
+      acted_at: actionAt,
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
+  }).catch(() => {});
+
   await notifyBlockerAction(supabase, {
     projectId,
     taskId,
@@ -316,6 +392,22 @@ export async function uploadTaskAttachment(projectId: string, taskId: string, fo
       participant_access_kind: user.accessKind,
     },
   });
+
+  await appendTaskActivityEvent({
+    projectId,
+    taskId,
+    actorAgentId: user.memberAgentId ?? null,
+    actorUserId: user.id,
+    eventType: 'attachment_uploaded',
+    summary: `Attachment uploaded: ${file.name}`,
+    metadata: {
+      filename: file.name,
+      mime_type: validated.mimeType,
+      size_bytes: buffer.length,
+      participant_role: user.projectRole,
+      participant_access_kind: user.accessKind,
+    },
+  }).catch(() => {});
 
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
 }

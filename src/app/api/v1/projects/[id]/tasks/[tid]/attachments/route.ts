@@ -8,6 +8,7 @@ import { getProjectAccess } from '@/lib/project-access';
 import { evaluateAttachmentDownloadAccess } from '@/lib/attachment-trust-policy';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiError } from '@/lib/types';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 function isMissingAttachmentIdsColumn(error: PostgrestError | null | undefined) {
   return !!error && /attachment_ids/i.test(error.message || '');
@@ -142,6 +143,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       details: { project_id: projectId, attachment_id: attachment.id, filename: attachment.original_name, mime_type: attachment.mime_type, size_bytes: attachment.size_bytes },
       ipAddress: getClientIp(req),
     });
+
+    await appendTaskActivityEvent({
+      projectId,
+      taskId,
+      actorAgentId: auth.agent.id,
+      eventType: 'attachment_uploaded',
+      summary: `Attachment uploaded: ${attachment.original_name || attachment.filename}`,
+      metadata: {
+        attachment_id: attachment.id,
+        filename: attachment.filename,
+        original_name: attachment.original_name,
+        mime_type: attachment.mime_type,
+        size_bytes: attachment.size_bytes,
+        run_id: runId,
+        checkpoint_id: checkpointId,
+      },
+    }).catch(() => {});
 
     return NextResponse.json(attachment, { status: 201 });
   } catch (error) {

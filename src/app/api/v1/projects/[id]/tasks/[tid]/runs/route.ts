@@ -7,6 +7,7 @@ import { createTaskExecutionRun, isTaskExecutionRunStatus, listTaskExecutionRuns
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import type { ApiError, CreateTaskExecutionRunRequest } from '@/lib/types';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function getTaskContext(projectId: string, taskId: string) {
   const supabase = createServerClient();
@@ -149,6 +150,20 @@ export async function POST(
     details: { project_id: projectId, run_id: run.id, status: run.status, attempt: run.attempt },
     ipAddress: getClientIp(req),
   });
+
+  await appendTaskActivityEvent({
+    projectId,
+    taskId,
+    actorAgentId: auth.agent.id,
+    eventType: 'execution_run_created',
+    summary: `Execution run #${run.attempt} started`,
+    metadata: {
+      run_id: run.id,
+      attempt: run.attempt,
+      status: run.status,
+      summary: run.summary,
+    },
+  }).catch(() => {});
 
   await storeIdempotencyResponse(idempotency.key, auth, endpoint, 201, run);
   return NextResponse.json(run, { status: 201 });

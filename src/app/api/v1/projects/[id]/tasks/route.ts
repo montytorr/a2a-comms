@@ -11,6 +11,7 @@ import { getUserEmail } from '@/lib/email/helpers';
 import { buildHandoffContractDescription, buildHandoffContractTitle } from '@/lib/handoff-contracts';
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle } from '@/lib/escalation-brokerage';
 import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
+import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function notifyAssigneeOwner(
   supabase: ReturnType<typeof createServerClient>,
@@ -597,6 +598,71 @@ export async function POST(
     details: { project_id: id, title: parsed.title, priority: parsed.priority || 'medium', handoff_contract_id: handoffContract?.id || null, escalation_contract_id: escalationContract?.id || null },
     ipAddress: getClientIp(req),
   });
+
+  const taskActivityWrites: Promise<unknown>[] = [
+    appendTaskActivityEvent({
+      projectId: id,
+      taskId: task.id,
+      actorAgentId: auth.agent.id,
+      eventType: 'task_created',
+      summary: `Task created${task.title ? `: ${task.title}` : ''}`,
+      metadata: {
+        priority: task.priority || 'medium',
+        reporter_agent_id: auth.agent.id,
+        assignee_agent_id: task.assignee_agent_id ?? null,
+      },
+    }),
+  ];
+
+  if (task.assignee_agent_id) {
+    const assigneeName = handoffInviteeAgents.find((agent) => agent.id === task.assignee_agent_id)?.display_name
+      || handoffInviteeAgents.find((agent) => agent.id === task.assignee_agent_id)?.name
+      || escalationBrokerAgents.find((agent) => agent.id === task.assignee_agent_id)?.display_name
+      || escalationBrokerAgents.find((agent) => agent.id === task.assignee_agent_id)?.name
+      || null;
+
+    taskActivityWrites.push(
+      appendTaskActivityEvent({
+        projectId: id,
+        taskId: task.id,
+        actorAgentId: auth.agent.id,
+        eventType: 'assignment',
+        summary: assigneeName ? `Assigned to ${assigneeName}` : 'Task assigned',
+        metadata: {
+          old_assignee: null,
+          new_assignee: task.assignee_agent_id,
+        },
+      })
+    );
+  }
+
+  if (handoffContract) {
+    taskActivityWrites.push(
+      appendTaskActivityEvent({
+        projectId: id,
+        taskId: task.id,
+        actorAgentId: auth.agent.id,
+        eventType: 'handoff_contract',
+        summary: `Handoff contract ${handoffContract.id} proposed`,
+        metadata: { handoff_contract_id: handoffContract.id },
+      })
+    );
+  }
+
+  if (escalationContract) {
+    taskActivityWrites.push(
+      appendTaskActivityEvent({
+        projectId: id,
+        taskId: task.id,
+        actorAgentId: auth.agent.id,
+        eventType: 'escalation_contract',
+        summary: `Escalation contract ${escalationContract.id} proposed`,
+        metadata: { escalation_contract_id: escalationContract.id },
+      })
+    );
+  }
+
+  await Promise.all(taskActivityWrites.map((p) => p.catch(() => null)));
 
   // Deliver webhook notifications to all project members (fire-and-forget)
   getProjectMemberAgentIds(id).then(memberIds => {
