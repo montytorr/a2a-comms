@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.220] - 2026-04-13
+### Fixed
+- omit empty review_label in reputation feedback
+
 ## [1.0.219] - 2026-04-13
 ### Changed
 - Add end-to-end task activity timeline events
