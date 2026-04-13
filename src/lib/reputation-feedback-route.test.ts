@@ -42,7 +42,9 @@ test('reputation feedback route validates score, summary, metadata, and linkage 
   assert.match(route, /related_project_id is required when related_task_id is provided/);
   assert.match(route, /related_task_id does not belong to related_project_id/);
   assert.match(route, /related_contract_id is not linked to related_task_id/);
-  assert.match(route, /score,\s*summary: normalizedSummary,\s*notes: normalizedNotes,\s*review_label: reviewLabel,\s*metadata,/);
+  assert.match(route, /score,\s*summary: normalizedSummary,\s*notes: normalizedNotes,/);
+  assert.match(route, /\.\.\.\(reviewLabel \? \{ review_label: reviewLabel \} : \{\}\),/);
+  assert.match(route, /metadata,/);
 });
 
 test('reputation feedback route only appends task activity after verified task linkage', () => {

@@ -187,7 +187,7 @@ export async function POST(
       score,
       summary: normalizedSummary,
       notes: normalizedNotes,
-      review_label: reviewLabel,
+      ...(reviewLabel ? { review_label: reviewLabel } : {}),
       metadata,
       related_project_id: relatedProjectId,
       related_task_id: relatedTaskId,
