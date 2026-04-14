@@ -22,6 +22,44 @@ import type {
 import { buildReputationPolicyGuidance } from '@/lib/reputation-policy-guidance';
 import type { PostgrestError } from '@supabase/supabase-js';
 
+type AuditLogRow = {
+  id: string;
+  actor: string;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+};
+
+type TaskExecutionRunRow = {
+  id: string;
+  task_id: string;
+  project_id: string;
+  agent_id: string;
+  status: string;
+  attempt: number;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  heartbeat_at: string | null;
+  summary: string | null;
+  error_message: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+type TaskActivityEventRow = {
+  id: string;
+  project_id: string;
+  task_id: string;
+  actor_agent_id: string | null;
+  actor_user_id: string | null;
+  event_type: string;
+  summary: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export const REPUTATION_EVENT_SOURCE_TYPES = [
   'task_run',
   'approval',
@@ -339,6 +377,298 @@ function isMissingReputationTable(error: PostgrestError | null) {
   return !!error && /(reputation_ledger_events|relation .* does not exist|column .*reputation_snapshot.* does not exist)/i.test(error.message || '');
 }
 
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function dedupeReputationEvents(events: ReputationLedgerEvent[]) {
+  const deduped = new Map<string, ReputationLedgerEvent>();
+  for (const event of events) {
+    deduped.set(event.id, event);
+  }
+  return Array.from(deduped.values()).sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
+}
+
+function buildSyntheticEventId(parts: Array<string | null | undefined>) {
+  return `derived:${parts.filter(Boolean).join(':')}`;
+}
+
+function getDerivedRunEvents(agentId: string, runs: TaskExecutionRunRow[]): ReputationLedgerEvent[] {
+  return runs.flatMap((run) => {
+    const occurredAt = run.completed_at ?? run.updated_at ?? run.created_at;
+    const metadata = asObject(run.metadata);
+    const baseMetadata = {
+      derived: true,
+      summary: run.summary,
+      error_message: run.error_message,
+      attempt: run.attempt,
+      status: run.status,
+      ...(Object.keys(metadata).length > 0 ? { run_metadata: metadata } : {}),
+    };
+
+    if (run.status === 'succeeded') {
+      return [{
+        id: buildSyntheticEventId(['task-run', run.id, 'delivery_reliability']),
+        agent_id: agentId,
+        occurred_at: occurredAt,
+        recorded_at: occurredAt,
+        source_type: 'task_run',
+        signal_key: 'delivery_reliability',
+        value: 0.8,
+        weight_hint: run.attempt > 1 ? 0.85 : 1,
+        source_id: run.id,
+        project_id: run.project_id,
+        task_id: run.task_id,
+        contract_id: asString(metadata.handoff_contract_id) ?? asString(metadata.escalation_contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: baseMetadata,
+      } satisfies ReputationLedgerEvent];
+    }
+
+    if (run.status === 'failed' || run.status === 'cancelled') {
+      return [{
+        id: buildSyntheticEventId(['task-run', run.id, 'delivery_reliability']),
+        agent_id: agentId,
+        occurred_at: occurredAt,
+        recorded_at: occurredAt,
+        source_type: 'task_run',
+        signal_key: 'delivery_reliability',
+        value: run.status === 'failed' ? -0.7 : -0.45,
+        weight_hint: 1,
+        source_id: run.id,
+        project_id: run.project_id,
+        task_id: run.task_id,
+        contract_id: asString(metadata.handoff_contract_id) ?? asString(metadata.escalation_contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: baseMetadata,
+      } satisfies ReputationLedgerEvent];
+    }
+
+    return [];
+  });
+}
+
+function getDerivedTaskActivityEvents(agentId: string, events: TaskActivityEventRow[]): ReputationLedgerEvent[] {
+  return events.flatMap((event) => {
+    const metadata = asObject(event.metadata);
+
+    if (event.event_type === 'handoff_claimed') {
+      return [{
+        id: buildSyntheticEventId(['task-activity', event.id, 'collaboration_quality']),
+        agent_id: agentId,
+        occurred_at: event.created_at,
+        recorded_at: event.created_at,
+        source_type: 'handoff',
+        signal_key: 'collaboration_quality',
+        value: 0.75,
+        weight_hint: 0.9,
+        source_id: event.id,
+        project_id: event.project_id,
+        task_id: event.task_id,
+        contract_id: asString(metadata.handoff_contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: {
+          derived: true,
+          event_type: event.event_type,
+          summary: event.summary,
+        },
+      } satisfies ReputationLedgerEvent];
+    }
+
+    if (event.event_type === 'blocker_escalation') {
+      return [{
+        id: buildSyntheticEventId(['task-activity', event.id, 'collaboration_quality']),
+        agent_id: agentId,
+        occurred_at: event.created_at,
+        recorded_at: event.created_at,
+        source_type: 'handoff',
+        signal_key: 'collaboration_quality',
+        value: -0.35,
+        weight_hint: 0.65,
+        source_id: event.id,
+        project_id: event.project_id,
+        task_id: event.task_id,
+        contract_id: asString(metadata.escalation_contract_id) ?? asString(metadata.contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: {
+          derived: true,
+          event_type: event.event_type,
+          summary: event.summary,
+        },
+      } satisfies ReputationLedgerEvent];
+    }
+
+    return [];
+  });
+}
+
+function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorName: string | null): ReputationLedgerEvent[] {
+  const normalizedActor = actorName?.trim().toLowerCase() ?? null;
+
+  return auditRows.flatMap<ReputationLedgerEvent>((row) => {
+    const details = asObject(row.details);
+    const originalActor = asString(details.original_actor);
+    const rowActor = row.actor?.trim().toLowerCase() ?? '';
+    const matchesRequestedActor = normalizedActor && (rowActor === normalizedActor || originalActor?.trim().toLowerCase() === normalizedActor);
+
+    if (row.action === 'approval.requested' && row.resource_type === 'approval' && rowActor === normalizedActor) {
+      return [{
+        id: buildSyntheticEventId(['audit', row.id, 'approval-requested']),
+        agent_id: agentId,
+        occurred_at: row.created_at,
+        recorded_at: row.created_at,
+        source_type: 'approval',
+        signal_key: 'approval_outcomes',
+        value: 0.15,
+        weight_hint: 0.3,
+        source_id: row.resource_id,
+        project_id: asString(details.project_id),
+        task_id: asString(details.task_id),
+        contract_id: asString(details.contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: {
+          derived: true,
+          audit_action: row.action,
+          approval_action: asString(details.approval_action),
+        },
+      } satisfies ReputationLedgerEvent];
+    }
+
+    if ((row.action === 'approval.approved' || row.action === 'approval.denied') && row.resource_type === 'approval' && matchesRequestedActor) {
+      return [{
+        id: buildSyntheticEventId(['audit', row.id, row.action]),
+        agent_id: agentId,
+        occurred_at: row.created_at,
+        recorded_at: row.created_at,
+        source_type: 'approval',
+        signal_key: 'approval_outcomes',
+        value: row.action === 'approval.approved' ? 0.85 : -0.75,
+        weight_hint: 1,
+        source_id: row.resource_id,
+        project_id: asString(details.project_id),
+        task_id: asString(details.task_id),
+        contract_id: asString(details.contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: {
+          derived: true,
+          audit_action: row.action,
+          approval_action: asString(details.approval_action),
+          reviewed_by: row.actor,
+        },
+      } satisfies ReputationLedgerEvent];
+    }
+
+    if ((row.action === 'auth.failure' || row.action === 'authz.denied') && rowActor === normalizedActor) {
+      return [{
+        id: buildSyntheticEventId(['audit', row.id, row.action]),
+        agent_id: agentId,
+        occurred_at: row.created_at,
+        recorded_at: row.created_at,
+        source_type: 'security_incident',
+        signal_key: 'security_hygiene',
+        value: row.action === 'auth.failure' ? -0.45 : -0.6,
+        weight_hint: 0.9,
+        source_id: row.id,
+        project_id: asString(details.project_id),
+        task_id: asString(details.task_id),
+        contract_id: asString(details.contract_id),
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: {
+          derived: true,
+          audit_action: row.action,
+          reason: asString(details.reason),
+        },
+      } satisfies ReputationLedgerEvent];
+    }
+
+    if ((row.action === 'suspicious.replay_detected' || row.action === 'suspicious.invalid_signature') && rowActor === normalizedActor) {
+      return [{
+        id: buildSyntheticEventId(['audit', row.id, row.action]),
+        agent_id: agentId,
+        occurred_at: row.created_at,
+        recorded_at: row.created_at,
+        source_type: 'security_incident',
+        signal_key: 'security_hygiene',
+        value: -0.9,
+        weight_hint: 1.3,
+        source_id: row.id,
+        project_id: null,
+        task_id: null,
+        contract_id: null,
+        reviewer_agent_id: null,
+        reviewer_user_id: null,
+        metadata: {
+          derived: true,
+          audit_action: row.action,
+        },
+      } satisfies ReputationLedgerEvent];
+    }
+
+    return [];
+  });
+}
+
+async function getDerivedReputationLedgerEvents(agentId: string) {
+  const supabase = createServerClient();
+  const { data: agentRow, error: agentError } = await supabase
+    .from('agents')
+    .select('id, name')
+    .eq('id', agentId)
+    .maybeSingle();
+
+  if (agentError) throw agentError;
+
+  const agentName = agentRow?.name ?? null;
+
+  const [runsRes, activityRes, auditRes] = await Promise.all([
+    supabase
+      .from('task_execution_runs')
+      .select('id, task_id, project_id, agent_id, status, attempt, created_at, updated_at, completed_at, heartbeat_at, summary, error_message, metadata')
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false })
+      .limit(200),
+    supabase
+      .from('task_activity_events')
+      .select('id, project_id, task_id, actor_agent_id, actor_user_id, event_type, summary, metadata, created_at')
+      .eq('actor_agent_id', agentId)
+      .in('event_type', ['handoff_claimed', 'blocker_escalation'])
+      .order('created_at', { ascending: false })
+      .limit(200),
+    supabase
+      .from('audit_log')
+      .select('id, actor, action, resource_type, resource_id, details, created_at')
+      .or(agentName ? `actor.eq.${agentName},details->>original_actor.eq.${agentName}` : `actor.eq.__never__`)
+      .in('action', ['approval.requested', 'approval.approved', 'approval.denied', 'auth.failure', 'authz.denied', 'suspicious.replay_detected', 'suspicious.invalid_signature'])
+      .order('created_at', { ascending: false })
+      .limit(200),
+  ]);
+
+  const missingRelationErrors = [runsRes.error, activityRes.error, auditRes.error].filter(
+    (error): error is PostgrestError => !!error && /relation .* does not exist/i.test(error.message || '')
+  );
+  if (missingRelationErrors.length > 0) return [] as ReputationLedgerEvent[];
+  if (runsRes.error) throw runsRes.error;
+  if (activityRes.error) throw activityRes.error;
+  if (auditRes.error) throw auditRes.error;
+
+  return dedupeReputationEvents([
+    ...getDerivedRunEvents(agentId, (runsRes.data || []) as TaskExecutionRunRow[]),
+    ...getDerivedTaskActivityEvents(agentId, (activityRes.data || []) as TaskActivityEventRow[]),
+    ...getDerivedAuditEvents(agentId, (auditRes.data || []) as AuditLogRow[], agentName),
+  ]);
+}
+
 export async function listReputationLedgerEvents(agentId: string, limit = 100) {
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -410,7 +740,9 @@ export function aggregateReputationLedger(params: {
 }
 
 export async function recomputeAgentReputation(agentId: string, options: ReputationAggregationOptions = {}) {
-  const events = options.includeEvents ?? (await listReputationLedgerEvents(agentId, 500));
+  const storedEvents = options.includeEvents ?? (await listReputationLedgerEvents(agentId, 500));
+  const derivedEvents = await getDerivedReputationLedgerEvents(agentId);
+  const events = dedupeReputationEvents([...storedEvents, ...derivedEvents]);
   return aggregateReputationLedger({ agentId, events, evaluatedAt: options.evaluatedAt });
 }
 
@@ -496,10 +828,23 @@ export async function recordOperatorFeedback(params: {
 
 export async function getAgentReputationDetail(agentId: string, options: ReputationAggregationOptions = {}) {
   const result = await recomputeAgentReputation(agentId, options);
+  const emptyReason = result.events.length === 0
+    ? 'No automatic reputation events have been derived yet. Reputation will populate after task runs, approvals, handoff activity, security incidents, or operator feedback are recorded for this agent.'
+    : undefined;
+  const explanation = emptyReason
+    ? {
+        ...result.snapshot.explanation,
+        gating: {
+          ...result.snapshot.explanation.gating,
+          reason: emptyReason,
+        },
+      }
+    : result.snapshot.explanation;
   const detail = {
     ...result.snapshot,
+    explanation,
     ledger_events: result.events,
-    explanation_contract: toExplanationContract(result.snapshot.explanation),
+    explanation_contract: toExplanationContract(explanation),
   };
 
   return {

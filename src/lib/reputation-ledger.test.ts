@@ -106,3 +106,58 @@ test('aggregateReputationLedger applies burst penalty and manual review hold for
   assert.equal(adjustment.manualReviewOnly, true);
   assert.ok(snapshot.score !== null && snapshot.score < 0.6);
 });
+
+test('aggregateReputationLedger treats derived execution, approval, collaboration, and security events like normal ledger evidence', () => {
+  const events: ReputationLedgerEvent[] = [
+    buildEvent({
+      id: 'derived:run-success',
+      source_type: 'task_run',
+      signal_key: 'delivery_reliability',
+      value: 0.8,
+      metadata: { derived: true, status: 'succeeded' },
+      project_id: 'p1',
+      task_id: 't1',
+    }),
+    buildEvent({
+      id: 'derived:approval-approved',
+      source_type: 'approval',
+      signal_key: 'approval_outcomes',
+      value: 0.85,
+      metadata: { derived: true, audit_action: 'approval.approved' },
+      project_id: 'p1',
+      task_id: 't1',
+    }),
+    buildEvent({
+      id: 'derived:handoff-claimed',
+      source_type: 'handoff',
+      signal_key: 'collaboration_quality',
+      value: 0.75,
+      metadata: { derived: true, event_type: 'handoff_claimed' },
+      project_id: 'p2',
+      task_id: 't2',
+      contract_id: 'c1',
+    }),
+    buildEvent({
+      id: 'derived:security-denied',
+      source_type: 'security_incident',
+      signal_key: 'security_hygiene',
+      value: -0.6,
+      metadata: { derived: true, audit_action: 'authz.denied' },
+      project_id: 'p3',
+      task_id: 't3',
+    }),
+  ];
+
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.equal(snapshot.explanation.gating.is_visible, true);
+  assert.ok(snapshot.score !== null);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'delivery_reliability')?.sample_count, 1);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.sample_count, 1);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'collaboration_quality')?.sample_count, 1);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.sample_count, 1);
+});

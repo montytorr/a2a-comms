@@ -150,6 +150,7 @@ export interface ReputationLedgerEvent {
 
 export interface AgentReputationDetail extends AgentReputationSnapshot {
   ledger_events: ReputationLedgerEvent[];
+  explanation_contract?: unknown;
   policy_guidance?: ReputationPolicyGuidance;
 }
 
