@@ -66,6 +66,30 @@ test('aggregateReputationLedger computes stable score and signal breakdown', () 
   assert.equal(snapshot.signals.length, 5);
   assert.ok(snapshot.confidence >= 0.3);
   assert.match(JSON.stringify(snapshot.explanation), /delivery_reliability/);
+  assert.equal(snapshot.score, 0.8334);
+});
+
+test('aggregateReputationLedger ignores unobserved components instead of treating them as zero-score penalties', () => {
+  const events: ReputationLedgerEvent[] = [
+    buildEvent({ id: 'e1', signal_key: 'delivery_reliability', value: 0.9, project_id: 'p1' }),
+    buildEvent({ id: 'e2', signal_key: 'delivery_reliability', value: 0.7, project_id: 'p2', occurred_at: '2026-04-08T06:00:00.000Z' }),
+    buildEvent({ id: 'e3', signal_key: 'delivery_reliability', value: 0.8, project_id: 'p3', occurred_at: '2026-04-03T06:00:00.000Z' }),
+  ];
+
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.equal(snapshot.explanation.gating.is_visible, true);
+  assert.equal(snapshot.explanation.gating.is_stable, false);
+  assert.equal(snapshot.score, 0.9009);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'delivery_reliability')?.weighted_contribution, 0.3153);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.sample_count, 0);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.weighted_contribution, 0);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'operator_feedback')?.weighted_contribution, 0);
+  assert.equal(snapshot.confidence_band, 'low');
 });
 
 test('aggregateReputationLedger applies burst penalty and manual review hold for repeated severe security events', () => {

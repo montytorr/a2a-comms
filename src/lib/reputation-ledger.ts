@@ -296,12 +296,13 @@ function buildSignalAggregates(events: ReputationLedgerEvent[], evaluatedAt: str
       weightedTotal += normalizeEventValue(event.value) * eventWeight;
     }
 
-    const value = totalWeight > 0 ? weightedTotal / totalWeight : 0;
+    const hasEvidence = totalWeight > 0;
+    const value = hasEvidence ? weightedTotal / totalWeight : 0;
     return {
       key: signal.key,
       value: Number(clamp(value, 0, 1).toFixed(4)),
       sampleCount: signalEvents.length,
-      weightedContribution: Number((clamp(value, 0, 1) * signal.weight).toFixed(4)),
+      weightedContribution: Number((hasEvidence ? clamp(value, 0, 1) * signal.weight : 0).toFixed(4)),
       lastEventAt: signalEvents[0]?.occurred_at ?? null,
       notes: buildSignalNotes(signal.key, value, signalEvents.length),
     };
@@ -317,7 +318,13 @@ function toSnapshot(params: {
   newestEventAt: string | null;
   adjustments: { antiGamingPenalty: number; manualReviewOnly: boolean; reasons: string[] };
 }): AgentReputationSnapshot {
-  const rawScore = params.signals.reduce((sum, signal) => sum + signal.weightedContribution, 0);
+  const observedSignals = params.signals.filter((signal) => signal.sampleCount > 0);
+  const observedWeight = observedSignals.reduce((sum, signal) => {
+    const configuredWeight = REPUTATION_SIGNAL_WEIGHTS.find((entry) => entry.key === signal.key)?.weight ?? 0;
+    return sum + configuredWeight;
+  }, 0);
+  const weightedScoreSum = observedSignals.reduce((sum, signal) => sum + signal.weightedContribution, 0);
+  const rawScore = observedWeight > 0 ? weightedScoreSum / observedWeight : 0;
   const visible = params.observedEvents >= REPUTATION_MIN_EVENTS_FOR_PROVISIONAL;
   const stable = params.observedEvents >= REPUTATION_MIN_EVENTS_FOR_STABLE;
   const score = visible ? Number(clamp(rawScore - params.adjustments.antiGamingPenalty, 0, 1).toFixed(4)) : null;
