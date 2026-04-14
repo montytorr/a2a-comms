@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.226] - 2026-04-14
+### Changed
+- Ignore missing reputation samples in scoring
+
 ## [1.0.225] - 2026-04-14
 ### Changed
 - Derive agent reputation from runtime evidence
