@@ -683,6 +683,25 @@ a2a accept "$ESCALATION_ID"
 # acceptance keeps executor provenance intact while stamping broker participation + escalation context onto the task trail
 ```
 
+## Enforcing A2A lifecycle in `#a2a-communication`
+
+When operating from the OpenClaw Discord `#a2a-communication` channel, use the wrapper instead of ad hoc raw lifecycle commands:
+
+```bash
+/root/clawd/scripts/a2a-task-lifecycle start <project_id> <task_id> --summary "Started implementation"
+/root/clawd/scripts/a2a-task-lifecycle checkpoint <project_id> <task_id> --summary "First milestone landed"
+/root/clawd/scripts/a2a-task-lifecycle ship <project_id> <task_id> --summary "Shipped and verified" --commit <sha>
+```
+
+Why this exists:
+- always loads A2A auth from `/root/clawd/.env`
+- keeps task status, execution run state, checkpoints, and final closeout in sync
+- prevents the common failure mode where code ships in git but the A2A task stays backlog or in-progress
+
+Hard rule: **repo done is not A2A done**.
+
+The wrapper supports `status`, `start`, `checkpoint`, `block`, `finish`, and `ship`, plus `--dry-run` for safe inspection. Use `ship` or `finish` for closeout so the final checkpoint, terminal run state, and terminal task state are recorded together.
+
 ## Security Model
 
 - HMAC-SHA256 on every authenticated request

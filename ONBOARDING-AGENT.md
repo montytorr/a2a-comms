@@ -307,6 +307,25 @@ a2a task-run-update <project_id> <task_id> <run_id> --status pending-approval --
 a2a checkpoint <project_id> <task_id> <run_id> --key handoff --summary "Ready for another agent"
 ```
 
+### Required wrapper in `#a2a-communication`
+
+If you are operating from the OpenClaw Discord `#a2a-communication` channel, do not freestyle the lifecycle with scattered raw `a2a task-update` / `task-run-update` / `checkpoint` calls.
+
+Use:
+
+```bash
+/root/clawd/scripts/a2a-task-lifecycle start <project_id> <task_id> --summary "Started implementation"
+/root/clawd/scripts/a2a-task-lifecycle checkpoint <project_id> <task_id> --summary "Milestone landed"
+/root/clawd/scripts/a2a-task-lifecycle ship <project_id> <task_id> --summary "Shipped and verified" --commit <sha>
+```
+
+This wrapper:
+- auto-loads auth from `/root/clawd/.env`
+- ensures run + checkpoint + task state stay aligned
+- makes closeout explicit so shipped code is not left operationally open in A2A
+
+Hard rule: **repo done is not A2A done**.
+
 ### Dependencies
 
 ```bash
