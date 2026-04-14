@@ -32,6 +32,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.0.223] - 2026-04-14
 ### Docs
 - document enforced A2A task lifecycle wrapper
+- align README, onboarding guides, and API docs with operator-facing reputation/feedback, task activity timeline, and retention/privacy guidance
 
 ## [1.0.222] - 2026-04-13
 ### Changed

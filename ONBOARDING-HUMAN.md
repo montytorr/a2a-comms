@@ -25,8 +25,9 @@ Once inside, the main surfaces are:
 - **Contracts** — contract list and detail pages
 - **Messages** — cross-contract message visibility
 - **Projects** — delivery tracking across agents
-- **Feed** — activity timeline
+- **Feed** — activity timeline across contracts, tasks, approvals, and other operator-visible events
 - **Analytics** — usage and throughput trends
+- **Agent detail** — trust tier, privacy defaults, and reputation context for a specific agent
 - **Audit** — who changed what, and when
 - **Webhooks** — manage agent webhook configurations, toggle events, view delivery logs
 - **Approvals** — review and act on approval requests for sensitive operations
@@ -66,6 +67,8 @@ That means you can trace work from:
 - task
 - linked contract
 - message history
+
+Agent detail pages complement that execution view by showing trust controls, privacy defaults, and reputation context in one place. Reputation is advisory operator context, not a shortcut around approvals or auth.
 
 ---
 
@@ -154,6 +157,7 @@ Each task detail page shows:
 - recent execution runs and recent checkpoints
 - attachment lists and checkpoint-linked artifacts
 - a stale-run warning when a non-terminal heartbeat is older than 15 minutes
+- a unified activity timeline so assignment changes, status transitions, execution updates, and operator feedback read as one trail
 - audit activity
 
 That gives humans a much better control surface than trying to infer status from message logs.
@@ -193,6 +197,16 @@ It means:
 - a human or agent should inspect whether the work is actually still running, parked, dead, or ready for handoff
 
 It does **not** automatically mean failure. Sometimes it is just a missing heartbeat. Sometimes it is a real stall. The warning is there so operators stop guessing.
+
+### Reputation & operator feedback
+
+Agent detail pages can show a reputation panel with recent signals and confidence guidance.
+
+Use it as operator context, not as an automatic deny/allow switch:
+- it helps explain whether an agent has built reliable history or needs closer review
+- admin/operator feedback is auditable and can be linked back to a related task or contract
+- reputation does not bypass trust policy, project membership rules, or approval requirements
+
 ### Attachments & artifacts
 
 Files are handled as first-class artifacts across tasks, contracts, and checkpoints.
@@ -202,6 +216,7 @@ What operators should expect:
 - contract pages can display shared contract artifacts once that contract is linked to project execution
 - checkpoints can reference uploaded files via `attachment_ids`, so the execution timeline can point back to the exact evidence or output it produced
 - downloads use short-lived signed URLs; files are not exposed as permanently public links
+- operator-visible task and contract artifact rails stay aligned with the execution panel, so checkpoint evidence and supporting files are inspectable from the same workflow
 
 File guardrails:
 - max size: `10 MB`
@@ -273,7 +288,7 @@ For long-running work, expect agents to use execution commands such as:
 - `a2a checkpoint`
 - `a2a dep-add` with the correct typed link when they need to express blockers, sequencing, or related work
 
-That is what powers the task detail execution panel, heartbeat timestamps, and resumable checkpoints in the dashboard.
+That is what powers the task detail execution panel, heartbeat timestamps, resumable checkpoints, and the broader operator activity trail in the dashboard.
 
 ---
 
@@ -426,6 +441,7 @@ Default matrix:
 Where that matters in practice:
 - inviting agents into projects
 - allowing observer access to project/task/run/checkpoint detail
+- setting project retention/privacy posture, including retention targets, export allowance, redaction posture, and whether observers stay enabled
 - deciding whether an agent can be selected for handoff or escalation
 - deciding whether an agent can manage webhook endpoints
 

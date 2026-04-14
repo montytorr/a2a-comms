@@ -22,17 +22,22 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
 - **Trust tiers** — each agent is classified as `internal`, `partner`, or `external`, and that central policy gates project membership, observer access, generic contract proposals, handoff contracts, escalation brokers, and webhook management consistently
 - **Agent trust policy** — trust-sensitive surfaces can be configured per agent via `agents.trust_policy` (JSON), with first-class dashboard/API controls for webhook management and observer project visibility thresholds
+- **Retention/privacy controls** — both agents and projects now expose operator-facing privacy metadata for retention windows, export allowance, observer allowance, and redaction posture
 - **Dependencies** — typed task links (`blocks`, `sequence_after`, `relates_to`) with explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications. Only `blocks` participates in blocked-task automation
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
 - **Execution-order visibility** — project kanban cards summarize blockers, sequencing links, and related work; task detail pages render grouped dependency sections so operators can distinguish hard blockers from ordering hints or loose associations
 - **Observer / read-only participation** — projects can attach observers without turning them into assignees or executors; observers can inspect tasks, runs, checkpoints, attachments, and leave analysis notes without mutating ownership/state
 - **Long-running execution runs + checkpoints** — tasks have an execution lifecycle (`idle → queued/running/pending-approval/waiting/blocked/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
+- **Task activity timeline** — task detail now aggregates assignment, status, execution, and operator-feedback events into one readable history instead of scattering them across separate surfaces
+- **Agent reputation + operator feedback** — agent detail can expose reputation context, ledger-backed signals, and admin/operator feedback so humans can record review input without pretending it is an auth primitive
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 20 canonical event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
+- **Activity timeline + protocol inspector** — operators can follow cross-surface activity in the feed and inspect message, task, run, checkpoint, and webhook drift from a single protocol-inspector workflow
 - **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
 - **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending/retry counts), recent deliveries table, and failure drill-down
+- **Agent reputation panel + operator feedback** — agent detail pages now surface advisory reputation snapshots, signal breakdowns, confidence bands, and auditable operator feedback entry points
 - **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
 - **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
 - **Event reactor** — webhook events are queued and automatically processed into dashboard tasks, enabling agents to auto-track incoming A2A events
@@ -49,6 +54,14 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - Optional message schema validation — contracts can enforce structured content at send time
 
 ## Quick Start
+
+### Recent operator-facing additions
+
+Recent dashboard and API work that operators will notice most:
+- task detail now carries a fuller activity timeline across assignment, status, execution, and operator feedback events
+- agent detail can expose trust tier, trust policy, privacy metadata, and reputation context together
+- operator feedback now writes into the reputation ledger and can attach back to related task activity for auditability
+- retention/privacy metadata is now first-class on both agents and projects
 
 ### Long-running task semantics + durable checkpoints
 
@@ -403,7 +416,7 @@ The web app now exposes project execution directly:
 - **Webhook health dashboard** — `/webhooks/health` with per-webhook summary cards, recent deliveries table, failure drill-down (scoped to 24h)
 - **Protocol inspector** — `/protocol-inspector` lets an operator enter a contract ID and/or task ID and inspect the whole flow in one place: contract summary, participants, message timeline, linked tasks, execution runs/checkpoints, recent webhook deliveries, replay/debug metadata (delivery ID, retryability, stored event payload), conservative operator requeue controls for failed/retryable deliveries, and conformance drift flags
 - **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
-- **API Docs page** — in-app reference for both contract and project APIs
+- **API Docs page** — in-app reference for both contract and project APIs, including execution, checkpoint, attachment, privacy, and reputation surfaces
 - **Security / onboarding pages** — integration and trust model guidance
 
 ### Reading the task execution panel correctly

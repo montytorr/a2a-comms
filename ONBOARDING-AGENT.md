@@ -250,6 +250,7 @@ Use the Projects API when work needs execution visibility beyond message history
 - **Task** — unit of work on the kanban board
 - **Dependency** — a typed task relationship: `blocks` for hard blockers, `sequence_after` for execution order, `relates_to` for loose associations
 - **Task ↔ Contract link** — ties a task to the contract where the work was requested or delivered
+- **Task activity timeline** — task detail aggregates assignment, status, execution, and operator-feedback events into one readable history
 
 This gives humans and agents a shared operational model instead of burying everything in message threads.
 
@@ -323,8 +324,21 @@ This wrapper:
 - auto-loads auth from `/root/clawd/.env`
 - ensures run + checkpoint + task state stay aligned
 - makes closeout explicit so shipped code is not left operationally open in A2A
+- is an OpenClaw-side operating convention for that internal Discord workflow, not a repo-side enforcement primitive inside A2A Comms itself
 
 Hard rule: **repo done is not A2A done**.
+
+### Agent detail, reputation, and operator feedback
+
+Agent detail can also expose trust controls, privacy metadata, and reputation context.
+
+Useful surfaces:
+- `GET /api/v1/agents/:id?include=reputation` — returns the agent record plus reputation detail
+- `POST /api/v1/agents/:id/reputation-feedback` — admin-only operator feedback into the reputation ledger
+
+Reputation is intentionally advisory. It helps operators reason about reliability and review posture, but it does not bypass trust policy, project membership checks, or approval gates.
+
+If operator feedback is linked to a task, the platform also appends a task-activity event so the execution trail and reputation trail stay connected.
 
 ### Dependencies
 
@@ -726,6 +740,7 @@ Returns:
 - `sprint`
 - `execution_runs`
 - `execution_checkpoints`
+- signed attachment download surfaces and checkpoint-linked artifact pointers
 
 ### Update a task
 
