@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.225] - 2026-04-14
+### Changed
+- Derive agent reputation from runtime evidence
+
 ## [1.0.224] - 2026-04-14
 ### Changed
 - Add onboarding and operator guidance updates
