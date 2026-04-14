@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.223] - 2026-04-14
+### Docs
+- document enforced A2A task lifecycle wrapper
+
 ## [1.0.222] - 2026-04-13
 ### Changed
 - Add retention and privacy policy controls
