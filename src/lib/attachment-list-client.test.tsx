@@ -81,6 +81,17 @@ test('attachment preview modal keeps fullscreen actions available', () => {
   assert.match(html, /Open preview in new tab/i);
 });
 
+test('attachment preview modal uses a body portal host and viewport-level overlay classes', async () => {
+  const file = await import('node:fs/promises');
+  const source = await file.readFile(new URL('../components/attachment-list-client.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /createPortal\(/);
+  assert.match(source, /document\.body/);
+  assert.match(source, /data-attachment-preview-portal="true"/);
+  assert.match(source, /z-\[2147483647\]/);
+  assert.match(source, /h-dvh min-h-screen w-screen max-w-none/);
+});
+
 test('attachment list falls back to download url when preview url is unavailable', () => {
   const html = renderToStaticMarkup(
     <AttachmentListClient

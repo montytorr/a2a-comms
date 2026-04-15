@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import MarkdownPreview from '@/components/markdown-preview';
 import type { TaskAttachment } from '@/lib/types';
 import { formatDateTime } from '@/lib/format-date';
@@ -221,6 +222,152 @@ function PreviewMetaPanel({ attachment }: { attachment: TaskAttachment }) {
   );
 }
 
+function AttachmentPreviewModal({
+  attachment,
+  detailsOpen,
+  onClose,
+  onToggleDetails,
+}: {
+  attachment: TaskAttachment;
+  detailsOpen: boolean;
+  onClose: () => void;
+  onToggleDetails: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (detailsOpen) {
+          onToggleDetails();
+          return;
+        }
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [detailsOpen, onClose, onToggleDetails]);
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
+    <div data-attachment-preview-portal="true" className="fixed inset-0 z-[2147483647] isolate" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-md" />
+      <div
+        className="relative flex h-dvh min-h-screen w-screen max-w-none flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_rgba(8,10,16,0.98),_rgba(2,4,8,1))]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04)_0%,transparent_24%,transparent_76%,rgba(255,255,255,0.03)_100%)]" />
+
+        <header className="relative z-10 flex items-start justify-between gap-3 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-8">
+          <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2 backdrop-blur-xl sm:px-4 sm:py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-300/85 sm:text-[11px]">Attachment preview</p>
+            <p className="mt-1 max-w-[min(72vw,920px)] truncate text-sm font-semibold text-white sm:text-base">{attachment.original_name}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-gray-300 sm:text-[11px]">
+              <span>{typeLabel(attachment)}</span>
+              <span className="text-gray-500">•</span>
+              <span>{humanSize(attachment.size_bytes)}</span>
+              <span className="text-gray-500">•</span>
+              <span>{formatDateTime(attachment.created_at)}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleDetails}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-100 backdrop-blur-xl transition hover:bg-black/50"
+            >
+              {detailsOpen ? 'Hide details' : 'Show details'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-sm font-semibold text-gray-100 backdrop-blur-xl transition hover:bg-black/50"
+              aria-label="Close attachment preview"
+            >
+              ✕
+            </button>
+          </div>
+        </header>
+
+        <div className="relative z-0 flex min-h-0 flex-1 px-2 pb-2 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6">
+          <div className="relative flex min-h-0 flex-1 items-stretch justify-center overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/25 shadow-[0_32px_90px_rgba(0,0,0,0.62)]">
+            <div className="absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/35 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/35 to-transparent" />
+            <div className="relative z-0 flex h-full min-h-0 w-full items-center justify-center p-2 sm:p-3 lg:p-4">
+              <InlinePreview attachment={attachment} />
+            </div>
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 lg:px-8">
+          <div className="pointer-events-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2 text-[11px] text-gray-200 backdrop-blur-xl sm:px-4 sm:py-3">
+              Preserve the full-screen canvas while keeping open and download actions close at hand.
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Link
+                href={openHrefOf(attachment) || '#'}
+                target="_blank"
+                className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.14] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-400/[0.2]"
+              >
+                Open full {fileKindLabel(attachment)}
+              </Link>
+              <Link
+                href={attachment.download_url || openHrefOf(attachment) || '#'}
+                target="_blank"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-100 transition hover:bg-white/[0.1]"
+              >
+                Download file
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {detailsOpen ? (
+          <>
+            <button
+              type="button"
+              aria-label="Close attachment details"
+              className="absolute inset-0 z-30 bg-black/40"
+              onClick={onToggleDetails}
+            />
+            <aside className="absolute inset-y-0 right-0 z-40 flex h-dvh min-h-screen w-full max-w-[420px] flex-col border-l border-white/[0.08] bg-[#0b0c12]/96 shadow-[-28px_0_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-4 sm:px-5 lg:px-6">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-300/85">Details</p>
+                  <p className="mt-1 truncate text-sm font-medium text-white">{attachment.original_name}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onToggleDetails}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-gray-100 transition hover:bg-white/[0.1]"
+                  aria-label="Close attachment details"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+                <PreviewMetaPanel attachment={attachment} />
+              </div>
+            </aside>
+          </>
+        ) : null}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export default function AttachmentListClient({ attachments }: { attachments: TaskAttachment[]; fallback?: ReactNode }) {
   const [preview, setPreview] = useState<TaskAttachment | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -321,110 +468,12 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
       </div>
 
       {preview && previewHrefOf(preview) ? (
-        <div className="fixed inset-0 z-[80] bg-black/95 backdrop-blur-md" onClick={() => setPreview(null)}>
-          <div
-            className="relative flex h-full w-full flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_rgba(8,10,16,0.98),_rgba(2,4,8,1))]"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04)_0%,transparent_24%,transparent_76%,rgba(255,255,255,0.03)_100%)]" />
-
-            <header className="relative z-10 flex items-start justify-between gap-3 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-8">
-              <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2 backdrop-blur-xl sm:px-4 sm:py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-300/85 sm:text-[11px]">Attachment preview</p>
-                <p className="mt-1 max-w-[min(72vw,920px)] truncate text-sm font-semibold text-white sm:text-base">{preview.original_name}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-gray-300 sm:text-[11px]">
-                  <span>{typeLabel(preview)}</span>
-                  <span className="text-gray-500">•</span>
-                  <span>{humanSize(preview.size_bytes)}</span>
-                  <span className="text-gray-500">•</span>
-                  <span>{formatDateTime(preview.created_at)}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setDetailsOpen((current) => !current)}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-100 backdrop-blur-xl transition hover:bg-black/50"
-                >
-                  {detailsOpen ? 'Hide details' : 'Show details'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreview(null)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-sm font-semibold text-gray-100 backdrop-blur-xl transition hover:bg-black/50"
-                  aria-label="Close attachment preview"
-                >
-                  ✕
-                </button>
-              </div>
-            </header>
-
-            <div className="relative z-0 flex min-h-0 flex-1 px-2 pb-2 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6">
-              <div className="relative flex min-h-0 flex-1 items-stretch justify-center overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/25 shadow-[0_32px_90px_rgba(0,0,0,0.62)]">
-                <div className="absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/35 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/35 to-transparent" />
-                <div className="relative z-0 flex h-full min-h-0 w-full items-center justify-center p-2 sm:p-3 lg:p-4">
-                  <InlinePreview attachment={preview} />
-                </div>
-              </div>
-            </div>
-
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 lg:px-8">
-              <div className="pointer-events-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div className="max-w-2xl rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2 text-[11px] text-gray-200 backdrop-blur-xl sm:px-4 sm:py-3">
-                  Preserve the full-screen canvas while keeping open and download actions close at hand.
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Link
-                    href={openHrefOf(preview) || '#'}
-                    target="_blank"
-                    className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.14] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-400/[0.2]"
-                  >
-                    Open full {fileKindLabel(preview)}
-                  </Link>
-                  <Link
-                    href={preview.download_url || openHrefOf(preview) || '#'}
-                    target="_blank"
-                    className="inline-flex items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-100 transition hover:bg-white/[0.1]"
-                  >
-                    Download file
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {detailsOpen ? (
-              <>
-                <button
-                  type="button"
-                  aria-label="Close attachment details"
-                  className="absolute inset-0 z-30 bg-black/40"
-                  onClick={() => setDetailsOpen(false)}
-                />
-                <aside className="absolute inset-y-0 right-0 z-40 flex w-full max-w-[420px] flex-col border-l border-white/[0.08] bg-[#0b0c12]/96 shadow-[-28px_0_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-                  <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-4 sm:px-5 lg:px-6">
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-300/85">Details</p>
-                      <p className="mt-1 truncate text-sm font-medium text-white">{preview.original_name}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setDetailsOpen(false)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-gray-100 transition hover:bg-white/[0.1]"
-                      aria-label="Close attachment details"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-auto px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
-                    <PreviewMetaPanel attachment={preview} />
-                  </div>
-                </aside>
-              </>
-            ) : null}
-          </div>
-        </div>
+        <AttachmentPreviewModal
+          attachment={preview}
+          detailsOpen={detailsOpen}
+          onClose={() => setPreview(null)}
+          onToggleDetails={() => setDetailsOpen((current) => !current)}
+        />
       ) : null}
     </>
   );
