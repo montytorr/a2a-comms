@@ -3,10 +3,8 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { getReservedNames } from '@/lib/admin';
-import { randomBytes, createHash } from 'crypto';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
-import { buildDefaultAgentTrustPolicyForTier } from '@/lib/agent-trust-policy';
-import { DEFAULT_AGENT_PRIVACY_METADATA } from '@/lib/privacy-policy';
+import { AgentLifecycleError, createAgentWithServiceKey } from '@/lib/agent-lifecycle';
 
 export interface RegisterAgentResult {
   success: boolean;
@@ -57,21 +55,8 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
 
   const supabase = createServerClient();
 
-  // Check for duplicate name
-  const { data: existing } = await supabase
-    .from('agents')
-    .select('id')
-    .eq('name', name)
-    .single();
-
-  if (existing) {
-    return { success: false, error: `Agent "${name}" already exists.` };
-  }
-
-  // Create agent — automatically link to current user
-  const { data: agent, error: agentError } = await supabase
-    .from('agents')
-    .insert({
+  try {
+    const { agent, serviceKey } = await createAgentWithServiceKey({
       name,
       display_name: displayName,
       owner,
@@ -82,49 +67,30 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
       max_concurrent_contracts: maxConcurrent,
       trust_tier: trustTier,
       trust_notes: trustNotes,
-      trust_policy: buildDefaultAgentTrustPolicyForTier(trustTier),
-      privacy_metadata: DEFAULT_AGENT_PRIVACY_METADATA,
-    })
-    .select('id')
-    .single();
+      service_key: {
+        label: `${displayName} production key`,
+        human_owner: owner,
+      },
+    });
 
-  if (agentError || !agent) {
-    return { success: false, error: `Failed to create agent: ${agentError?.message || 'Unknown error'}` };
+    await supabase.from('audit_log').insert({
+      actor: user.id,
+      action: 'agent.register',
+      resource_type: 'agent',
+      resource_id: agent.id,
+      details: { actor_name: user.displayName, name, display_name: displayName, owner, key_id: serviceKey.key_id, registered_by: user.email },
+    });
+
+    return {
+      success: true,
+      agentId: agent.id,
+      keyId: serviceKey.key_id,
+      signingSecret: serviceKey.signing_secret,
+    };
+  } catch (error) {
+    if (error instanceof AgentLifecycleError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
-
-  // Generate service key
-  const keyId = `${name}-prod`;
-  const signingSecret = randomBytes(32).toString('hex');
-  const keyHash = createHash('sha256').update(signingSecret).digest('hex');
-
-  const { error: keyError } = await supabase.from('service_keys').insert({
-    key_id: keyId,
-    key_hash: keyHash,
-    signing_secret: signingSecret,
-    agent_id: agent.id,
-    label: `${displayName} production key`,
-    is_active: true,
-  });
-
-  if (keyError) {
-    // Rollback agent creation
-    await supabase.from('agents').delete().eq('id', agent.id);
-    return { success: false, error: `Failed to create service key: ${keyError.message}` };
-  }
-
-  // Audit log
-  await supabase.from('audit_log').insert({
-    actor: user.id,
-    action: 'agent.register',
-    resource_type: 'agent',
-    resource_id: agent.id,
-    details: { actor_name: user.displayName, name, display_name: displayName, owner, key_id: keyId, registered_by: user.email },
-  });
-
-  return {
-    success: true,
-    agentId: agent.id,
-    keyId,
-    signingSecret,
-  };
 }

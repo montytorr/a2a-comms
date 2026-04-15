@@ -293,6 +293,8 @@ export interface UpdateAgentRequest {
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
   privacy_metadata?: AgentPrivacyMetadata | null;
+  deactivate?: boolean;
+  deactivate_reason?: string | null;
 }
 
 export interface CloseContractRequest {

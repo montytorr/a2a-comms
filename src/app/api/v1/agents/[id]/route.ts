@@ -4,10 +4,9 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent } from '@/lib/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import type { AgentReputationDetail, ApiError, UpdateAgentRequest } from '@/lib/types';
-import { isAgentTrustTier, normalizeAgentTrustTier } from '@/lib/trust-tiers';
-import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
-import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
+import { isAgentTrustTier } from '@/lib/trust-tiers';
 import { getAgentReputationDetail } from '@/lib/reputation-ledger';
+import { AgentLifecycleError, updateAgentLifecycle } from '@/lib/agent-lifecycle';
 
 export async function GET(
   req: NextRequest,
@@ -72,47 +71,38 @@ export async function PATCH(
     );
   }
 
-  // Build update object with only allowed fields
-  const updates: Record<string, unknown> = {};
-  if (parsed.capabilities !== undefined) updates.capabilities = parsed.capabilities;
-  if (parsed.protocols !== undefined) updates.protocols = parsed.protocols;
-  if (parsed.max_concurrent_contracts !== undefined) updates.max_concurrent_contracts = parsed.max_concurrent_contracts;
-  if (parsed.description !== undefined) updates.description = parsed.description;
-  if (parsed.trust_tier !== undefined) {
-    if (!isAgentTrustTier(parsed.trust_tier)) {
-      return NextResponse.json(
-        { error: 'Invalid trust_tier. Must be one of: internal, partner, external', code: 'VALIDATION_ERROR' } satisfies ApiError,
-        { status: 400 }
-      );
-    }
-    updates.trust_tier = normalizeAgentTrustTier(parsed.trust_tier);
-  }
-  if (parsed.trust_notes !== undefined) updates.trust_notes = parsed.trust_notes;
-  if (parsed.trust_policy !== undefined) updates.trust_policy = normalizeAgentTrustPolicy(parsed.trust_policy);
-  if (parsed.privacy_metadata !== undefined) updates.privacy_metadata = normalizeAgentPrivacyMetadata(parsed.privacy_metadata);
-
-  if (Object.keys(updates).length === 0) {
+  if (parsed.trust_tier !== undefined && !isAgentTrustTier(parsed.trust_tier)) {
     return NextResponse.json(
-      { error: 'No valid fields to update', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { error: 'Invalid trust_tier. Must be one of: internal, partner, external', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
     );
   }
 
-  updates.updated_at = new Date().toISOString();
+  const updateInput = {
+    capabilities: parsed.capabilities,
+    protocols: parsed.protocols,
+    max_concurrent_contracts: parsed.max_concurrent_contracts,
+    description: parsed.description,
+    trust_tier: parsed.trust_tier,
+    trust_notes: parsed.trust_notes,
+    trust_policy: parsed.trust_policy,
+    privacy_metadata: parsed.privacy_metadata,
+    deactivate: parsed.deactivate,
+    deactivate_reason: parsed.deactivate_reason,
+  };
 
-  const supabase = createServerClient();
-  const { data: agent, error } = await supabase
-    .from('agents')
-    .update(updates)
-    .eq('id', id)
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, created_at, updated_at')
-    .single();
+  let agent;
+  try {
+    agent = await updateAgentLifecycle(id, updateInput);
+  } catch (error) {
+    if (error instanceof AgentLifecycleError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code } satisfies ApiError,
+        { status: error.status }
+      );
+    }
 
-  if (error || !agent) {
-    return NextResponse.json(
-      { error: 'Agent not found or update failed', code: 'DB_ERROR', details: error?.message } satisfies ApiError,
-      { status: error ? 500 : 404 }
-    );
+    throw error;
   }
 
   await auditLog({
@@ -120,7 +110,7 @@ export async function PATCH(
     action: 'agent.update',
     resourceType: 'agent',
     resourceId: id,
-    details: { updated_fields: Object.keys(updates).filter(k => k !== 'updated_at') },
+    details: { updated_fields: Object.keys(updateInput).filter((key) => (updateInput as Record<string, unknown>)[key] !== undefined) },
     ipAddress: getClientIp(req),
   });
 
