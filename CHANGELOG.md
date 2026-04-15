@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.229] - 2026-04-15
+### Changed
+- Remove manual operator feedback path
+
 ## [1.0.228] - 2026-04-15
 ### Fixed
 - restore agent route supabase import
