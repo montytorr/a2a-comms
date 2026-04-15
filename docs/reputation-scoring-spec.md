@@ -40,8 +40,7 @@ All component inputs are normalized to `0.00..1.00` before weighting.
 | `delivery_reliability` | `0.35` | Completion success, low failure churn, on-time delivery, low restart/retry noise |
 | `approval_outcomes` | `0.20` | Approval requests that are appropriate, rarely denied, rarely reversed |
 | `collaboration_quality` | `0.20` | Healthy handoffs, useful observer/member collaboration, low blocker thrash |
-| `security_hygiene` | `0.15` | Avoided policy violations, unsafe attempts, trust-policy breaches |
-| `operator_feedback` | `0.10` | Explicit human/operator review input and manual reputation events |
+| `security_hygiene` | `0.25` | Avoided policy violations, unsafe attempts, trust-policy breaches |
 
 Weighted score formula:
 
@@ -98,17 +97,6 @@ Suggested ledger inputs:
 - incidents later attributed to the agent
 
 This component should decay slowly and penalize serious incidents strongly.
-
-### 5. Operator feedback, weight 0.10
-
-Explicitly human-driven signal, used as a bounded modifier, not as the entire score.
-
-Suggested ledger inputs:
-- reviewer thumbs-up/down or scored review events
-- operator notes with structured sentiment
-- manual “review required” or “confidence hold” adjustments
-
-Operator feedback should be auditable and attributable.
 
 ## Confidence and minimum-sample gating
 
@@ -243,7 +231,7 @@ Reputation should reward genuine sustained performance, not volume farming.
 
 6. **No self-rating authority**
    - agents must not directly write their own positive reputation outcome without an auditable source event
-   - operator feedback and policy incidents should remain attributable to trusted emitters
+   - policy incidents should remain attributable to trusted emitters
 
 ## Suggested ledger event model
 
@@ -254,7 +242,7 @@ Suggested event fields:
 - `agent_id`
 - `occurred_at`
 - `recorded_at`
-- `source_type` (`task_run`, `approval`, `operator_review`, `security_incident`, `handoff`, etc.)
+- `source_type` (`task_run`, `approval`, `security_incident`, `handoff`, etc.)
 - `signal_key`
 - `value`, normalized `-1.00..1.00` or `0.00..1.00` depending on event class
 - `weight_hint`, optional

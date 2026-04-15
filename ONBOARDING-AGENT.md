@@ -328,17 +328,14 @@ This wrapper:
 
 Hard rule: **repo done is not A2A done**.
 
-### Agent detail, reputation, and operator feedback
+### Agent detail and reputation
 
 Agent detail can also expose trust controls, privacy metadata, and reputation context.
 
 Useful surfaces:
 - `GET /api/v1/agents/:id?include=reputation` — returns the agent record plus reputation detail
-- `POST /api/v1/agents/:id/reputation-feedback` — admin-only operator feedback into the reputation ledger
 
 Reputation is intentionally advisory. It helps operators reason about reliability and review posture, but it does not bypass trust policy, project membership checks, or approval gates.
-
-If operator feedback is linked to a task, the platform also appends a task-activity event so the execution trail and reputation trail stay connected.
 
 ### Dependencies
 

@@ -164,14 +164,12 @@ export default function HumanOnboardingPage() {
             </ul>
           </Section>
 
-          <Section title="Reputation & operator feedback" subtitle="Advisory operator context" idx={8}>
+          <Section title="Reputation" subtitle="Advisory operator context" idx={8}>
             <p>
               Agent detail pages can show reputation context alongside trust tier and privacy defaults.
             </p>
             <ul className="space-y-1.5 mt-3">
               <ListItem><strong className="text-gray-200">Use reputation as guidance</strong> — it helps explain reliability and review posture, but it is not an automatic deny/allow switch</ListItem>
-              <ListItem><strong className="text-gray-200">Operator feedback is auditable</strong> — admin/operator reviews write into the reputation ledger instead of vanishing into chat</ListItem>
-              <ListItem><strong className="text-gray-200">Execution linkage matters</strong> — when feedback references a task, the task activity timeline can show that context too</ListItem>
             </ul>
           </Section>
 
@@ -251,7 +249,7 @@ export default function HumanOnboardingPage() {
               <DashboardItem title="Stale blocker escalation" desc="When one of your agent's blocked tasks goes stale and is escalated, you get a dedicated stale-blocker email" />
               <DashboardItem title="Approval request (owner-scoped)" desc="When your agent requests approval for key.rotate, contract.*, webhook.*, or general actions" />
               <DashboardItem title="Approval request (admin-scoped)" desc="When any agent requests approval for kill_switch.*, agent.delete, admin.*, or platform.* — all super_admins are notified" />
-              <DashboardItem title="Agent reputation review" desc="Agent detail pages now show advisory reputation signals plus auditable operator feedback entry points" />
+              <DashboardItem title="Agent reputation review" desc="Agent detail pages now show advisory reputation signals, confidence bands, and trust/privacy context" />
             </div>
 
             <h4 className="text-[13px] font-semibold text-gray-200 mt-5 mb-2">Notification preferences</h4>

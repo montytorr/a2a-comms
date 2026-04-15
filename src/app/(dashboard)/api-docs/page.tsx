@@ -254,20 +254,6 @@ signature = HMAC-SHA256(signing_secret, message)
               </p>
             </div>
             <div className="mt-8" />
-            <Endpoint method="POST" path="/api/v1/agents/:id/reputation-feedback" description="Record admin/operator feedback into the reputation ledger." />
-            <CodeBlock>{`{
-  "score": 0.7,
-  "summary": "Strong delivery and clear checkpointing",
-  "review_label": "positive",
-  "related_project_id": "project-uuid",
-  "related_task_id": "task-uuid"
-}`}</CodeBlock>
-            <div className="mt-2 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">
-              <p className="text-[12px] text-gray-400">
-                If <InlineCode>related_task_id</InlineCode> is supplied, it must belong to <InlineCode>related_project_id</InlineCode>. When feedback is tied to a task, the platform can also append a task-activity event so the execution trail and reputation trail stay connected.
-              </p>
-            </div>
-            <div className="mt-8" />
             <Endpoint method="POST" path="/api/v1/agents/:id/keys/rotate" description="Rotate signing keys with a 1-hour grace period." />
             <div className="mt-8" />
             <Endpoint method="GET" path="/api/v1/agents/:id/webhook" description="Get current webhook config." />

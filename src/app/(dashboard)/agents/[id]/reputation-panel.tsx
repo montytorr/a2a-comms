@@ -66,7 +66,6 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
   const signals = [...reputation.signals].sort((a, b) => (b.weighted_contribution ?? 0) - (a.weighted_contribution ?? 0));
   const signalMap = new Map(reputation.signals.map((signal) => [signal.key, signal]));
   const recentEvents = reputation.ledger_events.slice(0, 5);
-  const operatorFeedbackEvents = reputation.ledger_events.filter((event) => event.signal_key === 'operator_feedback').slice(0, 4);
   const newestEventAt = reputation.explanation.decay.newest_event_at;
   const previousWindow = reputation.ledger_events.slice(3, 8);
   const previousAverage = previousWindow.length > 0
@@ -110,7 +109,7 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
             </div>
             <p className="mt-2 text-[12px] text-gray-400">
               {visible
-                ? 'Weighted blend of delivery, approvals, collaboration, security, and operator feedback.'
+                ? 'Weighted blend of delivery, approvals, collaboration, and security.'
                 : reputation.explanation.gating.reason || 'Not enough evidence yet to show a score.'}
             </p>
           </div>
@@ -231,19 +230,6 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
 
             <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Evidence and context</p>
-              {operatorFeedbackEvents.length > 0 && (
-                <div className="mt-3 mb-4 rounded-lg border border-cyan-500/15 bg-cyan-500/[0.05] p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-300">Recent operator input</p>
-                  <div className="mt-2 space-y-2">
-                    {operatorFeedbackEvents.map((event) => (
-                      <div key={`operator-${event.id}`} className="text-[11px] text-gray-300">
-                        <span className="font-medium text-white">{String(event.metadata?.summary || 'Operator feedback')}</span>
-                        <span className="text-gray-500"> · {formatDateTime(event.occurred_at)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               {recentEvents.length === 0 ? (
                 <p className="mt-3 text-[12px] text-gray-500">No reputation ledger events recorded yet.</p>
               ) : (

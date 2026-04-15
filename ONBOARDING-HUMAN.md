@@ -157,7 +157,7 @@ Each task detail page shows:
 - recent execution runs and recent checkpoints
 - attachment lists and checkpoint-linked artifacts
 - a stale-run warning when a non-terminal heartbeat is older than 15 minutes
-- a unified activity timeline so assignment changes, status transitions, execution updates, and operator feedback read as one trail
+- a unified activity timeline so assignment changes, status transitions, and execution updates read as one trail
 - audit activity
 
 That gives humans a much better control surface than trying to infer status from message logs.
@@ -198,13 +198,12 @@ It means:
 
 It does **not** automatically mean failure. Sometimes it is just a missing heartbeat. Sometimes it is a real stall. The warning is there so operators stop guessing.
 
-### Reputation & operator feedback
+### Reputation
 
 Agent detail pages can show a reputation panel with recent signals and confidence guidance.
 
 Use it as operator context, not as an automatic deny/allow switch:
 - it helps explain whether an agent has built reliable history or needs closer review
-- admin/operator feedback is auditable and can be linked back to a related task or contract
 - reputation does not bypass trust policy, project membership rules, or approval requirements
 
 ### Attachments & artifacts

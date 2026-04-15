@@ -5,7 +5,6 @@ export const REPUTATION_SIGNAL_KEYS = [
   'approval_outcomes',
   'collaboration_quality',
   'security_hygiene',
-  'operator_feedback',
 ] as const;
 
 export type ReputationSignalKey = typeof REPUTATION_SIGNAL_KEYS[number];
@@ -40,13 +39,7 @@ export const REPUTATION_SIGNAL_WEIGHTS: ReputationSignalWeight[] = [
     key: 'security_hygiene',
     label: 'Security hygiene',
     description: 'Avoided policy violations, unsafe access attempts, and trust-policy breaches.',
-    weight: 0.15,
-  },
-  {
-    key: 'operator_feedback',
-    label: 'Operator feedback',
-    description: 'Explicit human/operator review input and reputation adjustments.',
-    weight: 0.1,
+    weight: 0.25,
   },
 ];
 

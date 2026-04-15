@@ -14,7 +14,6 @@ import {
 } from '@/lib/reputation-score';
 import type {
   AgentReputationSnapshot,
-  OperatorFeedbackInput,
   ReputationConfidenceBand,
   ReputationScoreExplanation,
   ReputationSignalValue,
@@ -63,7 +62,6 @@ type TaskActivityEventRow = {
 export const REPUTATION_EVENT_SOURCE_TYPES = [
   'task_run',
   'approval',
-  'operator_review',
   'security_incident',
   'handoff',
   'system',
@@ -160,9 +158,6 @@ function buildSignalNotes(key: ReputationSignalKey, value: number, sampleCount: 
 
   if (key === 'security_hygiene' && value <= 0.4) {
     notes.push('Security or policy-related incidents are suppressing this signal');
-  }
-  if (key === 'operator_feedback' && sampleCount > 0) {
-    notes.push('Includes explicit operator review input');
   }
 
   return notes;
@@ -945,47 +940,10 @@ export async function getAgentReputationSnapshot(agentId: string, options: Reput
   return (await recomputeAgentReputation(agentId, options)).snapshot;
 }
 
-export async function recordOperatorFeedback(params: {
-  agentId: string;
-  reviewerAgentId?: string | null;
-  reviewerUserId?: string | null;
-  input: OperatorFeedbackInput;
-}) {
-  const normalizedScore = Number(clamp(params.input.score, -1, 1).toFixed(4));
-  const event = await appendReputationLedgerEvent({
-    agentId: params.agentId,
-    sourceType: 'operator_review',
-    signalKey: 'operator_feedback',
-    value: normalizedScore,
-    weightHint: params.input.weight_hint ?? null,
-    projectId: params.input.related_project_id ?? null,
-    taskId: params.input.related_task_id ?? null,
-    contractId: params.input.related_contract_id ?? null,
-    reviewerAgentId: params.reviewerAgentId ?? null,
-    reviewerUserId: params.reviewerUserId ?? null,
-    metadata: {
-      summary: params.input.summary,
-      notes: params.input.notes ?? null,
-      review_label: params.input.review_label ?? null,
-      source: 'operator-feedback',
-      ...(params.input.metadata ?? {}),
-    },
-  });
-
-  const recomputed = await recomputeAndPersistAgentReputation(params.agentId, {
-    includeEvents: undefined,
-  });
-
-  return {
-    event,
-    snapshot: recomputed.snapshot,
-  };
-}
-
 export async function getAgentReputationDetail(agentId: string, options: ReputationAggregationOptions = {}) {
   const result = await recomputeAgentReputation(agentId, options);
   const emptyReason = result.events.length === 0
-    ? 'No automatic reputation events have been derived yet. Reputation will populate after task runs, approvals, handoff activity, security incidents, or operator feedback are recorded for this agent.'
+    ? 'No automatic reputation events have been derived yet. Reputation will populate after task runs, approvals, handoff activity, or security incidents are recorded for this agent.'
     : undefined;
   const explanation = emptyReason
     ? {

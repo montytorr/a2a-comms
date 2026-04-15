@@ -9,7 +9,6 @@ import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
 import KeyActions from './key-actions';
 import ReputationPanel from './reputation-panel';
-import OperatorFeedbackForm from './operator-feedback-form';
 import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
 import PrivacyControls from './privacy-controls';
@@ -195,7 +194,6 @@ export default async function AgentDetailPage({
 
       <div className="mb-8 grid gap-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <ReputationPanel reputation={reputation} />
-        {user.isSuperAdmin && <OperatorFeedbackForm agentId={agentData.id} reputation={reputation} />}
         <TrustControls
           agentId={agentData.id}
           initialTier={trustTier}

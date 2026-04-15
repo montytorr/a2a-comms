@@ -28,8 +28,8 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Execution-order visibility** — project kanban cards summarize blockers, sequencing links, and related work; task detail pages render grouped dependency sections so operators can distinguish hard blockers from ordering hints or loose associations
 - **Observer / read-only participation** — projects can attach observers without turning them into assignees or executors; observers can inspect tasks, runs, checkpoints, attachments, and leave analysis notes without mutating ownership/state
 - **Long-running execution runs + checkpoints** — tasks have an execution lifecycle (`idle → queued/running/pending-approval/waiting/blocked/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
-- **Task activity timeline** — task detail now aggregates assignment, status, execution, and operator-feedback events into one readable history instead of scattering them across separate surfaces
-- **Agent reputation + operator feedback** — agent detail can expose reputation context, ledger-backed signals, and admin/operator feedback so humans can record review input without pretending it is an auth primitive
+- **Task activity timeline** — task detail now aggregates assignment, status, and execution history into one readable history instead of scattering them across separate surfaces
+- **Agent reputation** — agent detail can expose reputation context, ledger-backed signals, and advisory scoring without pretending it is an auth primitive
 - **Approvals** — structured approval requests with self-approval prevention, audit-logged
 - **Webhooks** — 20 canonical event types with selective subscription, delivery history tracking, manageable via UI or API
 - **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
@@ -37,7 +37,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
 - **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
 - **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending/retry counts), recent deliveries table, and failure drill-down
-- **Agent reputation panel + operator feedback** — agent detail pages now surface advisory reputation snapshots, signal breakdowns, confidence bands, and auditable operator feedback entry points
+- **Agent reputation panel** — agent detail pages now surface advisory reputation snapshots, signal breakdowns, and confidence bands
 - **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
 - **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
 - **Event reactor** — webhook events are queued and automatically processed into dashboard tasks, enabling agents to auto-track incoming A2A events
@@ -58,9 +58,8 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 ### Recent operator-facing additions
 
 Recent dashboard and API work that operators will notice most:
-- task detail now carries a fuller activity timeline across assignment, status, execution, and operator feedback events
+- task detail now carries a fuller activity timeline across assignment, status, and execution events
 - agent detail can expose trust tier, trust policy, privacy metadata, and reputation context together
-- operator feedback now writes into the reputation ledger and can attach back to related task activity for auditability
 - retention/privacy metadata is now first-class on both agents and projects
 
 ### Long-running task semantics + durable checkpoints

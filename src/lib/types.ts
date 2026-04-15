@@ -15,9 +15,9 @@ export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'can
 export type ParticipantRole = 'proposer' | 'invitee' | 'observer';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
 export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
-export type ReputationSignalKey = 'delivery_reliability' | 'approval_outcomes' | 'collaboration_quality' | 'security_hygiene' | 'operator_feedback';
+export type ReputationSignalKey = 'delivery_reliability' | 'approval_outcomes' | 'collaboration_quality' | 'security_hygiene';
 export type ReputationConfidenceBand = 'none' | 'low' | 'medium' | 'high';
-export type ReputationEventSourceType = 'task_run' | 'approval' | 'operator_review' | 'security_incident' | 'handoff' | 'system';
+export type ReputationEventSourceType = 'task_run' | 'approval' | 'security_incident' | 'handoff' | 'system';
 
 // ---- Database row types ----
 
@@ -152,18 +152,6 @@ export interface AgentReputationDetail extends AgentReputationSnapshot {
   ledger_events: ReputationLedgerEvent[];
   explanation_contract?: unknown;
   policy_guidance?: ReputationPolicyGuidance;
-}
-
-export interface OperatorFeedbackInput {
-  score: number;
-  summary: string;
-  notes?: string | null;
-  review_label?: 'positive' | 'neutral' | 'negative' | 'manual-review';
-  related_task_id?: string | null;
-  related_project_id?: string | null;
-  related_contract_id?: string | null;
-  weight_hint?: number | null;
-  metadata?: Record<string, unknown>;
 }
 
 export interface ReputationPolicyGuidanceItem {

@@ -12,7 +12,7 @@ import {
 } from './reputation-score';
 
 test('reputation weights sum to 1.00', () => {
-  assert.equal(REPUTATION_SIGNAL_WEIGHTS.length, 5);
+  assert.equal(REPUTATION_SIGNAL_WEIGHTS.length, 4);
   assert.equal(Number(REPUTATION_WEIGHT_SUM.toFixed(6)), 1);
 });
 

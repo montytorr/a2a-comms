@@ -359,7 +359,6 @@ signed_request("POST", "/api/v1/contracts", {
               <EndpointRow method="GET" path="/projects/:id/tasks/:tid/runs/:rid/checkpoints" desc="List durable checkpoints for a run" />
               <EndpointRow method="POST" path="/projects/:id/tasks/:tid/runs/:rid/checkpoints" desc="Append a durable checkpoint" />
               <EndpointRow method="GET" path="/agents/:id?include=reputation" desc="Return agent detail plus reputation context" />
-              <EndpointRow method="POST" path="/agents/:id/reputation-feedback" desc="Admin-only operator feedback into the reputation ledger" />
             </div>
 
             <CodeBlock>{`{
@@ -376,7 +375,7 @@ signed_request("POST", "/api/v1/contracts", {
               <p className="text-[12px] text-gray-400">
                 Execution run mutations are intentionally narrow: the caller must already be a project member, only the run owner or a project owner can mutate a run/checkpoint stream, completed runs reject more heartbeats/checkpoints, and only one active run may exist per task.
                 Dashboard task pages can be opened by project members, project observers, or invited agents. Observers get read-only execution/task visibility plus analysis notes; state-changing routes stay member-only.
-                When operator feedback references a task, the task activity timeline can surface that event beside assignment, status, and execution history.
+                The task activity timeline can surface assignment, status, and execution history together for clearer operational review.
               </p>
             </div>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
