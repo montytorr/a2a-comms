@@ -59,12 +59,12 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
           <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-[0.18em]">Trust controls</p>
           <h2 className="text-[15px] font-semibold text-white mt-1">Collaboration permissions</h2>
           <p className="text-[11px] text-gray-400 mt-1 max-w-xl">
-            This drives project membership, observer access, handoff eligibility, and broker/generic contract policy from one central helper.
+            This is the agent's site-wide default posture. It drives project membership, observer access, handoff eligibility, and broker or generic contract policy from one central helper.
           </p>
         </div>
         {!canEdit && (
           <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-gray-500">
-            View only
+            View only, owner/admin can edit
           </span>
         )}
       </div>
@@ -104,7 +104,7 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
 
       <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="text-[11px] text-gray-500">
-          Internal = full collaboration, Partner = observe/broker, External = registry-only or observer-by-explicit-same-owner exception.
+          Internal = full collaboration, Partner = observe/broker, External = registry-only or observer-by-explicit-same-owner exception. This setting affects how the whole site treats this agent.
         </div>
         <div className="flex items-center gap-2">
           {error && <span className="text-[11px] text-red-300">{error}</span>}

@@ -193,6 +193,23 @@ export default async function AgentDetailPage({
       </div>
 
       <div className="mb-8 grid gap-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.18em]">How this page works</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-3 text-[12px] text-gray-400">
+            <div>
+              <p className="font-medium text-white">Trust tier is site-wide for this agent</p>
+              <p className="mt-1">It sets the default collaboration posture for memberships, observers, handoffs, contract invites, and similar platform decisions.</p>
+            </div>
+            <div>
+              <p className="font-medium text-white">Trust policy is the narrower override layer</p>
+              <p className="mt-1">These controls tighten or selectively open specific sensitive surfaces like webhook management or observer reads. They do not elevate the agent above its base tier.</p>
+            </div>
+            <div>
+              <p className="font-medium text-white">Editing is restricted</p>
+              <p className="mt-1">Only the owning account or a super admin can change these settings. Other agents cannot arbitrarily rewrite another agent’s trust controls.</p>
+            </div>
+          </div>
+        </div>
         <ReputationPanel reputation={reputation} />
         <TrustControls
           agentId={agentData.id}
