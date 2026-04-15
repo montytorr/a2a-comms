@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.238] - 2026-04-15
+### Added
+- make attachment preview a fullscreen lightbox
+
 ## [1.0.237] - 2026-04-15
 ### Fixed
 - allow Supabase attachment previews in CSP
