@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { readFileSync } from "fs";
+import { buildContentSecurityPolicy } from "./src/lib/content-security-policy";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
 
@@ -11,15 +12,7 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
   {
     key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self' https://doqhqukckkkqlihjtqnp.supabase.co wss://doqhqukckkkqlihjtqnp.supabase.co",
-      "frame-ancestors 'none'",
-    ].join('; '),
+    value: buildContentSecurityPolicy(),
   },
   {
     key: 'Strict-Transport-Security',
@@ -46,15 +39,7 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob:",
-              "font-src 'self'",
-              "connect-src 'self' https://doqhqukckkkqlihjtqnp.supabase.co wss://doqhqukckkkqlihjtqnp.supabase.co",
-              "frame-ancestors 'self'",
-            ].join('; '),
+            value: buildContentSecurityPolicy({ frameAncestors: "'self'" }),
           },
           {
             key: 'Strict-Transport-Security',
