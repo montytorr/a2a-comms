@@ -62,6 +62,17 @@ function actionLabel(attachment: TaskAttachment) {
   return 'Download';
 }
 
+function previewHrefOf(attachment: TaskAttachment) {
+  return attachment.preview_url || attachment.download_url;
+}
+
+function openHrefOf(attachment: TaskAttachment) {
+  if (isImageAttachment(attachment) || isPreviewableDocument(attachment)) {
+    return previewHrefOf(attachment);
+  }
+  return attachment.download_url;
+}
+
 function fileKindLabel(attachment: TaskAttachment) {
   if (isImageAttachment(attachment)) return 'image';
   if (isPdfAttachment(attachment)) return 'PDF';
@@ -72,7 +83,7 @@ function fileKindLabel(attachment: TaskAttachment) {
 }
 
 function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
-  const href = attachment.download_url;
+  const href = previewHrefOf(attachment);
   const isText = isTextAttachment(attachment);
   const isMarkdown = isMarkdownAttachment(attachment);
   const [textContent, setTextContent] = useState<string>('');
@@ -187,7 +198,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
       <div className="space-y-2.5">
         {sorted.map((attachment) => {
           const isImage = isImageAttachment(attachment);
-          const href = attachment.download_url;
+          const href = openHrefOf(attachment);
           const note = typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 ? attachment.metadata.note : null;
           const observerNote = typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 ? attachment.metadata.observer_note : null;
           const canPreviewInline = !!href && (isImage || isPreviewableDocument(attachment));
@@ -256,7 +267,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
                       target="_blank"
                       className="inline-flex items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-200 hover:bg-white/[0.08]"
                     >
-                      Open in new tab
+                      {canPreviewInline ? 'Open preview in new tab' : 'Download in new tab'}
                     </Link>
                   </div>
                 ) : null}
@@ -266,7 +277,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
         })}
       </div>
 
-      {preview && preview.download_url ? (
+      {preview && previewHrefOf(preview) ? (
         <div className="fixed inset-0 z-[80] bg-black/90 p-2 backdrop-blur-md sm:p-4" onClick={() => setPreview(null)}>
           <div
             className="mx-auto grid h-full max-h-[96vh] w-full max-w-[min(96vw,1800px)] overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#07070c] shadow-[0_32px_90px_rgba(0,0,0,0.62)] lg:grid-cols-[minmax(0,1.45fr),360px]"
@@ -335,7 +346,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
               <div className="border-t border-white/[0.06] p-4 sm:p-5 lg:p-6">
                 <div className="flex flex-col gap-2.5">
                   <Link
-                    href={preview.download_url}
+                    href={openHrefOf(preview) || '#'}
                     target="_blank"
                     className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.12] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-400/[0.18]"
                   >

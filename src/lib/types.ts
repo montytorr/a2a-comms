@@ -512,6 +512,7 @@ export interface TaskAttachment {
   sha256?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
+  preview_url?: string;
   download_url?: string;
 }
 

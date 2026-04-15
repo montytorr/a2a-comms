@@ -13,14 +13,18 @@ function makeAttachment(overrides: Partial<TaskAttachment> = {}): TaskAttachment
     contract_id: null,
     run_id: null,
     checkpoint_id: null,
-    storage_path: 'attachments/att-1',
+    uploader_agent_id: null,
+    uploader_user_id: null,
     filename: 'sample.md',
     original_name: 'sample.md',
     mime_type: 'text/markdown',
     size_bytes: 128,
-    created_by_agent_id: null,
-    metadata: null,
+    storage_bucket: 'artifacts',
+    storage_path: 'attachments/att-1',
+    sha256: null,
+    metadata: {},
     created_at: '2026-04-15T10:00:00.000Z',
+    preview_url: 'https://example.com/sample-preview.md',
     download_url: 'https://example.com/sample.md',
     ...overrides,
   };
@@ -30,7 +34,8 @@ test('attachment list renders preview action for markdown attachments', () => {
   const html = renderToStaticMarkup(<AttachmentListClient attachments={[makeAttachment()]} />);
 
   assert.match(html, /Open text/i);
-  assert.match(html, /Open in new tab/i);
+  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /sample-preview\.md/i);
   assert.match(html, /sample\.md/i);
 });
 
@@ -43,6 +48,7 @@ test('attachment list renders image preview affordance for image attachments', (
           filename: 'photo.png',
           original_name: 'photo.png',
           mime_type: 'image/png',
+          preview_url: 'https://example.com/photo-preview.png',
           download_url: 'https://example.com/photo.png',
         }),
       ]}
@@ -50,5 +56,23 @@ test('attachment list renders image preview affordance for image attachments', (
   );
 
   assert.match(html, /Preview image/i);
+  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /photo-preview\.png/i);
   assert.match(html, /img/i);
+});
+
+test('attachment list falls back to download url when preview url is unavailable', () => {
+  const html = renderToStaticMarkup(
+    <AttachmentListClient
+      attachments={[
+        makeAttachment({
+          preview_url: undefined,
+          download_url: 'https://example.com/fallback.md',
+        }),
+      ]}
+    />,
+  );
+
+  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /fallback\.md/i);
 });

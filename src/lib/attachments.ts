@@ -96,13 +96,27 @@ export async function ensureAttachmentBucket() {
   });
 }
 
-export async function createSignedAttachmentUrl(path: string, expiresIn = 60 * 60) {
+export type SignedAttachmentUrlMode = 'inline' | 'download';
+
+export async function createSignedAttachmentUrl(path: string, expiresIn = 60 * 60, mode: SignedAttachmentUrlMode = 'download') {
   const supabase = createServerClient();
   const { data, error } = await supabase.storage.from(ATTACHMENT_BUCKET).createSignedUrl(path, expiresIn, {
-    download: true,
+    download: mode === 'download',
   });
   if (error) throw error;
   return data.signedUrl;
+}
+
+export async function createSignedAttachmentUrls(path: string, expiresIn = 60 * 60) {
+  const [previewUrl, downloadUrl] = await Promise.all([
+    createSignedAttachmentUrl(path, expiresIn, 'inline'),
+    createSignedAttachmentUrl(path, expiresIn, 'download'),
+  ]);
+
+  return {
+    preview_url: previewUrl,
+    download_url: downloadUrl,
+  };
 }
 
 export async function uploadAttachmentBinary(path: string, content: Buffer, mimeType: string) {

@@ -33,6 +33,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aid:
     return NextResponse.json(projectPolicy.body || ({ error: 'Forbidden', code: 'FORBIDDEN' } satisfies ApiError), { status: projectPolicy.status || 403 });
   }
 
-  const url = await createSignedAttachmentUrl(attachment.storage_path);
+  const url = await createSignedAttachmentUrl(attachment.storage_path, 60 * 60, 'download');
   return NextResponse.json({ id: attachment.id, download_url: url, filename: attachment.original_name });
 }

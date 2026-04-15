@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
-import { createSignedAttachmentUrl } from '@/lib/attachments';
+import { createSignedAttachmentUrls } from '@/lib/attachments';
 import type { AttachmentRecord } from '@/lib/attachments';
 import { getProjectAccess } from '@/lib/project-access';
 
@@ -35,7 +35,7 @@ export async function listAttachmentsForScope(input: { projectId: string; taskId
   const rows = (data || []) as AttachmentRecord[];
   if (!input.includeSignedUrl) return rows;
 
-  return Promise.all(rows.map(async (row) => ({ ...row, download_url: await createSignedAttachmentUrl(row.storage_path) })));
+  return Promise.all(rows.map(async (row) => ({ ...row, ...(await createSignedAttachmentUrls(row.storage_path)) })));
 }
 
 export async function getAttachmentById(id: string) {
