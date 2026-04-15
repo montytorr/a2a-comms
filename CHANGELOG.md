@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.235] - 2026-04-15
+### Changed
+- Fix attachment preview modal UX
+
 ## [1.0.234] - 2026-04-15
 ### Changed
 - Remove dashboard contract proposal UI
