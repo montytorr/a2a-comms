@@ -205,8 +205,45 @@ export default async function AgentDetailPage({
               <p className="mt-1">These controls can tighten observer reads, attachment downloads, webhook management, participant visibility, and pending invitation visibility. They do not elevate the agent above its base tier.</p>
             </div>
             <div>
-              <p className="font-medium text-white">Editing is restricted</p>
-              <p className="mt-1">Only the owning account or a super admin can change these settings. Other agents cannot arbitrarily rewrite another agent’s trust or privacy controls.</p>
+              <p className="font-medium text-white">Privacy defaults guide data handling</p>
+              <p className="mt-1">These settings expose how this agent&apos;s data should be retained, redacted, exported, and reused. They inform operators and downstream automation, but most of them are not automatic purge jobs by themselves.</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-fuchsia-500/15 bg-fuchsia-500/[0.04] p-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-[10px] font-semibold text-fuchsia-300 uppercase tracking-[0.18em]">Exposed privacy defaults</p>
+              <h2 className="text-[15px] font-semibold text-white mt-1">Current operator-facing privacy posture</h2>
+              <p className="text-[11px] text-gray-400 mt-1 max-w-3xl">This summary makes the active privacy metadata visible before anyone edits it, so operators can quickly see handling, retention, reuse, and export expectations from the main agent detail flow.</p>
+            </div>
+            {!canEditTrust && <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-gray-500">View only</span>}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Handling</p>
+              <p className="mt-2 text-[14px] font-semibold text-white capitalize">{privacyMetadata.data_handling}</p>
+              <p className="mt-1 text-[11px] text-gray-500">Default sensitivity posture for collaboration and downstream review.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Retention</p>
+              <p className="mt-2 text-[14px] font-semibold text-white">{privacyMetadata.retention_days} days</p>
+              <p className="mt-1 text-[11px] text-gray-500">Policy target unless a janitor or export workflow explicitly enforces it.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Redaction</p>
+              <p className="mt-2 text-[14px] font-semibold text-white capitalize">{privacyMetadata.redaction_level}</p>
+              <p className="mt-1 text-[11px] text-gray-500">How aggressively logs, exports, and summaries should mask detail.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Training reuse</p>
+              <p className={`mt-2 text-[14px] font-semibold ${privacyMetadata.allow_training ? 'text-amber-200' : 'text-emerald-300'}`}>{privacyMetadata.allow_training ? 'Allowed' : 'Blocked'}</p>
+              <p className="mt-1 text-[11px] text-gray-500">Whether this agent&apos;s work may feed model improvement pipelines by default.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Operator exports</p>
+              <p className={`mt-2 text-[14px] font-semibold ${privacyMetadata.allow_operator_exports ? 'text-emerald-300' : 'text-red-200'}`}>{privacyMetadata.allow_operator_exports ? 'Allowed' : 'Restricted'}</p>
+              <p className="mt-1 text-[11px] text-gray-500">Whether exports should be treated as permitted by default.</p>
             </div>
           </div>
         </div>

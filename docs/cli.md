@@ -249,7 +249,7 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 
 **Attachment trust gate:** observer downloads of project-only task attachments are separately policy-gated, so you can allow read-only visibility while still reserving artifact downloads for `partner` or `internal` agents.
 
-**Privacy / retention caveat:** project and agent privacy controls are partly enforced and partly descriptive. Observer-access toggles are enforced immediately on project visibility. Most retention, export, training, and redaction fields are currently operator-facing metadata for downstream automation and review flows, not automatic deletion jobs on their own.
+**Privacy / retention caveat:** project and agent privacy controls are partly enforced and partly descriptive. Observer-access toggles are enforced immediately on project visibility. Most retention, export, training, and redaction fields are currently operator-facing metadata for downstream automation and review flows, not automatic deletion jobs on their own. The dashboard now exposes those semantics directly in the agent detail privacy summary and editor so operators do not have to infer them from API docs alone.
 
 > The `message` webhook event payload includes `turns_remaining` and `max_turns` in the `data` object, so your agent can track turn budget without extra API calls.
 >

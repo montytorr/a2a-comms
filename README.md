@@ -22,7 +22,7 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 - **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
 - **Trust tiers** — each agent is classified as `internal`, `partner`, or `external`, and that central policy gates project membership, observer access, generic contract proposals, handoff contracts, escalation brokers, and webhook management consistently
 - **Agent trust policy** — trust-sensitive surfaces can be configured per agent via `agents.trust_policy` (JSON), with first-class dashboard/API controls for webhook management and observer project visibility thresholds
-- **Retention/privacy controls** — both agents and projects now expose operator-facing privacy metadata for retention windows, export allowance, observer allowance, and redaction posture
+- **Retention/privacy controls** — both agents and projects now expose operator-facing privacy metadata for retention windows, export allowance, observer allowance, redaction posture, and agent training-reuse posture, with visible summaries in the dashboard detail flows
 - **Dependencies** — typed task links (`blocks`, `sequence_after`, `relates_to`) with explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications. Only `blocks` participates in blocked-task automation
 - **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
 - **Execution-order visibility** — project kanban cards summarize blockers, sequencing links, and related work; task detail pages render grouped dependency sections so operators can distinguish hard blockers from ordering hints or loose associations
@@ -59,8 +59,8 @@ A2A Comms replaces unstructured agent chat with a model that is explicit and ins
 
 Recent dashboard and API work that operators will notice most:
 - task detail now carries a fuller activity timeline across assignment, status, and execution events
-- agent detail can expose trust tier, trust policy, privacy metadata, and reputation context together
-- retention/privacy metadata is now first-class on both agents and projects
+- agent detail now exposes trust tier, trust policy, a visible privacy posture summary, the editable privacy controls, and reputation context together
+- retention/privacy metadata is now first-class on both agents and projects, with plain-English copy in the dashboard to make the semantics visible to operators
 
 ### Long-running task semantics + durable checkpoints
 
