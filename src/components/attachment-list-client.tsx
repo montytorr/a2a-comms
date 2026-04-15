@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import MarkdownPreview from '@/components/markdown-preview';
 import type { TaskAttachment } from '@/lib/types';
 import { formatDateTime } from '@/lib/format-date';
 
@@ -23,6 +24,11 @@ function isImageAttachment(attachment: TaskAttachment) {
 function isTextAttachment(attachment: TaskAttachment) {
   const ext = extensionOf(attachment.original_name || attachment.filename || '');
   return attachment.mime_type.startsWith('text/') || ['md', 'markdown', 'txt', 'json', 'log', 'yaml', 'yml', 'csv'].includes(ext);
+}
+
+function isMarkdownAttachment(attachment: TaskAttachment) {
+  const ext = extensionOf(attachment.original_name || attachment.filename || '');
+  return attachment.mime_type === 'text/markdown' || attachment.mime_type === 'text/x-markdown' || ['md', 'markdown'].includes(ext);
 }
 
 function isPdfAttachment(attachment: TaskAttachment) {
@@ -68,6 +74,7 @@ function fileKindLabel(attachment: TaskAttachment) {
 function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
   const href = attachment.download_url;
   const isText = isTextAttachment(attachment);
+  const isMarkdown = isMarkdownAttachment(attachment);
   const [textContent, setTextContent] = useState<string>('');
   const [textError, setTextError] = useState<string | null>(null);
 
@@ -103,12 +110,12 @@ function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
 
   if (isImageAttachment(attachment)) {
     return (
-      <div className="relative flex h-full w-full items-center justify-center rounded-[24px] border border-white/[0.08] bg-black/25 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-4 lg:p-6">
+      <div className="relative flex h-full min-h-[60vh] w-full items-center justify-center overflow-auto rounded-[24px] border border-white/[0.08] bg-black/30 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-4 lg:p-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={href}
           alt={attachment.original_name}
-          className="h-auto max-h-[72vh] w-auto max-w-full rounded-[18px] object-contain shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+          className="block h-auto max-h-none w-auto max-w-full rounded-[18px] object-contain shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
         />
       </div>
     );
@@ -145,8 +152,15 @@ function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
   if (isTextAttachment(attachment)) {
     if (textError) return <p className="text-sm text-red-200">{textError}</p>;
     if (!textContent) return <p className="text-sm text-gray-400">Loading text preview…</p>;
+    if (isMarkdown) {
+      return (
+        <div className="h-[76vh] w-full overflow-auto rounded-[24px] border border-white/[0.08] bg-[#05070d] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <MarkdownPreview content={textContent} className="max-w-none" />
+        </div>
+      );
+    }
     return (
-      <pre className="h-[72vh] w-full overflow-auto rounded-[24px] border border-white/[0.08] bg-[#05070d] p-5 text-[12px] leading-6 text-gray-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] whitespace-pre-wrap break-words">
+      <pre className="h-[76vh] w-full overflow-auto rounded-[24px] border border-white/[0.08] bg-[#05070d] p-5 text-[12px] leading-6 text-gray-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] whitespace-pre-wrap break-words">
         {textContent}
       </pre>
     );
@@ -253,15 +267,15 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
       </div>
 
       {preview && preview.download_url ? (
-        <div className="fixed inset-0 z-[80] bg-black/90 p-3 backdrop-blur-md sm:p-5" onClick={() => setPreview(null)}>
+        <div className="fixed inset-0 z-[80] bg-black/90 p-2 backdrop-blur-md sm:p-4" onClick={() => setPreview(null)}>
           <div
-            className="mx-auto grid h-full max-h-[92vh] w-full max-w-7xl overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#07070c] shadow-[0_32px_90px_rgba(0,0,0,0.62)] lg:grid-cols-[minmax(0,1fr),320px]"
+            className="mx-auto grid h-full max-h-[96vh] w-full max-w-[min(96vw,1800px)] overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#07070c] shadow-[0_32px_90px_rgba(0,0,0,0.62)] lg:grid-cols-[minmax(0,1.45fr),360px]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="relative flex min-h-[320px] flex-1 items-center justify-center overflow-hidden border-b border-white/[0.06] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_34%),linear-gradient(180deg,_rgba(11,15,24,0.96),_rgba(5,5,10,1))] p-4 sm:p-6 lg:min-h-0 lg:border-b-0 lg:border-r lg:border-white/[0.06] lg:p-10">
+            <div className="relative flex min-h-[420px] flex-1 items-center justify-center overflow-auto border-b border-white/[0.06] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_34%),linear-gradient(180deg,_rgba(11,15,24,0.96),_rgba(5,5,10,1))] p-3 sm:p-5 lg:min-h-0 lg:border-b-0 lg:border-r lg:border-white/[0.06] lg:p-8 xl:p-10">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06)_0%,transparent_24%,transparent_76%,rgba(255,255,255,0.04)_100%)]" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/35 to-transparent" />
-              <div className="relative h-full max-h-full w-full">
+              <div className="relative flex h-full max-h-full w-full items-center justify-center">
                 <InlinePreview attachment={preview} />
               </div>
             </div>
