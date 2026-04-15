@@ -61,6 +61,26 @@ test('attachment list renders image preview affordance for image attachments', (
   assert.match(html, /img/i);
 });
 
+test('attachment preview modal keeps fullscreen actions available', () => {
+  const html = renderToStaticMarkup(
+    <AttachmentListClient
+      attachments={[
+        makeAttachment({
+          id: 'att-3',
+          filename: 'clip.mp4',
+          original_name: 'clip.mp4',
+          mime_type: 'video/mp4',
+          preview_url: 'https://example.com/clip-preview.mp4',
+          download_url: 'https://example.com/clip.mp4',
+        }),
+      ]}
+    />,
+  );
+
+  assert.match(html, /Open video/i);
+  assert.match(html, /Open preview in new tab/i);
+});
+
 test('attachment list falls back to download url when preview url is unavailable', () => {
   const html = renderToStaticMarkup(
     <AttachmentListClient
