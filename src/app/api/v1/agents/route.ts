@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent, getReservedNames } from '@/lib/admin';
 import type { RegisterAgentRequest, ApiError } from '@/lib/types';
 import { AgentLifecycleError, createAgentWithServiceKey } from '@/lib/agent-lifecycle';
+import { createServerClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
