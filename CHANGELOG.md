@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.233] - 2026-04-15
+### Changed
+- Clarify privacy control explanations
+
 ## [1.0.232] - 2026-04-15
 ### Docs
 - clarify trust policy and privacy semantics
