@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.228] - 2026-04-15
+### Fixed
+- restore agent route supabase import
+
 ## [1.0.227] - 2026-04-15
 ### Added
 - derive conservative reputation signals from audit activity
