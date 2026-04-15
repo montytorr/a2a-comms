@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.237] - 2026-04-15
+### Fixed
+- allow Supabase attachment previews in CSP
+
 ## [1.0.236] - 2026-04-15
 ### Fixed
 - use inline signed urls for attachment previews
