@@ -185,3 +185,76 @@ test('aggregateReputationLedger treats derived execution, approval, collaboratio
   assert.equal(snapshot.signals.find((signal) => signal.key === 'collaboration_quality')?.sample_count, 1);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.sample_count, 1);
 });
+
+test('aggregateReputationLedger gives provisional credit to low-weight audit-derived activity without inflating scores', () => {
+  const events: ReputationLedgerEvent[] = [
+    buildEvent({
+      id: 'derived:message-send',
+      source_type: 'system',
+      signal_key: 'collaboration_quality',
+      value: 0.22,
+      weight_hint: 0.15,
+      metadata: { derived: true, audit_action: 'message.send', evidence_kind: 'contract_message_activity' },
+      contract_id: 'c1',
+      project_id: 'p1',
+    }),
+    buildEvent({
+      id: 'derived:contract-propose',
+      source_type: 'system',
+      signal_key: 'collaboration_quality',
+      value: 0.4,
+      weight_hint: 0.35,
+      metadata: { derived: true, audit_action: 'contract.propose', evidence_kind: 'contract_initiation' },
+      contract_id: 'c1',
+      project_id: 'p1',
+      occurred_at: '2026-04-10T11:00:00.000Z',
+    }),
+    buildEvent({
+      id: 'derived:contract-accept',
+      source_type: 'handoff',
+      signal_key: 'collaboration_quality',
+      value: 0.58,
+      weight_hint: 0.55,
+      metadata: { derived: true, audit_action: 'contract.accept', evidence_kind: 'contract_acceptance' },
+      contract_id: 'c1',
+      project_id: 'p1',
+      occurred_at: '2026-04-10T10:00:00.000Z',
+    }),
+    buildEvent({
+      id: 'derived:task-update',
+      source_type: 'system',
+      signal_key: 'delivery_reliability',
+      value: 0.34,
+      weight_hint: 0.2,
+      metadata: { derived: true, audit_action: 'task.update', evidence_kind: 'task_progress_update', status: 'done' },
+      task_id: 't1',
+      project_id: 'p1',
+      occurred_at: '2026-04-10T09:00:00.000Z',
+    }),
+    buildEvent({
+      id: 'derived:member-add',
+      source_type: 'system',
+      signal_key: 'collaboration_quality',
+      value: 0.32,
+      weight_hint: 0.18,
+      metadata: { derived: true, audit_action: 'project.member_add', evidence_kind: 'project_membership_gain' },
+      project_id: 'p2',
+      occurred_at: '2026-04-10T08:00:00.000Z',
+    }),
+  ];
+
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.equal(snapshot.explanation.gating.is_visible, true);
+  assert.equal(snapshot.explanation.gating.is_stable, false);
+  assert.equal(snapshot.confidence_band, 'low');
+  assert.ok(snapshot.score !== null);
+  assert.ok(snapshot.score >= 0.6 && snapshot.score <= 0.75);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'collaboration_quality')?.sample_count, 4);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'delivery_reliability')?.sample_count, 1);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.sample_count, 0);
+});

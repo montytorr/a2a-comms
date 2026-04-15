@@ -622,6 +622,142 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
       } satisfies ReputationLedgerEvent];
     }
 
+    if (rowActor === normalizedActor) {
+      if (row.action === 'message.send' && row.resource_type === 'message') {
+        return [{
+          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          agent_id: agentId,
+          occurred_at: row.created_at,
+          recorded_at: row.created_at,
+          source_type: 'system',
+          signal_key: 'collaboration_quality',
+          value: 0.22,
+          weight_hint: 0.15,
+          source_id: row.resource_id ?? row.id,
+          project_id: asString(details.project_id),
+          task_id: asString(details.task_id),
+          contract_id: asString(details.contract_id),
+          reviewer_agent_id: null,
+          reviewer_user_id: null,
+          metadata: {
+            derived: true,
+            audit_action: row.action,
+            message_type: asString(details.message_type),
+            turn: details.turn ?? null,
+            evidence_kind: 'contract_message_activity',
+          },
+        } satisfies ReputationLedgerEvent];
+      }
+
+      if (row.action === 'contract.propose' && row.resource_type === 'contract') {
+        return [{
+          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          agent_id: agentId,
+          occurred_at: row.created_at,
+          recorded_at: row.created_at,
+          source_type: 'system',
+          signal_key: 'collaboration_quality',
+          value: 0.4,
+          weight_hint: 0.35,
+          source_id: row.resource_id ?? row.id,
+          project_id: asString(details.project_id),
+          task_id: asString(details.task_id),
+          contract_id: row.resource_id,
+          reviewer_agent_id: null,
+          reviewer_user_id: null,
+          metadata: {
+            derived: true,
+            audit_action: row.action,
+            invitee_count: Array.isArray(details.invitees) ? details.invitees.length : 0,
+            observer_count: Array.isArray(details.observers) ? details.observers.length : 0,
+            evidence_kind: 'contract_initiation',
+          },
+        } satisfies ReputationLedgerEvent];
+      }
+
+      if (row.action === 'contract.accept' && row.resource_type === 'contract') {
+        return [{
+          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          agent_id: agentId,
+          occurred_at: row.created_at,
+          recorded_at: row.created_at,
+          source_type: 'handoff',
+          signal_key: 'collaboration_quality',
+          value: asString(details.resumed_run_id) || details.handoff_claimed === true ? 0.72 : 0.58,
+          weight_hint: asString(details.resumed_run_id) || details.handoff_claimed === true ? 0.8 : 0.55,
+          source_id: row.resource_id ?? row.id,
+          project_id: asString(details.project_id),
+          task_id: asString(details.task_id),
+          contract_id: row.resource_id,
+          reviewer_agent_id: null,
+          reviewer_user_id: null,
+          metadata: {
+            derived: true,
+            audit_action: row.action,
+            activated: details.activated === true,
+            handoff_claimed: details.handoff_claimed === true,
+            broker_engaged: details.broker_engaged === true,
+            resumed_run_id: asString(details.resumed_run_id),
+            evidence_kind: 'contract_acceptance',
+          },
+        } satisfies ReputationLedgerEvent];
+      }
+
+      if (row.action === 'task.update' && row.resource_type === 'task') {
+        const status = asString(details.status);
+        const meaningfulProgress = status === 'in-progress' || status === 'in-review' || status === 'done';
+        return [{
+          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          agent_id: agentId,
+          occurred_at: row.created_at,
+          recorded_at: row.created_at,
+          source_type: 'system',
+          signal_key: meaningfulProgress ? 'delivery_reliability' : 'collaboration_quality',
+          value: meaningfulProgress ? 0.34 : 0.2,
+          weight_hint: meaningfulProgress ? 0.2 : 0.12,
+          source_id: row.resource_id ?? row.id,
+          project_id: asString(details.project_id),
+          task_id: row.resource_id,
+          contract_id: asString(details.handoff_contract_id) ?? asString(details.escalation_contract_id),
+          reviewer_agent_id: null,
+          reviewer_user_id: null,
+          metadata: {
+            derived: true,
+            audit_action: row.action,
+            status,
+            priority: asString(details.priority),
+            evidence_kind: meaningfulProgress ? 'task_progress_update' : 'task_maintenance_update',
+          },
+        } satisfies ReputationLedgerEvent];
+      }
+
+      if (row.action === 'project.member_add' && row.resource_type === 'project') {
+        return [{
+          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          agent_id: agentId,
+          occurred_at: row.created_at,
+          recorded_at: row.created_at,
+          source_type: 'system',
+          signal_key: 'collaboration_quality',
+          value: 0.32,
+          weight_hint: 0.18,
+          source_id: row.resource_id ?? row.id,
+          project_id: row.resource_id,
+          task_id: null,
+          contract_id: null,
+          reviewer_agent_id: null,
+          reviewer_user_id: null,
+          metadata: {
+            derived: true,
+            audit_action: row.action,
+            role: asString(details.role),
+            via: asString(details.via),
+            evidence_kind: 'project_membership_gain',
+          },
+        } satisfies ReputationLedgerEvent];
+      }
+    }
+
     return [];
   });
 }
@@ -656,7 +792,20 @@ async function getDerivedReputationLedgerEvents(agentId: string) {
       .from('audit_log')
       .select('id, actor, action, resource_type, resource_id, details, created_at')
       .or(agentName ? `actor.eq.${agentName},details->>original_actor.eq.${agentName}` : `actor.eq.__never__`)
-      .in('action', ['approval.requested', 'approval.approved', 'approval.denied', 'auth.failure', 'authz.denied', 'suspicious.replay_detected', 'suspicious.invalid_signature'])
+      .in('action', [
+        'approval.requested',
+        'approval.approved',
+        'approval.denied',
+        'auth.failure',
+        'authz.denied',
+        'suspicious.replay_detected',
+        'suspicious.invalid_signature',
+        'message.send',
+        'contract.propose',
+        'contract.accept',
+        'task.update',
+        'project.member_add',
+      ])
       .order('created_at', { ascending: false })
       .limit(200),
   ]);
