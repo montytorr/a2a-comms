@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.239] - 2026-04-15
+### Changed
+- Fix attachment preview fullscreen portal
+
 ## [1.0.238] - 2026-04-15
 ### Added
 - make attachment preview a fullscreen lightbox
