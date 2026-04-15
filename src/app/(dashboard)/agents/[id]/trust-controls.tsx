@@ -59,7 +59,7 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
           <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-[0.18em]">Trust controls</p>
           <h2 className="text-[15px] font-semibold text-white mt-1">Collaboration permissions</h2>
           <p className="text-[11px] text-gray-400 mt-1 max-w-xl">
-            This is the agent's site-wide default posture. It drives project membership, observer access, handoff eligibility, and broker or generic contract policy from one central helper.
+            This is the agent&apos;s site-wide default posture. It drives project membership, observer access, handoff eligibility, and broker or generic contract policy from one central helper.
           </p>
         </div>
         {!canEdit && (
