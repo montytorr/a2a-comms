@@ -70,6 +70,12 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
           <p className="text-[11px] text-gray-400 mt-1 max-w-xl">
             Sets the default data-handling posture for this agent when it participates in contracts, tasks, exports, and downstream review or automation flows.
           </p>
+          <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 text-[11px] text-gray-400 space-y-1.5 max-w-3xl">
+            <p><span className="font-medium text-white">Handling level</span> describes how carefully operators and downstream automations should treat this agent&apos;s data by default.</p>
+            <p><span className="font-medium text-white">Retention days</span> is the intended storage window, not an automatic purge timer by itself.</p>
+            <p><span className="font-medium text-white">Redaction level</span> signals how aggressively logs, exports, and summaries should remove or mask sensitive details.</p>
+            <p><span className="font-medium text-white">Training and export toggles</span> describe what downstream use is allowed. They do not override trust policy, project membership, or approval requirements.</p>
+          </div>
         </div>
         {!canEdit && <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-gray-500">View only</span>}
       </div>
@@ -82,10 +88,12 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
             <option value="confidential">Confidential</option>
             <option value="restricted">Restricted</option>
           </select>
+          <p className="mt-2 text-[11px] text-gray-500">Standard suits ordinary collaboration, confidential asks for tighter handling, and restricted signals especially sensitive material.</p>
         </div>
         <div>
           <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">Retention days</label>
           <input value={retentionDays} disabled={!canEdit || isPending} onChange={(e) => setRetentionDays(e.target.value)} inputMode="numeric" className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 text-[13px] text-gray-200" />
+          <p className="mt-2 text-[11px] text-gray-500">This is the intended default storage window for related records and artifacts. It documents policy intent unless a janitor or export workflow explicitly enforces it.</p>
         </div>
         <div>
           <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">Redaction level</label>
@@ -94,15 +102,22 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
             <option value="enhanced">Enhanced</option>
             <option value="strict">Strict</option>
           </select>
+          <p className="mt-2 text-[11px] text-gray-500">Higher redaction levels mean logs, exports, and summaries should reveal less raw detail and mask more sensitive content.</p>
         </div>
-        <label className="flex items-center gap-2 text-[12px] text-gray-300">
-          <input type="checkbox" checked={allowTraining} disabled={!canEdit || isPending} onChange={(e) => setAllowTraining(e.target.checked)} />
-          Allow training or model improvement use
-        </label>
-        <label className="flex items-center gap-2 text-[12px] text-gray-300">
-          <input type="checkbox" checked={allowOperatorExports} disabled={!canEdit || isPending} onChange={(e) => setAllowOperatorExports(e.target.checked)} />
-          Allow operator exports
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-[12px] text-gray-300">
+            <input type="checkbox" checked={allowTraining} disabled={!canEdit || isPending} onChange={(e) => setAllowTraining(e.target.checked)} />
+            Allow training or model improvement use
+          </label>
+          <p className="text-[11px] text-gray-500">Turn this off when this agent&apos;s work should not be reused for model training, fine-tuning, or similar improvement pipelines.</p>
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-[12px] text-gray-300">
+            <input type="checkbox" checked={allowOperatorExports} disabled={!canEdit || isPending} onChange={(e) => setAllowOperatorExports(e.target.checked)} />
+            Allow operator exports
+          </label>
+          <p className="text-[11px] text-gray-500">Controls whether operators and downstream workflows should treat exports from this agent&apos;s data as permitted by default.</p>
+        </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
