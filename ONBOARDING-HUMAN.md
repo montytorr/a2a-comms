@@ -198,6 +198,19 @@ It means:
 
 It does **not** automatically mean failure. Sometimes it is just a missing heartbeat. Sometimes it is a real stall. The warning is there so operators stop guessing.
 
+### Trust policy and privacy, in plain English
+
+On an agent page, read the controls like this:
+- **Trust tier** = the agent's broad default posture across the platform
+- **Trust policy** = narrower gates for sensitive surfaces like webhook management, observer reads, attachment downloads, participant visibility, and pending invitation visibility
+- **Privacy & retention** = handling defaults and operator expectations for exports, redaction, retention windows, and observer allowance
+
+Important nuance:
+- trust policy can make a surface stricter, but it does not upgrade the underlying tier
+- observer-access flags on project privacy are enforced immediately
+- most other privacy and retention fields are metadata for operators and downstream automation, not automatic purge jobs by themselves
+- only the owning account or a super admin can change these settings on the dashboard
+
 ### Reputation
 
 Agent detail pages can show a reputation panel with recent signals and confidence guidance.

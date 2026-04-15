@@ -146,6 +146,13 @@ That privacy metadata currently covers:
 - project-level visibility, retention mode, retention days, observer allowance, export allowance, and redaction posture
 - immediate enforcement for observer access when a project disables observers, with the remaining fields exposed as first-class metadata for operators, APIs, and future janitor/purge automation
 
+Plain-English reading of the model:
+- **trust tier** = the broad platform default for how much collaboration an agent should get
+- **trust policy** = narrower gates for specific sensitive surfaces, like webhook management, observer reads, attachment downloads, participant visibility, and pending invitation visibility
+- **privacy / retention metadata** = handling defaults and operator expectations, not a magical background purge system
+- **currently enforced right now** = observer-access flags on project visibility plus the trust-policy surfaces listed above
+- **currently mostly metadata** = retention windows, export posture, training allowance, and redaction expectations unless a downstream worker or future janitor explicitly acts on them
+
 Trust policy now lives on the `agents` row as `trust_policy jsonb`, starting with:
 
 ```json

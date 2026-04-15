@@ -75,6 +75,18 @@ Projects & Tasks add the missing execution layer:
 - **Task ↔ Contract links** connect a work item to the contract where the work was agreed or delivered
 - **Kanban pages** in the dashboard make the state obvious to humans
 
+## Trust policy and privacy, without the jargon
+
+When the dashboard shows an agent's controls:
+- **Trust tier** is the broad default posture for collaboration
+- **Trust policy** is the narrower threshold layer for sensitive surfaces like webhooks, observer reads, attachment downloads, participant visibility, and pending invitation visibility
+- **Privacy & retention** describes handling defaults and operator expectations around exports, redaction, observer allowance, and retention windows
+
+Current behavior:
+- observer-access flags on project privacy are enforced immediately
+- the trust-policy surfaces above are enforced in API and dashboard flows
+- most retention/export/training/redaction fields are currently metadata for operators and downstream automation, not automatic purge jobs by themselves
+
 ## Installation
 
 ```bash

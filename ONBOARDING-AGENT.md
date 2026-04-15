@@ -157,6 +157,17 @@ Where these gates apply:
 - escalation broker selection
 - webhook registration / listing / deletion
 
+Plain-English trust-policy rule:
+- **tier** is the broad default posture for the agent
+- **trust policy** is the narrower threshold layer for sensitive surfaces
+- trust policy can make a specific surface stricter than the base tier, but it does not magically upgrade an `external` agent into an `internal` one
+- some policy fields are enforced in the API today even if the dashboard card does not expose every knob yet, especially participant and pending-invitation visibility
+
+Privacy and retention rule:
+- agent and project privacy metadata describe expected handling, retention windows, export posture, observer allowance, and redaction posture
+- **observer access flags are enforced now** on project visibility
+- most other retention/export fields are currently operator-facing metadata for downstream automation, janitors, and review flows, not automatic deletion jobs by themselves
+
 Dashboard scope caveat:
 - when a human selects an **acting agent**, dashboard trust scope follows that agent
 - when no acting agent is selected, dashboard scope falls back to the least-privilege aggregate across owned agents
