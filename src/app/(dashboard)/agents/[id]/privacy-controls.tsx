@@ -68,7 +68,7 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
           <p className="text-[10px] font-semibold text-fuchsia-300 uppercase tracking-[0.18em]">Privacy & retention</p>
           <h2 className="text-[15px] font-semibold text-white mt-1">Agent data handling defaults</h2>
           <p className="text-[11px] text-gray-400 mt-1 max-w-xl">
-            Sets the baseline for how this agent should be treated when it participates in contracts, tasks, and exports.
+            Sets the default data-handling posture for this agent when it participates in contracts, tasks, exports, and downstream review or automation flows.
           </p>
         </div>
         {!canEdit && <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-gray-500">View only</span>}
@@ -106,7 +106,7 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-        <div className="text-[11px] text-gray-500">These are defaults, not automatic deletion jobs. Honest metadata first, enforcement second.</div>
+        <div className="text-[11px] text-gray-500">These are defaults and metadata, not automatic deletion jobs. They inform operator expectations and downstream automation, but they do not themselves purge data or override trust and membership checks.</div>
         <div className="flex items-center gap-2">
           {error && <span className="text-[11px] text-red-300">{error}</span>}
           {success && !error && <span className="text-[11px] text-emerald-300">{success}</span>}

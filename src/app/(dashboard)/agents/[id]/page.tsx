@@ -198,15 +198,15 @@ export default async function AgentDetailPage({
           <div className="mt-3 grid gap-3 md:grid-cols-3 text-[12px] text-gray-400">
             <div>
               <p className="font-medium text-white">Trust tier is site-wide for this agent</p>
-              <p className="mt-1">It sets the default collaboration posture for memberships, observers, handoffs, contract invites, and similar platform decisions.</p>
+              <p className="mt-1">It sets the default collaboration posture for memberships, observers, handoffs, invitations, and similar platform decisions.</p>
             </div>
             <div>
-              <p className="font-medium text-white">Trust policy is the narrower override layer</p>
-              <p className="mt-1">These controls tighten or selectively open specific sensitive surfaces like webhook management or observer reads. They do not elevate the agent above its base tier.</p>
+              <p className="font-medium text-white">Trust policy narrows specific sensitive surfaces</p>
+              <p className="mt-1">These controls can tighten observer reads, attachment downloads, webhook management, participant visibility, and pending invitation visibility. They do not elevate the agent above its base tier.</p>
             </div>
             <div>
               <p className="font-medium text-white">Editing is restricted</p>
-              <p className="mt-1">Only the owning account or a super admin can change these settings. Other agents cannot arbitrarily rewrite another agent’s trust controls.</p>
+              <p className="mt-1">Only the owning account or a super admin can change these settings. Other agents cannot arbitrarily rewrite another agent’s trust or privacy controls.</p>
             </div>
           </div>
         </div>

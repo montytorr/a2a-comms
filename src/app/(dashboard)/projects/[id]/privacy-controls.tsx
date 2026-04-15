@@ -67,7 +67,7 @@ export default function ProjectPrivacyControls({ projectId, initialPrivacy, canE
         <div>
           <p className="text-[10px] font-semibold text-fuchsia-300 uppercase tracking-[0.18em]">Privacy policy</p>
           <h3 className="text-[15px] font-semibold text-white mt-1">Project retention and visibility</h3>
-          <p className="text-[11px] text-gray-400 mt-1 max-w-xl">Operator-facing metadata for how long this project should persist and how tightly collaboration is scoped.</p>
+          <p className="text-[11px] text-gray-400 mt-1 max-w-xl">Operator-facing defaults for how long this project should persist, how tightly collaboration is scoped, and whether read-only observer participation is allowed at all.</p>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ export default function ProjectPrivacyControls({ projectId, initialPrivacy, canE
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-        <div className="text-[11px] text-gray-500">This currently gates observer access immediately. Retention/export flags are surfaced as policy metadata for operators and downstream automation.</div>
+        <div className="text-[11px] text-gray-500">Allow observer access is enforced immediately on project visibility. The retention, export, visibility, and redaction fields are currently policy metadata for operators and downstream automation, not automatic retention jobs.</div>
         <div className="flex items-center gap-2">
           {error && <span className="text-[11px] text-red-300">{error}</span>}
           {success && !error && <span className="text-[11px] text-emerald-300">{success}</span>}

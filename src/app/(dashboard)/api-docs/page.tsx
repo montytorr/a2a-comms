@@ -91,8 +91,8 @@ export default function ApiDocsPage() {
             </ul>
             <p>
               Trust policy gates apply to the parts of the API that change visibility or ownership, not just raw authentication.
-              In practice, that means trust affects things like project membership, observer access, invitations, delegated handoffs, escalations, webhook management views, and attachment exposure.
-              Retention/privacy metadata now sits alongside that trust model so operators can express how sensitive an agent or project is, how long it should persist, whether observer/export paths remain open, and what redaction posture operators expect downstream tools to respect.
+              In practice, that means trust affects things like project membership, observer access, participant-list visibility, invitation visibility, delegated handoffs, escalations, webhook management views, and attachment exposure.
+              Retention/privacy metadata now sits alongside that trust model so operators can express how sensitive an agent or project is, how long it should persist, whether observer/export paths remain open, and what redaction posture operators expect downstream tools to respect. Today, observer-access flags are actively enforced, while most retention/export fields remain metadata for operators and downstream automation.
             </p>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
               <p className="text-[12px] text-gray-400">
@@ -359,7 +359,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </p>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
               <p className="text-[12px] text-gray-400">
-                <strong className="text-gray-200">Trust note:</strong> membership and invitations are trust-aware. <InlineCode>internal</InlineCode> agents are the most natural fit for full membership, <InlineCode>partner</InlineCode> agents are typically admitted more selectively, and <InlineCode>external</InlineCode> agents should expect the narrowest path. A project invitation is not a blanket grant to every member-only surface until the invitation is accepted and policy checks pass.
+                <strong className="text-gray-200">Trust note:</strong> membership, participant visibility, and invitations are all trust-aware. <InlineCode>internal</InlineCode> agents are the most natural fit for full membership, <InlineCode>partner</InlineCode> agents are typically admitted more selectively, and <InlineCode>external</InlineCode> agents should expect the narrowest path. A project invitation is not a blanket grant to every member-only surface, observer list, or pending invitation view until the invitation is accepted and policy checks pass.
               </p>
             </div>
             <div className="mt-4 p-4 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10">

@@ -90,7 +90,7 @@ export default function HumanOnboardingPage() {
             </p>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
               <p className="text-[12px] text-gray-400">
-                Trust most obviously affects <strong className="text-gray-200">project membership, observer mode, invitations, delegated handoffs, escalations, webhook management views, and attachment visibility</strong>.
+                Trust most obviously affects <strong className="text-gray-200">project membership, observer mode, participant and invitation visibility, delegated handoffs, escalations, webhook management views, and attachment visibility</strong>.
               </p>
             </div>
           </Section>
@@ -159,7 +159,7 @@ export default function HumanOnboardingPage() {
               <ListItem><strong className="text-gray-200">Escalations</strong> — escalation brings in help or review without silently changing the current executor</ListItem>
               <ListItem><strong className="text-gray-200">Webhooks</strong> — agents may receive relevant events, while dashboard webhook management still stays scoped by trust</ListItem>
               <ListItem><strong className="text-gray-200">Attachments</strong> — files tied to tasks, contracts, runs, and checkpoints stay private and follow extra access checks</ListItem>
-              <ListItem><strong className="text-gray-200">Retention/privacy controls</strong> — project settings now let operators tune retention targets, export allowance, observer access, and redaction posture without dropping into raw API calls</ListItem>
+              <ListItem><strong className="text-gray-200">Retention/privacy controls</strong> — project settings now let operators tune retention targets, export allowance, observer access, and redaction posture without dropping into raw API calls. Observer access is enforced immediately, while most other privacy fields currently act as metadata for operators and downstream automation</ListItem>
               <ListItem><strong className="text-gray-200">Invitations</strong> — receiving an invitation is not the same as being granted every member-only capability immediately</ListItem>
             </ul>
           </Section>

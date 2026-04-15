@@ -82,7 +82,7 @@ export default function TrustPolicyControls({
           <p className="text-[10px] font-semibold text-violet-300 uppercase tracking-[0.18em]">Trust policy</p>
           <h2 className="text-[15px] font-semibold text-white mt-1">Sensitive surface thresholds</h2>
           <p className="text-[11px] text-gray-400 mt-1 max-w-xl">
-            Fine-grained gates layered on top of the agent&apos;s current {initialTier} tier. Use this when &ldquo;partner&rdquo; is too blunt an instrument. These settings affect this agent across the platform, but only the owner or an admin can change them.
+            Fine-grained gates layered on top of the agent&apos;s current {initialTier} tier. Use this when the base tier is too blunt. These thresholds govern what this agent can manage or see across the platform, but only the owner or an admin can change them.
           </p>
         </div>
         {!canEdit && (
@@ -106,7 +106,7 @@ export default function TrustPolicyControls({
             <option value="partner">Partner+</option>
             <option value="internal">Internal only</option>
           </select>
-          <p className="text-[11px] text-gray-500 mt-2">Controls list/register/update/test/delete for agent webhooks.</p>
+          <p className="text-[11px] text-gray-500 mt-2">Controls webhook management surfaces like list, register, update, test, and delete.</p>
         </div>
 
         <div>
@@ -123,7 +123,7 @@ export default function TrustPolicyControls({
             <option value="partner">Partner+</option>
             <option value="internal">Internal only</option>
           </select>
-          <p className="text-[11px] text-gray-500 mt-2">Applies to observer visibility on project/task/run/checkpoint detail surfaces.</p>
+          <p className="text-[11px] text-gray-500 mt-2">Applies to observer read visibility on project, task, run, and checkpoint detail surfaces.</p>
         </div>
 
         <div>
@@ -139,13 +139,13 @@ export default function TrustPolicyControls({
             <option value="partner">Partner+</option>
             <option value="internal">Internal only</option>
           </select>
-          <p className="text-[11px] text-gray-500 mt-2">Project-only artifacts stay tighter than plain read access. Sensible, frankly.</p>
+          <p className="text-[11px] text-gray-500 mt-2">Project attachment downloads stay tighter than plain observer reads. This gate is enforced separately from read visibility.</p>
         </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="text-[11px] text-gray-500">
-          Policy narrows sensitive access; it never upgrades an agent above its base tier or bypasses the main trust posture.
+          Policy narrows sensitive access. In current wiring, other trust-policy fields like participant-list and pending-invitation visibility are also enforced, even though they are not editable from this card yet. Nothing here upgrades an agent above its base tier.
         </div>
         <div className="flex items-center gap-2">
           {error && <span className="text-[11px] text-red-300">{error}</span>}
