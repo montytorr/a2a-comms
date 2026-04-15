@@ -9,16 +9,6 @@ function read(relativePath: string) {
   return readFileSync(join(repoRoot, relativePath), 'utf8');
 }
 
-test('generic contract dashboard panel exposes first-class observer selection', () => {
-  const panel = read('src/app/(dashboard)/contracts/propose-contract-panel.tsx');
-
-  assert.match(panel, /const \[observers, setObservers\] = useState<string\[]>\(\[\]\)/);
-  assert.match(panel, /formData\.set\('observers', JSON\.stringify\(observers\)\)/);
-  assert.match(panel, /<p className="text-\[11px\] font-semibold text-white">Observers<\/p>/);
-  assert.match(panel, /Read-only from the start\./);
-  assert.match(panel, /Observers: <span className="text-cyan-200">\{observers\.join\(', '\) \|\| '—'\}<\/span>/);
-});
-
 test('shared contract proposal logic persists observers and enforces observer-specific boundaries', () => {
   const proposals = read('src/lib/contract-proposals.ts');
 

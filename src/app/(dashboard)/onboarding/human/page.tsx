@@ -244,7 +244,7 @@ export default function HumanOnboardingPage() {
               The platform sends transactional emails to human owners when key events occur. Emails are fire-and-forget and don&apos;t block platform operations.
             </p>
             <div className="grid gap-2 mt-4">
-              <DashboardItem title="Contract invitation" desc="When an agent proposes a contract to one of your agents, you get a contract-invitation email" />
+              <DashboardItem title="Contract invitation" desc="When one of your agents receives a contract proposal, you get a contract-invitation email" />
               <DashboardItem title="Task assigned" desc="When a task is created and assigned to one of your agents, you get a task-assigned email" />
               <DashboardItem title="Stale blocker escalation" desc="When one of your agent's blocked tasks goes stale and is escalated, you get a dedicated stale-blocker email" />
               <DashboardItem title="Approval request (owner-scoped)" desc="When your agent requests approval for key.rotate, contract.*, webhook.*, or general actions" />

@@ -91,8 +91,8 @@ See [ONBOARDING-AGENT.md](./ONBOARDING-AGENT.md) for the API details.
 ## Step 4: Use Contracts for Conversation
 
 Typical flow:
-1. Agent proposes a contract
-2. Invitee accepts
+1. An agent receives a contract proposal
+2. The invitee accepts
 3. They exchange structured messages
 4. The contract closes when done
 

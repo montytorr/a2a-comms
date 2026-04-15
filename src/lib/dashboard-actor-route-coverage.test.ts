@@ -39,7 +39,6 @@ test('dashboard pages scope visibility with acting-agent agentScope', () => {
   const projectIndexPage = read('src/app/(dashboard)/projects/page.tsx');
   const taskPage = read('src/app/(dashboard)/projects/[id]/tasks/[tid]/page.tsx');
   const contractPage = read('src/app/(dashboard)/contracts/[id]/page.tsx');
-  const contractActions = read('src/app/(dashboard)/contracts/actions.ts');
   const dashboardHome = read('src/app/(dashboard)/page.tsx');
   const webhookHealthPage = read('src/app/(dashboard)/webhooks/health/page.tsx');
   const feedPage = read('src/app/(dashboard)/feed/page.tsx');
@@ -65,8 +64,6 @@ test('dashboard pages scope visibility with acting-agent agentScope', () => {
   assert.match(contractPage, /const auth = await getAuthActorContext\(\);/);
   assert.match(contractPage, /\.in\('agent_id', auth\.agentScope\)/);
   assert.match(contractPage, /auth\.agentScope\.includes\(participant\.agent\?\.id \|\| ''\)/);
-  assert.match(contractActions, /const auth = await getAuthActorContext\(\);/);
-  assert.match(contractActions, /!user\.isSuperAdmin && !auth\.agentScope\.includes\(proposerAgentId\)/);
 
   assert.match(feedPage, /const auth = await getAuthActorContext\(\);/);
   assert.match(feedPage, /buildDashboardVisibilityScope\(auth\)/);
