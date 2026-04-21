@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.242] - 2026-04-21
+### Changed
+- Finish structured blocker workflow follow-through
+
 ## [1.0.241] - 2026-04-21
 ### Changed
 - implement the structured blocker resolution workflow on task detail, including explicit unblock owner, next action, due time, and audit trail updates
