@@ -43,6 +43,9 @@ test('fresh blockers stay in blocked state', () => {
   assert.equal(state.stale, false);
   assert.equal(state.followThroughDue, false);
   assert.equal(state.meta, 'Blocked · waiting on Webhook signature fix');
+  assert.equal(state.planSummary, 'No unblock plan logged yet');
+  assert.equal(state.statusLabel, 'Blocked');
+  assert.equal(state.dueState, 'none');
 });
 
 test('day-old blockers trigger follow-through reminders before going stale', () => {
@@ -58,6 +61,7 @@ test('day-old blockers trigger follow-through reminders before going stale', () 
   assert.equal(state.stale, false);
   assert.equal(state.followThroughDue, true);
   assert.match(state.meta, /Blocked 25h · follow through on Webhook signature fix \+1 more/);
+  assert.equal(state.escalationLabel, null);
 });
 
 test('logged follow-through suppresses repeated reminder copy until stale', () => {
@@ -82,6 +86,39 @@ test('logged follow-through suppresses repeated reminder copy until stale', () =
   assert.equal(state.blockerResolutionOwner, 'Platform team');
   assert.equal(state.blockerResolutionDueAt, '2026-04-04T18:00:00.000Z');
   assert.equal(state.blockerResolutionStatus, 'follow-up');
+  assert.equal(state.statusLabel, 'Follow-up plan');
+  assert.equal(state.dueState, 'due-soon');
+  assert.equal(state.dueStateLabel, 'Follow-up due soon');
+  assert.match(state.planSummary, /Wait for webhook signing key rotation · owner Platform team · by 2026-04-04T18:00:00.000Z/);
+});
+
+test('blocker due soon and overdue cues are derived from due timestamps', () => {
+  const dueSoon = getBlockedTaskNotificationState({
+    blockedAt: '2026-04-03T08:00:00.000Z',
+    updatedAt: '2026-04-04T11:00:00.000Z',
+    blockerResolutionAction: 'Check rollout metrics',
+    blockerResolutionOwner: 'Release captain',
+    blockerResolutionDueAt: '2026-04-04T14:00:00.000Z',
+    blockerResolutionStatus: 'follow-up',
+    blockedByCount: 1,
+    blockingTaskTitles: ['Schema migration'],
+  }, new Date('2026-04-04T12:00:00.000Z'));
+
+  const overdue = getBlockedTaskNotificationState({
+    blockedAt: '2026-04-03T08:00:00.000Z',
+    updatedAt: '2026-04-04T11:00:00.000Z',
+    blockerResolutionAction: 'Check rollout metrics',
+    blockerResolutionOwner: 'Release captain',
+    blockerResolutionDueAt: '2026-04-04T10:00:00.000Z',
+    blockerResolutionStatus: 'follow-up',
+    blockedByCount: 1,
+    blockingTaskTitles: ['Schema migration'],
+  }, new Date('2026-04-04T12:00:00.000Z'));
+
+  assert.equal(dueSoon.dueState, 'due-soon');
+  assert.equal(dueSoon.dueStateLabel, 'Follow-up due soon');
+  assert.equal(overdue.dueState, 'overdue');
+  assert.equal(overdue.dueStateLabel, 'Follow-up overdue');
 });
 
 test('old blockers flip to stale escalation', () => {
@@ -97,6 +134,7 @@ test('old blockers flip to stale escalation', () => {
   assert.equal(state.stale, true);
   assert.equal(state.followThroughDue, true);
   assert.match(state.meta, /Blocked 50h · stale blocker · escalate Webhook signature fix/);
+  assert.equal(state.escalationLabel, 'Escalate now');
 });
 
 test('stale blockers show escalation history once logged', () => {
@@ -106,10 +144,16 @@ test('stale blockers show escalation history once logged', () => {
     updatedAt: '2026-04-04T11:00:00.000Z',
     blockerFollowedThroughAt: '2026-04-03T12:00:00.000Z',
     blockerEscalatedAt: '2026-04-04T11:30:00.000Z',
+    blockerResolutionAction: 'Page provider on-call',
+    blockerResolutionOwner: 'Platform reliability owner',
+    blockerResolutionDueAt: '2026-04-04T12:30:00.000Z',
+    blockerResolutionStatus: 'escalate',
     blockedByCount: 1,
     blockingTaskTitles: ['Webhook signature fix'],
   }, now);
 
   assert.equal(state.tone, 'stale');
   assert.match(state.meta, /Blocked 50h · escalated after follow-through on Webhook signature fix/);
+  assert.equal(state.statusLabel, 'Escalated plan');
+  assert.equal(state.escalationLabel, 'Escalated');
 });

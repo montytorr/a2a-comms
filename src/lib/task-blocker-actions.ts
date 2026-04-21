@@ -62,11 +62,20 @@ export async function notifyBlockerAction(
     blockerFollowUpAt?: string | null;
     blockerFollowedThroughAt?: string | null;
     blockerEscalatedAt?: string | null;
+    blockerResolutionAction?: string | null;
+    blockerResolutionOwner?: string | null;
+    blockerResolutionDueAt?: string | null;
+    blockerResolutionStatus?: string | null;
   }
 ): Promise<void> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
   const blockerSummary = options.blockerTitles.filter(Boolean).join(', ') || 'task dependencies';
   const taskUrl = `${appUrl}/projects/${options.projectId}/tasks/${options.taskId}`;
+  const blockerPlan = [
+    options.blockerResolutionAction?.trim() || null,
+    options.blockerResolutionOwner?.trim() ? `owner: ${options.blockerResolutionOwner.trim()}` : null,
+    options.blockerResolutionDueAt ? `follow-up: ${options.blockerResolutionDueAt}` : null,
+  ].filter(Boolean).join(' · ') || null;
 
   if (options.action === 'stale-escalation') {
     const memberIds = await getProjectMemberAgentIds(options.projectId);
@@ -89,6 +98,11 @@ export async function notifyBlockerAction(
           blocker_follow_up_at: options.blockerFollowUpAt ?? null,
           blocker_followed_through_at: options.blockerFollowedThroughAt ?? null,
           blocker_escalated_at: options.blockerEscalatedAt ?? null,
+          blocker_resolution_action: options.blockerResolutionAction ?? null,
+          blocker_resolution_owner: options.blockerResolutionOwner ?? null,
+          blocker_resolution_due_at: options.blockerResolutionDueAt ?? null,
+          blocker_resolution_status: options.blockerResolutionStatus ?? null,
+          blocker_plan: blockerPlan,
           task_url: taskUrl,
         },
         timestamp: new Date().toISOString(),
@@ -118,6 +132,9 @@ export async function notifyBlockerAction(
         ? `The task has been blocked for ${options.hoursBlocked}h and crossed the stale-blocker escalation threshold.`
         : 'The task crossed the stale-blocker escalation threshold.',
       actedBy: options.actorName,
+      blockerOwner: options.blockerResolutionOwner ?? undefined,
+      nextAction: options.blockerResolutionAction ?? undefined,
+      followUpAt: options.blockerResolutionDueAt ?? undefined,
       taskUrl,
     }, assigneeAgent.owner_user_id);
     return;
@@ -125,8 +142,8 @@ export async function notifyBlockerAction(
 
   const actionLabel = options.action === 'escalate' ? 'Blocker escalated' : 'Blocker follow-up logged';
   const actionBody = options.action === 'escalate'
-    ? `${options.actorName} escalated a stale blocker on ${options.taskTitle}.`
-    : `${options.actorName} logged blocker follow-up on ${options.taskTitle}.`;
+    ? `${options.actorName} escalated a stale blocker on ${options.taskTitle}.${blockerPlan ? ` Unblock plan: ${blockerPlan}.` : ''}`
+    : `${options.actorName} logged blocker follow-up on ${options.taskTitle}.${blockerPlan ? ` Unblock plan: ${blockerPlan}.` : ''}`;
 
   await sendEmailWithPrefs(email, assigneeAgent.owner_user_id, 'task-assigned', {
     taskTitle: `${actionLabel}: ${options.taskTitle}`,

@@ -36,11 +36,31 @@ export interface BlockedTaskNotificationState {
   blockerResolutionOwner: string | null;
   blockerResolutionDueAt: string | null;
   blockerResolutionStatus: string | null;
+  dueState: 'none' | 'scheduled' | 'due-soon' | 'overdue';
+  dueStateLabel: string | null;
+  statusLabel: string;
+  escalationLabel: string | null;
+  planSummary: string;
 }
 
 function toIsoString(value?: string | Date | null): string | null {
   if (!value) return null;
   return (typeof value === 'string' ? new Date(value) : value).toISOString();
+}
+
+function getDueState(dueAt: string | null, now: Date): { dueState: BlockedTaskNotificationState['dueState']; dueStateLabel: string | null } {
+  if (!dueAt) return { dueState: 'none', dueStateLabel: null };
+  const dueDate = new Date(dueAt);
+  if (Number.isNaN(dueDate.getTime())) return { dueState: 'scheduled', dueStateLabel: null };
+  const diffMs = dueDate.getTime() - now.getTime();
+  if (diffMs < 0) return { dueState: 'overdue', dueStateLabel: 'Follow-up overdue' };
+  if (diffMs <= 1000 * 60 * 60 * 6) return { dueState: 'due-soon', dueStateLabel: 'Follow-up due soon' };
+  return { dueState: 'scheduled', dueStateLabel: 'Follow-up scheduled' };
+}
+
+function formatPlanSummary(action: string | null, owner: string | null, dueLabel: string | null): string {
+  const parts = [action, owner ? `owner ${owner}` : null, dueLabel];
+  return parts.filter(Boolean).join(' · ') || 'No unblock plan logged yet';
 }
 
 export function resolveBlockedSince(task: Pick<BlockedTaskNotificationContext, 'blockedAt' | 'updatedAt'>): string {
@@ -69,6 +89,17 @@ export function getBlockedTaskNotificationState(
   const blockerResolutionAction = task.blockerResolutionAction?.trim() || null;
   const blockerResolutionOwner = task.blockerResolutionOwner?.trim() || null;
   const blockerResolutionStatus = task.blockerResolutionStatus?.trim() || null;
+  const { dueState, dueStateLabel } = getDueState(blockerResolutionDueAt, now);
+  const statusLabel = blockerResolutionStatus === 'escalate' || blockerEscalatedAt
+    ? 'Escalated plan'
+    : blockerResolutionStatus === 'follow-up'
+      ? 'Follow-up plan'
+      : 'Blocked';
+  const escalationLabel = blockerEscalatedAt ? 'Escalated' : stale ? 'Escalate now' : null;
+  const dueDescriptor = blockerResolutionDueAt
+    ? `${dueState === 'overdue' ? 'due' : 'by'} ${blockerResolutionDueAt}`
+    : null;
+  const planSummary = formatPlanSummary(blockerResolutionAction, blockerResolutionOwner, dueDescriptor);
 
   if (stale) {
     const meta = blockerEscalatedAt
@@ -88,6 +119,11 @@ export function getBlockedTaskNotificationState(
       blockerResolutionOwner,
       blockerResolutionDueAt,
       blockerResolutionStatus,
+      dueState,
+      dueStateLabel,
+      statusLabel,
+      escalationLabel,
+      planSummary,
     };
   }
 
@@ -109,6 +145,11 @@ export function getBlockedTaskNotificationState(
       blockerResolutionOwner,
       blockerResolutionDueAt,
       blockerResolutionStatus,
+      dueState,
+      dueStateLabel,
+      statusLabel,
+      escalationLabel,
+      planSummary,
     };
   }
 
@@ -130,6 +171,11 @@ export function getBlockedTaskNotificationState(
     blockerResolutionOwner,
     blockerResolutionDueAt,
     blockerResolutionStatus,
+    dueState,
+    dueStateLabel,
+    statusLabel,
+    escalationLabel,
+    planSummary,
   };
 }
 

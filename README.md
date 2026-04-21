@@ -219,12 +219,23 @@ Blocked tasks now track dedicated blocker timestamps instead of piggybacking on 
 - `blocked_at` — when the task first became blocked by an active dependency
 - `blocker_follow_up_at` / `blocker_followed_through_at` — latest operator follow-up logged from the UI
 - `blocker_escalated_at` — when a stale blocker was escalated from the UI
+- `blocker_resolution_action` / `blocker_resolution_owner` / `blocker_resolution_due_at` / `blocker_resolution_status` — the structured unblock plan that records what happens next, who owns it, when to check again, and whether the latest operator action was a follow-up or escalation
 
 Operators can use the task detail page to:
 - **Log follow-up** once they have nudged the blocker owner or checked status
 - **Escalate blocker** once the blocker is stale (48h+) and needs louder routing
 
-The current slice also seeds email/webhook escalation semantics by persisting those timestamps, so automation can key off explicit operator intent instead of inferring from generic task edits.
+That structured blocker plan is now visible in three places, not just the task detail:
+- task detail shows the current unblock owner, next action, due time, last follow-up, and escalation history
+- project blocker radar cards summarize owner, next action, expected follow-up time, and stale/escalated cues
+- kanban cards surface hard-blocker plan context inline so operators do not have to drill into every blocked task to see what is supposed to happen next
+
+Notification surfaces now carry the same structured fields where useful:
+- dashboard blocker inbox items append the unblock plan summary to the meta line
+- stale-blocker webhook payloads include the structured blocker fields plus a compact `blocker_plan` string for receivers that prefer a single field
+- stale-blocker email and blocker follow-up/escalation email copy now include the recorded owner, next action, and expected follow-up time when present
+
+The workflow stays audit-friendly because the structured fields still land in task state, comments, activity history, webhook payloads, and email copy instead of relying on implicit interpretation of generic task edits.
 
 ### Stale blocker escalation sweep
 

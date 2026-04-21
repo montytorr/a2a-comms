@@ -119,7 +119,7 @@ export default async function ProjectDetailPage({
     (() => {
       let q = supabase
         .from('tasks')
-        .select('id, project_id, title, status, priority, labels, assignee_agent_id, due_date, position, sprint_id, created_at, updated_at, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
+        .select('id, project_id, title, status, priority, labels, assignee_agent_id, due_date, position, sprint_id, created_at, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
         .eq('project_id', id);
 
       if (sprintFilter && sprintFilter !== 'backlog') {
@@ -132,7 +132,7 @@ export default async function ProjectDetailPage({
     })(),
     supabase
       .from('task_dependencies')
-      .select('id, blocking_task_id, blocked_task_id, dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at)')
+      .select('id, blocking_task_id, blocked_task_id, dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status)')
       .limit(500),
     supabase.from('agents').select('id, name, display_name').order('name'),
   ]);
@@ -161,7 +161,7 @@ export default async function ProjectDetailPage({
     blocked_task_id: string;
     dependency_type?: string;
     blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null;
-    blocked_task: { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null } | { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null }[] | null;
+    blocked_task: { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null; blocker_resolution_action?: string | null; blocker_resolution_owner?: string | null; blocker_resolution_due_at?: string | null; blocker_resolution_status?: string | null } | { id: string; title: string; status: string; project_id: string; assignee_agent_id: string | null; updated_at: string; blocked_at?: string | null; blocker_follow_up_at?: string | null; blocker_followed_through_at?: string | null; blocker_escalated_at?: string | null; blocker_resolution_action?: string | null; blocker_resolution_owner?: string | null; blocker_resolution_due_at?: string | null; blocker_resolution_status?: string | null }[] | null;
   }>;
 
   // Available agents = all agents minus current members and pending invitees
@@ -285,12 +285,16 @@ export default async function ProjectDetailPage({
         blocker_follow_up_at: blocked.blocker_follow_up_at ?? null,
         blocker_followed_through_at: blocked.blocker_followed_through_at ?? null,
         blocker_escalated_at: blocked.blocker_escalated_at ?? null,
+        blocker_resolution_action: blocked.blocker_resolution_action ?? null,
+        blocker_resolution_owner: blocked.blocker_resolution_owner ?? null,
+        blocker_resolution_due_at: blocked.blocker_resolution_due_at ?? null,
+        blocker_resolution_status: blocked.blocker_resolution_status ?? null,
         blockers: [] as Array<{ id: string; title: string; status: string }>,
       };
       existing.blockers.push({ id: blocking.id, title: blocking.title, status: blocking.status });
       acc.set(blocked.id, existing);
       return acc;
-    }, new Map<string, { id: string; title: string; status: string; assignee_agent_id: string | null; updated_at: string; blocked_at: string | null; blocker_follow_up_at: string | null; blocker_followed_through_at: string | null; blocker_escalated_at: string | null; blockers: Array<{ id: string; title: string; status: string }> }>());
+    }, new Map<string, { id: string; title: string; status: string; assignee_agent_id: string | null; updated_at: string; blocked_at: string | null; blocker_follow_up_at: string | null; blocker_followed_through_at: string | null; blocker_escalated_at: string | null; blocker_resolution_action: string | null; blocker_resolution_owner: string | null; blocker_resolution_due_at: string | null; blocker_resolution_status: string | null; blockers: Array<{ id: string; title: string; status: string }> }>());
 
   const blockedTaskCards = Array.from(blockedTaskCardMap.values())
     .filter((task) => ['todo', 'in-progress', 'in-review'].includes(task.status))
@@ -333,8 +337,8 @@ export default async function ProjectDetailPage({
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
                 <p className="text-[10px] font-semibold text-red-300 uppercase tracking-[0.2em]">Blocker radar</p>
-                <h2 className="text-lg font-semibold text-white mt-1">Blocked tasks needing escalation</h2>
-                <p className="text-[12px] text-gray-400 mt-1">Pulled from task dependencies so blocked work is visible before it fossilizes.</p>
+                <h2 className="text-lg font-semibold text-white mt-1">Blocked tasks with concrete unblock plans</h2>
+                <p className="text-[12px] text-gray-400 mt-1">Pulled from task dependencies so blocker owner, next action, and timing stay visible at project level before work fossilizes.</p>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">{blockedTaskCards.length}</p>
@@ -349,6 +353,10 @@ export default async function ProjectDetailPage({
                   blockerFollowUpAt: task.blocker_follow_up_at,
                   blockerFollowedThroughAt: task.blocker_followed_through_at,
                   blockerEscalatedAt: task.blocker_escalated_at,
+                  blockerResolutionAction: task.blocker_resolution_action,
+                  blockerResolutionOwner: task.blocker_resolution_owner,
+                  blockerResolutionDueAt: task.blocker_resolution_due_at,
+                  blockerResolutionStatus: task.blocker_resolution_status,
                   blockedByCount: task.blockers.length,
                   blockingTaskTitles: task.blockers.map((blocker) => blocker.title),
                 });
@@ -373,6 +381,26 @@ export default async function ProjectDetailPage({
                         </div>
                         <p className="text-sm font-semibold text-white">{task.title}</p>
                         <p className="text-[12px] text-gray-400 mt-1">Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}</p>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <div className="rounded-lg border border-white/[0.06] bg-black/15 px-2.5 py-2">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500">Owner</p>
+                            <p className="mt-1 text-[12px] text-gray-200">{state.blockerResolutionOwner || 'Unassigned'}</p>
+                          </div>
+                          <div className="rounded-lg border border-white/[0.06] bg-black/15 px-2.5 py-2">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500">Expected follow-up</p>
+                            <p className="mt-1 text-[12px] text-gray-200">{state.blockerResolutionDueAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(state.blockerResolutionDueAt)) + ' UTC' : 'Not scheduled'}</p>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-[12px] text-gray-300 line-clamp-2">{state.blockerResolutionAction || 'No unblock plan logged yet'}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-gray-300">{state.statusLabel}</span>
+                          {state.dueStateLabel && (
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${state.dueState === 'overdue' ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : state.dueState === 'due-soon' ? 'border-amber-500/20 bg-amber-500/[0.12] text-amber-200' : 'border-cyan-500/20 bg-cyan-500/[0.1] text-cyan-200'}`}>{state.dueStateLabel}</span>
+                          )}
+                          {state.escalationLabel && (
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${state.blockerEscalatedAt ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : 'border-red-500/20 bg-red-500/[0.08] text-red-300'}`}>{state.escalationLabel}</span>
+                          )}
+                        </div>
                       </div>
                       <span className="text-[11px] text-cyan-400 shrink-0">Open →</span>
                     </div>

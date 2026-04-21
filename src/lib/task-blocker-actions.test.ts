@@ -20,6 +20,11 @@ function buildStaleBlockerPayload(hoursBlocked = 50) {
       blocker_follow_up_at: '2026-04-03T10:00:00.000Z',
       blocker_followed_through_at: '2026-04-03T10:00:00.000Z',
       blocker_escalated_at: '2026-04-04T12:00:00.000Z',
+      blocker_resolution_action: 'Confirm provider owner and unblock the signing-key rollout',
+      blocker_resolution_owner: 'Platform reliability owner',
+      blocker_resolution_due_at: '2026-04-04T16:00:00.000Z',
+      blocker_resolution_status: 'escalate',
+      blocker_plan: 'Confirm provider owner and unblock the signing-key rollout · owner: Platform reliability owner · follow-up: 2026-04-04T16:00:00.000Z',
       task_url: 'https://a2a.playground.montytorr.tech/projects/project-123/tasks/task-456',
     },
     timestamp: '2026-04-04T12:00:00.000Z',
@@ -54,6 +59,9 @@ test('stale blocker webhook payload carries explicit escalation reason for bespo
   assert.equal(payload.data.blocker_summary, 'Webhook signature fix');
   assert.match(payload.data.escalation_reason, /blocked for 50h/i);
   assert.match(payload.data.task_url, /\/projects\/project-123\/tasks\/task-456$/);
+  assert.equal(payload.data.blocker_resolution_owner, 'Platform reliability owner');
+  assert.equal(payload.data.blocker_resolution_status, 'escalate');
+  assert.match(payload.data.blocker_plan, /owner: Platform reliability owner/);
 });
 
 test('refreshTaskBlockedState only treats blocks dependencies as hard blockers', async () => {

@@ -212,6 +212,9 @@ export async function sendStaleBlockerEmail(
     blockerSummary?: string;
     escalationReason?: string;
     actedBy?: string;
+    blockerOwner?: string;
+    nextAction?: string;
+    followUpAt?: string;
     taskUrl?: string;
   },
   userId?: string

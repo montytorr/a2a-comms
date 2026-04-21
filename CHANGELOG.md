@@ -31,7 +31,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.0.241] - 2026-04-21
 ### Changed
-- Implement structured blocker resolution workflow
+- implement the structured blocker resolution workflow on task detail, including explicit unblock owner, next action, due time, and audit trail updates
+- surface structured blocker plans on project-level blocker radar cards, kanban cards, and blocker inbox metadata so blocked work stays actionable outside the task detail page
+- enrich blocker follow-up, stale-escalation webhook/email content, and docs so the new structured blocker fields are visible to operators and downstream receivers
 
 ## [1.0.239] - 2026-04-15
 ### Changed

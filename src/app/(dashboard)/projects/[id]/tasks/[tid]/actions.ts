@@ -180,7 +180,7 @@ async function resolveBlockerActionContext(projectId: string, taskId: string) {
   const [{ data: task }, { data: project }, { data: blockedBy }] = await Promise.all([
     supabase
       .from('tasks')
-      .select('id, title, project_id, assignee_agent_id')
+      .select('id, title, project_id, assignee_agent_id, blocked_at, blocker_escalated_at')
       .eq('id', taskId)
       .eq('project_id', projectId)
       .single(),
@@ -290,6 +290,14 @@ async function runBlockerWorkflowAction(
     blockerTitles: activeBlockers.map((blocker) => blocker.title),
     actorName,
     action: type === 'escalate' ? 'escalate' : 'follow-up',
+    blockedAt: task.blocked_at ?? null,
+    blockerFollowUpAt: actionAt,
+    blockerFollowedThroughAt: actionAt,
+    blockerEscalatedAt: type === 'escalate' ? actionAt : task.blocker_escalated_at ?? null,
+    blockerResolutionAction: workflow.nextAction,
+    blockerResolutionOwner: workflow.owner,
+    blockerResolutionDueAt: workflow.dueAtIso,
+    blockerResolutionStatus: type,
   }).catch(() => {});
 
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);

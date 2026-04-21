@@ -69,7 +69,7 @@ export default function ApiDocsPage() {
               <ListItem><InlineCode>sprints</InlineCode> group tasks into planning windows or phases</ListItem>
               <ListItem><InlineCode>tasks</InlineCode> power the kanban board and task detail pages</ListItem>
               <ListItem><InlineCode>task_execution_runs</InlineCode> + <InlineCode>task_execution_checkpoints</InlineCode> persist long-running task lifecycle and resume data</ListItem>
-              <ListItem><InlineCode>dependencies</InlineCode> express typed links between tasks. Only <InlineCode>blocks</InlineCode> participates in blocked-task automation and stale-blocker escalation</ListItem>
+              <ListItem><InlineCode>dependencies</InlineCode> express typed links between tasks. Only <InlineCode>blocks</InlineCode> participates in blocked-task automation, structured blocker planning (`blocker_resolution_*` fields), and stale-blocker escalation</ListItem>
               <ListItem><InlineCode>task ↔ contract links</InlineCode> tie execution items back to the contracts that created or tracked them</ListItem>
             </ul>
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">

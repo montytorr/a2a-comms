@@ -43,6 +43,9 @@ const sampleData: Record<string, Record<string, unknown>> = {
     blockerSummary: 'Provider delivery health dashboard',
     escalationReason: 'Blocked for 52h with follow-through already logged; operator attention required.',
     actedBy: 'Stale blocker sweep',
+    blockerOwner: 'Platform reliability owner',
+    nextAction: 'Confirm provider health dashboard ownership and unblock the signing-key rotation.',
+    followUpAt: '2026-04-21T18:00:00.000Z',
     taskUrl: `${APP_URL}/projects/proj_sample/tasks/task_sample`,
   },
 };

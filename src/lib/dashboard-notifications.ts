@@ -66,9 +66,13 @@ type BlockedTaskRow = {
   blocker_follow_up_at: string | null;
   blocker_followed_through_at: string | null;
   blocker_escalated_at: string | null;
+  blocker_resolution_action: string | null;
+  blocker_resolution_owner: string | null;
+  blocker_resolution_due_at: string | null;
+  blocker_resolution_status: string | null;
   project_id: string;
   project: { id: string; title: string } | { id: string; title: string }[] | null;
-  blocked_by: Array<{ blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null }> | null;
+  blocked_by: Array<{ blocking_task: { id: string; title: string; status: string } | { id: string; title: string; status: string }[] | null; dependency_type?: string }> | null;
 };
 
 type ApprovalRow = {
@@ -133,6 +137,10 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
         blocker_follow_up_at,
         blocker_followed_through_at,
         blocker_escalated_at,
+        blocker_resolution_action,
+        blocker_resolution_owner,
+        blocker_resolution_due_at,
+        blocker_resolution_status,
         project_id,
         project:projects(id, title),
         blocked_by:task_dependencies!task_dependencies_blocked_task_id_fkey(
@@ -211,6 +219,10 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       blockerFollowUpAt: row.blocker_follow_up_at,
       blockerFollowedThroughAt: row.blocker_followed_through_at,
       blockerEscalatedAt: row.blocker_escalated_at,
+      blockerResolutionAction: row.blocker_resolution_action,
+      blockerResolutionOwner: row.blocker_resolution_owner,
+      blockerResolutionDueAt: row.blocker_resolution_due_at,
+      blockerResolutionStatus: row.blocker_resolution_status,
       blockedByCount: activeBlockers.length,
       blockingTaskTitles: activeBlockers.map((task) => task.title),
     });
@@ -234,7 +246,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       body: row.title,
       href: row.project?.id ? `/projects/${row.project.id}/tasks/${row.id}` : `/projects/${row.project_id}/tasks/${row.id}`,
       createdAt: row.updated_at,
-      meta: `${row.project?.title || row.status} · ${blockerState.meta}`,
+      meta: `${row.project?.title || row.status} · ${blockerState.meta} · ${blockerState.planSummary}`,
     };
   });
 

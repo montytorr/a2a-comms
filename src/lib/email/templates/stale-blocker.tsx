@@ -19,6 +19,9 @@ interface StaleBlockerEmailProps {
   blockerSummary?: string;
   escalationReason?: string;
   actedBy?: string;
+  blockerOwner?: string;
+  nextAction?: string;
+  followUpAt?: string;
   taskUrl?: string;
 }
 
@@ -45,6 +48,9 @@ export default function StaleBlockerEmail({
   blockerSummary = 'No blockers listed',
   escalationReason = 'The task has been blocked long enough to require operator attention.',
   actedBy = 'A2A operator',
+  blockerOwner,
+  nextAction,
+  followUpAt,
   taskUrl = 'https://a2a.playground.montytorr.tech/projects',
 }: StaleBlockerEmailProps) {
   return (
@@ -79,6 +85,15 @@ export default function StaleBlockerEmail({
                 <Text style={label}>Why you are receiving this</Text>
                 <Text style={value}>{escalationReason}</Text>
               </Section>
+
+              {(nextAction || blockerOwner || followUpAt) && (
+                <Section style={infoCard}>
+                  <Text style={label}>Structured unblock plan</Text>
+                  {nextAction ? <Text style={value}>Next action: {nextAction}</Text> : null}
+                  {blockerOwner ? <Text style={value}>Owner: {blockerOwner}</Text> : null}
+                  {followUpAt ? <Text style={value}>Expected follow-up: {followUpAt}</Text> : null}
+                </Section>
+              )}
 
               <Section style={buttonWrap}>
                 <Button href={taskUrl} style={button}>Open blocked task</Button>

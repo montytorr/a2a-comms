@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 import QuickTaskForm from './quick-task-form';
 import { formatDate } from '@/lib/format-date';
+import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 
 const columns: { id: TaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },
@@ -140,6 +141,14 @@ export interface TaskRow {
   due_date: string | null;
   created_at?: string;
   updated_at?: string;
+  blocked_at?: string | null;
+  blocker_follow_up_at?: string | null;
+  blocker_followed_through_at?: string | null;
+  blocker_escalated_at?: string | null;
+  blocker_resolution_action?: string | null;
+  blocker_resolution_owner?: string | null;
+  blocker_resolution_due_at?: string | null;
+  blocker_resolution_status?: string | null;
   dependencySummary?: {
     blockedBy?: Array<{ id: string; title: string; status: string }>;
     blocks?: Array<{ id: string; title: string; status: string }>;
@@ -226,6 +235,21 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   ] as const;
                   const activeDependencyGroups = dependencyGroups.filter((group) => group.items.length > 0);
                   const hasDependencyContext = activeDependencyGroups.length > 0;
+                  const blockerState = dependencySummary?.blockedBy?.length
+                    ? getBlockedTaskNotificationState({
+                        updatedAt: task.updated_at || task.created_at || new Date().toISOString(),
+                        blockedAt: task.blocked_at,
+                        blockerFollowUpAt: task.blocker_follow_up_at,
+                        blockerFollowedThroughAt: task.blocker_followed_through_at,
+                        blockerEscalatedAt: task.blocker_escalated_at,
+                        blockerResolutionAction: task.blocker_resolution_action,
+                        blockerResolutionOwner: task.blocker_resolution_owner,
+                        blockerResolutionDueAt: task.blocker_resolution_due_at,
+                        blockerResolutionStatus: task.blocker_resolution_status,
+                        blockedByCount: dependencySummary.blockedBy.length,
+                        blockingTaskTitles: dependencySummary.blockedBy.map((item) => item.title),
+                      })
+                    : null;
 
                   return (
                     <Link
@@ -277,6 +301,25 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
                         {hasDependencyContext && (
                           <div className="space-y-2 rounded-2xl border border-white/[0.06] bg-black/20 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+                            {blockerState && (
+                              <div className="rounded-xl border border-red-500/18 bg-red-500/[0.06] p-2.5">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-semibold ${blockerState.tone === 'stale' ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : blockerState.tone === 'follow-through' ? 'border-amber-500/20 bg-amber-500/[0.12] text-amber-200' : 'border-rose-500/20 bg-rose-500/[0.10] text-rose-200'}`}>
+                                    {blockerState.tone === 'stale' ? 'Stale blocker' : blockerState.tone === 'follow-through' ? 'Follow-up due' : 'Blocked'}
+                                  </span>
+                                  <span className="inline-flex items-center rounded-full border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-[8px] font-medium text-gray-300">{blockerState.statusLabel}</span>
+                                  {blockerState.dueStateLabel && (
+                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-medium ${blockerState.dueState === 'overdue' ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : blockerState.dueState === 'due-soon' ? 'border-amber-500/20 bg-amber-500/[0.12] text-amber-200' : 'border-cyan-500/20 bg-cyan-500/[0.1] text-cyan-200'}`}>{blockerState.dueStateLabel}</span>
+                                  )}
+                                </div>
+                                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">Next unblock step</p>
+                                <p className="mt-1 text-[11px] leading-4 text-gray-100 line-clamp-2">{blockerState.blockerResolutionAction || 'No unblock plan logged yet'}</p>
+                                <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-gray-300">
+                                  <span><span className="text-gray-500">Owner:</span> {blockerState.blockerResolutionOwner || 'Unassigned'}</span>
+                                  <span><span className="text-gray-500">Follow-up:</span> {blockerState.blockerResolutionDueAt ? compactDate(blockerState.blockerResolutionDueAt) : 'Not scheduled'}</span>
+                                </div>
+                              </div>
+                            )}
                             <div className="flex flex-wrap items-center gap-1">
                               {activeDependencyGroups.map((group) => {
                                 const config = dependencyTypeConfig[group.key];
