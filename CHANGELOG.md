@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.241] - 2026-04-21
+### Changed
+- Implement structured blocker resolution workflow
+
 ## [1.0.239] - 2026-04-15
 ### Changed
 - Fix attachment preview fullscreen portal
