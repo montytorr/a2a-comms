@@ -67,6 +67,10 @@ test('logged follow-through suppresses repeated reminder copy until stale', () =
     updatedAt: '2026-04-04T11:00:00.000Z',
     blockerFollowUpAt: '2026-04-04T09:00:00.000Z',
     blockerFollowedThroughAt: '2026-04-04T09:05:00.000Z',
+    blockerResolutionAction: 'Wait for webhook signing key rotation',
+    blockerResolutionOwner: 'Platform team',
+    blockerResolutionDueAt: '2026-04-04T18:00:00.000Z',
+    blockerResolutionStatus: 'follow-up',
     blockedByCount: 1,
     blockingTaskTitles: ['Webhook signature fix'],
   }, now);
@@ -74,6 +78,10 @@ test('logged follow-through suppresses repeated reminder copy until stale', () =
   assert.equal(state.tone, 'blocked');
   assert.equal(state.followThroughDue, false);
   assert.equal(state.meta, 'Blocked · follow-through logged for Webhook signature fix');
+  assert.equal(state.blockerResolutionAction, 'Wait for webhook signing key rotation');
+  assert.equal(state.blockerResolutionOwner, 'Platform team');
+  assert.equal(state.blockerResolutionDueAt, '2026-04-04T18:00:00.000Z');
+  assert.equal(state.blockerResolutionStatus, 'follow-up');
 });
 
 test('old blockers flip to stale escalation', () => {

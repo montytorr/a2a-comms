@@ -16,6 +16,10 @@ export interface BlockedTaskNotificationContext {
   blockerFollowUpAt?: string | null;
   blockerFollowedThroughAt?: string | null;
   blockerEscalatedAt?: string | null;
+  blockerResolutionAction?: string | null;
+  blockerResolutionOwner?: string | null;
+  blockerResolutionDueAt?: string | null;
+  blockerResolutionStatus?: string | null;
 }
 
 export interface BlockedTaskNotificationState {
@@ -28,6 +32,10 @@ export interface BlockedTaskNotificationState {
   blockerFollowUpAt: string | null;
   blockerFollowedThroughAt: string | null;
   blockerEscalatedAt: string | null;
+  blockerResolutionAction: string | null;
+  blockerResolutionOwner: string | null;
+  blockerResolutionDueAt: string | null;
+  blockerResolutionStatus: string | null;
 }
 
 function toIsoString(value?: string | Date | null): string | null {
@@ -46,7 +54,7 @@ export function getBlockedTaskAgeHours(blockedSince: string | Date, now = new Da
 }
 
 export function getBlockedTaskNotificationState(
-  task: Pick<BlockedTaskNotificationContext, 'updatedAt' | 'blockedAt' | 'blockedByCount' | 'blockingTaskTitles' | 'blockerFollowUpAt' | 'blockerFollowedThroughAt' | 'blockerEscalatedAt'>,
+  task: Pick<BlockedTaskNotificationContext, 'updatedAt' | 'blockedAt' | 'blockedByCount' | 'blockingTaskTitles' | 'blockerFollowUpAt' | 'blockerFollowedThroughAt' | 'blockerEscalatedAt' | 'blockerResolutionAction' | 'blockerResolutionOwner' | 'blockerResolutionDueAt' | 'blockerResolutionStatus'>,
   now = new Date()
 ): BlockedTaskNotificationState {
   const blockedSince = resolveBlockedSince(task);
@@ -57,6 +65,10 @@ export function getBlockedTaskNotificationState(
   const blockerFollowedThroughAt = toIsoString(task.blockerFollowedThroughAt);
   const blockerEscalatedAt = toIsoString(task.blockerEscalatedAt);
   const followThroughDue = !blockerFollowedThroughAt && hoursBlocked >= BLOCKED_TASK_FOLLOW_THROUGH_HOURS;
+  const blockerResolutionDueAt = toIsoString(task.blockerResolutionDueAt);
+  const blockerResolutionAction = task.blockerResolutionAction?.trim() || null;
+  const blockerResolutionOwner = task.blockerResolutionOwner?.trim() || null;
+  const blockerResolutionStatus = task.blockerResolutionStatus?.trim() || null;
 
   if (stale) {
     const meta = blockerEscalatedAt
@@ -72,6 +84,10 @@ export function getBlockedTaskNotificationState(
       blockerFollowUpAt,
       blockerFollowedThroughAt,
       blockerEscalatedAt,
+      blockerResolutionAction,
+      blockerResolutionOwner,
+      blockerResolutionDueAt,
+      blockerResolutionStatus,
     };
   }
 
@@ -89,6 +105,10 @@ export function getBlockedTaskNotificationState(
       blockerFollowUpAt,
       blockerFollowedThroughAt,
       blockerEscalatedAt,
+      blockerResolutionAction,
+      blockerResolutionOwner,
+      blockerResolutionDueAt,
+      blockerResolutionStatus,
     };
   }
 
@@ -106,6 +126,10 @@ export function getBlockedTaskNotificationState(
     blockerFollowUpAt,
     blockerFollowedThroughAt,
     blockerEscalatedAt,
+    blockerResolutionAction,
+    blockerResolutionOwner,
+    blockerResolutionDueAt,
+    blockerResolutionStatus,
   };
 }
 

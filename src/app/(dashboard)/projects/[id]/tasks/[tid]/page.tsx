@@ -280,6 +280,10 @@ export default async function TaskDetailPage({
         blockerFollowUpAt: task.blocker_follow_up_at,
         blockerFollowedThroughAt: task.blocker_followed_through_at,
         blockerEscalatedAt: task.blocker_escalated_at,
+        blockerResolutionAction: task.blocker_resolution_action,
+        blockerResolutionOwner: task.blocker_resolution_owner,
+        blockerResolutionDueAt: task.blocker_resolution_due_at,
+        blockerResolutionStatus: task.blocker_resolution_status,
         blockedByCount: blockedBy.length,
         blockingTaskTitles: blockedBy.map((dep) => dep.tasks?.title || '').filter(Boolean),
       })
@@ -444,10 +448,22 @@ export default async function TaskDetailPage({
 
                   {blockerState && (
                     <>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-[11px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-4 text-[11px]">
                         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
                           <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Blocked since</p>
                           <p className="text-gray-300">{formatDateTime(blockerState.blockedSince)}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Unblock owner</p>
+                          <p className="text-gray-300">{blockerState.blockerResolutionOwner || 'Unassigned'}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:col-span-2 xl:col-span-1">
+                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Expected follow-up</p>
+                          <p className="text-gray-300">{blockerState.blockerResolutionDueAt ? formatDateTime(blockerState.blockerResolutionDueAt) : 'Not scheduled'}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:col-span-2 xl:col-span-3">
+                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Next action</p>
+                          <p className="text-gray-300 leading-relaxed">{blockerState.blockerResolutionAction || 'No unblock plan logged yet'}</p>
                         </div>
                         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
                           <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Last follow-up</p>
@@ -457,8 +473,12 @@ export default async function TaskDetailPage({
                           <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Escalation</p>
                           <p className="text-gray-300">{blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated'}</p>
                         </div>
+                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Workflow state</p>
+                          <p className="text-gray-300">{blockerState.blockerResolutionStatus || 'Blocked'}</p>
+                        </div>
                       </div>
-                      {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} />}
+                      {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} currentAction={blockerState.blockerResolutionAction} currentOwner={blockerState.blockerResolutionOwner} currentDueAt={blockerState.blockerResolutionDueAt} />}
                     </>
                   )}
 

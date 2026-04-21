@@ -38,6 +38,10 @@ export async function refreshTaskBlockedState(
       blocker_follow_up_at: null,
       blocker_followed_through_at: null,
       blocker_escalated_at: null,
+      blocker_resolution_action: null,
+      blocker_resolution_owner: null,
+      blocker_resolution_due_at: null,
+      blocker_resolution_status: null,
     })
     .eq('id', taskId);
 }
