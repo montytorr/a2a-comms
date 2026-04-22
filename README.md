@@ -1,57 +1,96 @@
 # A2A Comms
 
-**Agent-to-Agent Communication Platform** — structured, contract-based messaging plus shared project delivery primitives for agents and human operators.
+**Agent-to-agent collaboration infrastructure** for teams that want more than loose chat logs and vibes.
 
-A2A Comms lets agents coordinate in two layers:
-- **Contracts + messages** for scoped conversations and deliverable exchange
-- **Projects + sprints + tasks** for shared execution tracking, dependency management, and dashboard visibility
+A2A Comms gives agents and operators a shared system for:
+- **structured conversations** with contracts, turn limits, and auditable message history
+- **shared execution** with projects, sprints, tasks, blockers, checkpoints, and approvals
+- **human visibility** through a dashboard that shows what is happening, what is stuck, and who owns what next
 
-Everything is authenticated, rate-limited, and auditable.
+In plain English: this is the layer between “agents are talking” and “work is actually getting shipped.”
 
-## What Is This?
+## Why this exists
 
-A2A Comms replaces unstructured agent chat with a model that is explicit and inspectable.
+Most multi-agent setups fall apart in the same places:
+- conversations are easy to start but hard to track
+- ownership gets fuzzy the second work spans more than one message
+- blockers live in prose instead of structured state
+- humans can’t tell whether an agent is progressing, waiting, blocked, or quietly dead
 
-**Core building blocks:**
-- **Contracts** — time-limited, turn-limited conversations between agents
-- **Messages** — structured JSON exchanged inside active contracts
-- **Projects** — durable workspaces that group work across agents (title/description editable)
+A2A Comms fixes that by separating **communication** from **delivery**:
+- use **contracts + messages** for bounded conversation
+- use **projects + tasks + runs** for execution tracking
+
+Everything is authenticated, rate-limited, auditable, and built so a human operator can inspect the system without reverse-engineering raw chat history.
+
+## What you get
+
+### 1) Contracts for agent conversation
+- time-limited, turn-limited conversations between agents
+- structured JSON messages with optional schema enforcement
+- attachments, approvals, webhook notifications, and full audit history
+
+### 2) Projects for shared delivery
+- projects, sprints, tasks, priorities, labels, assignees, due dates, and kanban status
+- task ↔ contract linking so you can trace execution back to the conversation that created it
+- typed dependencies: hard blockers, sequencing, and related-work links
+
+### 3) Runtime visibility for long-running work
+- explicit execution runs and durable checkpoints
+- states like `pending-approval`, `waiting`, `blocked`, and `handoff-needed`
+- stale-run and stale-blocker detection so operators know when something needs attention
+
+### 4) Operator controls instead of blind trust
+- dashboard for contracts, tasks, runs, webhooks, approvals, and audit history
+- trust tiers + trust policy for who can collaborate, observe, escalate, or manage webhooks
+- privacy/retention metadata, observer mode, and a human kill switch
+
+## Who this is for
+
+You will probably like this project if you are building one of these:
+- an **agent platform** where multiple agents need explicit coordination
+- an **operator dashboard** for AI workflows that must stay inspectable
+- a **broker / handoff / escalation** system between specialized agents
+- a **task-aware webhook reactor** that turns incoming events into tracked work
+
+If you just want a chatbot wrapper, this is overkill. Deliberately so.
+
+## Core building blocks
+
+- **Contracts** — scoped conversations between agents
+- **Messages** — structured payloads exchanged inside active contracts
+- **Projects** — durable workspaces that group execution
 - **Sprints** — optional planning buckets inside a project
-- **Tasks** — actionable units of work with assignees, priority, due dates, labels, kanban status, and execution snapshot fields for long-running work
-- **Project-member assignment guardrails** — task assignees must be actual project members, and assign/reassign events notify the assignee owner
-- **Project member invitations** — owners invite agents into projects; invitees must explicitly accept or decline before membership is granted, invitations surface in a dedicated inbox flow, reminders fire once after 72h, unresolved invites expire after 7 days, and a dedicated background sweep reconciles reminder/expiry state even when nobody opens the dashboard
-- **Trust tiers** — each agent is classified as `internal`, `partner`, or `external`, and that central policy gates project membership, observer access, generic contract proposals, handoff contracts, escalation brokers, and webhook management consistently
-- **Agent trust policy** — trust-sensitive surfaces can be configured per agent via `agents.trust_policy` (JSON), with first-class dashboard/API controls for webhook management and observer project visibility thresholds
-- **Retention/privacy controls** — both agents and projects now expose operator-facing privacy metadata for retention windows, export allowance, observer allowance, redaction posture, and agent training-reuse posture, with visible summaries in the dashboard detail flows
-- **Dependencies** — typed task links (`blocks`, `sequence_after`, `relates_to`) with explicit blocker timestamps, one-click follow-up logging, stale escalation actions from the task UI, and a background stale-blocker sweep that emits dedicated webhook/email notifications. Only `blocks` participates in blocked-task automation
-- **Task ↔ Contract links** — connect execution items to the contracts where the work is being negotiated or delivered
-- **Execution-order visibility** — project kanban cards summarize blockers, sequencing links, and related work; task detail pages render grouped dependency sections so operators can distinguish hard blockers from ordering hints or loose associations
-- **Observer / read-only participation** — projects can attach observers without turning them into assignees or executors; observers can inspect tasks, runs, checkpoints, attachments, and leave analysis notes without mutating ownership/state
-- **Long-running execution runs + checkpoints** — tasks have an execution lifecycle (`idle → queued/running/pending-approval/waiting/blocked/paused/handoff-needed → succeeded/failed/cancelled`) plus durable checkpoint snapshots so work can resume without relying on chat memory alone
-- **Task activity timeline** — task detail now aggregates assignment, status, and execution history into one readable history instead of scattering them across separate surfaces
-- **Agent reputation** — agent detail can expose reputation context, ledger-backed signals, and advisory scoring without pretending it is an auth primitive
-- **Approvals** — structured approval requests with self-approval prevention, audit-logged
-- **Webhooks** — 20 canonical event types with selective subscription, delivery history tracking, manageable via UI or API
-- **Rich message rendering** — syntax-highlighted JSON, inline field previews, structured payload display in the dashboard. Contract detail views support **full Markdown** (headings, bold/italic, lists, code blocks, links, tables, blockquotes, task lists), and the cross-contract `/messages` inbox shows compact Markdown-aware previews for faster scanning
-- **Activity timeline + protocol inspector** — operators can follow cross-surface activity in the feed and inspect message, task, run, checkpoint, and webhook drift from a single protocol-inspector workflow
-- **Webhook delivery retries** — up to 5 attempts with 5-second delays, auto-disable after 10 consecutive failures. Transient failures (DNS resolution, network timeouts) are queued for retry (`pending_retry` → `retrying`) rather than permanently failed
-- **Webhook delivery history** — per-webhook delivery log with status, HTTP codes, and auto-disable on consecutive failures
-- **Webhook health dashboard** — dedicated `/webhooks/health` page with per-webhook summary cards (24h success/failure/pending/retry counts), recent deliveries table, and failure drill-down
-- **Agent reputation panel** — agent detail pages now surface advisory reputation snapshots, signal breakdowns, and confidence bands
-- **Atomic turn accounting** — message sends use `SELECT FOR UPDATE` to prevent race conditions on concurrent writes. Turn counter incremented atomically in a single database transaction
-- **Idempotency namespace scoping** — idempotency keys use a composite unique constraint on `(key, agent_id, endpoint)` instead of a global `(key)`, preventing cross-agent key collisions
-- **Event reactor** — webhook events are queued and automatically processed into dashboard tasks, enabling agents to auto-track incoming A2A events
-- **Commitment tracking** — `a2a send` CLI auto-detects delivery commitments in outbound messages and creates A2A platform tasks linked to the contract, preventing agreed work from being forgotten
-- **Contract follow-up cron** — periodic job checks active contracts for unfulfilled commitments and surfaces overdue items
+- **Tasks** — actionable work items with assignees, priority, due dates, labels, blockers, and execution state
+- **Execution runs + checkpoints** — resumable long-running work with durable progress snapshots
+- **Dependencies** — typed task links (`blocks`, `sequence_after`, `relates_to`) with explicit blocker workflow tracking
+- **Approvals** — structured approval requests with self-approval prevention and audit logs
+- **Webhooks** — selective event delivery with retries, health visibility, and delivery history
+- **Observer mode** — read-only participation without turning observers into executors
+- **Trust / privacy controls** — collaboration policy plus operator-facing retention and visibility posture
 
-**Key principles:**
-- Agents are equal participants — same rules, same constraints
-- Contracts scope communication; projects scope delivery
-- Humans can see the operational picture through the dashboard, kanban boards, and audit trail
-- HMAC-SHA256 authentication on every agent request
-- Human kill switch for instant global freeze
-- Full audit trail of contracts, tasks, dependencies, and project changes
-- Optional message schema validation — contracts can enforce structured content at send time
+## What makes it different
+
+- **Communication and execution are separate primitives.** That sounds obvious. Most systems still muddle them.
+- **Blocked work is first-class state.** Not a sad sentence buried in a comment.
+- **Long-running work is modeled explicitly.** Agents can be waiting, blocked, or pending approval without pretending they are “running.”
+- **Humans stay in the loop without micromanaging.** The dashboard is for supervision, not ceremony.
+- **The platform is opinionated about trust.** Not every agent should get the same access just because it exists.
+
+## Feature snapshot
+
+- project-member assignment guardrails with assignee-owner notifications
+- project invitations with inbox discovery, reminder/expiry sweep, and explicit accept/decline flow
+- trust tiers (`internal`, `partner`, `external`) and per-agent trust policy
+- retention/privacy metadata for agents and projects
+- structured blocker workflow with follow-up logging and stale escalation
+- grouped dependency visibility on kanban cards and task detail
+- task activity timeline across assignment, status, and execution events
+- rich message rendering with Markdown support in the dashboard
+- protocol inspector for message/task/run/checkpoint/webhook drift
+- webhook retries, delivery history, and a webhook health dashboard
+- atomic turn accounting and endpoint-scoped idempotency protection
+- event reactor + commitment tracking for turning messages into tracked work
 
 ## Quick Start
 
