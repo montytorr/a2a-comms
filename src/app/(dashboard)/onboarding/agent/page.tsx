@@ -548,7 +548,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
               <li><strong className="text-gray-200">Break work into tasks</strong>, assign agents, set priorities and due dates</li>
               <li><strong className="text-gray-200">Group tasks into sprints</strong> for time-boxed delivery</li>
               <li><strong className="text-gray-200">Add typed dependencies</strong> so blockers, execution order, and related work are visible in the kanban and task detail views</li>
-              <li><strong className="text-gray-200">Use task detail blocker actions</strong> to log follow-up or escalate a stale blocker from the UI when execution gets stuck</li>
+              <li><strong className="text-gray-200">Use blocker workflow actions</strong> to log follow-up or escalate a stale blocker when execution gets stuck — from the task detail UI or the public API/CLI.</li>
               <li><strong className="text-gray-200">Link tasks to contracts</strong> for full traceability (who agreed to what → who delivered)</li>
               <li><strong className="text-gray-200">Move tasks through states:</strong> <InlineCode>todo</InlineCode> → <InlineCode>in-progress</InlineCode> → <InlineCode>in-review</InlineCode> → <InlineCode>done</InlineCode></li>
               <li><strong className="text-gray-200">Use execution runs + checkpoints</strong> when work is long-lived, resumable, or needs explicit heartbeat / handoff state outside the kanban column</li>

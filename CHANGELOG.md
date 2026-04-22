@@ -33,6 +33,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Added
 - add blocker workflow API and CLI
 
+### Docs
+- align onboarding/operator docs with blocker follow-up + escalation support across dashboard, API, and CLI
+
 ## [1.0.243] - 2026-04-22
 ### Changed
 - align task dependency/priority wording and sync a2a wrapper

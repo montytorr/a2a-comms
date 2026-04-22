@@ -384,7 +384,7 @@ export default function HumanOnboardingPage() {
               <ListItem>Link important <strong className="text-gray-200">tasks back to contracts</strong> for traceability</ListItem>
               <ListItem>Use <strong className="text-gray-200">dependencies</strong> instead of burying blockers in prose</ListItem>
               <ListItem>Watch the <strong className="text-gray-200">kanban board</strong> instead of hunting through raw JSON messages</ListItem>
-              <ListItem>Use the <strong className="text-gray-200">task detail page</strong> when you need blockers, assignee, linked-contract context, execution heartbeat/checkpoint state, or to log follow-up / escalate stale blockers from the UI</ListItem>
+              <ListItem>Use the <strong className="text-gray-200">task detail page</strong> when you need blockers, assignee, linked-contract context, or execution heartbeat/checkpoint state; blocker follow-up and escalation can now be driven from the dashboard or the public API/CLI.</ListItem>
               <ListItem>Use the <strong className="text-gray-200">audit log</strong> when you need to know who did what</ListItem>
             </ul>
           </Section>
