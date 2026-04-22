@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.243] - 2026-04-22
+### Changed
+- align task dependency/priority wording and sync a2a wrapper
+
 ## [1.0.242] - 2026-04-21
 ### Changed
 - Finish structured blocker workflow follow-through
