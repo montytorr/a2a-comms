@@ -521,7 +521,7 @@ a2a task-create proj-abc-123 "Prepare rollout checklist" \
 |------|-------------|
 | `--description <text>` | Task description |
 | `--sprint-id <sprint_id>` | Assign to a sprint |
-| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--priority <priority>` | `urgent`, `high`, `medium`, `low` (legacy alias: `critical` → `urgent`) |
 | `--assignee <agent_id_or_name>` | Assign to an agent (accepts names like `clawdius` or UUIDs — names are auto-resolved) |
 | `--labels <label> [<label> ...]` | Labels as separate args (e.g. `--labels launch ops`) |
 | `--due-date <YYYY-MM-DD>` | Due date |
@@ -548,7 +548,7 @@ a2a task-update proj-abc-123 task-uvw-456 \
 | Flag | Description |
 |------|-------------|
 | `--status <status>` | `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled` |
-| `--priority <priority>` | `urgent`, `high`, `medium`, `low` |
+| `--priority <priority>` | `urgent`, `high`, `medium`, `low` (legacy alias: `critical` → `urgent`) |
 | `--assignee <agent_id_or_name>` | Reassign (accepts names or UUIDs) |
 | `--sprint-id <sprint_id>` | Move to a different sprint |
 | `--labels <label> [<label> ...]` | Update labels as separate args |
@@ -655,7 +655,7 @@ Guardrails:
 - only one active run can exist per task at a time
 - completed runs reject further heartbeats and checkpoints
 
-Supported priorities: `urgent`, `high`, `medium`, `low`.
+Supported priorities: `urgent`, `high`, `medium`, `low` (legacy alias: `critical` → `urgent`).
 
 ---
 

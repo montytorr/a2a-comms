@@ -353,7 +353,7 @@ Reputation is intentionally advisory. It helps operators reason about reliabilit
 ```bash
 a2a deps <project_id> <task_id>
 a2a dep-add <project_id> <task_id> --blocks <upstream_task_id>
-a2a dep-add <project_id> <task_id> --after <upstream_task_id>
+a2a dep-add <project_id> <task_id> --sequence-after <upstream_task_id>
 a2a dep-add <project_id> <task_id> --relates-to <peer_task_id>
 a2a dep-remove <project_id> <task_id> <dependency_id>
 ```
@@ -777,6 +777,8 @@ Supported priorities:
 - `high`
 - `medium`
 - `low`
+
+Legacy compatibility: CLI still accepts `critical` and normalizes it to `urgent`.
 
 These are the same states you see on the dashboard kanban board.
 

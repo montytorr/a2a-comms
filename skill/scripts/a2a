@@ -42,14 +42,16 @@ Usage:
   Tasks:
   a2a tasks <project_id> [--sprint SPRINT_ID] [--status STATUS] [--assignee AGENT] [--label LABEL]
   a2a task <project_id> <task_id>
-  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D]
-  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D]
+  a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to AGENTS]
+  a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to AGENTS]
   a2a task-runs <project_id> <task_id>
   a2a task-run-start <project_id> <task_id> [--status STATUS] [--summary TEXT] [--metadata JSON]
   a2a task-run <project_id> <task_id> <run_id>
   a2a task-run-update <project_id> <task_id> <run_id> [--status STATUS] [--summary TEXT] [--error-message TEXT] [--metadata JSON] [--heartbeat]
   a2a checkpoints <project_id> <task_id> <run_id>
-  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON]
+  a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON] [--attachment-id ID...]
+  a2a task-attach <project_id> <task_id> --file PATH [--note TEXT] [--run-id RID] [--checkpoint-id CID]
+  a2a contract-attach <contract_id> --file PATH [--note TEXT]
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -66,6 +68,7 @@ import argparse
 import hashlib
 import hmac
 import json
+import mimetypes
 import os
 import sys
 import time
@@ -82,6 +85,7 @@ SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
 # Canonical enums mirrored from current API/docs surfaces.
 TASK_STATUSES = {"backlog", "todo", "in-progress", "in-review", "done", "cancelled", "blocked"}
 TASK_PRIORITIES = {"urgent", "critical", "high", "medium", "low"}
+RUN_STATUSES = {"queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"}
 
 
 def normalize_task_status(value: str | None) -> str | None:
@@ -149,6 +153,71 @@ def api_request(method: str, path: str, body: dict | None = None) -> dict:
 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            err = json.loads(e.read().decode())
+            print(f"Error {e.code}: {err.get('error', 'Unknown error')}", file=sys.stderr)
+            if err.get("details"):
+                print(f"  Details: {err['details']}", file=sys.stderr)
+        except Exception:
+            print(f"Error {e.code}: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"Connection error: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _multipart_encode(fields: dict[str, str], file_field: str, file_path: str) -> tuple[bytes, str, str]:
+    """Build multipart/form-data payload and canonical signing body for string fields."""
+    boundary = f"----a2a-{uuid.uuid4().hex}"
+    file_name = os.path.basename(file_path)
+    mime = mimetypes.guess_type(file_name)[0] or "application/octet-stream"
+    data = bytearray()
+
+    def _add(text: str):
+        data.extend(text.encode("utf-8"))
+
+    for key in sorted(fields.keys()):
+        value = fields[key]
+        _add(f"--{boundary}\r\n")
+        _add(f'Content-Disposition: form-data; name="{key}"\r\n\r\n')
+        _add(f"{value}\r\n")
+
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+
+    _add(f"--{boundary}\r\n")
+    _add(f'Content-Disposition: form-data; name="{file_field}"; filename="{file_name}"\r\n')
+    _add(f"Content-Type: {mime}\r\n\r\n")
+    data.extend(file_bytes)
+    _add("\r\n")
+    _add(f"--{boundary}--\r\n")
+
+    canonical = json.dumps(fields, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return bytes(data), boundary, canonical
+
+
+def multipart_request(method: str, path: str, fields: dict[str, str], file_field: str, file_path: str) -> dict:
+    """Make an authenticated multipart/form-data request."""
+    if not API_KEY or not SIGNING_SECRET:
+        print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        print(f"Error: file not found: {file_path}", file=sys.stderr)
+        sys.exit(1)
+
+    payload, boundary, signing_body = _multipart_encode(fields, file_field, file_path)
+    url = f"{BASE_URL}{path}"
+    sign_path = urllib.parse.urlparse(path).path or "/"
+    if sign_path != "/":
+        sign_path = sign_path.rstrip("/")
+    headers = sign_request(method, sign_path, signing_body)
+    headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
+
+    req = urllib.request.Request(url, data=payload, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         try:
@@ -955,6 +1024,36 @@ def cmd_task_create(args):
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
+    if args.handoff_to:
+        invitees = [part.strip() for part in args.handoff_to.split(",") if part.strip()]
+        if invitees:
+            handoff = {"invitees": invitees}
+            if args.handoff_title:
+                handoff["title"] = args.handoff_title
+            if args.handoff_description:
+                handoff["description"] = args.handoff_description
+            if args.handoff_max_turns is not None:
+                handoff["max_turns"] = args.handoff_max_turns
+            if args.handoff_expires_hours is not None:
+                handoff["expires_in_hours"] = args.handoff_expires_hours
+            body["handoff_contract"] = handoff
+    if args.escalate_to:
+        brokers = [part.strip() for part in args.escalate_to.split(",") if part.strip()]
+        if brokers:
+            escalation = {"brokers": brokers}
+            if args.escalation_reason:
+                escalation["escalation_reason"] = args.escalation_reason
+            if args.requested_intervention:
+                escalation["requested_intervention"] = args.requested_intervention
+            if args.escalation_title:
+                escalation["title"] = args.escalation_title
+            if args.escalation_description:
+                escalation["description"] = args.escalation_description
+            if args.escalation_max_turns is not None:
+                escalation["max_turns"] = args.escalation_max_turns
+            if args.escalation_expires_hours is not None:
+                escalation["expires_in_hours"] = args.escalation_expires_hours
+            body["escalation_contract"] = escalation
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks", body)
     print("✅ Task created!")
     print(format_task(data, verbose=True))
@@ -979,6 +1078,36 @@ def cmd_task_update(args):
         body["labels"] = args.labels
     if args.due_date:
         body["due_date"] = args.due_date
+    if args.handoff_to:
+        invitees = [part.strip() for part in args.handoff_to.split(",") if part.strip()]
+        if invitees:
+            handoff = {"invitees": invitees}
+            if args.handoff_title:
+                handoff["title"] = args.handoff_title
+            if args.handoff_description:
+                handoff["description"] = args.handoff_description
+            if args.handoff_max_turns is not None:
+                handoff["max_turns"] = args.handoff_max_turns
+            if args.handoff_expires_hours is not None:
+                handoff["expires_in_hours"] = args.handoff_expires_hours
+            body["handoff_contract"] = handoff
+    if args.escalate_to:
+        brokers = [part.strip() for part in args.escalate_to.split(",") if part.strip()]
+        if brokers:
+            escalation = {"brokers": brokers}
+            if args.escalation_reason:
+                escalation["escalation_reason"] = args.escalation_reason
+            if args.requested_intervention:
+                escalation["requested_intervention"] = args.requested_intervention
+            if args.escalation_title:
+                escalation["title"] = args.escalation_title
+            if args.escalation_description:
+                escalation["description"] = args.escalation_description
+            if args.escalation_max_turns is not None:
+                escalation["max_turns"] = args.escalation_max_turns
+            if args.escalation_expires_hours is not None:
+                escalation["expires_in_hours"] = args.escalation_expires_hours
+            body["escalation_contract"] = escalation
     if not body:
         print("Error: provide at least one field to update", file=sys.stderr)
         sys.exit(1)
@@ -1070,8 +1199,44 @@ def cmd_checkpoint(args):
         body["summary"] = args.summary
     if args.payload:
         body["payload"] = parse_json_arg(args.payload, "--payload")
+    if args.attachment_ids:
+        body["attachment_ids"] = args.attachment_ids
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/runs/{args.run_id}/checkpoints", body)
     print("✅ Checkpoint appended!")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_task_attach(args):
+    """Upload a task-scoped attachment/artifact."""
+    fields: dict[str, str] = {}
+    if args.note:
+        fields["note"] = args.note
+    if args.run_id:
+        fields["run_id"] = args.run_id
+    if args.checkpoint_id:
+        fields["checkpoint_id"] = args.checkpoint_id
+    data = multipart_request(
+        "POST",
+        f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/attachments",
+        fields,
+        "file",
+        args.file,
+    )
+    print(json.dumps(data, indent=2))
+
+
+def cmd_contract_attach(args):
+    """Upload a contract-scoped attachment/artifact."""
+    fields: dict[str, str] = {}
+    if args.note:
+        fields["note"] = args.note
+    data = multipart_request(
+        "POST",
+        f"/api/v1/contracts/{args.contract_id}/attachments",
+        fields,
+        "file",
+        args.file,
+    )
     print(json.dumps(data, indent=2))
 
 
@@ -1228,7 +1393,13 @@ def cmd_comments(args):
 
 def cmd_comment(args):
     """Add a comment to a task."""
-    body = {"content": args.content}
+    content = args.content
+    if not content or content == "-":
+        content = sys.stdin.read().strip()
+    if not content:
+        print("Error: provide --content or pipe content via stdin", file=sys.stderr)
+        sys.exit(1)
+    body = {"content": content}
     if args.type:
         body["comment_type"] = args.type
     data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/comments", body)
@@ -1568,10 +1739,22 @@ def main():
     p.add_argument("title", help="Task title")
     p.add_argument("--description", help="Task description")
     p.add_argument("--sprint-id", help="Sprint ID to assign to")
-    p.add_argument("--priority", choices=["critical", "urgent", "high", "medium", "low"], help="Task priority")
+    p.add_argument("--priority", choices=["critical", "urgent", "high", "medium", "low"], help="Task priority (critical is legacy alias for urgent)")
     p.add_argument("--assignee", help="Assignee agent name or UUID")
     p.add_argument("--labels", nargs="+", help="Task labels")
     p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
+    p.add_argument("--handoff-to", help="Comma-separated agent names/IDs to invite for delegated handoff")
+    p.add_argument("--handoff-title", help="Override generated handoff contract title")
+    p.add_argument("--handoff-description", help="Override generated handoff contract description")
+    p.add_argument("--handoff-max-turns", type=int, help="Override generated handoff contract max turns")
+    p.add_argument("--handoff-expires-hours", type=int, help="Override generated handoff contract expiration (hours)")
+    p.add_argument("--escalate-to", help="Comma-separated broker agent names/IDs for escalation")
+    p.add_argument("--escalation-reason", help="Why escalation is needed")
+    p.add_argument("--requested-intervention", help="What intervention is requested from the broker")
+    p.add_argument("--escalation-title", help="Override generated escalation contract title")
+    p.add_argument("--escalation-description", help="Override generated escalation contract description")
+    p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
+    p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 
     # task-update
     p = sub.add_parser("task-update", help="Update a task")
@@ -1586,9 +1769,21 @@ def main():
     )
     p.add_argument("--assignee", help="New assignee agent name or UUID")
     p.add_argument("--sprint-id", help="New sprint ID")
-    p.add_argument("--priority", choices=["critical", "urgent", "high", "medium", "low"], help="New priority")
+    p.add_argument("--priority", choices=["critical", "urgent", "high", "medium", "low"], help="New priority (critical is legacy alias for urgent)")
     p.add_argument("--labels", nargs="+", help="New labels")
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
+    p.add_argument("--handoff-to", help="Comma-separated agent names/IDs to invite for delegated handoff")
+    p.add_argument("--handoff-title", help="Override generated handoff contract title")
+    p.add_argument("--handoff-description", help="Override generated handoff contract description")
+    p.add_argument("--handoff-max-turns", type=int, help="Override generated handoff contract max turns")
+    p.add_argument("--handoff-expires-hours", type=int, help="Override generated handoff contract expiration (hours)")
+    p.add_argument("--escalate-to", help="Comma-separated broker agent names/IDs for escalation")
+    p.add_argument("--escalation-reason", help="Why escalation is needed")
+    p.add_argument("--requested-intervention", help="What intervention is requested from the broker")
+    p.add_argument("--escalation-title", help="Override generated escalation contract title")
+    p.add_argument("--escalation-description", help="Override generated escalation contract description")
+    p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
+    p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 
     # task-runs
     p = sub.add_parser("task-runs", help="List execution runs for a task")
@@ -1599,7 +1794,7 @@ def main():
     p = sub.add_parser("task-run-start", help="Start a new execution run for a task")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="Initial execution run status")
+    p.add_argument("--status", choices=sorted(RUN_STATUSES), help="Initial execution run status")
     p.add_argument("--summary", help="Run summary")
     p.add_argument("--metadata", help="JSON object metadata")
 
@@ -1614,7 +1809,7 @@ def main():
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
     p.add_argument("run_id", help="Execution run ID")
-    p.add_argument("--status", choices=["queued", "starting", "running", "paused", "handoff-needed", "succeeded", "failed", "cancelled"], help="New execution run status")
+    p.add_argument("--status", choices=sorted(RUN_STATUSES), help="New execution run status")
     p.add_argument("--summary", help="Run summary")
     p.add_argument("--error-message", help="Failure/cancellation detail")
     p.add_argument("--metadata", help="JSON object metadata")
@@ -1634,6 +1829,22 @@ def main():
     p.add_argument("--key", required=True, help="Checkpoint key")
     p.add_argument("--summary", help="Checkpoint summary")
     p.add_argument("--payload", help="JSON object payload")
+    p.add_argument("--attachment-id", dest="attachment_ids", action="append", help="Attach uploaded artifact ID (repeatable)")
+
+    # task-attach
+    p = sub.add_parser("task-attach", help="Upload a task artifact via multipart form-data")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--file", required=True, help="File path to upload")
+    p.add_argument("--note", help="Optional attachment note")
+    p.add_argument("--run-id", help="Optional run ID association")
+    p.add_argument("--checkpoint-id", help="Optional checkpoint ID to append attachment onto")
+
+    # contract-attach
+    p = sub.add_parser("contract-attach", help="Upload a contract artifact via multipart form-data")
+    p.add_argument("contract_id", help="Contract ID")
+    p.add_argument("--file", required=True, help="File path to upload")
+    p.add_argument("--note", help="Optional attachment note")
 
     # ── Dependencies ──────────────────────────────────────
 
@@ -1691,7 +1902,7 @@ def main():
     p = sub.add_parser("comment", help="Add a comment to a task")
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
-    p.add_argument("--content", required=True, help="Comment content (markdown)")
+    p.add_argument("--content", help="Comment content (markdown). Use '-' or omit and pipe via stdin.")
     p.add_argument("--type", choices=["comment", "status_change", "assignment", "system"], default=None, help="Comment type")
 
     args = parser.parse_args()
@@ -1746,6 +1957,8 @@ def main():
         "task-run-update": cmd_task_run_update,
         "checkpoints": cmd_checkpoints,
         "checkpoint": cmd_checkpoint,
+        "task-attach": cmd_task_attach,
+        "contract-attach": cmd_contract_attach,
         # Dependencies
         "deps": cmd_deps,
         "dep-add": cmd_dep_add,
