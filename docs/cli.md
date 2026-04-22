@@ -445,9 +445,11 @@ Supported sprint statuses: `planning`, `active`, `completed`, `cancelled`.
 | Command | Description |
 |---------|-------------|
 | `a2a tasks <project_id>` | List tasks in a project |
-| `a2a task <project_id> <task_id>` | Get task details (deps, links, assignee, reporter, sprint) |
+| `a2a task <project_id> <task_id>` | Get task details (deps, blocker metadata, links, assignee, reporter, sprint) |
 | `a2a task-create <project_id> <title>` | Create a task (optionally with a generated handoff or escalation contract) |
 | `a2a task-update <project_id> <task_id>` | Update task fields (including description changes, and optionally generate a handoff or escalation contract) |
+| `a2a blocker-follow-up <project_id> <task_id>` | Record the structured unblock plan for a blocked task |
+| `a2a blocker-escalate <project_id> <task_id>` | Escalate a blocked task with the same structured unblock plan |
 | `a2a task-runs <project_id> <task_id>` | List execution runs for a task |
 | `a2a task-run-start <project_id> <task_id>` | Start an execution run |
 | `a2a task-run <project_id> <task_id> <run_id>` | Get a specific execution run |
@@ -500,6 +502,18 @@ $ a2a task proj-abc-123 task-uvw-456
 ```
 
 Returns task fields plus `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, `relates_to`, `linked_contracts`, `assignee`, `reporter`, `sprint`, and — when present — `execution_runs` / `execution_checkpoints` for long-running task recovery.
+
+For hard blockers, the task payload also carries the structured blocker workflow fields used by the dashboard and automation:
+- `blocked_at`
+- `blocker_follow_up_at`
+- `blocker_followed_through_at`
+- `blocker_escalated_at`
+- `blocker_resolution_action`
+- `blocker_resolution_owner`
+- `blocker_resolution_due_at`
+- `blocker_resolution_status`
+
+Use those fields to understand what is supposed to happen next on blocked work before you nudge a human, create a brokered escalation, or assume the task is stale.
 
 ### Create a task
 
@@ -677,6 +691,27 @@ $ a2a deps proj-abc-123 task-uvw-456
 
 The CLI prints grouped relationships so you can distinguish hard blockers from execution ordering and related-work links before mutating anything.
 
+`blocks` is the only dependency type that drives blocked-task automation.
+- `--blocked-by` / `--blocks` → hard blockers that surface in task detail, kanban cards, blocker radar, stale-blocker sweep, and webhook/email escalation
+- `--sequence-after` → ordering hint only; visible in dependency sections but does **not** mark the task blocked
+- `--relates-to` → loose relationship only; useful for navigation/context, not blocker automation
+
+You can also write the structured unblock plan directly from the CLI:
+
+```bash
+a2a blocker-follow-up <project_id> <task_id> \
+  --next-action "Ping release manager for final sign-off" \
+  --owner "Release manager" \
+  --due-at "2026-04-23T09:00:00Z"
+
+a2a blocker-escalate <project_id> <task_id> \
+  --next-action "Escalate to broker for launch decision" \
+  --owner "Brokerbot" \
+  --due-at "2026-04-23T12:00:00Z"
+```
+
+Both commands update the same `blocker_resolution_*` fields used by the dashboard, append a system comment/activity event, and trigger the normal blocker notification fan-out.
+
 ### Add a dependency
 
 ```bash
@@ -703,10 +738,13 @@ a2a dep-add proj-abc-123 task-uvw-456 --relates-to task-followup-id
 ### Remove a dependency
 
 ```bash
-a2a dep-remove proj-abc-123 task-uvw-456 dep-123456
+a2a dep-remove proj-abc-123 task-uvw-456 --blocked-by task-upstream-id
+a2a dep-remove proj-abc-123 task-uvw-456 --blocks task-downstream-id
+a2a dep-remove proj-abc-123 task-uvw-456 --sequence-after task-design-id
+a2a dep-remove proj-abc-123 task-uvw-456 --relates-to task-followup-id
 ```
 
-`dep-remove` deletes by `dependency_id`, matching the API contract. Use `a2a deps` first to inspect the grouped relationships and copy the exact dependency ID you want to remove.
+The CLI resolves the matching dependency ID for you from the relationship you specify, then issues the API delete. Use `a2a deps` first if you want to inspect the grouped dependency state before removing anything.
 
 Compatibility note: older automation that omits `dependency_type` on creation still produces a `blocks` link. Creating `sequence_after` and `relates_to` requires a deployment with the typed-dependency migration applied.
 

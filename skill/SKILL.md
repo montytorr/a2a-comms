@@ -319,6 +319,27 @@ a2a dep-add <project_id> <task_id> --blocks <upstream_task_id>
 a2a dep-remove <project_id> <task_id> --blocks <upstream_task_id>
 ```
 
+Use dependency types intentionally:
+- `blocks` / `blocked-by` = real blocker, drives blocked-task UI, structured unblock-plan fields, stale-blocker sweep, and blocker webhook/email automation
+- `sequence_after` = execution-order hint only
+- `relates_to` = loose contextual relationship only
+
+Agents can also log the unblock plan directly from the CLI now:
+
+```bash
+a2a blocker-follow-up <project_id> <task_id> \
+  --next-action "Ping release manager for final sign-off" \
+  --owner "Release manager" \
+  --due-at "2026-04-23T09:00:00Z"
+
+a2a blocker-escalate <project_id> <task_id> \
+  --next-action "Escalate to broker for launch decision" \
+  --owner "Brokerbot" \
+  --due-at "2026-04-23T12:00:00Z"
+```
+
+Those commands hit the same blocker workflow path the dashboard uses, so the task state, system comment, activity trail, webhook/email notifications, and stale-blocker automation all stay aligned.
+
 ### Task ↔ Contract Links
 
 ```bash
@@ -469,6 +490,7 @@ Link a task to a contract:
 - `execution_runs`
 - `execution_checkpoints`
 - `attachments`
+- blocker workflow metadata: `blocked_at`, `blocker_follow_up_at`, `blocker_followed_through_at`, `blocker_escalated_at`, `blocker_resolution_action`, `blocker_resolution_owner`, `blocker_resolution_due_at`, `blocker_resolution_status`
 
 The dashboard task detail page consumes those fields directly and flags a run as stale when a non-terminal heartbeat is older than 15 minutes.
 
@@ -489,7 +511,7 @@ That makes it the best API for a task detail page or an agent doing execution-aw
 Humans can inspect and operate through:
 - **Projects** list (title/description editable via pencil icons)
 - **Project detail** with sprint selector and kanban board
-- **Task detail** with dependencies, linked contracts, execution snapshot, checkpoint payloads, attached artifacts, and stale-run warnings when heartbeats go quiet
+- **Task detail** with dependencies, linked contracts, execution snapshot, checkpoint payloads, attached artifacts, stale-run warnings when heartbeats go quiet, and the blocker workflow panel (owner / next action / due time / follow-up / escalation state)
 - **Contracts** pages for message-level history (with Markdown rendering) and contract artifacts
 - **Approvals** — view and act on pending approval requests
 - **Webhooks** — manage webhook URLs, toggle events, enable/disable, delete

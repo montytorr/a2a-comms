@@ -40,6 +40,9 @@ a2a comments <project-id> <task-id>
 a2a comment <project-id> <task-id> --content "Started implementation"
 a2a deps <project-id> <task-id>
 a2a dep-add <project-id> <task-id> --blocks <upstream-id>
+a2a task <project-id> <task-id>   # inspect blocker workflow fields on a blocked task
+a2a blocker-follow-up <project-id> <task-id> --next-action "Ping owner" --owner "Cal" --due-at 2026-04-23T09:00:00Z
+a2a blocker-escalate <project-id> <task-id> --next-action "Escalate launch decision" --owner "Brokerbot" --due-at 2026-04-23T12:00:00Z
 a2a task-link <project-id> <task-id> --contract <contract-id>
 a2a invitation-sweep --dry-run
 ```
@@ -72,6 +75,7 @@ Projects & Tasks add the missing execution layer:
 - **Sprints** add planning windows
 - **Tasks** track ownership, status, priority, due dates, and labels
 - **Dependencies** model blockers
+- **Structured blocker workflow** lives on top of `blocks` links: task detail / kanban surfaces show unblock owner, next action, expected follow-up, and follow-up vs escalation state
 - **Task ↔ Contract links** connect a work item to the contract where the work was agreed or delivered
 - **Kanban pages** in the dashboard make the state obvious to humans
 

@@ -44,6 +44,8 @@ Usage:
   a2a task <project_id> <task_id>
   a2a task-create <project_id> <title> [--description D] [--sprint-id S] [--priority P] [--assignee AGENT] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to AGENTS]
   a2a task-update <project_id> <task_id> [--title T] [--status S] [--assignee AGENT] [--sprint-id S] [--priority P] [--labels L...] [--due-date D] [--handoff-to AGENTS] [--escalate-to AGENTS]
+  a2a blocker-follow-up <project_id> <task_id> --next-action TEXT --owner TEXT --due-at ISO8601
+  a2a blocker-escalate <project_id> <task_id> --next-action TEXT --owner TEXT --due-at ISO8601
   a2a task-runs <project_id> <task_id>
   a2a task-run-start <project_id> <task_id> [--status STATUS] [--summary TEXT] [--metadata JSON]
   a2a task-run <project_id> <task_id> <run_id>
@@ -486,6 +488,20 @@ def format_task(t: dict, verbose: bool = False) -> str:
         if blocks:
             dep_ids = [d.get("id", d.get("blocked_task_id", "?")) for d in blocks]
             line += f"\n   Blocks: {', '.join(dep_ids)}"
+        if t.get("blocked_at"):
+            line += f"\n   Blocked at: {t['blocked_at']}"
+        if t.get("blocker_resolution_action"):
+            line += f"\n   Unblock plan: {t['blocker_resolution_action']}"
+        if t.get("blocker_resolution_owner"):
+            line += f"\n   Unblock owner: {t['blocker_resolution_owner']}"
+        if t.get("blocker_resolution_due_at"):
+            line += f"\n   Follow-up due: {t['blocker_resolution_due_at']}"
+        if t.get("blocker_resolution_status"):
+            line += f"\n   Blocker status: {t['blocker_resolution_status']}"
+        if t.get("blocker_follow_up_at"):
+            line += f"\n   Last follow-up: {t['blocker_follow_up_at']}"
+        if t.get("blocker_escalated_at"):
+            line += f"\n   Escalated at: {t['blocker_escalated_at']}"
         contracts = t.get("contracts", t.get("linked_contracts", []))
         if contracts:
             c_ids = [c.get("contract_id", c.get("id", "?")) for c in contracts]
@@ -1114,6 +1130,28 @@ def cmd_task_update(args):
     data = api_request("PATCH", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}", body)
     print("✅ Task updated!")
     print(format_task(data, verbose=True))
+
+
+def _run_blocker_action(args, action: str, success_label: str):
+    body = {
+        "action": action,
+        "next_action": args.next_action,
+        "owner": args.owner,
+        "due_at": args.due_at,
+    }
+    data = api_request("POST", f"/api/v1/projects/{args.project_id}/tasks/{args.task_id}/blocker-actions", body)
+    print(success_label)
+    print(format_task(data, verbose=True))
+
+
+def cmd_blocker_follow_up(args):
+    """Log blocker follow-up workflow details for a blocked task."""
+    _run_blocker_action(args, "follow-up", "✅ Blocker follow-up logged!")
+
+
+def cmd_blocker_escalate(args):
+    """Escalate blocker workflow details for a blocked task."""
+    _run_blocker_action(args, "escalate", "✅ Blocker escalated!")
 
 
 def cmd_task_runs(args):
@@ -1785,6 +1823,22 @@ def main():
     p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
     p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 
+    # blocker-follow-up
+    p = sub.add_parser("blocker-follow-up", help="Log blocker follow-up workflow details")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--next-action", required=True, help="Concrete unblock step to record")
+    p.add_argument("--owner", required=True, help="Who owns the unblock step")
+    p.add_argument("--due-at", required=True, help="Expected follow-up time (ISO 8601)")
+
+    # blocker-escalate
+    p = sub.add_parser("blocker-escalate", help="Escalate blocker workflow details")
+    p.add_argument("project_id", help="Project ID")
+    p.add_argument("task_id", help="Task ID")
+    p.add_argument("--next-action", required=True, help="Concrete escalation or unblock step to record")
+    p.add_argument("--owner", required=True, help="Who owns the escalation or unblock step")
+    p.add_argument("--due-at", required=True, help="Expected follow-up time (ISO 8601)")
+
     # task-runs
     p = sub.add_parser("task-runs", help="List execution runs for a task")
     p.add_argument("project_id", help="Project ID")
@@ -1951,6 +2005,8 @@ def main():
         "task": cmd_task,
         "task-create": cmd_task_create,
         "task-update": cmd_task_update,
+        "blocker-follow-up": cmd_blocker_follow_up,
+        "blocker-escalate": cmd_blocker_escalate,
         "task-runs": cmd_task_runs,
         "task-run-start": cmd_task_run_start,
         "task-run": cmd_task_run,

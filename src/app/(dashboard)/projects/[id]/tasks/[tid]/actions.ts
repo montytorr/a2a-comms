@@ -3,7 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { notifyBlockerAction } from '@/lib/task-blocker-actions';
+import { runBlockerWorkflowAction as applyBlockerWorkflowAction, type BlockerWorkflowInput } from '@/lib/task-blocker-actions';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
 import { buildObserverCommentMetadata, normalizeObserverCommentType } from '@/lib/observer-mode';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
@@ -148,157 +148,33 @@ export async function addComment(
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
 }
 
-type BlockerWorkflowInput = {
-  nextAction: string;
-  owner: string;
-  dueAt: string;
-};
-
-function normalizeBlockerWorkflowInput(input: BlockerWorkflowInput) {
-  const nextAction = input.nextAction.trim();
-  const owner = input.owner.trim();
-  const dueAt = input.dueAt.trim();
-
-  if (!nextAction) throw new Error('Next action is required');
-  if (!owner) throw new Error('Unblock owner is required');
-  if (!dueAt) throw new Error('Expected follow-up time is required');
-
-  const dueDate = new Date(dueAt);
-  if (Number.isNaN(dueDate.getTime())) throw new Error('Expected follow-up time is invalid');
-
-  return {
-    nextAction,
-    owner,
-    dueAtIso: dueDate.toISOString(),
-  };
-}
-
-async function resolveBlockerActionContext(projectId: string, taskId: string) {
-  const supabase = createServerClient();
-  const actionAt = new Date().toISOString();
-
-  const [{ data: task }, { data: project }, { data: blockedBy }] = await Promise.all([
-    supabase
-      .from('tasks')
-      .select('id, title, project_id, assignee_agent_id, blocked_at, blocker_escalated_at')
-      .eq('id', taskId)
-      .eq('project_id', projectId)
-      .single(),
-    supabase
-      .from('projects')
-      .select('title')
-      .eq('id', projectId)
-      .single(),
-    supabase
-      .from('task_dependencies')
-      .select('dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
-      .eq('blocked_task_id', taskId)
-      .eq('dependency_type', 'blocks'),
-  ]);
-
-  if (!task) throw new Error('Task not found');
-
-  const activeBlockers = (blockedBy || [])
-    .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
-    .filter((blocker): blocker is { id: string; title: string; status: string } => !!blocker && blocker.status !== 'done' && blocker.status !== 'cancelled');
-
-  return { supabase, actionAt, task, project, activeBlockers };
-}
-
-async function runBlockerWorkflowAction(
+async function runDashboardBlockerWorkflowAction(
   projectId: string,
   taskId: string,
   type: 'follow-up' | 'escalate',
   input: BlockerWorkflowInput,
 ) {
   const user = await requireProjectMembership(projectId);
-  const workflow = normalizeBlockerWorkflowInput(input);
-  const { supabase, actionAt, task, project, activeBlockers } = await resolveBlockerActionContext(projectId, taskId);
-
-  const updates: Record<string, string> = {
-    blocker_follow_up_at: actionAt,
-    blocker_followed_through_at: actionAt,
-    blocker_resolution_action: workflow.nextAction,
-    blocker_resolution_owner: workflow.owner,
-    blocker_resolution_due_at: workflow.dueAtIso,
-    blocker_resolution_status: type,
-    updated_at: actionAt,
-  };
-
-  if (type === 'escalate') {
-    updates.blocker_escalated_at = actionAt;
-  }
-
-  const { error: updateError } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', taskId)
-    .eq('project_id', projectId);
-
-  if (updateError) throw new Error(`Failed to ${type === 'escalate' ? 'escalate blocked task' : 'log blocker follow-up'}: ${updateError.message}`);
-
+  const supabase = createServerClient();
   const { data: actorAgent } = user.memberAgentId
     ? await supabase.from('agents').select('name, display_name').eq('id', user.memberAgentId).single()
     : { data: null };
   const actorName = actorAgent?.display_name || actorAgent?.name || user.displayName || 'Dashboard User';
-  const blockerSummary = activeBlockers.map((blocker) => blocker.title).join(', ') || 'current blockers';
-  const content = type === 'escalate'
-    ? `Escalated blocker on ${blockerSummary}: ${workflow.nextAction} (owner: ${workflow.owner}, due: ${workflow.dueAtIso})`
-    : `Logged blocker follow-up on ${blockerSummary}: ${workflow.nextAction} (owner: ${workflow.owner}, due: ${workflow.dueAtIso})`;
 
-  const metadata = {
-    action: type === 'escalate' ? 'blocker_escalation' : 'blocker_follow_up',
-    blocker_titles: activeBlockers.map((blocker) => blocker.title),
-    acted_at: actionAt,
-    actor_agent_id: user.memberAgentId ?? null,
-    blocker_resolution_action: workflow.nextAction,
-    blocker_resolution_owner: workflow.owner,
-    blocker_resolution_due_at: workflow.dueAtIso,
-    blocker_resolution_status: type,
-    participant_role: user.projectRole,
-    participant_access_kind: user.accessKind,
-  };
-
-  const { error: commentError } = await supabase.from('task_comments').insert({
-    task_id: taskId,
-    project_id: projectId,
-    author_agent_id: user.memberAgentId ?? null,
-    author_name: actorName,
-    content,
-    comment_type: 'system',
-    metadata,
+  await applyBlockerWorkflowAction({
+    supabase,
+    projectId,
+    taskId,
+    type,
+    input,
+    actor: {
+      agentId: user.memberAgentId ?? null,
+      userId: user.id,
+      name: actorName,
+      participantRole: user.projectRole,
+      participantAccessKind: user.accessKind,
+    },
   });
-
-  if (commentError) throw new Error(`Failed to log blocker ${type === 'escalate' ? 'escalation' : 'comment'} comment: ${commentError.message}`);
-
-  await appendTaskActivityEvent({
-    projectId,
-    taskId,
-    actorAgentId: user.memberAgentId ?? null,
-    actorUserId: user.id,
-    eventType: type === 'escalate' ? 'blocker_escalation' : 'blocker_follow_up',
-    summary: type === 'escalate' ? `Escalated blocker on ${blockerSummary}` : `Logged blocker follow-up on ${blockerSummary}`,
-    metadata,
-  }).catch(() => {});
-
-  await notifyBlockerAction(supabase, {
-    projectId,
-    taskId,
-    taskTitle: task.title,
-    projectTitle: project?.title || 'Unknown Project',
-    assigneeAgentId: task.assignee_agent_id,
-    blockerTitles: activeBlockers.map((blocker) => blocker.title),
-    actorName,
-    action: type === 'escalate' ? 'escalate' : 'follow-up',
-    blockedAt: task.blocked_at ?? null,
-    blockerFollowUpAt: actionAt,
-    blockerFollowedThroughAt: actionAt,
-    blockerEscalatedAt: type === 'escalate' ? actionAt : task.blocker_escalated_at ?? null,
-    blockerResolutionAction: workflow.nextAction,
-    blockerResolutionOwner: workflow.owner,
-    blockerResolutionDueAt: workflow.dueAtIso,
-    blockerResolutionStatus: type,
-  }).catch(() => {});
 
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
   revalidatePath(`/projects/${projectId}`);
@@ -306,11 +182,11 @@ async function runBlockerWorkflowAction(
 }
 
 export async function logBlockerFollowUp(projectId: string, taskId: string, input: BlockerWorkflowInput) {
-  return runBlockerWorkflowAction(projectId, taskId, 'follow-up', input);
+  return runDashboardBlockerWorkflowAction(projectId, taskId, 'follow-up', input);
 }
 
 export async function escalateBlockedTask(projectId: string, taskId: string, input: BlockerWorkflowInput) {
-  return runBlockerWorkflowAction(projectId, taskId, 'escalate', input);
+  return runDashboardBlockerWorkflowAction(projectId, taskId, 'escalate', input);
 }
 
 export async function uploadTaskAttachment(projectId: string, taskId: string, formData: FormData) {

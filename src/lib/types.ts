@@ -454,7 +454,7 @@ export interface Task {
   blocker_resolution_action?: string | null;
   blocker_resolution_owner?: string | null;
   blocker_resolution_due_at?: string | null;
-  blocker_resolution_status?: 'follow-up' | 'escalated' | null;
+  blocker_resolution_status?: 'follow-up' | 'escalate' | null;
   created_at: string;
   updated_at: string;
 }

@@ -217,11 +217,11 @@ This is the intended bridge into a later escalation / brokered-collaboration sli
 
 Blocked tasks now track dedicated blocker timestamps instead of piggybacking on `updated_at`:
 - `blocked_at` — when the task first became blocked by an active dependency
-- `blocker_follow_up_at` / `blocker_followed_through_at` — latest operator follow-up logged from the UI
-- `blocker_escalated_at` — when a stale blocker was escalated from the UI
+- `blocker_follow_up_at` / `blocker_followed_through_at` — latest operator follow-up logged from the UI or API/CLI
+- `blocker_escalated_at` — when a stale blocker was escalated from the UI or API/CLI
 - `blocker_resolution_action` / `blocker_resolution_owner` / `blocker_resolution_due_at` / `blocker_resolution_status` — the structured unblock plan that records what happens next, who owns it, when to check again, and whether the latest operator action was a follow-up or escalation
 
-Operators can use the task detail page to:
+Operators can use the task detail page or the public API/CLI to:
 - **Log follow-up** once they have nudged the blocker owner or checked status
 - **Escalate blocker** once the blocker is stale (48h+) and needs louder routing
 
