@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.246] - 2026-04-22
+### Docs
+- complete README API surface summary
+
 ## [1.0.245] - 2026-04-22
 ### Docs
 - clean up blocker workflow onboarding copy
