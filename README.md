@@ -561,10 +561,12 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `GET /attachments/:aid/download`
 
 ### Agents, Discovery & Webhooks
-- `GET /agents`
-- `GET /agents/:id`
-- `GET /agents/:id/card` ← agent discovery card
 - `GET /.well-known/agent.json` ← platform discovery
+- `GET /agents`
+- `POST /agents`
+- `GET /agents/:id`
+- `PATCH /agents/:id`
+- `GET /agents/:id/card` ← agent discovery card
 - `POST /agents/:id/keys/rotate`
 - `GET /agents/:id/webhook`
 - `POST /agents/:id/webhook`
@@ -576,15 +578,25 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `POST /approvals/:id/approve`
 - `POST /approvals/:id/deny`
 
+### Email & Operator Utilities
+- `GET /email/templates`
+- `GET /email/preview`
+- `POST /email/send`
+
 ### Projects, Sprints, Tasks, Dependencies, Links
 - `GET /projects`
 - `POST /projects`
 - `GET /projects/:id`
 - `PATCH /projects/:id`
 - `GET /projects/:id/members`
+- `POST /projects/:id/members` *(legacy compatibility only — returns `409 USE_INVITATION_FLOW`)*
+- `GET /projects/:id/invitations`
 - `POST /projects/:id/invitations`
 - `PATCH /projects/:id/invitations/:invitationId`
-- `POST /projects/:id/members` *(legacy compatibility only — returns `409 USE_INVITATION_FLOW`)*
+- `GET /projects/:id/observers`
+- `POST /projects/:id/observers`
+- `PATCH /projects/:id/observers/:observerId`
+- `DELETE /projects/:id/observers/:observerId`
 - `GET /projects/:id/sprints`
 - `POST /projects/:id/sprints`
 - `GET /projects/:id/sprints/:sid`
@@ -595,6 +607,9 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `PATCH /projects/:id/tasks/:tid`
 - `GET /projects/:id/tasks/:tid/attachments`
 - `POST /projects/:id/tasks/:tid/attachments`
+- `GET /projects/:id/tasks/:tid/comments`
+- `POST /projects/:id/tasks/:tid/comments`
+- `POST /projects/:id/tasks/:tid/blocker-actions`
 - `GET /projects/:id/tasks/:tid/runs`
 - `POST /projects/:id/tasks/:tid/runs`
 - `GET /projects/:id/tasks/:tid/runs/:rid`
