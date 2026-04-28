@@ -1,49 +1,50 @@
 'use client';
 
 import { useState } from 'react';
+import { AlertTriangle, CheckSquare, FileText, KeyRound, Mail, ShieldCheck, UserPlus } from 'lucide-react';
 
 const TEMPLATES = [
   {
     id: 'welcome',
     label: 'Welcome',
     description: 'Sent when a new account is created',
-    icon: '👋',
+    icon: Mail,
   },
   {
     id: 'password-reset',
     label: 'Password Reset',
     description: 'Sent when a user requests a password reset',
-    icon: '🔑',
+    icon: KeyRound,
   },
   {
     id: 'contract-invitation',
     label: 'Contract Invitation',
     description: 'Sent when an agent receives a contract proposal',
-    icon: '📄',
+    icon: FileText,
   },
   {
     id: 'task-assigned',
     label: 'Task Assigned',
     description: 'Sent when a task is assigned to a user',
-    icon: '✅',
+    icon: CheckSquare,
   },
   {
     id: 'approval-request',
     label: 'Approval Request',
     description: 'Sent when an action requires admin approval',
-    icon: '🔐',
+    icon: ShieldCheck,
   },
   {
     id: 'project-member-invitation',
     label: 'Project Invitation',
     description: 'Sent when an agent is invited to a project',
-    icon: '📬',
+    icon: UserPlus,
   },
   {
     id: 'stale-blocker',
     label: 'Stale Blocker',
     description: 'Sent when a blocked task is automatically escalated',
-    icon: '🚨',
+    icon: AlertTriangle,
   },
 ];
 
@@ -55,46 +56,83 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <p className="upper dim" style={{ fontSize: '10px', padding: '0 0.25rem', marginBottom: '0.75rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          padding: 8,
+          border: '1px solid var(--line-1)',
+          borderRadius: 12,
+          background: 'color-mix(in oklch, var(--bg-1) 72%, transparent)',
+        }}
+      >
+        <p className="upper dim" style={{ fontSize: 10, padding: '4px 8px 8px', letterSpacing: '0.12em' }}>
           Templates
         </p>
-        {TEMPLATES.map((tpl) => (
-          <div
-            key={tpl.id}
-            className="card"
-            style={{
-              cursor: 'pointer',
-              border: activeTemplate === tpl.id ? '1px solid var(--amber)' : '1px solid var(--line-1)',
-              background: activeTemplate === tpl.id ? 'var(--amber-bg)' : 'var(--bg-1)',
-            }}
-            onClick={() => setActiveTemplate(tpl.id)}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>{tpl.icon}</span>
-                <div>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg-0)' }}>{tpl.label}</p>
-                  <p className="dim" style={{ fontSize: '11px', marginTop: '0.125rem' }}>{tpl.description}</p>
-                </div>
-              </div>
-              {activeTemplate === tpl.id && (
+        {TEMPLATES.map((tpl) => {
+          const Icon = tpl.icon;
+          const selected = activeTemplate === tpl.id;
+
+          return (
+            <button
+              key={tpl.id}
+              type="button"
+              style={{
+                cursor: 'pointer',
+                width: '100%',
+                border: `1px solid ${selected ? 'color-mix(in oklch, var(--amber) 58%, var(--line-1))' : 'transparent'}`,
+                background: selected ? 'color-mix(in oklch, var(--amber-bg) 46%, var(--bg-1))' : 'transparent',
+                borderRadius: 9,
+                padding: '9px 10px',
+                display: 'grid',
+                gridTemplateColumns: '30px 1fr',
+                gap: 10,
+                textAlign: 'left',
+                alignItems: 'center',
+                position: 'relative',
+              }}
+              onClick={() => setActiveTemplate(tpl.id)}
+            >
+              {selected && (
                 <span
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: -1,
+                    top: 10,
+                    bottom: 10,
+                    width: 2,
+                    borderRadius: 999,
                     background: 'var(--amber)',
-                    display: 'inline-block',
-                    marginTop: '0.375rem',
-                    flexShrink: 0,
                   }}
                 />
               )}
-            </div>
-          </div>
-        ))}
+              <span
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 8,
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: selected ? 'var(--amber)' : 'var(--fg-3)',
+                  background: selected ? 'color-mix(in oklch, var(--amber-bg) 70%, transparent)' : 'var(--bg-2)',
+                  border: '1px solid var(--line-1)',
+                }}
+              >
+                <Icon size={15} strokeWidth={1.8} />
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13, fontWeight: 650, color: 'var(--fg-0)', lineHeight: 1.2 }}>
+                  {tpl.label}
+                </span>
+                <span className="dim" style={{ display: 'block', fontSize: 11, marginTop: 3, lineHeight: 1.25 }}>
+                  {tpl.description}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div
