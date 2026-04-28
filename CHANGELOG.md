@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.252] - 2026-04-28
+### Fixed
+- remove synthetic dashboard and email data
+
 ## [1.0.251] - 2026-04-28
 ### Changed
 - style: hash avatar badge colors
