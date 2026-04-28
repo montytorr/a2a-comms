@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react';
 import { Search, RefreshCw, Bell } from 'lucide-react';
 import { Ticker } from '@/components/atoms';
 
+type TickerItem = { tone: string; actor: string; type: string; time: string };
+
 interface TopbarProps {
-  tickerItems?: Array<{ tone: string; actor: string; type: string; time: string }>;
+  tickerItems?: TickerItem[];
   onOpenPalette: () => void;
 }
 
 export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
   const [time, setTime] = useState('');
+  const [liveItems, setLiveItems] = useState<TickerItem[]>([]);
 
   useEffect(() => {
     const update = () => {
@@ -20,6 +23,31 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (tickerItems) return;
+
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/internal/live-feed', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json() as { items?: TickerItem[] };
+        if (!cancelled) setLiveItems(Array.isArray(json.items) ? json.items : []);
+      } catch {
+        // Header ticker should never break navigation.
+      }
+    };
+
+    load();
+    const id = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [tickerItems]);
+
+  const displayItems = tickerItems ?? liveItems;
 
   return (
     <div style={{
@@ -59,8 +87,8 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
       </button>
 
       {/* Ticker */}
-      {tickerItems && tickerItems.length > 0 ? (
-        <Ticker items={tickerItems} />
+      {displayItems.length > 0 ? (
+        <Ticker items={displayItems} />
       ) : (
         <div style={{ flex: 1 }} />
       )}
