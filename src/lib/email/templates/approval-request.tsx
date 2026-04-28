@@ -3,20 +3,15 @@ import {
 } from '@react-email/components';
 
 export interface ApprovalRequestEmailProps {
-  actionDescription?: string;
-  requestedBy?: string;
-  approvalUrl?: string;
+  actionDescription: string;
+  requestedBy: string;
+  approvalUrl: string;
   details?: string;
 }
 
 export const subject = 'Approval required — A2A Comms';
 
-export default function ApprovalRequestEmail({
-  actionDescription = 'Rotate API keys for production agent',
-  requestedBy = 'Agent Alpha',
-  approvalUrl = 'https://a2a.playground.montytorr.tech/approvals',
-  details,
-}: ApprovalRequestEmailProps) {
+export default function ApprovalRequestEmail({ actionDescription, requestedBy, approvalUrl, details }: ApprovalRequestEmailProps) {
   return (
     <Html>
       <Head />

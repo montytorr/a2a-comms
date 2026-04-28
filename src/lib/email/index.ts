@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { createElement } from 'react';
+import { createElement, type ComponentType } from 'react';
 
 import WelcomeEmail, { subject as welcomeSubject } from './templates/welcome';
 import PasswordResetEmail, { subject as passwordResetSubject } from './templates/password-reset';
@@ -42,6 +42,29 @@ export type TemplateName = (typeof TEMPLATE_NAMES)[number];
 
 export function getTemplateNames(): string[] {
   return [...TEMPLATE_NAMES];
+}
+
+const REQUIRED_TEMPLATE_PROPS: Record<TemplateName, string[]> = {
+  welcome: ['name', 'dashboardUrl'],
+  'password-reset': ['resetLink'],
+  'contract-invitation': ['contractTitle', 'proposerName', 'contractId', 'acceptUrl'],
+  'task-assigned': ['taskTitle', 'projectName', 'priority', 'taskUrl'],
+  'approval-request': ['actionDescription', 'requestedBy', 'approvalUrl'],
+  'project-member-invitation': ['projectTitle', 'inviterName', 'invitationUrl'],
+  'stale-blocker': ['taskTitle', 'projectName', 'blockerSummary', 'escalationReason', 'actedBy', 'taskUrl'],
+};
+
+function validateTemplateProps(template: TemplateName, props: Record<string, unknown>): string | null {
+  const missing = REQUIRED_TEMPLATE_PROPS[template].filter((key) => {
+    const value = props[key];
+    return typeof value !== 'string' || value.trim().length === 0;
+  });
+  if (missing.length === 0) return null;
+  return `Missing required email props for ${template}: ${missing.join(', ')}`;
+}
+
+function renderTemplate<P extends object>(component: ComponentType<P>, props: Record<string, unknown>) {
+  return createElement(component, props as P);
 }
 
 /**
@@ -123,30 +146,36 @@ export async function sendEmail(
   props: Record<string, any> = {}
 ): Promise<SendEmailResult> {
   try {
+    if (!TEMPLATE_NAMES.includes(template as TemplateName)) {
+      return { error: `Unknown template: ${template}` };
+    }
+    const validationError = validateTemplateProps(template as TemplateName, props);
+    if (validationError) return { error: validationError };
+
     const resend = getResendClient();
     let result: Awaited<ReturnType<typeof resend.emails.send>>;
 
     switch (template) {
       case 'welcome':
-        result = await resend.emails.send({ from: FROM, to, subject: welcomeSubject, react: createElement(WelcomeEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: welcomeSubject, react: renderTemplate(WelcomeEmail, props) });
         break;
       case 'password-reset':
-        result = await resend.emails.send({ from: FROM, to, subject: passwordResetSubject, react: createElement(PasswordResetEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: passwordResetSubject, react: renderTemplate(PasswordResetEmail, props) });
         break;
       case 'contract-invitation':
-        result = await resend.emails.send({ from: FROM, to, subject: contractInvitationSubject, react: createElement(ContractInvitationEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: contractInvitationSubject, react: renderTemplate(ContractInvitationEmail, props) });
         break;
       case 'task-assigned':
-        result = await resend.emails.send({ from: FROM, to, subject: taskAssignedSubject, react: createElement(TaskAssignedEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: taskAssignedSubject, react: renderTemplate(TaskAssignedEmail, props) });
         break;
       case 'approval-request':
-        result = await resend.emails.send({ from: FROM, to, subject: approvalRequestSubject, react: createElement(ApprovalRequestEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: approvalRequestSubject, react: renderTemplate(ApprovalRequestEmail, props) });
         break;
       case 'project-member-invitation':
-        result = await resend.emails.send({ from: FROM, to, subject: projectMemberInvitationSubject, react: createElement(ProjectMemberInvitationEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: projectMemberInvitationSubject, react: renderTemplate(ProjectMemberInvitationEmail, props) });
         break;
       case 'stale-blocker':
-        result = await resend.emails.send({ from: FROM, to, subject: staleBlockerSubject, react: createElement(StaleBlockerEmail, props) });
+        result = await resend.emails.send({ from: FROM, to, subject: staleBlockerSubject, react: renderTemplate(StaleBlockerEmail, props) });
         break;
       default:
         return { error: `Unknown template: ${template}` };

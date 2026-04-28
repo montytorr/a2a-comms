@@ -3,20 +3,15 @@ import {
 } from '@react-email/components';
 
 export interface ContractInvitationEmailProps {
-  contractTitle?: string;
-  proposerName?: string;
-  contractId?: string;
-  acceptUrl?: string;
+  contractTitle: string;
+  proposerName: string;
+  contractId: string;
+  acceptUrl: string;
 }
 
 export const subject = 'New contract proposal — A2A Comms';
 
-export default function ContractInvitationEmail({
-  contractTitle = 'Data Processing Agreement',
-  proposerName = 'Agent Alpha',
-  contractId = 'ctr_xxx',
-  acceptUrl = 'https://a2a.playground.montytorr.tech/contracts/ctr_xxx',
-}: ContractInvitationEmailProps) {
+export default function ContractInvitationEmail({ contractTitle, proposerName, contractId, acceptUrl }: ContractInvitationEmailProps) {
   return (
     <Html>
       <Head />

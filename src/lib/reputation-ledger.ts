@@ -395,7 +395,7 @@ function dedupeReputationEvents(events: ReputationLedgerEvent[]) {
   return Array.from(deduped.values()).sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
 }
 
-function buildSyntheticEventId(parts: Array<string | null | undefined>) {
+function buildDerivedEventId(parts: Array<string | null | undefined>) {
   return `derived:${parts.filter(Boolean).join(':')}`;
 }
 
@@ -414,7 +414,7 @@ function getDerivedRunEvents(agentId: string, runs: TaskExecutionRunRow[]): Repu
 
     if (run.status === 'succeeded') {
       return [{
-        id: buildSyntheticEventId(['task-run', run.id, 'delivery_reliability']),
+        id: buildDerivedEventId(['task-run', run.id, 'delivery_reliability']),
         agent_id: agentId,
         occurred_at: occurredAt,
         recorded_at: occurredAt,
@@ -434,7 +434,7 @@ function getDerivedRunEvents(agentId: string, runs: TaskExecutionRunRow[]): Repu
 
     if (run.status === 'failed' || run.status === 'cancelled') {
       return [{
-        id: buildSyntheticEventId(['task-run', run.id, 'delivery_reliability']),
+        id: buildDerivedEventId(['task-run', run.id, 'delivery_reliability']),
         agent_id: agentId,
         occurred_at: occurredAt,
         recorded_at: occurredAt,
@@ -462,7 +462,7 @@ function getDerivedTaskActivityEvents(agentId: string, events: TaskActivityEvent
 
     if (event.event_type === 'handoff_claimed') {
       return [{
-        id: buildSyntheticEventId(['task-activity', event.id, 'collaboration_quality']),
+        id: buildDerivedEventId(['task-activity', event.id, 'collaboration_quality']),
         agent_id: agentId,
         occurred_at: event.created_at,
         recorded_at: event.created_at,
@@ -486,7 +486,7 @@ function getDerivedTaskActivityEvents(agentId: string, events: TaskActivityEvent
 
     if (event.event_type === 'blocker_escalation') {
       return [{
-        id: buildSyntheticEventId(['task-activity', event.id, 'collaboration_quality']),
+        id: buildDerivedEventId(['task-activity', event.id, 'collaboration_quality']),
         agent_id: agentId,
         occurred_at: event.created_at,
         recorded_at: event.created_at,
@@ -523,7 +523,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
     if (row.action === 'approval.requested' && row.resource_type === 'approval' && rowActor === normalizedActor) {
       return [{
-        id: buildSyntheticEventId(['audit', row.id, 'approval-requested']),
+        id: buildDerivedEventId(['audit', row.id, 'approval-requested']),
         agent_id: agentId,
         occurred_at: row.created_at,
         recorded_at: row.created_at,
@@ -547,7 +547,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
     if ((row.action === 'approval.approved' || row.action === 'approval.denied') && row.resource_type === 'approval' && matchesRequestedActor) {
       return [{
-        id: buildSyntheticEventId(['audit', row.id, row.action]),
+        id: buildDerivedEventId(['audit', row.id, row.action]),
         agent_id: agentId,
         occurred_at: row.created_at,
         recorded_at: row.created_at,
@@ -572,7 +572,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
     if ((row.action === 'auth.failure' || row.action === 'authz.denied') && rowActor === normalizedActor) {
       return [{
-        id: buildSyntheticEventId(['audit', row.id, row.action]),
+        id: buildDerivedEventId(['audit', row.id, row.action]),
         agent_id: agentId,
         occurred_at: row.created_at,
         recorded_at: row.created_at,
@@ -596,7 +596,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
     if ((row.action === 'suspicious.replay_detected' || row.action === 'suspicious.invalid_signature') && rowActor === normalizedActor) {
       return [{
-        id: buildSyntheticEventId(['audit', row.id, row.action]),
+        id: buildDerivedEventId(['audit', row.id, row.action]),
         agent_id: agentId,
         occurred_at: row.created_at,
         recorded_at: row.created_at,
@@ -620,7 +620,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
     if (rowActor === normalizedActor) {
       if (row.action === 'message.send' && row.resource_type === 'message') {
         return [{
-          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          id: buildDerivedEventId(['audit', row.id, row.action]),
           agent_id: agentId,
           occurred_at: row.created_at,
           recorded_at: row.created_at,
@@ -646,7 +646,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
       if (row.action === 'contract.propose' && row.resource_type === 'contract') {
         return [{
-          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          id: buildDerivedEventId(['audit', row.id, row.action]),
           agent_id: agentId,
           occurred_at: row.created_at,
           recorded_at: row.created_at,
@@ -672,7 +672,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
       if (row.action === 'contract.accept' && row.resource_type === 'contract') {
         return [{
-          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          id: buildDerivedEventId(['audit', row.id, row.action]),
           agent_id: agentId,
           occurred_at: row.created_at,
           recorded_at: row.created_at,
@@ -702,7 +702,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
         const status = asString(details.status);
         const meaningfulProgress = status === 'in-progress' || status === 'in-review' || status === 'done';
         return [{
-          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          id: buildDerivedEventId(['audit', row.id, row.action]),
           agent_id: agentId,
           occurred_at: row.created_at,
           recorded_at: row.created_at,
@@ -728,7 +728,7 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 
       if (row.action === 'project.member_add' && row.resource_type === 'project') {
         return [{
-          id: buildSyntheticEventId(['audit', row.id, row.action]),
+          id: buildDerivedEventId(['audit', row.id, row.action]),
           agent_id: agentId,
           occurred_at: row.created_at,
           recorded_at: row.created_at,

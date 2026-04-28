@@ -3,14 +3,12 @@ import {
 } from '@react-email/components';
 
 export interface PasswordResetEmailProps {
-  resetLink?: string;
+  resetLink: string;
 }
 
 export const subject = 'Reset your A2A Comms password';
 
-export default function PasswordResetEmail({
-  resetLink = 'https://a2a.playground.montytorr.tech/reset-password?token=xxx',
-}: PasswordResetEmailProps) {
+export default function PasswordResetEmail({ resetLink }: PasswordResetEmailProps) {
   return (
     <Html>
       <Head />

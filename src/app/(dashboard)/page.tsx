@@ -114,10 +114,18 @@ export default async function DashboardPage() {
     .from('webhooks')
     .select('id', { count: 'exact', head: true })
     .gte('last_delivery_at', twentyFourHoursAgo);
+  let latestWebhookDeliveryQuery = supabase
+    .from('webhooks')
+    .select('last_delivery_at')
+    .not('last_delivery_at', 'is', null)
+    .order('last_delivery_at', { ascending: false })
+    .limit(1);
   if (!isAdmin && scope.webhookIds.length > 0) {
     webhookDeliveriesQuery = webhookDeliveriesQuery.in('id', scope.webhookIds);
+    latestWebhookDeliveryQuery = latestWebhookDeliveryQuery.in('id', scope.webhookIds);
   } else if (!isAdmin) {
     webhookDeliveriesQuery = webhookDeliveriesQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
+    latestWebhookDeliveryQuery = latestWebhookDeliveryQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
   }
 
   const [
@@ -130,6 +138,7 @@ export default async function DashboardPage() {
     activeProjectsRes,
     tasksInProgressRes,
     webhookDeliveriesRes,
+    latestWebhookDeliveryRes,
   ] = await Promise.all([
     contractsQuery,
     messagesQuery,
@@ -140,6 +149,7 @@ export default async function DashboardPage() {
     activeProjectsQuery,
     tasksInProgressQuery,
     webhookDeliveriesQuery,
+    latestWebhookDeliveryQuery,
   ]);
 
   const activeContracts = ((contractsRes.data as Contract[] | null) || []).length;
@@ -152,6 +162,7 @@ export default async function DashboardPage() {
   const activeProjects = activeProjectsRes.count || 0;
   const tasksInProgress = tasksInProgressRes.count || 0;
   const webhookDeliveries = webhookDeliveriesRes.count || 0;
+  const latestWebhookDeliveryAt = latestWebhookDeliveryRes.data?.[0]?.last_delivery_at ?? null;
 
   return (
     <DashboardClient
@@ -164,6 +175,7 @@ export default async function DashboardPage() {
       tasksInProgress={tasksInProgress}
       webhookDeliveries={webhookDeliveries}
       recentAudit={recentAudit}
+      latestWebhookDeliveryAt={latestWebhookDeliveryAt}
     />
   );
 }

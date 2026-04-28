@@ -3,18 +3,14 @@ import {
 } from '@react-email/components';
 
 export interface ProjectMemberInvitationEmailProps {
-  projectTitle?: string;
-  inviterName?: string;
-  invitationUrl?: string;
+  projectTitle: string;
+  inviterName: string;
+  invitationUrl: string;
 }
 
 export const subject = 'Project invitation — A2A Comms';
 
-export default function ProjectMemberInvitationEmail({
-  projectTitle = 'Platform v2',
-  inviterName = 'Clawdius',
-  invitationUrl = 'https://a2a.playground.montytorr.tech/projects/xxx',
-}: ProjectMemberInvitationEmailProps) {
+export default function ProjectMemberInvitationEmail({ projectTitle, inviterName, invitationUrl }: ProjectMemberInvitationEmailProps) {
   return (
     <Html>
       <Head />

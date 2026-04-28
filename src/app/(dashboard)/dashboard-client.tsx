@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+
 import Link from 'next/link';
 import {
   FileText,
@@ -11,7 +11,6 @@ import {
   Folder,
   Zap,
   Link2,
-  Download,
   CheckCircle2,
   XCircle,
   Send,
@@ -21,35 +20,11 @@ import {
   Webhook,
 } from 'lucide-react';
 import {
-  Sparkline,
   HashChip,
   Avatar,
-  ProgressBar,
   SectionHeader,
   PageFrame,
 } from '@/components/atoms';
-
-// ── Mock sparkline data ───────────────────────────────────────────────────────
-
-const SPARKLINES: Record<string, number[]> = {
-  contracts:   [3, 5, 4, 7, 6, 8, 9, 7, 10, 12, 11, 14],
-  messages:    [12, 18, 14, 22, 19, 25, 21, 28, 24, 30, 27, 34],
-  agents:      [4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9],
-  projects:    [1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7],
-  tasks:       [2, 3, 5, 4, 6, 5, 7, 6, 8, 7, 9, 8],
-  webhooks:    [5, 8, 6, 10, 9, 12, 11, 14, 13, 16, 15, 18],
-  throughput:  [40, 55, 48, 62, 58, 72, 65, 80, 74, 88, 82, 96],
-};
-
-// ── Mock health services ──────────────────────────────────────────────────────
-
-const HEALTH_SERVICES = [
-  { name: 'API Gateway',     latency: '12ms',  uptime: 99.98, color: 'var(--mint)'  },
-  { name: 'Contract Engine', latency: '34ms',  uptime: 99.91, color: 'var(--mint)'  },
-  { name: 'Message Broker',  latency: '8ms',   uptime: 99.99, color: 'var(--mint)'  },
-  { name: 'Webhook Relay',   latency: '61ms',  uptime: 98.40, color: 'var(--amber)' },
-  { name: 'Auth Service',    latency: '19ms',  uptime: 99.95, color: 'var(--mint)'  },
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -115,26 +90,8 @@ interface DashboardClientProps {
   tasksInProgress:    number;
   webhookDeliveries:  number;
   recentAudit:        AuditEntry[];
+  latestWebhookDeliveryAt?: string | null;
 }
-
-// ── Segmented control (interactive island) ────────────────────────────────────
-
-const TIME_OPTIONS = ['24h', '7d', '30d'] as const;
-type TimeRange = typeof TIME_OPTIONS[number];
-
-const SegControl = ({ value, onChange }: { value: TimeRange; onChange: (v: TimeRange) => void }) => (
-  <div className="seg">
-    {TIME_OPTIONS.map(opt => (
-      <button
-        key={opt}
-        className={value === opt ? 'active' : ''}
-        onClick={() => onChange(opt)}
-      >
-        {opt}
-      </button>
-    ))}
-  </div>
-);
 
 // ── Stat tile ─────────────────────────────────────────────────────────────────
 
@@ -144,12 +101,10 @@ interface StatTileProps {
   hint:      string;
   icon:      React.ElementType;
   iconColor: string;
-  spark?:    number[];
-  sparkColor?: string;
   href:      string;
 }
 
-const StatTile = ({ label, value, hint, icon: Icon, iconColor, spark, sparkColor, href }: StatTileProps) => (
+const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileProps) => (
   <Link href={href} style={{ textDecoration: 'none' }}>
     <div
       className="card"
@@ -207,12 +162,6 @@ const StatTile = ({ label, value, hint, icon: Icon, iconColor, spark, sparkColor
       {/* Hint */}
       <div className="dim" style={{ fontSize: 11 }}>{hint}</div>
 
-      {/* Sparkline pinned bottom-right */}
-      {spark && (
-        <div style={{ position: 'absolute', bottom: 12, right: 12, opacity: 0.6 }}>
-          <Sparkline data={spark} color={sparkColor ?? iconColor} width={72} height={22} />
-        </div>
-      )}
     </div>
   </Link>
 );
@@ -382,8 +331,8 @@ export const DashboardClient = ({
   tasksInProgress,
   webhookDeliveries,
   recentAudit,
+  latestWebhookDeliveryAt,
 }: DashboardClientProps) => {
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
 
   // Stat tiles definition
   const STATS: StatTileProps[] = [
@@ -393,8 +342,6 @@ export const DashboardClient = ({
       hint:       'View all contracts →',
       icon:       FileText,
       iconColor:  'oklch(0.78 0.14 165)',
-      spark:      SPARKLINES.contracts,
-      sparkColor: 'oklch(0.78 0.14 165)',
       href:       '/contracts?status=active',
     },
     {
@@ -403,8 +350,6 @@ export const DashboardClient = ({
       hint:       'View messages →',
       icon:       MessageSquare,
       iconColor:  'oklch(0.78 0.10 265)',
-      spark:      SPARKLINES.messages,
-      sparkColor: 'oklch(0.78 0.10 265)',
       href:       '/contracts',
     },
     {
@@ -413,8 +358,6 @@ export const DashboardClient = ({
       hint:       'Review project + contract inboxes →',
       icon:       Clock,
       iconColor:  'oklch(0.80 0.155 65)',
-      spark:      SPARKLINES.tasks,
-      sparkColor: 'oklch(0.80 0.155 65)',
       href:       '/projects',
     },
     {
@@ -423,8 +366,6 @@ export const DashboardClient = ({
       hint:       'View all agents →',
       icon:       Users,
       iconColor:  'oklch(0.74 0.14 25)',
-      spark:      SPARKLINES.agents,
-      sparkColor: 'oklch(0.74 0.14 25)',
       href:       '/agents',
     },
     {
@@ -433,8 +374,6 @@ export const DashboardClient = ({
       hint:       'View projects →',
       icon:       Folder,
       iconColor:  'oklch(0.78 0.14 165)',
-      spark:      SPARKLINES.projects,
-      sparkColor: 'oklch(0.78 0.14 165)',
       href:       '/projects',
     },
     {
@@ -443,8 +382,6 @@ export const DashboardClient = ({
       hint:       'View tasks →',
       icon:       Zap,
       iconColor:  'oklch(0.78 0.10 265)',
-      spark:      SPARKLINES.tasks,
-      sparkColor: 'oklch(0.78 0.10 265)',
       href:       '/projects',
     },
     {
@@ -453,8 +390,6 @@ export const DashboardClient = ({
       hint:       'View webhooks →',
       icon:       Link2,
       iconColor:  'oklch(0.80 0.155 65)',
-      spark:      SPARKLINES.webhooks,
-      sparkColor: 'oklch(0.80 0.155 65)',
       href:       '/webhooks',
     },
   ];
@@ -466,15 +401,6 @@ export const DashboardClient = ({
         eyebrow="Overview"
         title="Dashboard"
         sub="System overview and recent activity"
-        right={
-          <>
-            <SegControl value={timeRange} onChange={setTimeRange} />
-            <button className="btn btn--ghost btn--sm row gap-2">
-              <Download size={13} />
-              Export
-            </button>
-          </>
-        }
       />
 
       {/* 4×2 stat grid */}
@@ -553,67 +479,33 @@ export const DashboardClient = ({
 
         {/* ── Right column ── */}
         <div className="col gap-3">
-          {/* System Health card */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div
-              className="row"
-              style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid var(--line-1)',
-                justifyContent: 'space-between',
-              }}
-            >
-              <span className="h3">System Health</span>
-              <span className="pill pill--mint">Live</span>
-            </div>
-            <div className="col" style={{ padding: '8px 16px 12px', gap: 12 }}>
-              {HEALTH_SERVICES.map(svc => (
-                <div key={svc.name} className="col" style={{ gap: 5 }}>
-                  <div className="row" style={{ justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--fg-1)', fontWeight: 500 }}>{svc.name}</span>
-                    <div className="row gap-2">
-                      <span className="mono dim" style={{ fontSize: 11 }}>{svc.latency}</span>
-                      <span
-                        className="mono"
-                        style={{ fontSize: 11, color: svc.uptime >= 99.9 ? 'var(--mint)' : 'var(--amber)' }}
-                      >
-                        {svc.uptime.toFixed(2)}%
-                      </span>
-                    </div>
-                  </div>
-                  <ProgressBar value={svc.uptime} max={100} color={svc.color} height={3} />
-                </div>
-              ))}
+          <div className="card" style={{ padding: 16 }}>
+            <div className="col gap-2">
+              <span className="h3">Live Data Only</span>
+              <span className="dim" style={{ fontSize: 12 }}>
+                This dashboard now shows only persisted contracts, messages, audit rows, projects, tasks, agents, and webhook delivery timestamps.
+              </span>
             </div>
           </div>
 
-          {/* Throughput card */}
           <div className="card" style={{ padding: 16 }}>
-            <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div className="col gap-1">
-                <span className="upper" style={{ fontSize: 10 }}>Throughput</span>
-                <div
-                  className="num"
-                  style={{
-                    fontSize: 34,
-                    fontFamily: 'var(--sans)',
-                    fontWeight: 700,
-                    color: 'var(--fg-0)',
-                    lineHeight: 1,
-                  }}
-                >
-                  96
-                </div>
-                <span className="dim" style={{ fontSize: 11 }}>msg/min · {timeRange} avg</span>
+            <div className="col gap-1">
+              <span className="upper" style={{ fontSize: 10 }}>Latest Webhook Delivery</span>
+              <div
+                className="num"
+                style={{
+                  fontSize: 26,
+                  fontFamily: 'var(--sans)',
+                  fontWeight: 700,
+                  color: 'var(--fg-0)',
+                  lineHeight: 1.15,
+                }}
+              >
+                {latestWebhookDeliveryAt ? timeAgo(latestWebhookDeliveryAt) : '—'}
               </div>
-              <div style={{ paddingTop: 4 }}>
-                <Sparkline
-                  data={SPARKLINES.throughput}
-                  color="oklch(0.78 0.14 165)"
-                  width={96}
-                  height={40}
-                />
-              </div>
+              <span className="dim" style={{ fontSize: 11 }}>
+                {latestWebhookDeliveryAt ? latestWebhookDeliveryAt : 'No webhook delivery timestamp recorded yet'}
+              </span>
             </div>
           </div>
         </div>

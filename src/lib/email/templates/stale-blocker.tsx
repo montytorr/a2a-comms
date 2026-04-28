@@ -14,15 +14,15 @@ import {
 export const subject = 'A2A stale blocker escalation';
 
 interface StaleBlockerEmailProps {
-  taskTitle?: string;
-  projectName?: string;
-  blockerSummary?: string;
-  escalationReason?: string;
-  actedBy?: string;
+  taskTitle: string;
+  projectName: string;
+  blockerSummary: string;
+  escalationReason: string;
+  actedBy: string;
   blockerOwner?: string;
   nextAction?: string;
   followUpAt?: string;
-  taskUrl?: string;
+  taskUrl: string;
 }
 
 const main = { backgroundColor: '#0a0a0f', fontFamily: 'Inter, Arial, sans-serif', margin: 0, padding: '32px 0' };
@@ -43,15 +43,15 @@ const divider = { borderColor: 'rgba(255,255,255,0.08)', margin: '24px 0' };
 const footer = { color: '#6b7280', fontSize: '12px', lineHeight: '18px', margin: 0 };
 
 export default function StaleBlockerEmail({
-  taskTitle = 'Untitled task',
-  projectName = 'Unknown project',
-  blockerSummary = 'No blockers listed',
-  escalationReason = 'The task has been blocked long enough to require operator attention.',
-  actedBy = 'A2A operator',
+  taskTitle,
+  projectName,
+  blockerSummary,
+  escalationReason,
+  actedBy,
   blockerOwner,
   nextAction,
   followUpAt,
-  taskUrl = 'https://a2a.playground.montytorr.tech/projects',
+  taskUrl,
 }: StaleBlockerEmailProps) {
   return (
     <Html>

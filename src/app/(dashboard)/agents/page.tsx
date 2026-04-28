@@ -1,208 +1,170 @@
-'use client';
-
-import { useState } from 'react';
-import { Filter, Plus, MoreHorizontal } from 'lucide-react';
+import { unstable_noStore as noStore } from 'next/cache';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { Filter, Plus } from 'lucide-react';
+import { createServerClient } from '@/lib/supabase/server';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { Avatar, KV, SectionHeader, PageFrame } from '@/components/atoms';
+import { TRUST_TIER_LABELS, normalizeAgentTrustTier } from '@/lib/trust-tiers';
+import { formatDate } from '@/lib/format-date';
 
-const AGENTS = [
-  {
-    id: 'clawdius',
-    name: 'Clawdius',
-    tone: 'amber' as const,
-    role: 'OpenClaw operator',
-    type: 'internal' as const,
-    desc: 'Primary orchestration agent for contract lifecycle management. Handles inbound partner requests, routes approval workflows, and maintains audit trails across all active contracts.',
-    capabilities: ['Messaging', 'Contracts', 'Webhooks', 'Approvals', 'Audit', 'Sub-agents', 'Policy gating'],
-    protocols: ['contract.v1', 'message.v1', 'webhook.deliver.v1', 'approval.v1', 'audit.read.v1'],
-    config: { inbound: 'partner→', outbound: 'partner→', extension: '30s', context: 'human' },
-    metrics: { active: 1, max: 10, observed: '28 mar 2026' },
-  },
-  {
-    id: 'sentinel',
-    name: 'Sentinel',
-    tone: 'mint' as const,
-    role: 'Policy enforcer',
-    type: 'internal' as const,
-    desc: 'Stateless policy evaluation agent. Intercepts all outbound webhook deliveries and validates payloads against registered policy rules before forwarding.',
-    capabilities: ['Policy gating', 'Audit', 'Webhooks', 'Rate limiting'],
-    protocols: ['webhook.deliver.v1', 'policy.eval.v1', 'audit.write.v1'],
-    config: { inbound: 'internal→', outbound: 'internal→', extension: '5s', context: 'system' },
-    metrics: { active: 3, max: 50, observed: '27 mar 2026' },
-  },
-  {
-    id: 'nexus',
-    name: 'Nexus',
-    tone: 'peri' as const,
-    role: 'Integration bridge',
-    type: 'partner' as const,
-    desc: 'External partner integration agent. Bridges third-party systems to the A2A contract plane via standardised message envelopes and schema translation.',
-    capabilities: ['Messaging', 'Contracts', 'Schema translation', 'Auth delegation'],
-    protocols: ['contract.v1', 'message.v1', 'auth.delegate.v1'],
-    config: { inbound: 'external→', outbound: 'external→', extension: '60s', context: 'partner' },
-    metrics: { active: 0, max: 5, observed: '25 mar 2026' },
-  },
-  {
-    id: 'archiver',
-    name: 'Archiver',
-    tone: 'rose' as const,
-    role: 'Retention worker',
-    type: 'internal' as const,
-    desc: 'Background archival agent responsible for compressing, encrypting, and migrating completed contract payloads to cold storage on schedule.',
-    capabilities: ['Audit', 'Storage', 'Encryption', 'Scheduling'],
-    protocols: ['audit.read.v1', 'storage.write.v1', 'schedule.v1'],
-    config: { inbound: 'internal→', outbound: 'internal→', extension: '120s', context: 'system' },
-    metrics: { active: 0, max: 2, observed: '26 mar 2026' },
-  },
-];
+export const dynamic = 'force-dynamic';
 
-type FilterTab = 'all' | 'internal' | 'partner';
+type AgentRow = {
+  id: string;
+  name: string;
+  display_name: string | null;
+  description: string | null;
+  owner: string | null;
+  capabilities: string[] | null;
+  protocols: string[] | null;
+  trust_tier: string | null;
+  webhook_url: string | null;
+  created_at: string | null;
+  max_active_contracts: number | null;
+};
 
-export default function AgentsPage() {
-  const [activeTab, setActiveTab] = useState<FilterTab>('all');
+const trustTierPillClass: Record<string, string> = {
+  internal: 'pill pill--mint',
+  partner: 'pill pill--peri',
+  external: 'pill pill--ghost',
+  unknown: 'pill pill--ghost',
+};
 
-  const filtered = AGENTS.filter((a) => activeTab === 'all' || a.type === activeTab);
+export default async function AgentsPage({ searchParams }: { searchParams?: Promise<{ tier?: string }> }) {
+  const auth = await getAuthActorContext();
+  if (!auth?.user) redirect('/login?redirect=/agents');
+
+  const params = await searchParams;
+  const activeTier = params?.tier || 'all';
+  const supabase = createServerClient();
+  noStore();
+
+  let query = supabase
+    .from('agents')
+    .select('id, name, display_name, description, owner, capabilities, protocols, trust_tier, webhook_url, created_at, max_active_contracts')
+    .order('name');
+
+  if (activeTier !== 'all') query = query.eq('trust_tier', activeTier);
+
+  const { data } = await query;
+  const agents = (data || []) as AgentRow[];
 
   return (
     <PageFrame>
       <SectionHeader
         eyebrow="Registry"
         title="Agents"
-        sub={`Registered agent identities · ${AGENTS.length} total`}
+        sub={`Registered agent identities · ${agents.length} visible`}
         right={
           <>
-            <button className="btn btn--ghost btn--sm btn--icon">
+            <Link className="btn btn--ghost btn--sm btn--icon" href="/agents">
               <Filter size={14} />
-            </button>
-            <button className="btn btn--primary btn--sm row gap-2">
+            </Link>
+            <Link className="btn btn--primary btn--sm row gap-2" href="/agents/register">
               <Plus size={13} />
               Register Agent
-            </button>
+            </Link>
           </>
         }
       />
 
       <div className="seg" style={{ marginBottom: 20 }}>
-        {(['all', 'internal', 'partner'] as FilterTab[]).map((tab) => (
-          <button
-            key={tab}
-            className={activeTab === tab ? 'active' : ''}
-            onClick={() => setActiveTab(tab)}
+        {(['all', 'internal', 'partner', 'external'] as const).map((tier) => (
+          <Link
+            key={tier}
+            href={tier === 'all' ? '/agents' : `/agents?tier=${tier}`}
+            className={activeTier === tier ? 'active' : ''}
+            style={{ textDecoration: 'none' }}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
+            {tier.charAt(0).toUpperCase() + tier.slice(1)}
+          </Link>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-        {filtered.map((agent) => (
-          <AgentCard key={agent.id} agent={agent} />
-        ))}
-      </div>
+      {agents.length === 0 ? (
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <div className="h3">No registered agents</div>
+          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>
+            Agents will appear here after they register or are created by an administrator.
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+          {agents.map((agent) => (
+            <AgentCard key={agent.id} agent={agent} />
+          ))}
+        </div>
+      )}
     </PageFrame>
   );
 }
 
-interface AgentData {
-  id: string;
-  name: string;
-  tone?: 'amber' | 'mint' | 'peri' | 'rose';
-  role: string;
-  type: 'internal' | 'partner';
-  desc: string;
-  capabilities: string[];
-  protocols: string[];
-  config: { inbound: string; outbound: string; extension: string; context: string };
-  metrics: { active: number; max: number; observed: string };
-}
-
-function AgentCard({ agent }: { agent: AgentData }) {
-  const typePillClass = agent.type === 'internal' ? 'pill pill--mint' : 'pill pill--peri';
-  const dotClass = agent.metrics.active > 0 ? 'dot dot--mint pulse' : 'dot';
+function AgentCard({ agent }: { agent: AgentRow }) {
+  const name = agent.display_name || agent.name;
+  const trustTier = normalizeAgentTrustTier(agent.trust_tier);
+  const capabilities = agent.capabilities || [];
+  const protocols = agent.protocols || [];
 
   return (
-    <div className="card" style={{ padding: 22 }}>
-      {/* Header */}
-      <div className="row gap-2" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
-        <Avatar name={agent.name} size={40} />
-        <div className="col gap-1" style={{ flex: 1, minWidth: 0 }}>
-          <div className="row gap-2">
-            <span className="h3 truncate-text">{agent.name}</span>
-            <span className={typePillClass}>{agent.type}</span>
-          </div>
-          <span className="dim" style={{ fontSize: 12 }}>{agent.role}</span>
-        </div>
-        <button className="btn btn--ghost btn--icon btn--sm" style={{ flexShrink: 0 }}>
-          <MoreHorizontal size={14} />
-        </button>
-      </div>
-
-      {/* Description */}
-      <p className="dim" style={{ fontSize: 13, lineHeight: 1.55, marginBottom: 14 }}>
-        {agent.desc}
-      </p>
-
-      {/* Capabilities */}
-      <div className="col gap-1" style={{ marginBottom: 12 }}>
-        <div className="upper">Capabilities</div>
-        <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
-          {agent.capabilities.map((cap) => (
-            <span key={cap} className="pill pill--ghost">{cap}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Protocols */}
-      <div className="col gap-1" style={{ marginBottom: 14 }}>
-        <div className="upper">Protocols</div>
-        <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
-          {agent.protocols.map((proto) => (
-            <span key={proto} className="pill pill--peri mono">{proto}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Config inset block */}
-      <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 14 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px' }}>
-          <KV label="Webhook">
-            <span className="mono">{agent.config.inbound}</span>
-          </KV>
-          <KV label="Observer">
-            <span className="mono">{agent.config.outbound}</span>
-          </KV>
-          <KV label="Extension">
-            <span className="mono">{agent.config.extension}</span>
-          </KV>
-          <KV label="Routing">
-            <span className="mono">{agent.config.context}</span>
-          </KV>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="row gap-4" style={{ borderTop: '1px solid var(--line-1)', paddingTop: 12 }}>
-        <div className="col gap-1">
-          <div className="upper">Active rate</div>
-          <div className="row gap-2">
-            <span className={dotClass} />
-            <span className="num mono" style={{ fontSize: 13, color: 'var(--fg-1)' }}>
-              {agent.metrics.active}
-            </span>
+    <Link href={`/agents/${agent.id}`} style={{ textDecoration: 'none' }}>
+      <div className="card" style={{ padding: 22, height: '100%' }}>
+        <div className="row gap-2" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
+          <Avatar name={name} size={40} />
+          <div className="col gap-1" style={{ flex: 1, minWidth: 0 }}>
+            <div className="row gap-2">
+              <span className="h3 truncate-text">{name}</span>
+              <span className={trustTierPillClass[trustTier] || 'pill pill--ghost'}>{TRUST_TIER_LABELS[trustTier]}</span>
+            </div>
+            <span className="dim mono" style={{ fontSize: 12 }}>{agent.name}</span>
           </div>
         </div>
-        <div className="col gap-1">
-          <div className="upper">Max active contracts</div>
-          <span className="num mono" style={{ fontSize: 13, color: 'var(--fg-1)' }}>
-            {agent.metrics.max}
-          </span>
+
+        {agent.description ? (
+          <p className="dim" style={{ fontSize: 13, lineHeight: 1.55, marginBottom: 14 }}>
+            {agent.description}
+          </p>
+        ) : (
+          <p className="dim" style={{ fontSize: 13, lineHeight: 1.55, marginBottom: 14, fontStyle: 'italic' }}>
+            No description recorded.
+          </p>
+        )}
+
+        <div className="col gap-1" style={{ marginBottom: 12 }}>
+          <div className="upper">Capabilities</div>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
+            {capabilities.length > 0 ? capabilities.map((cap) => (
+              <span key={cap} className="pill pill--ghost">{cap}</span>
+            )) : <span className="dim" style={{ fontSize: 12 }}>None recorded</span>}
+          </div>
         </div>
-        <div className="col gap-1">
-          <div className="upper">Observed</div>
-          <span className="mono muted" style={{ fontSize: 12 }}>
-            {agent.metrics.observed}
-          </span>
+
+        <div className="col gap-1" style={{ marginBottom: 14 }}>
+          <div className="upper">Protocols</div>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
+            {protocols.length > 0 ? protocols.map((proto) => (
+              <span key={proto} className="pill pill--peri mono">{proto}</span>
+            )) : <span className="dim" style={{ fontSize: 12 }}>None recorded</span>}
+          </div>
+        </div>
+
+        <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px' }}>
+            <KV label="Webhook">
+              <span className="mono">{agent.webhook_url ? 'registered' : 'none'}</span>
+            </KV>
+            <KV label="Owner">
+              <span className="mono">{agent.owner || '—'}</span>
+            </KV>
+            <KV label="Max contracts">
+              <span className="mono">{agent.max_active_contracts ?? '—'}</span>
+            </KV>
+            <KV label="Created">
+              <span className="mono">{agent.created_at ? formatDate(agent.created_at) : '—'}</span>
+            </KV>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

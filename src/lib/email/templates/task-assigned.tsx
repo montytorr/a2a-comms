@@ -3,10 +3,10 @@ import {
 } from '@react-email/components';
 
 export interface TaskAssignedEmailProps {
-  taskTitle?: string;
-  projectName?: string;
-  priority?: string;
-  taskUrl?: string;
+  taskTitle: string;
+  projectName: string;
+  priority: string;
+  taskUrl: string;
   summary?: string;
   blockerSummary?: string;
 }
@@ -20,14 +20,7 @@ const priorityBg: Record<string, string> = {
   critical: 'rgba(239,68,68,0.08)', high: 'rgba(249,115,22,0.08)', medium: 'rgba(234,179,8,0.08)', low: 'rgba(34,197,94,0.08)',
 };
 
-export default function TaskAssignedEmail({
-  taskTitle = 'Implement OAuth flow',
-  projectName = 'Platform v2',
-  priority = 'high',
-  taskUrl = 'https://a2a.playground.montytorr.tech/projects/xxx/tasks/yyy',
-  summary,
-  blockerSummary,
-}: TaskAssignedEmailProps) {
+export default function TaskAssignedEmail({ taskTitle, projectName, priority, taskUrl, summary, blockerSummary }: TaskAssignedEmailProps) {
   const pColor = priorityColors[priority.toLowerCase()] ?? '#06b6d4';
   const pBg = priorityBg[priority.toLowerCase()] ?? 'rgba(6,182,212,0.08)';
 

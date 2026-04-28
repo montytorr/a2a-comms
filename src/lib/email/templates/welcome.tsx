@@ -3,16 +3,13 @@ import {
 } from '@react-email/components';
 
 export interface WelcomeEmailProps {
-  name?: string;
-  dashboardUrl?: string;
+  name: string;
+  dashboardUrl: string;
 }
 
 export const subject = 'Welcome to A2A Comms';
 
-export default function WelcomeEmail({
-  name = 'there',
-  dashboardUrl = 'https://a2a.playground.montytorr.tech',
-}: WelcomeEmailProps) {
+export default function WelcomeEmail({ name, dashboardUrl }: WelcomeEmailProps) {
   return (
     <Html>
       <Head />

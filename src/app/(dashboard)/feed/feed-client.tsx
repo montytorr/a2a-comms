@@ -5,7 +5,7 @@ import { Pause, Play } from 'lucide-react';
 import { createBrowserClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { formatDateTime } from '@/lib/format-date';
-import { Sparkline, HashChip, ProgressBar, SectionHeader, PageFrame } from '@/components/atoms';
+import { HashChip, SectionHeader, PageFrame } from '@/components/atoms';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,36 +28,6 @@ interface FeedClientProps {
   contractIds: string[];
 }
 
-// ─── Mock / seed data ─────────────────────────────────────────────────────────
-
-const MOCK_EVENTS: FeedEvent[] = [
-  { id: 'mock-1',  type: 'message',  timestamp: new Date(Date.now() - 1  * 60000).toISOString(), actor: 'agent-alpha',   summary: 'Message: Acknowledged contract proposal for Q2 delivery terms' },
-  { id: 'mock-2',  type: 'audit',    timestamp: new Date(Date.now() - 2  * 60000).toISOString(), actor: 'sys',          summary: 'contract.update on contract (4a2f9c…)' },
-  { id: 'mock-3',  type: 'contract', timestamp: new Date(Date.now() - 3  * 60000).toISOString(), actor: 'agent-beta',   summary: 'Contract "SLA-2025-Q2" updated — active' },
-  { id: 'mock-4',  type: 'task',     timestamp: new Date(Date.now() - 4  * 60000).toISOString(), actor: 'agent-alpha',  summary: 'Task status changed: in-progress → done' },
-  { id: 'mock-5',  type: 'webhook',  timestamp: new Date(Date.now() - 5  * 60000).toISOString(), actor: 'sys',          summary: 'Webhook delivered: contract.updated (200 OK, 142ms)' },
-  { id: 'mock-6',  type: 'message',  timestamp: new Date(Date.now() - 7  * 60000).toISOString(), actor: 'agent-gamma',  summary: 'Message: Counter-proposal submitted with revised penalty clause' },
-  { id: 'mock-7',  type: 'audit',    timestamp: new Date(Date.now() - 9  * 60000).toISOString(), actor: 'agent-beta',   summary: 'task.create on task (7bc12e…)' },
-  { id: 'mock-8',  type: 'contract', timestamp: new Date(Date.now() - 11 * 60000).toISOString(), actor: 'agent-delta',  summary: 'Contract "NDA-Vendor-007" created — draft' },
-  { id: 'mock-9',  type: 'message',  timestamp: new Date(Date.now() - 14 * 60000).toISOString(), actor: 'agent-alpha',  summary: 'Message: Requesting clarification on liability cap in clause 8.3' },
-  { id: 'mock-10', type: 'audit',    timestamp: new Date(Date.now() - 16 * 60000).toISOString(), actor: 'sys',          summary: 'webhook.delivery on webhook.delivery (9d4f01…)' },
-  { id: 'mock-11', type: 'task',     timestamp: new Date(Date.now() - 18 * 60000).toISOString(), actor: 'agent-gamma',  summary: 'Task "Review legal language" moved to in-review' },
-  { id: 'mock-12', type: 'contract', timestamp: new Date(Date.now() - 20 * 60000).toISOString(), actor: 'agent-beta',   summary: 'Contract "MSA-2025" updated — pending-signature' },
-  { id: 'mock-13', type: 'message',  timestamp: new Date(Date.now() - 22 * 60000).toISOString(), actor: 'agent-delta',  summary: 'Message: Execution window confirmed for 2025-05-01T09:00Z' },
-  { id: 'mock-14', type: 'audit',    timestamp: new Date(Date.now() - 25 * 60000).toISOString(), actor: 'agent-alpha',  summary: 'project.update on project (b3e7a2…)' },
-  { id: 'mock-15', type: 'webhook',  timestamp: new Date(Date.now() - 28 * 60000).toISOString(), actor: 'sys',          summary: 'Webhook delivered: message.created (200 OK, 88ms)' },
-];
-
-const MOCK_SPARKLINE = [42, 55, 48, 61, 58, 72, 65, 68, 75, 62, 70, 62];
-
-const MOCK_EVENT_TYPES: { type: EventType; label: string; count: number }[] = [
-  { type: 'audit',    label: 'audit',    count: 28 },
-  { type: 'message',  label: 'message',  count: 18 },
-  { type: 'contract', label: 'contract', count: 9  },
-  { type: 'task',     label: 'task',     count: 5  },
-  { type: 'webhook',  label: 'webhook',  count: 2  },
-];
-
 // ─── Config ────────────────────────────────────────────────────────────────────
 
 const TYPE_DOT: Record<EventType, string> = {
@@ -75,8 +45,6 @@ const TYPE_COLOR: Record<EventType, string> = {
   task:     'var(--mint)',
   webhook:  'var(--rose)',
 };
-
-const MAX_TOP = Math.max(...MOCK_EVENT_TYPES.map(t => t.count));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -165,11 +133,10 @@ const contractToEvent = (row: Record<string, unknown>, eventType: string): FeedE
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: FeedClientProps) {
-  const [events, setEvents] = useState<FeedEvent[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<FeedEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
 
   const pausedRef = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -245,8 +212,7 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
       setLoading(true);
       const history = await loadHistory(0);
       if (!cancelled) {
-        if (history.length > 0) setEvents(history);
-        setPage(1);
+        setEvents(history);
         setLoading(false);
       }
     })();
@@ -297,6 +263,15 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  const eventTypeCounts = events.reduce<Record<EventType, number>>((acc, event) => {
+    acc[event.type] += 1;
+    return acc;
+  }, { message: 0, contract: 0, audit: 0, task: 0, webhook: 0 });
+  const topEventTypes = (Object.entries(eventTypeCounts) as Array<[EventType, number]>)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const maxTopEventCount = Math.max(1, ...topEventTypes.map(([, count]) => count));
+
   const headerRight = (
     <div className="row gap-3">
       <span className={`pill ${paused ? 'pill--amber' : 'pill--mint'}`}>
@@ -330,7 +305,7 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
             borderBottom: '1px solid var(--line-1)',
           }}>
             <span className="upper grow">Event Stream</span>
-            <span className="mono dim" style={{ fontSize: 11 }}>~62 events / minute</span>
+            <span className="mono dim" style={{ fontSize: 11 }}>{events.length} loaded</span>
             {!loading && (
               <span className={`dot ${connected ? 'dot--mint' : 'dot--rose'}`} title={connected ? 'Connected' : 'Disconnected'} />
             )}
@@ -357,30 +332,26 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
         {/* ── Right column ───────────────────────────────────────────────── */}
         <div className="col gap-3">
 
-          {/* Throughput card */}
+          {/* Event counts card */}
           <div className="card" style={{ padding: 16 }}>
-            <div className="upper" style={{ marginBottom: 10 }}>Throughput</div>
-            <div className="row gap-2" style={{ alignItems: 'flex-end', marginBottom: 12 }}>
-              <span className="num" style={{ fontSize: 36, fontWeight: 600, lineHeight: 1, color: 'var(--fg-0)' }}>62</span>
-              <span className="mono muted" style={{ fontSize: 13, marginBottom: 4 }}>ev/m</span>
-            </div>
-            <Sparkline data={MOCK_SPARKLINE} color="var(--mint)" height={36} width={248} />
-          </div>
-
-          {/* Top event types card */}
-          <div className="card" style={{ padding: 16 }}>
-            <div className="upper" style={{ marginBottom: 12 }}>Top Event Types</div>
-            <div className="col gap-3">
-              {MOCK_EVENT_TYPES.map(({ type, label, count }) => (
-                <div key={type}>
-                  <div className="row gap-2" style={{ marginBottom: 5 }}>
-                    <span className="mono" style={{ flex: 1, fontSize: 12, color: TYPE_COLOR[type] }}>{label}</span>
-                    <span className="mono num dim" style={{ fontSize: 12 }}>{count}</span>
+            <div className="upper" style={{ marginBottom: 12 }}>Event Types</div>
+            {topEventTypes.length === 0 ? (
+              <div className="dim" style={{ fontSize: 12 }}>No real events loaded yet.</div>
+            ) : (
+              <div className="col gap-3">
+                {topEventTypes.map(([type, count]) => (
+                  <div key={type}>
+                    <div className="row gap-2" style={{ marginBottom: 5 }}>
+                      <span className="mono" style={{ flex: 1, fontSize: 12, color: TYPE_COLOR[type] }}>{type}</span>
+                      <span className="mono num dim" style={{ fontSize: 12 }}>{count}</span>
+                    </div>
+                    <div style={{ height: 3, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.max(6, (count / maxTopEventCount) * 100)}%`, height: '100%', background: TYPE_COLOR[type] }} />
+                    </div>
                   </div>
-                  <ProgressBar value={count} max={MAX_TOP} color={TYPE_COLOR[type]} height={3} />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
