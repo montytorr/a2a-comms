@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.257] - 2026-04-28
+### Changed
+- style: polish email template selector
+
 ## [1.0.256] - 2026-04-28
 ### Fixed
 - keep header ticker event-sourced
