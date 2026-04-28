@@ -14,7 +14,7 @@ export default function ActingAgentSelector() {
 
   const selectedValue = actor.activeAgentId ?? '__least_privilege__';
 
-  function updateSelection(value: string) {
+  const updateSelection = (value: string) => {
     startTransition(async () => {
       await fetch('/api/dashboard/acting-agent', {
         method: 'POST',
@@ -23,25 +23,26 @@ export default function ActingAgentSelector() {
       });
       router.refresh();
     });
-  }
+  };
 
   return (
-    <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2.5">
-      <div className="flex flex-wrap items-center gap-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Acting agent</p>
-          <p className="text-[11px] text-gray-400 mt-1">
+    <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 8 }}>
+      <div className="row gap-3" style={{ flexWrap: 'wrap' }}>
+        <div style={{ flex: 1 }}>
+          <div className="upper" style={{ fontSize: 10 }}>Acting agent</div>
+          <div className="dim" style={{ fontSize: 11, marginTop: 2 }}>
             {actor.fallbackMode === 'selected-agent'
               ? 'Dashboard trust and visibility are scoped to the selected agent.'
               : 'No agent selected, using least-privilege trust across all owned agents.'}
-          </p>
+          </div>
         </div>
-        <div className="ml-auto min-w-[240px] max-w-full">
+        <div style={{ minWidth: 240 }}>
           <select
             value={selectedValue}
             disabled={isPending}
-            onChange={(event) => updateSelection(event.target.value)}
-            className="w-full rounded-lg border border-white/[0.08] bg-[#0a0a14] px-3 py-2 text-[12px] text-gray-200 focus:outline-none focus:border-cyan-500/35 disabled:opacity-60"
+            onChange={(e) => updateSelection(e.target.value)}
+            className="cp-select"
+            style={{ opacity: isPending ? 0.6 : 1 }}
           >
             <option value="__least_privilege__">All owned agents, least privilege fallback</option>
             {actor.availableAgents.map((agent) => (

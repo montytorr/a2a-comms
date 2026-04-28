@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { testWebhook, updateWebhook, deleteWebhook, getDeliveries, type WebhookTestResult, type WebhookDelivery } from './actions';
 import { formatDate } from '@/lib/format-date';
 import { CANONICAL_WEBHOOK_EVENTS } from '@/lib/webhook-events';
+import { Send, Edit2, Pause, Play, Trash2, ChevronRight, Check, X } from 'lucide-react';
 
 const ALL_EVENTS = CANONICAL_WEBHOOK_EVENTS;
 
@@ -102,45 +103,71 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
   }
 
   return (
-    <div
-      className="rounded-2xl glass-card overflow-hidden animate-fade-in"
-      style={{ animationDelay }}
-    >
-      <div className={`h-px bg-gradient-to-r from-transparent ${wh.is_active ? 'via-cyan-500/30' : 'via-gray-600/20'} to-transparent`} />
+    <div className="card animate-fade-in" style={{ animationDelay }}>
+      {/* Active state top accent line */}
+      <div style={{
+        height: 2,
+        background: wh.is_active
+          ? 'linear-gradient(90deg, transparent, var(--mint-bg), transparent)'
+          : 'linear-gradient(90deg, transparent, var(--line-1), transparent)',
+      }} />
 
-      <div className="p-5">
+      <div style={{ padding: '16px 20px' }}>
         {error && (
-          <div className="mb-3 p-2 rounded-lg bg-red-500/[0.06] border border-red-500/10 text-[11px] text-red-400">
+          <div style={{
+            marginBottom: 12,
+            padding: '8px 12px',
+            borderRadius: 6,
+            background: 'var(--rose-bg)',
+            border: '1px solid oklch(0.40 0.08 25 / 0.4)',
+            fontSize: 12,
+            color: 'var(--rose)',
+          }}>
             {error}
           </div>
         )}
 
         {/* URL + Status row */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="mt-1.5 shrink-0 relative">
-            <div className={`w-2 h-2 rounded-full ${wh.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
+        <div className="row gap-3" style={{ marginBottom: 16, alignItems: 'flex-start' }}>
+          <div style={{ marginTop: 4, flexShrink: 0, position: 'relative' }}>
+            <div style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: wh.is_active ? 'var(--mint)' : 'var(--rose)',
+            }} />
             {wh.is_active && (
-              <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-30" />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: 'var(--mint)',
+                animation: 'pulse 2s ease-in-out infinite',
+                opacity: 0.3,
+              }} />
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div style={{ flex: 1, minWidth: 0 }}>
             {editing ? (
               <input
                 type="url"
                 value={editUrl}
                 onChange={(e) => setEditUrl(e.target.value)}
-                className="w-full bg-[#0a0a10] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[13px] text-gray-200 font-mono focus:outline-none focus:border-cyan-500/30"
+                className="cp-input mono"
+                style={{ height: 32 }}
               />
             ) : (
-              <p className="text-[13px] font-mono text-gray-300 truncate" title={wh.url}>
+              <p className="mono" style={{ fontSize: 13, color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wh.url}>
                 {truncateUrl(wh.url, 60)}
               </p>
             )}
-            <p className="text-[10px] text-gray-700 mt-0.5">
+            <p style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 2 }}>
               {wh.is_active ? 'Active' : 'Inactive'}
               {wh.failure_count > 0 && (
-                <span className="text-amber-500 ml-2">
+                <span style={{ color: 'var(--amber)', marginLeft: 8 }}>
                   · {wh.failure_count} consecutive failure{wh.failure_count !== 1 ? 's' : ''}
                 </span>
               )}
@@ -148,67 +175,56 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="row gap-1" style={{ flexShrink: 0 }}>
             {!editing && (
               <>
                 <button
                   onClick={handleTest}
                   disabled={testing || isPending}
-                  className="px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-white/[0.08] text-gray-400 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-500/[0.06] transition-all duration-200 disabled:opacity-50 flex items-center gap-1.5"
+                  className="btn btn--sm"
+                  style={{ gap: 6 }}
                 >
                   {testing ? (
                     <>
-                      <span className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                      <span style={{
+                        width: 12,
+                        height: 12,
+                        border: '2px solid var(--line-2)',
+                        borderTopColor: 'var(--peri)',
+                        borderRadius: '50%',
+                        animation: 'spin 0.6s linear infinite',
+                        display: 'inline-block',
+                      }} />
                       Testing…
                     </>
                   ) : (
                     <>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 2L11 13" />
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                      </svg>
+                      <Send size={12} />
                       Test
                     </>
                   )}
                 </button>
                 <button
                   onClick={() => { setEditing(true); setEditUrl(wh.url); setEditEvents([...wh.events]); }}
-                  className="p-1.5 rounded-lg border border-white/[0.06] text-gray-500 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-500/[0.06] transition-all duration-200"
+                  className="btn btn--sm btn--icon"
                   title="Edit"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                  <Edit2 size={13} />
                 </button>
                 <button
                   onClick={handleToggleActive}
                   disabled={isPending}
-                  className={`p-1.5 rounded-lg border transition-all duration-200 ${
-                    wh.is_active
-                      ? 'border-white/[0.06] text-gray-500 hover:text-amber-400 hover:border-amber-500/20 hover:bg-amber-500/[0.06]'
-                      : 'border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/[0.06]'
-                  }`}
+                  className="btn btn--sm btn--icon"
                   title={wh.is_active ? 'Disable' : 'Enable'}
                 >
-                  {wh.is_active ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                  )}
+                  {wh.is_active ? <Pause size={13} /> : <Play size={13} />}
                 </button>
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="p-1.5 rounded-lg border border-white/[0.06] text-gray-500 hover:text-red-400 hover:border-red-500/20 hover:bg-red-500/[0.06] transition-all duration-200"
+                  className="btn btn--sm btn--icon btn--danger"
                   title="Delete"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
+                  <Trash2 size={13} />
                 </button>
               </>
             )}
@@ -217,13 +233,13 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 <button
                   onClick={handleSave}
                   disabled={isPending}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                  className="btn btn--sm btn--primary"
                 >
                   {isPending ? '…' : 'Save'}
                 </button>
                 <button
                   onClick={() => { setEditing(false); setError(null); }}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-gray-500 border border-white/[0.06] hover:text-gray-300 transition-all"
+                  className="btn btn--sm btn--ghost"
                 >
                   Cancel
                 </button>
@@ -234,19 +250,28 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
 
         {/* Delete confirmation */}
         {confirmDelete && (
-          <div className="mb-4 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/15 flex items-center justify-between">
-            <span className="text-[12px] text-red-400 font-medium">Delete this webhook?</span>
-            <div className="flex gap-2">
+          <div style={{
+            marginBottom: 16,
+            padding: '10px 14px',
+            borderRadius: 6,
+            background: 'var(--rose-bg)',
+            border: '1px solid oklch(0.40 0.08 25 / 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <span style={{ fontSize: 12, color: 'var(--rose)', fontWeight: 500 }}>Delete this webhook?</span>
+            <div className="row gap-2">
               <button
                 onClick={handleDelete}
                 disabled={isPending}
-                className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                className="btn btn--sm btn--danger"
               >
                 {isPending ? '…' : 'Delete'}
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="px-3 py-1 rounded-lg text-[11px] font-semibold text-gray-500 border border-white/[0.06] hover:text-gray-300 transition-all"
+                className="btn btn--sm btn--ghost"
               >
                 Cancel
               </button>
@@ -256,20 +281,22 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
 
         {/* Test result */}
         {testResult && (
-          <div className={`mb-4 rounded-lg px-3 py-2.5 flex items-center gap-2 text-[11px] font-medium ${
-            testResult.success
-              ? 'bg-emerald-500/[0.06] border border-emerald-500/15 text-emerald-400'
-              : 'bg-red-500/[0.06] border border-red-500/15 text-red-400'
-          }`}>
-            {testResult.success ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            )}
+          <div style={{
+            marginBottom: 16,
+            borderRadius: 6,
+            padding: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 12,
+            fontWeight: 500,
+            background: testResult.success ? 'var(--mint-bg)' : 'var(--rose-bg)',
+            border: testResult.success
+              ? '1px solid oklch(0.50 0.10 165 / 0.4)'
+              : '1px solid oklch(0.40 0.08 25 / 0.4)',
+            color: testResult.success ? 'var(--mint)' : 'var(--rose)',
+          }}>
+            {testResult.success ? <Check size={13} /> : <X size={13} />}
             <span>
               {testResult.success
                 ? `OK — ${testResult.status} ${testResult.statusText}`
@@ -278,34 +305,31 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   : `Failed — ${testResult.status} ${testResult.statusText}`}
             </span>
             {testResult.responseTime !== undefined && (
-              <span className="text-gray-600 ml-auto font-mono tabular-nums">{testResult.responseTime}ms</span>
+              <span className="mono num" style={{ color: 'var(--fg-4)', marginLeft: 'auto', fontSize: 11 }}>{testResult.responseTime}ms</span>
             )}
           </div>
         )}
 
         {/* Event badges (editable when editing) */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
           {editing ? (
             ALL_EVENTS.map((ev) => (
               <button
                 key={ev}
                 type="button"
                 onClick={() => toggleEvent(ev)}
-                className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border transition-all duration-200 ${
-                  editEvents.includes(ev)
-                    ? 'text-cyan-400 bg-cyan-500/[0.08] border-cyan-500/[0.12]'
-                    : 'text-gray-600 bg-white/[0.02] border-white/[0.04] hover:text-gray-400'
-                }`}
+                className="pill mono"
+                style={editEvents.includes(ev)
+                  ? { color: 'var(--peri)', background: 'var(--peri-bg)', borderColor: 'oklch(0.50 0.08 265 / 0.5)', cursor: 'pointer' }
+                  : { color: 'var(--fg-4)', background: 'transparent', borderColor: 'var(--line-1)', cursor: 'pointer' }
+                }
               >
-                {editEvents.includes(ev) && '✓ '}{ev}
+                {editEvents.includes(ev) && <Check size={10} />}{ev}
               </button>
             ))
           ) : (
             wh.events.map((event) => (
-              <span
-                key={event}
-                className="text-[10px] font-mono font-medium text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/[0.12] px-2 py-0.5 rounded-full"
-              >
+              <span key={event} className="pill pill--peri mono">
                 {event}
               </span>
             ))
@@ -313,38 +337,38 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-6 pt-3 border-t border-white/[0.04]">
+        <div className="row gap-6" style={{ paddingTop: 12, borderTop: '1px solid var(--line-1)' }}>
           <div>
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Last Delivery</p>
-            <span className="text-[12px] text-gray-400 font-mono tabular-nums">
+            <p className="upper" style={{ marginBottom: 4 }}>Last Delivery</p>
+            <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
               {wh.last_delivery_at ? timeAgo(wh.last_delivery_at) : 'Never'}
             </span>
           </div>
           <div>
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Created</p>
-            <span className="text-[12px] text-gray-400 font-mono tabular-nums">
+            <p className="upper" style={{ marginBottom: 4 }}>Created</p>
+            <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
               {formatDate(wh.created_at)}
             </span>
           </div>
           <div>
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Updated</p>
-            <span className="text-[12px] text-gray-400 font-mono tabular-nums">
+            <p className="upper" style={{ marginBottom: 4 }}>Updated</p>
+            <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
               {formatDate(wh.updated_at)}
             </span>
           </div>
           {wh.failure_count > 0 && (
             <div>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Consecutive Fails</p>
-              <span className="text-[12px] text-amber-400 font-mono font-semibold tabular-nums">
+              <p className="upper" style={{ marginBottom: 4 }}>Consecutive Fails</p>
+              <span className="mono num" style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 600 }}>
                 {wh.failure_count}
-                <span className="text-[10px] text-gray-600 font-normal ml-1">/ 10 to auto-disable</span>
+                <span style={{ fontSize: 11, color: 'var(--fg-4)', fontWeight: 400, marginLeft: 4 }}>/ 10 to auto-disable</span>
               </span>
             </div>
           )}
         </div>
 
         {/* Recent Deliveries */}
-        <div className="mt-4 pt-3 border-t border-white/[0.04]">
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line-1)' }}>
           <button
             onClick={async () => {
               if (!showDeliveries && deliveries.length === 0) {
@@ -355,97 +379,101 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
               }
               setShowDeliveries(!showDeliveries);
             }}
-            className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-gray-600 hover:text-gray-400 transition-colors duration-200 uppercase tracking-wider"
+            className="btn btn--ghost btn--sm"
+            style={{ gap: 6, paddingLeft: 0 }}
           >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`transition-transform duration-200 ${showDeliveries ? 'rotate-90' : ''}`}
-            >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            {deliveriesLoading ? 'Loading…' : `Recent Deliveries${deliveries.length > 0 ? ` (${deliveries.length})` : ''}`}
+            <ChevronRight
+              size={12}
+              style={{
+                transition: 'transform 0.2s',
+                transform: showDeliveries ? 'rotate(90deg)' : 'rotate(0deg)',
+              }}
+            />
+            <span className="upper" style={{ fontSize: 10 }}>
+              {deliveriesLoading ? 'Loading…' : `Recent Deliveries${deliveries.length > 0 ? ` (${deliveries.length})` : ''}`}
+            </span>
           </button>
 
           {showDeliveries && deliveries.length > 0 && (() => {
             const successCount = deliveries.filter(d => d.status === 'success').length;
             const failedCount = deliveries.filter(d => d.status === 'failed').length;
             return (
-              <div className="mt-3 space-y-1 animate-fade-in" style={{ animationDuration: '0.15s' }}>
+              <div className="animate-fade-in" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {/* Summary bar */}
-                <div className="flex items-center gap-4 px-3 py-2 mb-1 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                  <span className="text-[10px] text-gray-500">Last {deliveries.length} deliveries:</span>
-                  <span className="text-[10px] font-semibold text-emerald-400">{successCount} OK</span>
-                  {failedCount > 0 && <span className="text-[10px] font-semibold text-red-400">{failedCount} failed</span>}
+                <div className="row gap-4" style={{
+                  padding: '8px 12px',
+                  marginBottom: 4,
+                  borderRadius: 6,
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--line-1)',
+                }}>
+                  <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Last {deliveries.length} deliveries:</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--mint)' }}>{successCount} OK</span>
+                  {failedCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--rose)' }}>{failedCount} failed</span>}
                   {deliveries.filter(d => d.status === 'retrying').length > 0 && (
-                    <span className="text-[10px] font-semibold text-amber-400">{deliveries.filter(d => d.status === 'retrying').length} retrying</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'retrying').length} retrying</span>
                   )}
                   {deliveries.filter(d => d.status === 'pending').length > 0 && (
-                    <span className="text-[10px] font-semibold text-amber-400">{deliveries.filter(d => d.status === 'pending').length} pending</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'pending').length} pending</span>
                   )}
-                  <span className="text-[10px] text-gray-600 ml-auto font-mono">
+                  <span className="mono num" style={{ fontSize: 11, color: 'var(--fg-4)', marginLeft: 'auto' }}>
                     {Math.round((successCount / deliveries.length) * 100)}% success rate
                   </span>
                 </div>
 
                 {/* Header */}
-                <div className="grid grid-cols-[1fr_80px_90px_80px_100px] gap-2 px-3 py-1.5">
-                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Event</span>
-                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Status</span>
-                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">HTTP</span>
-                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider">Attempts</span>
-                  <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-wider text-right">When</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px 80px 100px', gap: 8, padding: '4px 12px' }}>
+                  <span className="upper" style={{ fontSize: 10 }}>Event</span>
+                  <span className="upper" style={{ fontSize: 10 }}>Status</span>
+                  <span className="upper" style={{ fontSize: 10 }}>HTTP</span>
+                  <span className="upper" style={{ fontSize: 10 }}>Attempts</span>
+                  <span className="upper" style={{ fontSize: 10, textAlign: 'right' }}>When</span>
                 </div>
                 {deliveries.map((d) => {
                   const maxRetries = d.max_retries ?? 1;
+                  const rowBg = d.status === 'failed'
+                    ? 'var(--rose-bg)'
+                    : d.status === 'success'
+                      ? 'var(--bg-2)'
+                      : 'var(--amber-bg)';
+                  const rowBorder = d.status === 'failed'
+                    ? 'oklch(0.40 0.08 25 / 0.3)'
+                    : d.status === 'success'
+                      ? 'var(--line-1)'
+                      : 'oklch(0.55 0.12 60 / 0.3)';
                   return (
-                  <div
-                    key={d.id}
-                    className={`grid grid-cols-[1fr_80px_90px_80px_100px] gap-2 px-3 py-2 rounded-lg ${
-                      d.status === 'failed'
-                        ? 'bg-red-500/[0.04] border border-red-500/[0.08]'
-                        : d.status === 'success'
-                          ? 'bg-white/[0.01] border border-white/[0.03]'
-                          : 'bg-amber-500/[0.04] border border-amber-500/[0.08]'
-                    }`}
-                  >
-                    <span className="text-[11px] font-mono text-gray-300 truncate">{d.event}</span>
-                    <span className={`text-[11px] font-semibold ${
-                      d.status === 'success' ? 'text-emerald-400'
-                        : d.status === 'failed' ? 'text-red-400'
-                        : d.status === 'retrying' ? 'text-amber-400'
-                        : 'text-amber-400'
-                    }`}>
-                      {d.status === 'success'
-                        ? d.attempts > 1 ? `✅ Attempt ${d.attempts}` : '✓ OK'
-                        : d.status === 'failed'
-                          ? d.attempts > 1 ? `❌ ${d.attempts} tries` : '✗ Failed'
-                          : d.status === 'retrying'
-                            ? `⏳ Retry ${d.attempts}/${maxRetries}`
-                            : '⏳ Pending'}
-                    </span>
-                    <span className={`text-[11px] font-mono tabular-nums ${
-                      d.response_status && d.response_status >= 200 && d.response_status < 300
-                        ? 'text-emerald-400'
-                        : d.response_status
-                          ? 'text-red-400'
-                          : d.status === 'failed' ? 'text-red-400/60 italic' : 'text-gray-600'
-                    }`}>
-                      {d.response_status ? d.response_status : d.status === 'failed' ? 'Network' : '—'}
-                    </span>
-                    <span className="text-[11px] font-mono text-gray-500 tabular-nums">
-                      {d.attempts}/{maxRetries}
-                    </span>
-                    <span className="text-[10px] font-mono text-gray-600 tabular-nums text-right">
-                      {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
-                    </span>
-                  </div>
+                    <div
+                      key={d.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 80px 90px 80px 100px',
+                        gap: 8,
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        background: rowBg,
+                        border: `1px solid ${rowBorder}`,
+                      }}
+                    >
+                      <span className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.event}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: d.status === 'success' ? 'var(--mint)' : d.status === 'failed' ? 'var(--rose)' : 'var(--amber)' }}>
+                        {d.status === 'success'
+                          ? d.attempts > 1 ? `Attempt ${d.attempts}` : 'OK'
+                          : d.status === 'failed'
+                            ? d.attempts > 1 ? `${d.attempts} tries` : 'Failed'
+                            : d.status === 'retrying'
+                              ? `Retry ${d.attempts}/${maxRetries}`
+                              : 'Pending'}
+                      </span>
+                      <span className="mono num" style={{ fontSize: 12, color: d.response_status && d.response_status >= 200 && d.response_status < 300 ? 'var(--mint)' : d.response_status ? 'var(--rose)' : 'var(--fg-4)' }}>
+                        {d.response_status ? d.response_status : d.status === 'failed' ? 'Network' : '—'}
+                      </span>
+                      <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
+                        {d.attempts}/{maxRetries}
+                      </span>
+                      <span className="mono num" style={{ fontSize: 11, color: 'var(--fg-4)', textAlign: 'right' }}>
+                        {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
+                      </span>
+                    </div>
                   );
                 })}
               </div>
@@ -453,7 +481,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           })()}
 
           {showDeliveries && !deliveriesLoading && deliveries.length === 0 && (
-            <p className="mt-2 text-[11px] text-gray-600">No deliveries recorded yet</p>
+            <p style={{ marginTop: 8, fontSize: 12, color: 'var(--fg-4)' }}>No deliveries recorded yet</p>
           )}
         </div>
       </div>

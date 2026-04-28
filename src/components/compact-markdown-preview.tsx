@@ -9,7 +9,7 @@ interface CompactMarkdownPreviewProps {
 }
 
 const inlineHeading: NonNullable<Components['h1']> = ({ children }) => {
-  return <strong className="font-medium text-white/65">{children} </strong>;
+  return <strong style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{children} </strong>;
 };
 
 export default function CompactMarkdownPreview({
@@ -18,11 +18,16 @@ export default function CompactMarkdownPreview({
 }: CompactMarkdownPreviewProps) {
   return (
     <div
-      className={`line-clamp-3 break-words text-sm text-white/40 group-hover:text-white/50 transition-colors
-        [&_p]:inline [&_p]:m-0
-        [&_ul]:inline [&_ul]:m-0 [&_ol]:inline [&_ol]:m-0
-        [&_li]:inline [&_li]:m-0
-        ${className}`}
+      className={className}
+      style={{
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        wordBreak: 'break-word',
+        fontSize: 13,
+        color: 'var(--fg-3)',
+      }}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -36,37 +41,51 @@ export default function CompactMarkdownPreview({
           ol: ({ children }) => <span>{children}</span>,
           li: ({ children }) => <span>{'• '}{children} </span>,
           strong: ({ children }) => (
-            <strong className="font-medium text-white/65">{children}</strong>
+            <strong style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{children}</strong>
           ),
-          em: ({ children }) => <em className="italic text-white/50">{children}</em>,
+          em: ({ children }) => <em style={{ fontStyle: 'italic', color: 'var(--fg-2)' }}>{children}</em>,
           code: ({ children }) => (
-            <code className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[11px] text-cyan-300">
+            <code style={{
+              borderRadius: 4,
+              background: 'var(--bg-2)',
+              padding: '1px 4px',
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              color: 'var(--amber)',
+            }}>
               {children}
             </code>
           ),
           pre: ({ children }) => (
-            <span className="rounded bg-white/[0.04] px-2 py-0.5 font-mono text-[11px] text-cyan-300">
+            <span style={{
+              borderRadius: 4,
+              background: 'var(--bg-2)',
+              padding: '1px 8px',
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              color: 'var(--amber)',
+            }}>
               {children}
             </span>
           ),
           blockquote: ({ children }) => (
-            <span className="border-l border-cyan-500/30 pl-2 italic text-white/45">
+            <span style={{ borderLeft: '2px solid var(--line-2)', paddingLeft: 8, fontStyle: 'italic', color: 'var(--fg-2)' }}>
               {children}{' '}
             </span>
           ),
           a: ({ children }) => (
-            <span className="text-cyan-300 underline decoration-cyan-400/40 underline-offset-2">
+            <span style={{ color: 'var(--amber)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
               {children}
             </span>
           ),
-          hr: () => <span className="text-white/20"> / </span>,
+          hr: () => <span style={{ color: 'var(--fg-4)' }}> / </span>,
           br: () => <span>{' '}</span>,
           table: ({ children }) => <span>{children}</span>,
           thead: ({ children }) => <span>{children}</span>,
           tbody: ({ children }) => <span>{children}</span>,
           tr: ({ children }) => <span>{children} </span>,
           th: ({ children }) => (
-            <strong className="font-medium text-white/60">{children}: </strong>
+            <strong style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{children}: </strong>
           ),
           td: ({ children }) => <span>{children} </span>,
           input: ({ checked }) => <span>{checked ? '[x] ' : '[ ] '}</span>,

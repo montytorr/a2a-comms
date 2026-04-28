@@ -6,13 +6,13 @@ import { addComment } from './actions';
 import { formatRelative } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 
-const avatarGradients = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
+const avatarColors: string[] = [
+  'var(--mint)',
+  'var(--peri)',
+  'var(--mint-2)',
+  'var(--amber)',
+  'var(--rose)',
+  'var(--amber-2)',
 ];
 
 function getAvatarIndex(name: string): number {
@@ -20,7 +20,7 @@ function getAvatarIndex(name: string): number {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return Math.abs(hash) % avatarGradients.length;
+  return Math.abs(hash) % avatarColors.length;
 }
 
 interface Comment {
@@ -80,49 +80,87 @@ function CommentItem({ comment }: { comment: Comment }) {
 
   if (isSystem) {
     return (
-      <div className="flex items-start gap-3 py-2">
-        <div className="w-6 h-6 rounded-full bg-white/[0.04] flex items-center justify-center text-[10px] mt-0.5 shrink-0">
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' }}>
+        <div style={{
+          width: 24,
+          height: 24,
+          borderRadius: '50%',
+          background: 'var(--bg-3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 10,
+          marginTop: 2,
+          flexShrink: 0,
+        }}>
           {config.icon}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-gray-500">
-            <span className="font-medium text-gray-400">{authorName}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+            <span style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{authorName}</span>
             {' · '}
             <span>{comment.content}</span>
           </p>
-          <p className="text-[9px] text-gray-700 font-mono tabular-nums mt-0.5">
+          <p className="mono num" style={{ fontSize: 9, color: 'var(--fg-4)', marginTop: 2 }}>
             {formatRelative(comment.created_at)}
           </p>
           {metadataSummary && (
-            <p className="text-[9px] text-gray-600 mt-1">{metadataSummary}</p>
+            <p style={{ fontSize: 9, color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
           )}
         </div>
-        <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-semibold uppercase tracking-wider text-gray-600 bg-white/[0.03] border border-white/[0.04]">
+        <span style={{
+          flexShrink: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '2px 6px',
+          borderRadius: 4,
+          fontSize: 8,
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          color: 'var(--fg-3)',
+          background: 'var(--bg-2)',
+          border: '1px solid var(--line-1)',
+        }}>
           {config.label}
         </span>
       </div>
     );
   }
 
+  const avatarColor = avatarColors[getAvatarIndex(authorName)];
+
   return (
-    <div className="flex items-start gap-3 py-3">
-      <div
-        className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradients[getAvatarIndex(authorName)]} flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5`}
-      >
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0' }}>
+      <div style={{
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        background: 'var(--bg-3)',
+        border: `1px solid ${avatarColor}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 10,
+        fontWeight: 700,
+        color: avatarColor,
+        flexShrink: 0,
+        marginTop: 2,
+      }}>
         {authorName[0]?.toUpperCase()}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[12px] font-medium text-gray-300">{authorName}</span>
-          <span className="text-[9px] text-gray-700 font-mono tabular-nums">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-1)' }}>{authorName}</span>
+          <span className="mono num" style={{ fontSize: 9, color: 'var(--fg-4)' }}>
             {formatRelative(comment.created_at)}
           </span>
         </div>
-        <div className="text-[13px] text-gray-400">
+        <div style={{ fontSize: 13, color: 'var(--fg-2)' }}>
           <MarkdownPreview content={comment.content} />
         </div>
         {metadataSummary && (
-          <p className="text-[9px] text-gray-600 mt-1">{metadataSummary}</p>
+          <p style={{ fontSize: 9, color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
         )}
       </div>
     </div>
@@ -160,30 +198,32 @@ export default function TaskComments({
   const visibleComments = sorted;
 
   return (
-    <div className="rounded-2xl glass-card animate-fade-in p-6" style={{ animationDelay: '0.25s' }}>
-      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">
+    <div className="card animate-fade-in" style={{ padding: 24, animationDelay: '0.25s' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <p className="upper" style={{ color: 'var(--fg-4)' }}>
           Activity & Comments
           {comments.length > 0 && (
-            <span className="ml-2 text-gray-700 normal-case tracking-normal font-normal">
+            <span style={{ marginLeft: 8, color: 'var(--fg-3)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
               ({comments.length})
             </span>
           )}
         </p>
-        <span className="text-[10px] text-gray-500">Chronological feed</span>
+        <span style={{ fontSize: 10, color: 'var(--fg-3)' }}>Chronological feed</span>
       </div>
 
       {visibleComments.length > 0 ? (
-        <div className="space-y-0 divide-y divide-white/[0.04] mb-4">
-          {visibleComments.map((c) => (
-            <CommentItem key={c.id} comment={c} />
+        <div style={{ marginBottom: 16 }}>
+          {visibleComments.map((c, i) => (
+            <div key={c.id} style={{ borderTop: i > 0 ? '1px solid var(--line-1)' : 'none' }}>
+              <CommentItem comment={c} />
+            </div>
           ))}
         </div>
       ) : (
-        <p className="text-[12px] text-gray-600 italic mb-4">No activity yet.</p>
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', fontStyle: 'italic', marginBottom: 16 }}>No activity yet.</p>
       )}
 
-      <div className="border-t border-white/[0.06] pt-4">
+      <div style={{ borderTop: '1px solid var(--line-1)', paddingTop: 16 }}>
         <textarea
           ref={textareaRef}
           value={content}
@@ -200,17 +240,34 @@ export default function TaskComments({
           }}
           placeholder="Add a comment… (markdown supported)"
           disabled={isPending}
-          className="w-full bg-white/[0.03] text-[13px] text-gray-300 leading-relaxed rounded-lg p-3 outline-none ring-1 ring-white/[0.06] focus:ring-cyan-500/30 resize-none placeholder-gray-600 min-h-[60px] transition-all"
+          style={{
+            width: '100%',
+            background: 'var(--bg-2)',
+            fontSize: 13,
+            color: 'var(--fg-1)',
+            lineHeight: 1.6,
+            borderRadius: 6,
+            padding: 12,
+            outline: 'none',
+            border: '1px solid var(--line-1)',
+            resize: 'none',
+            minHeight: 60,
+            transition: 'border-color 0.15s',
+            fontFamily: 'inherit',
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--amber)'; }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-1)'; }}
         />
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-[9px] text-gray-700">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+          <span style={{ fontSize: 9, color: 'var(--fg-4)' }}>
             Markdown supported · ⌘+Enter to submit
           </span>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={isPending || !content.trim()}
-            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="btn btn--primary btn--sm"
+            style={{ opacity: isPending || !content.trim() ? 0.35 : 1, cursor: isPending || !content.trim() ? 'not-allowed' : 'pointer' }}
           >
             {isPending ? 'Sending…' : 'Comment'}
           </button>

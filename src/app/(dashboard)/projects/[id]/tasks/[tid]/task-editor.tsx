@@ -6,20 +6,20 @@ import MarkdownPreview from '@/components/markdown-preview';
 import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
 
-const priorityOptions: { id: TaskPriority; label: string; icon: string; color: string }[] = [
-  { id: 'urgent', label: 'Urgent', icon: '🔴', color: 'text-red-400' },
-  { id: 'high', label: 'High', icon: '🟠', color: 'text-orange-400' },
-  { id: 'medium', label: 'Medium', icon: '🔵', color: 'text-blue-400' },
-  { id: 'low', label: 'Low', icon: '⚪', color: 'text-gray-500' },
+const priorityOptions: { id: TaskPriority; label: string; icon: string; varColor: string }[] = [
+  { id: 'urgent', label: 'Urgent', icon: '🔴', varColor: 'var(--rose)' },
+  { id: 'high',   label: 'High',   icon: '🟠', varColor: 'var(--amber)' },
+  { id: 'medium', label: 'Medium', icon: '🔵', varColor: 'var(--peri)' },
+  { id: 'low',    label: 'Low',    icon: '⚪', varColor: 'var(--fg-3)' },
 ];
 
-const avatarGradients = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
+const avatarColors: string[] = [
+  'var(--mint)',
+  'var(--peri)',
+  'var(--mint-2)',
+  'var(--amber)',
+  'var(--rose)',
+  'var(--amber-2)',
 ];
 
 function getAvatarIndex(name: string): number {
@@ -27,7 +27,7 @@ function getAvatarIndex(name: string): number {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return Math.abs(hash) % avatarGradients.length;
+  return Math.abs(hash) % avatarColors.length;
 }
 
 // ----- Inline Editable Title -----
@@ -66,7 +66,17 @@ function EditableTitle({
     return (
       <h1
         onClick={() => setEditing(true)}
-        className="text-[24px] font-bold text-white tracking-tight mb-3 cursor-pointer hover:bg-white/[0.03] rounded-lg px-1 -mx-1 transition-colors"
+        className="h1"
+        style={{
+          cursor: 'pointer',
+          marginBottom: 12,
+          padding: '4px 6px',
+          marginLeft: -6,
+          borderRadius: 6,
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
         title="Click to edit"
       >
         {value}
@@ -85,7 +95,22 @@ function EditableTitle({
         if (e.key === 'Escape') { setText(value); setEditing(false); }
       }}
       disabled={isPending}
-      className="text-[24px] font-bold text-white tracking-tight mb-3 bg-white/[0.03] rounded-lg px-1 -mx-1 outline-none ring-1 ring-cyan-500/30 w-full"
+      style={{
+        fontSize: 28,
+        fontWeight: 600,
+        color: 'var(--fg-0)',
+        letterSpacing: '-0.02em',
+        marginBottom: 12,
+        background: 'var(--bg-2)',
+        borderRadius: 6,
+        padding: '4px 6px',
+        marginLeft: -6,
+        outline: 'none',
+        border: '1px solid var(--amber)',
+        boxShadow: '0 0 0 3px oklch(0.70 0.16 60 / 0.15)',
+        width: 'calc(100% + 12px)',
+        fontFamily: 'inherit',
+      }}
     />
   );
 }
@@ -129,20 +154,29 @@ function EditableDescription({
     return (
       <div
         onClick={() => setEditing(true)}
-        className="cursor-pointer hover:bg-white/[0.02] rounded-lg p-2 -m-2 transition-colors min-h-[40px]"
+        style={{
+          cursor: 'pointer',
+          borderRadius: 6,
+          padding: 8,
+          margin: -8,
+          minHeight: 40,
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
         title="Click to edit description"
       >
         {value ? (
           <MarkdownPreview content={value} />
         ) : (
-          <p className="text-[13px] text-gray-600 italic">Click to add description…</p>
+          <p style={{ fontSize: 13, color: 'var(--fg-4)', fontStyle: 'italic' }}>Click to add description…</p>
         )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <textarea
         ref={textareaRef}
         value={text}
@@ -156,13 +190,27 @@ function EditableDescription({
         }}
         disabled={isPending}
         placeholder="Write description (markdown supported)…"
-        className="w-full bg-white/[0.03] text-[13px] text-gray-300 leading-relaxed rounded-lg p-2 outline-none ring-1 ring-cyan-500/30 resize-none placeholder-gray-600 min-h-[80px]"
+        style={{
+          width: '100%',
+          background: 'var(--bg-2)',
+          fontSize: 13,
+          color: 'var(--fg-1)',
+          lineHeight: 1.6,
+          borderRadius: 6,
+          padding: 8,
+          outline: 'none',
+          border: '1px solid var(--amber)',
+          boxShadow: '0 0 0 3px oklch(0.70 0.16 60 / 0.15)',
+          resize: 'none',
+          minHeight: 80,
+          fontFamily: 'inherit',
+        }}
       />
-      <div className="flex justify-end gap-1.5">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
         <button
           type="button"
           onClick={() => { setText(value || ''); setEditing(false); }}
-          className="px-2 py-1 rounded-md text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+          className="btn btn--ghost btn--sm"
         >
           Cancel
         </button>
@@ -170,7 +218,8 @@ function EditableDescription({
           type="button"
           onClick={save}
           disabled={isPending}
-          className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 transition-all"
+          className="btn btn--primary btn--sm"
+          style={{ opacity: isPending ? 0.3 : 1 }}
         >
           {isPending ? 'Saving…' : 'Save'}
         </button>
@@ -215,52 +264,132 @@ function AssigneePicker({
   const current = members.find(m => m.agent?.id === currentId)?.agent;
 
   return (
-    <div className="relative" ref={ref}>
+    <div style={{ position: 'relative' }} ref={ref}>
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-2 hover:bg-white/[0.04] rounded-lg px-2 py-1 -mx-2 transition-colors w-full text-left"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: 'transparent',
+          border: 'none',
+          padding: '4px 8px',
+          marginLeft: -8,
+          borderRadius: 6,
+          cursor: 'pointer',
+          width: '100%',
+          textAlign: 'left',
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
         {current ? (
           <>
-            <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarGradients[getAvatarIndex(current.display_name || current.name)]} flex items-center justify-center text-[9px] font-bold text-white`}>
+            <div style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'var(--bg-3)',
+              border: `1px solid ${avatarColors[getAvatarIndex(current.display_name || current.name)]}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 9,
+              fontWeight: 700,
+              color: avatarColors[getAvatarIndex(current.display_name || current.name)],
+              flexShrink: 0,
+            }}>
               {(current.display_name || current.name)[0]?.toUpperCase()}
             </div>
-            <span className="text-[13px] text-gray-300 font-medium">{current.display_name || current.name}</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-1)', fontWeight: 500 }}>{current.display_name || current.name}</span>
           </>
         ) : (
-          <span className="text-[12px] text-gray-600 italic">Unassigned — click to assign</span>
+          <span style={{ fontSize: 12, color: 'var(--fg-4)', fontStyle: 'italic' }}>Unassigned — click to assign</span>
         )}
-        {isPending && <span className="text-[10px] text-gray-500 ml-auto">…</span>}
+        {isPending && <span style={{ fontSize: 10, color: 'var(--fg-3)', marginLeft: 'auto' }}>…</span>}
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 min-w-[200px] max-h-[220px] overflow-y-auto rounded-xl border border-white/[0.06] bg-[#0a0a14]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
+        <div
+          className="animate-fade-in"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            zIndex: 50,
+            minWidth: 200,
+            maxHeight: 220,
+            overflowY: 'auto',
+            borderRadius: 8,
+            border: '1px solid var(--line-1)',
+            background: 'var(--bg-1)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+          }}
+        >
           <button
             onClick={() => handleSelect(null)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] text-gray-500 hover:text-white hover:bg-white/[0.04] transition-colors"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 12px',
+              textAlign: 'left',
+              fontSize: 11,
+              color: 'var(--fg-3)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.1s, color 0.1s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; }}
           >
-            <span className="w-6 h-6 rounded-full bg-white/[0.06] flex items-center justify-center text-[9px] text-gray-500">—</span>
+            <span style={{
+              width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'var(--fg-3)',
+            }}>—</span>
             Unassigned
           </button>
           {members.map((m) => {
             if (!m.agent) return null;
             const name = m.agent.display_name || m.agent.name;
             const isSelected = m.agent.id === currentId;
+            const avatarColor = avatarColors[getAvatarIndex(name)];
             return (
               <button
                 key={m.agent.id}
                 onClick={() => handleSelect(m.agent!.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] transition-colors ${
-                  isSelected ? 'text-cyan-400 bg-white/[0.04]' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-                }`}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontSize: 11,
+                  color: isSelected ? 'var(--amber)' : 'var(--fg-2)',
+                  background: isSelected ? 'var(--bg-3)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.1s, color 0.1s',
+                }}
+                onMouseEnter={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
+                onMouseLeave={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
               >
-                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarGradients[getAvatarIndex(name)]} flex items-center justify-center text-[9px] font-bold text-white`}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-3)',
+                  border: `1px solid ${avatarColor}`, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontSize: 9, fontWeight: 700, color: avatarColor, flexShrink: 0,
+                }}>
                   {name[0]?.toUpperCase()}
                 </div>
                 {name}
                 {isSelected && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 )}
@@ -309,14 +438,36 @@ function LabelsEditor({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5 mb-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
         {labels.map((label) => (
-          <span key={label} className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-400 bg-violet-500/[0.08] px-2 py-0.5 rounded-full border border-violet-500/10 group/label">
+          <span
+            key={label}
+            className="pill pill--peri"
+            style={{ gap: 4 }}
+          >
             {label}
             <button
               onClick={() => removeLabel(label)}
               disabled={isPending}
-              className="opacity-0 group-hover/label:opacity-100 text-violet-400 hover:text-red-400 transition-all text-[8px] leading-none"
+              style={{
+                color: 'var(--peri)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 10,
+                lineHeight: 1,
+                padding: 0,
+                opacity: 0,
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--rose)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.opacity = '0';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--peri)';
+              }}
             >
               ×
             </button>
@@ -324,7 +475,7 @@ function LabelsEditor({
         ))}
       </div>
       {editing ? (
-        <div className="flex gap-1">
+        <div style={{ display: 'flex', gap: 6 }}>
           <input
             ref={inputRef}
             value={input}
@@ -335,12 +486,14 @@ function LabelsEditor({
             }}
             placeholder="Label name…"
             disabled={isPending}
-            className="flex-1 bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none"
+            className="cp-input"
+            style={{ flex: 1 }}
           />
           <button
             onClick={addLabel}
             disabled={!input.trim() || isPending}
-            className="px-2 py-1 rounded-md text-[10px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 transition-all"
+            className="btn btn--sm btn--primary"
+            style={{ opacity: !input.trim() || isPending ? 0.35 : 1 }}
           >
             Add
           </button>
@@ -348,7 +501,17 @@ function LabelsEditor({
       ) : (
         <button
           onClick={() => setEditing(true)}
-          className="text-[10px] text-gray-600 hover:text-cyan-400 transition-colors"
+          style={{
+            fontSize: 10,
+            color: 'var(--fg-3)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            transition: 'color 0.1s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--amber)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; }}
         >
           + Add label
         </button>
@@ -378,21 +541,27 @@ function DueDatePicker({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <input
         type="date"
         value={value?.split('T')[0] || ''}
         onChange={(e) => handleChange(e.target.value)}
         disabled={isPending}
-        className={`bg-white/[0.03] text-[12px] rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none [color-scheme:dark] ${
-          isOverdue ? 'text-red-400' : 'text-gray-300'
-        }`}
+        className="cp-input"
+        style={{
+          width: 'auto',
+          colorScheme: 'dark',
+          color: isOverdue ? 'var(--rose)' : 'var(--fg-1)',
+        }}
       />
       {value && (
         <button
           onClick={() => handleChange('')}
           disabled={isPending}
-          className="text-[10px] text-gray-600 hover:text-red-400 transition-colors"
+          className="btn btn--ghost btn--sm"
+          style={{ fontSize: 10 }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--rose)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = ''; }}
         >
           Clear
         </button>
@@ -428,18 +597,46 @@ function PriorityPicker({
   const current = priorityOptions.find(p => p.id === value) || priorityOptions[2];
 
   return (
-    <div className="relative" ref={ref}>
+    <div style={{ position: 'relative' }} ref={ref}>
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className={`flex items-center gap-1.5 hover:bg-white/[0.04] rounded-lg px-2 py-1 -mx-2 transition-colors ${current.color}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'transparent',
+          border: 'none',
+          padding: '4px 8px',
+          marginLeft: -8,
+          borderRadius: 6,
+          cursor: 'pointer',
+          color: current.varColor,
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
         <span>{current.icon}</span>
-        <span className="text-[12px] font-medium capitalize">{current.label}</span>
+        <span style={{ fontSize: 12, fontWeight: 500 }}>{current.label}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 min-w-[140px] rounded-xl border border-white/[0.06] bg-[#0a0a14]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
+        <div
+          className="animate-fade-in"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            zIndex: 50,
+            minWidth: 140,
+            borderRadius: 8,
+            border: '1px solid var(--line-1)',
+            background: 'var(--bg-1)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+          }}
+        >
           {priorityOptions.map((p) => (
             <button
               key={p.id}
@@ -453,14 +650,27 @@ function PriorityPicker({
                   setOpen(false);
                 }
               }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] transition-colors ${
-                p.id === value ? `${p.color} bg-white/[0.04]` : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-              }`}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: 11,
+                color: p.id === value ? p.varColor : 'var(--fg-2)',
+                background: p.id === value ? 'var(--bg-3)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.1s, color 0.1s',
+              }}
+              onMouseEnter={e => { if (p.id !== value) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
+              onMouseLeave={e => { if (p.id !== value) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
             >
               <span>{p.icon}</span>
-              <span className="font-medium">{p.label}</span>
+              <span style={{ fontWeight: 500 }}>{p.label}</span>
               {p.id === value && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
               )}
@@ -500,18 +710,53 @@ function SprintPicker({
 
   const current = sprints.find(s => s.id === currentSprintId);
 
+  function sprintDotClass(status: string) {
+    if (status === 'active') return 'dot dot--amber';
+    if (status === 'completed') return 'dot dot--mint';
+    return 'dot';
+  }
+
   return (
-    <div className="relative" ref={ref}>
+    <div style={{ position: 'relative' }} ref={ref}>
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1.5 hover:bg-white/[0.04] rounded-lg px-2 py-1 -mx-2 transition-colors w-full text-left"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'transparent',
+          border: 'none',
+          padding: '4px 8px',
+          marginLeft: -8,
+          borderRadius: 6,
+          cursor: 'pointer',
+          width: '100%',
+          textAlign: 'left',
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
-        <span className="text-[12px] text-gray-300 font-medium">{current?.title || 'Backlog'}</span>
+        <span style={{ fontSize: 12, color: 'var(--fg-1)', fontWeight: 500 }}>{current?.title || 'Backlog'}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] rounded-xl border border-white/[0.06] bg-[#0a0a14]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
+        <div
+          className="animate-fade-in"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            zIndex: 50,
+            minWidth: 180,
+            borderRadius: 8,
+            border: '1px solid var(--line-1)',
+            background: 'var(--bg-1)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+          }}
+        >
           <button
             onClick={() => {
               if (currentSprintId !== null) {
@@ -523,13 +768,26 @@ function SprintPicker({
                 setOpen(false);
               }
             }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] transition-colors ${
-              !currentSprintId ? 'text-cyan-400 bg-white/[0.04]' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-            }`}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 12px',
+              textAlign: 'left',
+              fontSize: 11,
+              color: !currentSprintId ? 'var(--amber)' : 'var(--fg-2)',
+              background: !currentSprintId ? 'var(--bg-3)' : 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.1s, color 0.1s',
+            }}
+            onMouseEnter={e => { if (currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
+            onMouseLeave={e => { if (currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
           >
             Backlog
             {!currentSprintId && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             )}
@@ -547,14 +805,27 @@ function SprintPicker({
                   setOpen(false);
                 }
               }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] transition-colors ${
-                s.id === currentSprintId ? 'text-cyan-400 bg-white/[0.04]' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-              }`}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: 11,
+                color: s.id === currentSprintId ? 'var(--amber)' : 'var(--fg-2)',
+                background: s.id === currentSprintId ? 'var(--bg-3)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.1s, color 0.1s',
+              }}
+              onMouseEnter={e => { if (s.id !== currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
+              onMouseLeave={e => { if (s.id !== currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'active' ? 'bg-cyan-400' : s.status === 'completed' ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+              <span className={sprintDotClass(s.status)} />
               {s.title}
               {s.id === currentSprintId && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
               )}
@@ -583,7 +854,13 @@ function DeleteTaskButton({ projectId, taskId }: { projectId: string; taskId: st
     <button
       onClick={handleDelete}
       disabled={isPending}
-      className="w-full mt-2 py-2 rounded-xl border border-red-500/15 text-[11px] font-medium text-red-400/70 hover:text-red-400 hover:bg-red-500/[0.06] hover:border-red-500/25 transition-all disabled:opacity-30"
+      className="btn btn--danger"
+      style={{
+        width: '100%',
+        marginTop: 8,
+        justifyContent: 'center',
+        opacity: isPending ? 0.35 : 1,
+      }}
     >
       {isPending ? 'Deleting…' : 'Delete Task'}
     </button>

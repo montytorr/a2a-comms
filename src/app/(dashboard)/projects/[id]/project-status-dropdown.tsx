@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect, useTransition } from 'react';
+import { ChevronDown, Check } from 'lucide-react';
 import type { ProjectStatus } from '@/lib/types';
 import { updateProjectStatus } from './actions';
 
-const statusConfig: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {
-  planning: { bg: 'bg-amber-500/[0.08]', text: 'text-amber-400', dot: 'bg-amber-400' },
-  active: { bg: 'bg-cyan-500/[0.08]', text: 'text-cyan-400', dot: 'bg-cyan-400' },
-  completed: { bg: 'bg-emerald-500/[0.08]', text: 'text-emerald-400', dot: 'bg-emerald-400' },
-  archived: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', dot: 'bg-gray-500' },
+type StatusTone = 'amber' | 'mint' | 'peri' | 'ghost';
+
+const statusConfig: Record<ProjectStatus, { tone: StatusTone; dotClass: string }> = {
+  planning: { tone: 'amber', dotClass: 'dot dot--amber' },
+  active:   { tone: 'mint',  dotClass: 'dot dot--mint' },
+  completed:{ tone: 'mint',  dotClass: 'dot dot--mint' },
+  archived: { tone: 'ghost', dotClass: 'dot' },
 };
 
 const allStatuses: ProjectStatus[] = ['planning', 'active', 'completed', 'archived'];
@@ -53,17 +56,30 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all cursor-pointer hover:ring-1 hover:ring-white/[0.1] ${sc.bg} ${sc.text} ${isPending ? 'opacity-50' : ''}`}
+        className={`pill pill--${sc.tone}`}
+        style={{ opacity: isPending ? 0.5 : 1, cursor: 'pointer' }}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} ${isPending ? 'animate-pulse' : ''}`} />
+        <span className={sc.dotClass} style={isPending ? { animation: 'pulse 1s infinite' } : undefined} />
         {isPending ? 'Updating…' : currentStatus}
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform ${open ? 'rotate-180' : ''}`}>
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <ChevronDown
+          size={10}
+          style={{ transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 z-50 min-w-[160px] rounded-xl border border-white/[0.06] bg-[#0a0a14]/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-fade-in">
+        <div
+          className="card"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
+            zIndex: 50,
+            minWidth: 160,
+            padding: 0,
+            overflow: 'hidden',
+          }}
+        >
           {allStatuses.map((status) => {
             const sOpt = statusConfig[status];
             const isSelected = status === currentStatus;
@@ -71,19 +87,37 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
               <button
                 key={status}
                 onClick={() => handleSelect(status)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] font-medium transition-colors ${
-                  isSelected
-                    ? `${sOpt.text} bg-white/[0.04]`
-                    : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-                }`}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  background: isSelected ? 'var(--bg-2)' : 'transparent',
+                  color: isSelected ? 'var(--fg-1)' : 'var(--fg-3)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.1s, color 0.1s',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)';
+                  }
+                }}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${sOpt.dot}`} />
-                <span className="uppercase tracking-wider font-semibold">{status}</span>
-                {isSelected && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                )}
+                <span className={sOpt.dotClass} />
+                <span className="upper" style={{ fontSize: 10 }}>{status}</span>
+                {isSelected && <Check size={12} style={{ marginLeft: 'auto' }} />}
               </button>
             );
           })}

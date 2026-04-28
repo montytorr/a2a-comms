@@ -7,14 +7,6 @@ import type { ProjectStatus } from '@/lib/types';
 const statuses: Array<ProjectStatus | 'all'> = ['all', 'planning', 'active', 'completed', 'archived'];
 const inboxOptions = ['all', 'needs-response', 'history'] as const;
 
-const statusColors: Record<string, { active: string }> = {
-  all: { active: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]' },
-  planning: { active: 'bg-amber-500/15 text-amber-400 border-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.1)]' },
-  active: { active: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]' },
-  completed: { active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.1)]' },
-  archived: { active: 'bg-gray-500/15 text-gray-400 border-gray-500/25' },
-};
-
 export default function ProjectFilters({ current }: { current: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,43 +29,28 @@ export default function ProjectFilters({ current }: { current: string }) {
   );
 
   return (
-    <div className="space-y-4 mb-6">
-      <div className="flex gap-2 flex-wrap">
-        {statuses.map((status) => {
-          const isActive = current === status;
-          const colors = statusColors[status] || statusColors.all;
-          return (
-            <button
-              key={status}
-              onClick={() => updateParams({ status })}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-300 border ${
-                isActive
-                  ? colors.active
-                  : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
-              }`}
-            >
-              {status}
-            </button>
-          );
-        })}
+    <div className="col gap-3" style={{ marginBottom: 16 }}>
+      <div className="seg">
+        {statuses.map((status) => (
+          <button
+            key={status}
+            className={current === status ? 'active' : ''}
+            onClick={() => updateParams({ status })}
+          >
+            {status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
+          </button>
+        ))}
       </div>
-      <div className="flex gap-2 flex-wrap">
-        {inboxOptions.map((option) => {
-          const isActive = currentInbox === option;
-          return (
-            <button
-              key={option}
-              onClick={() => updateParams({ inbox: option })}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-300 border ${
-                isActive
-                  ? 'bg-violet-500/15 text-violet-300 border-violet-500/25 shadow-[0_0_12px_rgba(139,92,246,0.12)]'
-                  : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
-              }`}
-            >
-              {option === 'needs-response' ? 'Needs response' : option}
-            </button>
-          );
-        })}
+      <div className="seg">
+        {inboxOptions.map((option) => (
+          <button
+            key={option}
+            className={currentInbox === option ? 'active' : ''}
+            onClick={() => updateParams({ inbox: option })}
+          >
+            {option === 'needs-response' ? 'Needs Response' : option === 'all' ? 'Open Workflow' : 'History'}
+          </button>
+        ))}
       </div>
     </div>
   );

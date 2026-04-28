@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus, Pencil } from 'lucide-react';
 import SprintStatusDropdown from './sprint-status-dropdown';
 import { formatDate } from '@/lib/format-date';
 import { createSprint, updateSprint } from './actions';
@@ -26,7 +27,13 @@ function SprintEditForm({
   onDone,
 }: {
   projectId: string;
-  sprint?: { id: string; title: string; start_date: string | null; end_date: string | null; goal: string | null };
+  sprint?: {
+    id: string;
+    title: string;
+    start_date: string | null;
+    end_date: string | null;
+    goal: string | null;
+  };
   onDone: () => void;
 }) {
   const [title, setTitle] = useState(sprint?.title || '');
@@ -59,7 +66,7 @@ function SprintEditForm({
           trimmed,
           startDate || undefined,
           endDate || undefined,
-          goal || undefined,
+          goal || undefined
         );
       }
       onDone();
@@ -67,7 +74,11 @@ function SprintEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl border border-cyan-500/20 bg-white/[0.02] p-3 animate-fade-in">
+    <form
+      onSubmit={handleSubmit}
+      className="card"
+      style={{ padding: 12 }}
+    >
       <input
         ref={titleRef}
         type="text"
@@ -75,27 +86,30 @@ function SprintEditForm({
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Sprint title…"
         disabled={isPending}
-        className="w-full bg-transparent text-[12px] text-white placeholder-gray-600 outline-none mb-2 border-b border-white/[0.06] pb-1.5 focus:border-cyan-500/30"
+        className="cp-input"
+        style={{ width: '100%', marginBottom: 8 }}
       />
-      <div className="grid grid-cols-2 gap-2 mb-2">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
         <div>
-          <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold">Start</label>
+          <label className="upper" style={{ display: 'block', fontSize: 9, marginBottom: 6 }}>Start</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             disabled={isPending}
-            className="w-full bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none [color-scheme:dark]"
+            className="cp-input"
+            style={{ width: '100%', colorScheme: 'dark' }}
           />
         </div>
         <div>
-          <label className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold">End</label>
+          <label className="upper" style={{ display: 'block', fontSize: 9, marginBottom: 6 }}>End</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             disabled={isPending}
-            className="w-full bg-white/[0.03] text-[11px] text-gray-300 rounded-md px-2 py-1 border border-white/[0.06] focus:border-cyan-500/30 outline-none [color-scheme:dark]"
+            className="cp-input"
+            style={{ width: '100%', colorScheme: 'dark' }}
           />
         </div>
       </div>
@@ -105,20 +119,17 @@ function SprintEditForm({
         onChange={(e) => setGoal(e.target.value)}
         placeholder="Sprint goal (optional)…"
         disabled={isPending}
-        className="w-full bg-transparent text-[11px] text-gray-400 placeholder-gray-600 outline-none mb-2"
+        className="cp-input"
+        style={{ width: '100%', marginBottom: 8 }}
       />
-      <div className="flex justify-end gap-1.5">
-        <button
-          type="button"
-          onClick={onDone}
-          className="px-2 py-1 rounded-md text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
-        >
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+        <button type="button" onClick={onDone} className="btn btn--ghost btn--sm">
           Cancel
         </button>
         <button
           type="submit"
           disabled={!title.trim() || isPending}
-          className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="btn btn--primary btn--sm"
         >
           {isPending ? 'Saving…' : sprint ? 'Save' : 'Create'}
         </button>
@@ -127,7 +138,12 @@ function SprintEditForm({
   );
 }
 
-export default function SprintSelector({ sprints, currentSprintId, projectId, sprintStats }: SprintSelectorProps) {
+export default function SprintSelector({
+  sprints,
+  currentSprintId,
+  projectId,
+  sprintStats,
+}: SprintSelectorProps) {
   const router = useRouter();
   const [showNewForm, setShowNewForm] = useState(false);
   const [editingSprintId, setEditingSprintId] = useState<string | null>(null);
@@ -135,46 +151,56 @@ export default function SprintSelector({ sprints, currentSprintId, projectId, sp
   const tabs = [
     { id: 'all', label: 'All Tasks' },
     { id: 'backlog', label: 'Backlog' },
-    ...sprints.map(s => ({ id: s.id, label: s.title, status: s.status })),
+    ...sprints.map((s) => ({ id: s.id, label: s.title, status: s.status })),
   ];
 
-  const activeSprint = sprints.find(s => s.id === currentSprintId);
+  const activeSprint = sprints.find((s) => s.id === currentSprintId);
 
   return (
-    <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-      <div className="flex gap-2 flex-wrap mb-3 items-center">
+    <div style={{ marginBottom: 24 }}>
+      {/* Tab row */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
         {tabs.map((tab) => {
           const isActive = currentSprintId === tab.id;
           const sprintStatus = 'status' in tab ? tab.status : null;
           const stats = sprintStats?.[tab.id];
           const pct = stats && stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : null;
-          const sprintData = sprints.find(s => s.id === tab.id);
+          const sprintData = sprints.find((s) => s.id === tab.id);
 
           return (
-            <div key={tab.id} className="flex items-center gap-0.5 group/sprint">
+            <div
+              key={tab.id}
+              style={{ display: 'flex', alignItems: 'center', gap: 2 }}
+              className="group/sprint"
+            >
               <button
                 onClick={() => {
                   const params = tab.id === 'all' ? '' : `?sprint=${tab.id}`;
                   router.push(`/projects/${projectId}${params}`);
                 }}
-                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-300 border flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]'
-                    : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
-                }`}
+                className={isActive ? 'cp-tab cp-tab--active' : 'cp-tab'}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 {sprintStatus && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${sprintStatus === 'active' ? 'bg-cyan-400' : sprintStatus === 'completed' ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                  <span
+                    className={`dot${sprintStatus === 'active' ? ' dot--mint' : sprintStatus === 'completed' ? ' dot--mint' : ''}`}
+                  />
                 )}
                 {tab.label}
                 {pct !== null && stats && stats.total > 0 && (
-                  <span className={`ml-1 text-[9px] font-mono tabular-nums ${
-                    pct === 100 ? 'text-emerald-400' : isActive ? 'text-cyan-400/70' : 'text-gray-600'
-                  }`}>
+                  <span
+                    className="mono"
+                    style={{
+                      fontSize: 9,
+                      marginLeft: 2,
+                      color: pct === 100 ? 'var(--mint)' : isActive ? 'var(--peri)' : 'var(--fg-4)',
+                    }}
+                  >
                     {pct}%
                   </span>
                 )}
               </button>
+
               {sprintStatus && (
                 <SprintStatusDropdown
                   projectId={projectId}
@@ -182,7 +208,7 @@ export default function SprintSelector({ sprints, currentSprintId, projectId, sp
                   currentStatus={sprintStatus}
                 />
               )}
-              {/* Edit button for sprints */}
+
               {sprintData && (
                 <button
                   onClick={(e) => {
@@ -190,89 +216,138 @@ export default function SprintSelector({ sprints, currentSprintId, projectId, sp
                     setEditingSprintId(editingSprintId === tab.id ? null : tab.id);
                     setShowNewForm(false);
                   }}
-                  className="p-1 rounded-md transition-all hover:bg-white/[0.06] opacity-0 group-hover/sprint:opacity-100"
+                  className="btn btn--ghost btn--icon"
                   title="Edit sprint"
+                  style={{ opacity: 0 }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.opacity = '0';
+                  }}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500 hover:text-gray-300">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                  <Pencil size={11} style={{ color: 'var(--fg-4)' }} />
                 </button>
               )}
             </div>
           );
         })}
 
-        {/* New Sprint Button */}
+        {/* New Sprint button */}
         <button
           onClick={() => {
             setShowNewForm(!showNewForm);
             setEditingSprintId(null);
           }}
-          className="px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-dashed border-white/[0.08] text-gray-600 hover:text-cyan-400 hover:border-cyan-500/25 hover:bg-cyan-500/[0.03] transition-all flex items-center gap-1"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '6px 12px',
+            borderRadius: 20,
+            border: '1px dashed var(--line-1)',
+            background: 'transparent',
+            color: 'var(--fg-4)',
+            fontSize: 10,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            cursor: 'pointer',
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--peri)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--peri)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--peri-bg)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-4)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line-1)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+          }}
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M12 5v14m-7-7h14" />
-          </svg>
+          <Plus size={10} />
           New Sprint
         </button>
       </div>
 
       {/* New Sprint Form */}
       {showNewForm && (
-        <div className="mb-3 max-w-md">
-          <SprintEditForm
-            projectId={projectId}
-            onDone={() => setShowNewForm(false)}
-          />
+        <div style={{ marginBottom: 12, maxWidth: 448 }}>
+          <SprintEditForm projectId={projectId} onDone={() => setShowNewForm(false)} />
         </div>
       )}
 
       {/* Edit Sprint Form */}
-      {editingSprintId && (() => {
-        const sprint = sprints.find(s => s.id === editingSprintId);
-        if (!sprint) return null;
-        return (
-          <div className="mb-3 max-w-md">
-            <SprintEditForm
-              projectId={projectId}
-              sprint={sprint}
-              onDone={() => setEditingSprintId(null)}
-            />
-          </div>
-        );
-      })()}
+      {editingSprintId &&
+        (() => {
+          const sprint = sprints.find((s) => s.id === editingSprintId);
+          if (!sprint) return null;
+          return (
+            <div style={{ marginBottom: 12, maxWidth: 448 }}>
+              <SprintEditForm
+                projectId={projectId}
+                sprint={sprint}
+                onDone={() => setEditingSprintId(null)}
+              />
+            </div>
+          );
+        })()}
 
-      {/* Active sprint info with progress bar */}
+      {/* Active sprint info + progress */}
       {activeSprint && !editingSprintId && (
-        <div className="rounded-xl glass-card px-4 py-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 min-w-0">
+        <div className="card" style={{ padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {activeSprint.goal && (
                 <>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">Sprint Goal</p>
-                  <p className="text-[12px] text-gray-400 leading-relaxed mb-2">{activeSprint.goal}</p>
+                  <p className="upper" style={{ fontSize: 9, marginBottom: 4 }}>Sprint Goal</p>
+                  <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 8 }}>
+                    {activeSprint.goal}
+                  </p>
                 </>
               )}
-              {/* Progress bar */}
               {(() => {
                 const stats = sprintStats?.[activeSprint.id];
                 if (!stats || stats.total === 0) return null;
                 const pct = Math.round((stats.done / stats.total) * 100);
                 return (
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Progress</p>
-                      <p className="text-[10px] font-mono tabular-nums text-gray-500">
-                        {stats.done}/{stats.total} tasks · <span className={pct === 100 ? 'text-emerald-400' : 'text-cyan-400'}>{pct}%</span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 6,
+                      }}
+                    >
+                      <p className="upper" style={{ fontSize: 9 }}>Progress</p>
+                      <p
+                        className="mono"
+                        style={{ fontSize: 10, color: 'var(--fg-4)' }}
+                      >
+                        {stats.done}/{stats.total} tasks ·{' '}
+                        <span style={{ color: pct === 100 ? 'var(--mint)' : 'var(--peri)' }}>
+                          {pct}%
+                        </span>
                       </p>
                     </div>
-                    <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+                    <div
+                      style={{
+                        height: 6,
+                        background: 'var(--bg-2)',
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                      }}
+                    >
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          pct === 100 ? 'bg-emerald-400' : 'bg-gradient-to-r from-cyan-500 to-cyan-400'
-                        }`}
-                        style={{ width: `${pct}%` }}
+                        style={{
+                          height: '100%',
+                          borderRadius: 4,
+                          width: `${pct}%`,
+                          background: pct === 100 ? 'var(--mint)' : 'var(--peri)',
+                          transition: 'width 0.5s',
+                        }}
                       />
                     </div>
                   </div>
@@ -280,9 +355,9 @@ export default function SprintSelector({ sprints, currentSprintId, projectId, sp
               })()}
             </div>
             {(activeSprint.start_date || activeSprint.end_date) && (
-              <div className="text-right shrink-0">
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">Duration</p>
-                <p className="text-[11px] text-gray-500 font-mono tabular-nums">
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p className="upper" style={{ fontSize: 9, marginBottom: 4 }}>Duration</p>
+                <p className="mono dim" style={{ fontSize: 11 }}>
                   {activeSprint.start_date ? formatDate(activeSprint.start_date) : '—'}
                   {' → '}
                   {activeSprint.end_date ? formatDate(activeSprint.end_date) : '—'}

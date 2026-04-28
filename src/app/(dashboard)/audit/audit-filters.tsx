@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
+import { Search } from 'lucide-react';
 
 const actionTypes = [
-  { value: 'all', label: 'All Actions' },
+  { value: 'all', label: 'All event types' },
   { value: 'contract.propose', label: 'Propose Contract' },
   { value: 'contract.accept', label: 'Accept Contract' },
   { value: 'contract.reject', label: 'Reject Contract' },
@@ -12,8 +13,7 @@ const actionTypes = [
   { value: 'message.send', label: 'Send Message' },
   { value: 'kill_switch.activate', label: 'Kill Switch Activate' },
   { value: 'kill_switch.deactivate', label: 'Kill Switch Deactivate' },
-  // Security events
-  { value: 'security', label: '🔒 Security Events' },
+  { value: 'security', label: 'Security Events' },
   { value: 'auth.success', label: 'Auth Success' },
   { value: 'auth.failure', label: 'Auth Failure' },
   { value: 'authz.denied', label: 'Authorization Denied' },
@@ -27,17 +27,11 @@ const actionTypes = [
 ];
 
 const dateRanges = [
-  { value: 'all', label: 'All Time' },
+  { value: 'all', label: 'All time' },
   { value: 'today', label: 'Today' },
-  { value: '7d', label: 'Last 7 Days' },
-  { value: '30d', label: 'Last 30 Days' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
 ];
-
-const selectClasses =
-  'bg-[#0a0a14] border border-white/[0.06] rounded-xl px-3 py-2 text-[12px] text-gray-300 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 appearance-none cursor-pointer hover:border-white/[0.1]';
-
-const inputClasses =
-  'bg-[#0a0a14] border border-white/[0.06] rounded-xl px-3 py-2 text-[12px] text-gray-300 placeholder:text-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 hover:border-white/[0.1]';
 
 export default function AuditFilters() {
   const router = useRouter();
@@ -55,7 +49,6 @@ export default function AuditFilters() {
       } else {
         params.set(key, value);
       }
-      // Reset to page 1 when filters change
       params.delete('page');
       const qs = params.toString();
       router.push(`/audit${qs ? `?${qs}` : ''}`);
@@ -63,28 +56,37 @@ export default function AuditFilters() {
     [router, searchParams],
   );
 
-  const hasFilters = actor || action !== 'all' || dateRange !== 'all';
-
-  const clearAll = useCallback(() => {
-    router.push('/audit');
-  }, [router]);
-
   return (
-    <div className="flex flex-wrap items-center gap-3 mb-6">
-      {/* Actor search */}
-      <input
-        type="text"
-        placeholder="Filter by actor..."
-        value={actor}
-        onChange={(e) => updateFilter('actor', e.target.value)}
-        className={`${inputClasses} w-44`}
-      />
+    <div className="row gap-3" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+      {/* Actor search — full width on small screens, flex grow on large */}
+      <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 0 }}>
+        <Search
+          size={13}
+          style={{
+            position: 'absolute',
+            left: 10,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--fg-3)',
+            pointerEvents: 'none',
+          }}
+        />
+        <input
+          type="text"
+          placeholder="Search actors…"
+          value={actor}
+          onChange={(e) => updateFilter('actor', e.target.value)}
+          className="cp-input"
+          style={{ paddingLeft: 30 }}
+        />
+      </div>
 
-      {/* Action type */}
+      {/* All actors placeholder select — reuses actor filter visually */}
       <select
         value={action}
         onChange={(e) => updateFilter('action', e.target.value)}
-        className={selectClasses}
+        className="cp-select"
+        style={{ width: 160 }}
       >
         {actionTypes.map((t) => (
           <option key={t.value} value={t.value}>
@@ -97,7 +99,8 @@ export default function AuditFilters() {
       <select
         value={dateRange}
         onChange={(e) => updateFilter('range', e.target.value)}
-        className={selectClasses}
+        className="cp-select"
+        style={{ width: 130 }}
       >
         {dateRanges.map((d) => (
           <option key={d.value} value={d.value}>
@@ -105,16 +108,6 @@ export default function AuditFilters() {
           </option>
         ))}
       </select>
-
-      {/* Clear button */}
-      {hasFilters && (
-        <button
-          onClick={clearAll}
-          className="text-[10px] font-semibold text-gray-600 hover:text-gray-400 transition-colors uppercase tracking-wider"
-        >
-          Clear filters
-        </button>
-      )}
     </div>
   );
 }

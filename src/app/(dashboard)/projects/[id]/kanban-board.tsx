@@ -7,106 +7,53 @@ import { formatDate } from '@/lib/format-date';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 
 const columns: { id: TaskStatus; label: string }[] = [
-  { id: 'backlog', label: 'Backlog' },
-  { id: 'todo', label: 'To Do' },
+  { id: 'backlog',     label: 'Backlog' },
+  { id: 'todo',        label: 'To Do' },
   { id: 'in-progress', label: 'In Progress' },
-  { id: 'in-review', label: 'In Review' },
-  { id: 'done', label: 'Done' },
-  { id: 'cancelled', label: 'Cancelled' },
+  { id: 'in-review',   label: 'In Review' },
+  { id: 'done',        label: 'Done' },
+  { id: 'cancelled',   label: 'Cancelled' },
 ];
 
-const statusColors: Record<TaskStatus, { header: string; dot: string; glow: string; panel: string; count: string }> = {
-  backlog: {
-    header: 'text-gray-400',
-    dot: 'bg-gray-400',
-    glow: '',
-    panel: 'from-white/[0.03] via-white/[0.018] to-white/[0.01]',
-    count: 'border-white/[0.07] bg-white/[0.04] text-gray-400',
-  },
-  todo: {
-    header: 'text-blue-300',
-    dot: 'bg-blue-400',
-    glow: 'shadow-[0_0_10px_rgba(59,130,246,0.18)]',
-    panel: 'from-blue-500/[0.07] via-white/[0.02] to-white/[0.01]',
-    count: 'border-blue-400/15 bg-blue-500/[0.08] text-blue-200',
-  },
-  'in-progress': {
-    header: 'text-cyan-300',
-    dot: 'bg-cyan-400',
-    glow: 'shadow-[0_0_10px_rgba(6,182,212,0.22)]',
-    panel: 'from-cyan-500/[0.08] via-white/[0.02] to-white/[0.01]',
-    count: 'border-cyan-400/15 bg-cyan-500/[0.08] text-cyan-200',
-  },
-  'in-review': {
-    header: 'text-amber-300',
-    dot: 'bg-amber-400',
-    glow: 'shadow-[0_0_10px_rgba(245,158,11,0.18)]',
-    panel: 'from-amber-500/[0.07] via-white/[0.02] to-white/[0.01]',
-    count: 'border-amber-400/15 bg-amber-500/[0.08] text-amber-200',
-  },
-  done: {
-    header: 'text-emerald-300',
-    dot: 'bg-emerald-400',
-    glow: 'shadow-[0_0_10px_rgba(16,185,129,0.18)]',
-    panel: 'from-emerald-500/[0.07] via-white/[0.02] to-white/[0.01]',
-    count: 'border-emerald-400/15 bg-emerald-500/[0.08] text-emerald-200',
-  },
-  cancelled: {
-    header: 'text-red-300',
-    dot: 'bg-red-400',
-    glow: '',
-    panel: 'from-red-500/[0.06] via-white/[0.02] to-white/[0.01]',
-    count: 'border-red-400/15 bg-red-500/[0.08] text-red-200',
-  },
+// Map each status to design-system tokens
+const statusMeta: Record<TaskStatus, {
+  dotClass: string;
+  headingColor: string;
+  panelBg: string;
+  countTone: string;
+}> = {
+  backlog:     { dotClass: 'dot',           headingColor: 'var(--fg-3)',  panelBg: 'var(--bg-1)', countTone: 'ghost' },
+  todo:        { dotClass: 'dot dot--peri', headingColor: 'var(--peri)',  panelBg: 'var(--bg-1)', countTone: 'peri'  },
+  'in-progress':{ dotClass: 'dot dot--amber pulse', headingColor: 'var(--amber)', panelBg: 'var(--amber-bg)', countTone: 'amber' },
+  'in-review': { dotClass: 'dot dot--amber', headingColor: 'var(--amber)', panelBg: 'var(--bg-1)', countTone: 'amber' },
+  done:        { dotClass: 'dot dot--mint', headingColor: 'var(--mint)',  panelBg: 'var(--mint-bg)', countTone: 'mint'  },
+  cancelled:   { dotClass: 'dot dot--rose', headingColor: 'var(--rose)',  panelBg: 'var(--bg-1)', countTone: 'rose'  },
 };
 
-const priorityConfig: Record<TaskPriority, { bg: string; text: string; label: string }> = {
-  urgent: { bg: 'bg-red-500/[0.1]', text: 'text-red-400', label: 'Urgent' },
-  high: { bg: 'bg-orange-500/[0.1]', text: 'text-orange-400', label: 'High' },
-  medium: { bg: 'bg-blue-500/[0.08]', text: 'text-blue-400', label: 'Medium' },
-  low: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', label: 'Low' },
+const priorityTone: Record<TaskPriority, string> = {
+  urgent: 'rose',
+  high:   'amber',
+  medium: 'peri',
+  low:    'ghost',
 };
 
-const avatarGradients = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
+const priorityLabel: Record<TaskPriority, string> = {
+  urgent: 'Urgent',
+  high:   'High',
+  medium: 'Medium',
+  low:    'Low',
+};
+
+const avatarColors = [
+  '#06b6d4', '#7c3aed', '#10b981', '#f97316', '#ec4899', '#f59e0b',
 ];
 
 const dependencyTypeConfig = {
-  blockedBy: {
-    label: 'Blocked by',
-    tone: 'border-red-500/20 bg-red-500/[0.08] text-red-300',
-    previewTone: 'border-l-red-400/50 text-gray-300',
-    previewLabel: 'Waiting on',
-  },
-  blocks: {
-    label: 'Blocking',
-    tone: 'border-amber-500/20 bg-amber-500/[0.08] text-amber-300',
-    previewTone: 'border-l-amber-400/50 text-gray-300',
-    previewLabel: 'Blocking',
-  },
-  sequenceAfter: {
-    label: 'After',
-    tone: 'border-indigo-500/20 bg-indigo-500/[0.08] text-indigo-300',
-    previewTone: 'border-l-indigo-400/50 text-gray-300',
-    previewLabel: 'Follows',
-  },
-  sequenceBefore: {
-    label: 'Before',
-    tone: 'border-sky-500/20 bg-sky-500/[0.08] text-sky-300',
-    previewTone: 'border-l-sky-400/50 text-gray-300',
-    previewLabel: 'Leads into',
-  },
-  related: {
-    label: 'Related',
-    tone: 'border-violet-500/20 bg-violet-500/[0.08] text-violet-300',
-    previewTone: 'border-l-violet-400/50 text-gray-300',
-    previewLabel: 'Related to',
-  },
+  blockedBy:     { label: 'Blocked by',  tone: 'rose',  previewLabel: 'Waiting on' },
+  blocks:        { label: 'Blocking',    tone: 'amber', previewLabel: 'Blocking' },
+  sequenceAfter: { label: 'After',       tone: 'peri',  previewLabel: 'Follows' },
+  sequenceBefore:{ label: 'Before',      tone: 'peri',  previewLabel: 'Leads into' },
+  related:       { label: 'Related',     tone: 'ghost', previewLabel: 'Related to' },
 } as const;
 
 function getAvatarIndex(name: string): number {
@@ -114,7 +61,7 @@ function getAvatarIndex(name: string): number {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return Math.abs(hash) % avatarGradients.length;
+  return Math.abs(hash) % avatarColors.length;
 }
 
 function renderDependencyPreview(items: Array<{ id: string; title: string; status: string }>, maxItems = 2) {
@@ -124,10 +71,7 @@ function renderDependencyPreview(items: Array<{ id: string; title: string; statu
 function compactDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return formatDate(value);
-  return new Intl.DateTimeFormat('en', {
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(date);
 }
 
 export interface TaskRow {
@@ -177,213 +121,433 @@ function timestampOrZero(value?: string) {
 
 function sortTasksForColumn(tasks: TaskRow[], status: TaskStatus) {
   const sorted = [...tasks];
-
   if (status === 'backlog' || status === 'todo') {
     sorted.sort((a, b) => timestampOrZero(b.created_at) - timestampOrZero(a.created_at));
     return sorted;
   }
-
   sorted.sort((a, b) => timestampOrZero(b.updated_at) - timestampOrZero(a.updated_at));
   return sorted;
 }
 
 export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }: KanbanBoardProps) {
   const tasksByStatus = columns.reduce((acc, col) => {
-    acc[col.id] = sortTasksForColumn(tasks.filter(t => t.status === col.id), col.id);
+    acc[col.id] = sortTasksForColumn(tasks.filter((t) => t.status === col.id), col.id);
     return acc;
   }, {} as Record<string, TaskRow[]>);
 
   return (
-    <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-      <div className="overflow-x-auto overflow-y-visible pb-2">
-        <div className="flex min-w-max items-start gap-4">
-        {columns.map((col) => {
-          const colTasks = tasksByStatus[col.id] || [];
-          const sc = statusColors[col.id];
+    <div style={{ animationDelay: '0.1s' }}>
+      <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: 8 }}>
+        <div style={{ display: 'flex', minWidth: 'max-content', alignItems: 'flex-start', gap: 16 }}>
+          {columns.map((col) => {
+            const colTasks = tasksByStatus[col.id] || [];
+            const meta = statusMeta[col.id];
 
-          return (
-            <div key={col.id} className={`w-[360px] min-w-[360px] min-h-0 rounded-[22px] border border-white/[0.06] bg-gradient-to-b ${sc.panel} p-2.5 shadow-[0_14px_36px_rgba(0,0,0,0.26)] ring-1 ring-inset ring-white/[0.02] lg:h-[720px] lg:max-h-[720px] flex flex-col`}>
-              <div className="mb-3 flex items-center justify-between gap-2 rounded-2xl border border-white/[0.05] bg-black/20 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${sc.dot} ${sc.glow}`} />
-                  <span className={`truncate text-[10px] font-semibold uppercase tracking-[0.16em] ${sc.header}`}>
-                    {col.label}
+            return (
+              <div
+                key={col.id}
+                style={{
+                  width: 360,
+                  minWidth: 360,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  maxHeight: 720,
+                  borderRadius: 20,
+                  border: '1px solid var(--line-1)',
+                  background: meta.panelBg,
+                  padding: 10,
+                }}
+              >
+                {/* Column header */}
+                <div
+                  style={{
+                    marginBottom: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    borderRadius: 14,
+                    border: '1px solid var(--line-1)',
+                    background: 'var(--bg-0)',
+                    padding: '8px 12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <span className={meta.dotClass} />
+                    <span
+                      className="upper"
+                      style={{ color: meta.headingColor, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {col.label}
+                    </span>
+                  </div>
+                  <span className={`pill pill--${meta.countTone}`} style={{ fontSize: 9, fontFamily: 'var(--mono)' }}>
+                    {colTasks.length}
                   </span>
                 </div>
-                <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-mono shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${sc.count}`}>
-                  {colTasks.length}
-                </span>
-              </div>
 
-              <div className="space-y-2.5 overflow-y-auto pr-1 lg:flex-1 lg:min-h-0">
-                {colTasks.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-white/[0.07] bg-black/10 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-gray-600">No tasks</p>
-                  </div>
-                )}
-                {colTasks.map((task) => {
-                  const pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
-                  const assigneeName = task.assignee?.display_name || task.assignee?.name;
-                  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
-                  const dependencySummary = task.dependencySummary;
-                  const dependencyGroups = [
-                    { key: 'blockedBy', items: dependencySummary?.blockedBy || [] },
-                    { key: 'blocks', items: dependencySummary?.blocks || [] },
-                    { key: 'sequenceAfter', items: dependencySummary?.sequenceAfter || [] },
-                    { key: 'sequenceBefore', items: dependencySummary?.sequenceBefore || [] },
-                    { key: 'related', items: dependencySummary?.related || [] },
-                  ] as const;
-                  const activeDependencyGroups = dependencyGroups.filter((group) => group.items.length > 0);
-                  const hasDependencyContext = activeDependencyGroups.length > 0;
-                  const blockerState = dependencySummary?.blockedBy?.length
-                    ? getBlockedTaskNotificationState({
-                        updatedAt: task.updated_at || task.created_at || new Date().toISOString(),
-                        blockedAt: task.blocked_at,
-                        blockerFollowUpAt: task.blocker_follow_up_at,
-                        blockerFollowedThroughAt: task.blocker_followed_through_at,
-                        blockerEscalatedAt: task.blocker_escalated_at,
-                        blockerResolutionAction: task.blocker_resolution_action,
-                        blockerResolutionOwner: task.blocker_resolution_owner,
-                        blockerResolutionDueAt: task.blocker_resolution_due_at,
-                        blockerResolutionStatus: task.blocker_resolution_status,
-                        blockedByCount: dependencySummary.blockedBy.length,
-                        blockingTaskTitles: dependencySummary.blockedBy.map((item) => item.title),
-                      })
-                    : null;
-
-                  return (
-                    <Link
-                      key={task.id}
-                      href={`/projects/${projectId}/tasks/${task.id}`}
-                      className="group block rounded-[24px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.028)_42%,rgba(255,255,255,0.01))] p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.28)] ring-1 ring-inset ring-white/[0.03] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.16] hover:bg-[linear-gradient(145deg,rgba(255,255,255,0.1),rgba(255,255,255,0.038)_42%,rgba(255,255,255,0.015))] hover:shadow-[0_20px_48px_rgba(0,0,0,0.34)]"
+                {/* Task list */}
+                <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 4 }}>
+                  {colTasks.length === 0 && (
+                    <div
+                      style={{
+                        borderRadius: 16,
+                        border: '1px dashed var(--line-1)',
+                        background: 'var(--bg-0)',
+                        padding: '24px 0',
+                        textAlign: 'center',
+                      }}
                     >
-                      <div className="flex h-full flex-col gap-3">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-[8px] font-bold uppercase tracking-[0.18em] ${pc.bg} ${pc.text}`}>
-                              {pc.label}
-                            </span>
-                            {task.labels && task.labels.length > 0 && (
-                              <div className="flex min-w-0 flex-wrap gap-1">
-                                {task.labels.slice(0, 3).map((label) => (
-                                  <span
-                                    key={label}
-                                    className="max-w-full truncate rounded-full border border-violet-400/15 bg-violet-500/[0.09] px-2 py-0.5 text-[8px] font-medium uppercase tracking-[0.08em] text-violet-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-                                  >
-                                    {label}
-                                  </span>
-                                ))}
-                                {task.labels.length > 3 && (
-                                  <span className="rounded-full border border-white/[0.07] bg-white/[0.05] px-1.5 py-0.5 text-[8px] font-medium text-gray-400">
-                                    +{task.labels.length - 3}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {task.due_date && (
-                              <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-mono tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${isOverdue ? 'border-red-500/20 bg-red-500/[0.08] text-red-300' : 'border-white/[0.07] bg-white/[0.05] text-gray-400'}`}>
-                                {compactDate(task.due_date)}
-                              </span>
-                            )}
-                            {isOverdue && (
-                              <span className="rounded-md border border-red-500/20 bg-red-500/[0.12] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.14em] text-red-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                                Overdue
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                      <p className="upper" style={{ fontSize: 10, color: 'var(--fg-4)' }}>No tasks</p>
+                    </div>
+                  )}
 
-                        <h4 className="text-[14px] font-semibold leading-5 text-gray-100 transition-colors group-hover:text-white line-clamp-3 [text-wrap:balance]">
-                          {task.title}
-                        </h4>
+                  {colTasks.map((task) => {
+                    const prioTone = priorityTone[task.priority as TaskPriority] || 'ghost';
+                    const prioLabel = priorityLabel[task.priority as TaskPriority] || task.priority;
+                    const assigneeName = task.assignee?.display_name || task.assignee?.name;
+                    const isOverdue =
+                      task.due_date &&
+                      new Date(task.due_date) < new Date() &&
+                      task.status !== 'done';
+                    const dependencySummary = task.dependencySummary;
+                    const dependencyGroups = [
+                      { key: 'blockedBy' as const,      items: dependencySummary?.blockedBy || [] },
+                      { key: 'blocks' as const,         items: dependencySummary?.blocks || [] },
+                      { key: 'sequenceAfter' as const,  items: dependencySummary?.sequenceAfter || [] },
+                      { key: 'sequenceBefore' as const, items: dependencySummary?.sequenceBefore || [] },
+                      { key: 'related' as const,        items: dependencySummary?.related || [] },
+                    ];
+                    const activeDependencyGroups = dependencyGroups.filter((g) => g.items.length > 0);
+                    const hasDependencyContext = activeDependencyGroups.length > 0;
+                    const blockerState = dependencySummary?.blockedBy?.length
+                      ? getBlockedTaskNotificationState({
+                          updatedAt: task.updated_at || task.created_at || new Date().toISOString(),
+                          blockedAt: task.blocked_at,
+                          blockerFollowUpAt: task.blocker_follow_up_at,
+                          blockerFollowedThroughAt: task.blocker_followed_through_at,
+                          blockerEscalatedAt: task.blocker_escalated_at,
+                          blockerResolutionAction: task.blocker_resolution_action,
+                          blockerResolutionOwner: task.blocker_resolution_owner,
+                          blockerResolutionDueAt: task.blocker_resolution_due_at,
+                          blockerResolutionStatus: task.blocker_resolution_status,
+                          blockedByCount: dependencySummary.blockedBy.length,
+                          blockingTaskTitles: dependencySummary.blockedBy.map((item) => item.title),
+                        })
+                      : null;
 
-                        {hasDependencyContext && (
-                          <div className="space-y-2 rounded-2xl border border-white/[0.06] bg-black/20 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-                            {blockerState && (
-                              <div className="rounded-xl border border-red-500/18 bg-red-500/[0.06] p-2.5">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-semibold ${blockerState.tone === 'stale' ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : blockerState.tone === 'follow-through' ? 'border-amber-500/20 bg-amber-500/[0.12] text-amber-200' : 'border-rose-500/20 bg-rose-500/[0.10] text-rose-200'}`}>
-                                    {blockerState.tone === 'stale' ? 'Stale blocker' : blockerState.tone === 'follow-through' ? 'Follow-up due' : 'Blocked'}
-                                  </span>
-                                  <span className="inline-flex items-center rounded-full border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-[8px] font-medium text-gray-300">{blockerState.statusLabel}</span>
-                                  {blockerState.dueStateLabel && (
-                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-medium ${blockerState.dueState === 'overdue' ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : blockerState.dueState === 'due-soon' ? 'border-amber-500/20 bg-amber-500/[0.12] text-amber-200' : 'border-cyan-500/20 bg-cyan-500/[0.1] text-cyan-200'}`}>{blockerState.dueStateLabel}</span>
+                    return (
+                      <Link
+                        key={task.id}
+                        href={`/projects/${projectId}/tasks/${task.id}`}
+                        style={{
+                          display: 'block',
+                          borderRadius: 20,
+                          border: '1px solid var(--line-1)',
+                          background: 'var(--bg-1)',
+                          padding: 14,
+                          textDecoration: 'none',
+                          transition: 'transform 0.15s, border-color 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-2px)';
+                          (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line-strong)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
+                          (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line-1)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+                          {/* Top row: priority + labels + due */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                              <span className={`pill pill--${prioTone}`} style={{ fontSize: 8 }}>
+                                {prioLabel}
+                              </span>
+                              {task.labels && task.labels.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
+                                  {task.labels.slice(0, 3).map((label) => (
+                                    <span
+                                      key={label}
+                                      className="pill pill--peri"
+                                      style={{ fontSize: 8, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                    >
+                                      {label}
+                                    </span>
+                                  ))}
+                                  {task.labels.length > 3 && (
+                                    <span className="pill pill--ghost" style={{ fontSize: 8 }}>
+                                      +{task.labels.length - 3}
+                                    </span>
                                   )}
                                 </div>
-                                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">Next unblock step</p>
-                                <p className="mt-1 text-[11px] leading-4 text-gray-100 line-clamp-2">{blockerState.blockerResolutionAction || 'No unblock plan logged yet'}</p>
-                                <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-gray-300">
-                                  <span><span className="text-gray-500">Owner:</span> {blockerState.blockerResolutionOwner || 'Unassigned'}</span>
-                                  <span><span className="text-gray-500">Follow-up:</span> {blockerState.blockerResolutionDueAt ? compactDate(blockerState.blockerResolutionDueAt) : 'Not scheduled'}</span>
-                                </div>
-                              </div>
-                            )}
-                            <div className="flex flex-wrap items-center gap-1">
-                              {activeDependencyGroups.map((group) => {
-                                const config = dependencyTypeConfig[group.key];
-                                return (
-                                  <span
-                                    key={group.key}
-                                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-semibold ${config.tone}`}
-                                  >
-                                    {config.label} {group.items.length}
-                                  </span>
-                                );
-                              })}
+                              )}
                             </div>
-
-                            <div className="grid gap-1.5 sm:grid-cols-2">
-                              {activeDependencyGroups.slice(0, 2).map((group) => {
-                                const config = dependencyTypeConfig[group.key];
-                                const overflow = group.items.length - 2;
-                                return (
-                                  <div
-                                    key={group.key}
-                                    className={`rounded-xl border border-white/[0.05] border-l-2 bg-black/15 px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] ${config.previewTone}`}
-                                  >
-                                    <div className="mb-0.5 flex items-center justify-between gap-2">
-                                      <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                                        {config.previewLabel}
-                                      </span>
-                                      <span className="text-[8px] text-gray-500">{group.items.length}</span>
-                                    </div>
-                                    <p className="text-[10px] leading-4 text-gray-200 line-clamp-2">
-                                      {renderDependencyPreview(group.items)}
-                                      {overflow > 0 ? ` +${overflow} more` : ''}
-                                    </p>
-                                  </div>
-                                );
-                              })}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {task.due_date && (
+                                <span
+                                  className={isOverdue ? 'pill pill--rose' : 'pill pill--ghost'}
+                                  style={{ fontSize: 8, fontFamily: 'var(--mono)' }}
+                                >
+                                  {compactDate(task.due_date)}
+                                </span>
+                              )}
+                              {isOverdue && (
+                                <span className="pill pill--rose" style={{ fontSize: 8 }}>
+                                  Overdue
+                                </span>
+                              )}
                             </div>
                           </div>
-                        )}
 
-                        <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/[0.05] pt-2.5">
-                          {assigneeName ? (
-                            <div className="flex min-w-0 items-center gap-2" title={assigneeName}>
-                              <div className={`flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br ${avatarGradients[getAvatarIndex(assigneeName)]} text-[8px] font-bold text-white`}>
-                                {assigneeName[0]?.toUpperCase()}
+                          {/* Title */}
+                          <h4
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 600,
+                              lineHeight: 1.4,
+                              color: 'var(--fg-1)',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              margin: 0,
+                            }}
+                          >
+                            {task.title}
+                          </h4>
+
+                          {/* Dependency context */}
+                          {hasDependencyContext && (
+                            <div
+                              className="card--inset"
+                              style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}
+                            >
+                              {blockerState && (
+                                <div
+                                  style={{
+                                    borderRadius: 10,
+                                    border: '1px solid var(--rose-bg)',
+                                    background: 'var(--rose-bg)',
+                                    padding: 10,
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+                                    <span
+                                      className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'}`}
+                                      style={{ fontSize: 8 }}
+                                    >
+                                      {blockerState.tone === 'stale'
+                                        ? 'Stale blocker'
+                                        : blockerState.tone === 'follow-through'
+                                        ? 'Follow-up due'
+                                        : 'Blocked'}
+                                    </span>
+                                    <span className="pill pill--ghost" style={{ fontSize: 8 }}>
+                                      {blockerState.statusLabel}
+                                    </span>
+                                    {blockerState.dueStateLabel && (
+                                      <span
+                                        className={`pill pill--${blockerState.dueState === 'overdue' ? 'rose' : blockerState.dueState === 'due-soon' ? 'amber' : 'mint'}`}
+                                        style={{ fontSize: 8 }}
+                                      >
+                                        {blockerState.dueStateLabel}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="upper" style={{ fontSize: 9, marginTop: 8, color: 'var(--fg-4)' }}>
+                                    Next unblock step
+                                  </p>
+                                  <p
+                                    style={{
+                                      marginTop: 4,
+                                      fontSize: 11,
+                                      lineHeight: 1.4,
+                                      color: 'var(--fg-1)',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    {blockerState.blockerResolutionAction || 'No unblock plan logged yet'}
+                                  </p>
+                                  <div
+                                    style={{
+                                      marginTop: 8,
+                                      display: 'flex',
+                                      flexWrap: 'wrap',
+                                      gap: 12,
+                                      fontSize: 10,
+                                      color: 'var(--fg-2)',
+                                    }}
+                                  >
+                                    <span>
+                                      <span style={{ color: 'var(--fg-4)' }}>Owner: </span>
+                                      {blockerState.blockerResolutionOwner || 'Unassigned'}
+                                    </span>
+                                    <span>
+                                      <span style={{ color: 'var(--fg-4)' }}>Follow-up: </span>
+                                      {blockerState.blockerResolutionDueAt
+                                        ? compactDate(blockerState.blockerResolutionDueAt)
+                                        : 'Not scheduled'}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Dependency badges */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
+                                {activeDependencyGroups.map((group) => {
+                                  const config = dependencyTypeConfig[group.key];
+                                  return (
+                                    <span
+                                      key={group.key}
+                                      className={`pill pill--${config.tone}`}
+                                      style={{ fontSize: 8 }}
+                                    >
+                                      {config.label} {group.items.length}
+                                    </span>
+                                  );
+                                })}
                               </div>
-                              <span className="truncate text-[9px] text-gray-300">{assigneeName}</span>
+
+                              {/* Dependency previews */}
+                              <div
+                                style={{
+                                  display: 'grid',
+                                  gap: 6,
+                                  gridTemplateColumns: activeDependencyGroups.slice(0, 2).length > 1 ? '1fr 1fr' : '1fr',
+                                }}
+                              >
+                                {activeDependencyGroups.slice(0, 2).map((group) => {
+                                  const config = dependencyTypeConfig[group.key];
+                                  const overflow = group.items.length - 2;
+                                  return (
+                                    <div
+                                      key={group.key}
+                                      style={{
+                                        borderRadius: 10,
+                                        border: '1px solid var(--line-1)',
+                                        background: 'var(--bg-0)',
+                                        padding: '8px 10px',
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          gap: 8,
+                                          marginBottom: 2,
+                                        }}
+                                      >
+                                        <span className="upper" style={{ fontSize: 8, color: 'var(--fg-4)' }}>
+                                          {config.previewLabel}
+                                        </span>
+                                        <span style={{ fontSize: 8, color: 'var(--fg-4)' }}>
+                                          {group.items.length}
+                                        </span>
+                                      </div>
+                                      <p
+                                        style={{
+                                          fontSize: 10,
+                                          lineHeight: 1.4,
+                                          color: 'var(--fg-2)',
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden',
+                                        }}
+                                      >
+                                        {renderDependencyPreview(group.items)}
+                                        {overflow > 0 ? ` +${overflow} more` : ''}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          ) : (
-                            <span className="text-[9px] italic text-gray-500">Unassigned</span>
                           )}
-                          <span className="text-[8px] font-mono uppercase tracking-[0.12em] text-gray-500">
-                            #{task.id.slice(0, 6)}
-                          </span>
+
+                          {/* Footer: assignee + id */}
+                          <div
+                            style={{
+                              marginTop: 'auto',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 8,
+                              borderTop: '1px solid var(--line-1)',
+                              paddingTop: 10,
+                            }}
+                          >
+                            {assigneeName ? (
+                              <div
+                                style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
+                                title={assigneeName}
+                              >
+                                <div
+                                  style={{
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: '50%',
+                                    background: avatarColors[getAvatarIndex(assigneeName)],
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: 8,
+                                    fontWeight: 700,
+                                    color: '#fff',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {assigneeName[0]?.toUpperCase()}
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    color: 'var(--fg-3)',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {assigneeName}
+                                </span>
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: 9, fontStyle: 'italic', color: 'var(--fg-4)' }}>
+                                Unassigned
+                              </span>
+                            )}
+                            <span
+                              className="mono"
+                              style={{
+                                fontSize: 8,
+                                color: 'var(--fg-4)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.12em',
+                              }}
+                            >
+                              #{task.id.slice(0, 6)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-                <QuickTaskForm projectId={projectId} status={col.id} sprintId={sprintId} members={members} />
+                      </Link>
+                    );
+                  })}
+                  <QuickTaskForm
+                    projectId={projectId}
+                    status={col.id}
+                    sprintId={sprintId}
+                    members={members}
+                  />
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -74,48 +74,72 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-6">
+    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem' }}>
       {/* Template list */}
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-[0.15em] px-1 mb-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <p className="upper dim" style={{ fontSize: '10px', padding: '0 0.25rem', marginBottom: '0.75rem' }}>
           Templates
         </p>
         {TEMPLATES.map((tpl) => (
           <div
             key={tpl.id}
-            className={`glass-card rounded-xl p-4 cursor-pointer transition-all duration-200 border ${
-              activeTemplate === tpl.id
-                ? 'border-amber-500/30 bg-amber-500/[0.04]'
-                : 'border-white/[0.04] hover:border-white/[0.08]'
-            }`}
+            className="card"
+            style={{
+              cursor: 'pointer',
+              border: activeTemplate === tpl.id ? '1px solid var(--amber)' : '1px solid var(--line-1)',
+              background: activeTemplate === tpl.id ? 'var(--amber-bg)' : 'var(--bg-1)',
+            }}
             onClick={() => setActiveTemplate(tpl.id)}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{tpl.icon}</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>{tpl.icon}</span>
                 <div>
-                  <p className="text-[13px] font-semibold text-white">{tpl.label}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{tpl.description}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg-0)' }}>{tpl.label}</p>
+                  <p className="dim" style={{ fontSize: '11px', marginTop: '0.125rem' }}>{tpl.description}</p>
                 </div>
               </div>
               {activeTemplate === tpl.id && (
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--amber)',
+                    display: 'inline-block',
+                    marginTop: '0.375rem',
+                    flexShrink: 0,
+                  }}
+                />
               )}
             </div>
 
             {activeTemplate === tpl.id && (
-              <div className="mt-3 pt-3 border-t border-white/[0.04] flex items-center gap-2">
+              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line-1)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSendTest(tpl.id);
                   }}
                   disabled={sendingTest}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-semibold hover:bg-amber-500/15 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.375rem 0.75rem',
+                    borderRadius: '0.5rem',
+                    background: 'var(--amber-bg)',
+                    border: '1px solid var(--amber)',
+                    color: 'var(--amber)',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    opacity: sendingTest ? 0.5 : 1,
+                  }}
                 >
                   {sendingTest ? (
                     <>
-                      <span className="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                      <span style={{ width: '0.75rem', height: '0.75rem', border: '1px solid var(--amber)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
                       Sending…
                     </>
                   ) : (
@@ -128,7 +152,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                     </>
                   )}
                 </button>
-                <span className="text-[10px] text-gray-600 truncate">→ {userEmail}</span>
+                <span className="dim" style={{ fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>→ {userEmail}</span>
               </div>
             )}
           </div>
@@ -136,11 +160,16 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
 
         {sendResult && (
           <div
-            className={`rounded-xl px-4 py-3 text-[12px] font-medium border ${
-              sendResult.ok
-                ? 'bg-emerald-500/[0.06] border-emerald-500/15 text-emerald-400'
-                : 'bg-red-500/[0.06] border-red-500/15 text-red-400'
-            }`}
+            style={{
+              borderRadius: '0.75rem',
+              padding: '0.75rem 1rem',
+              fontSize: '12px',
+              fontWeight: 500,
+              border: '1px solid',
+              borderColor: sendResult.ok ? 'var(--mint)' : 'var(--rose)',
+              background: sendResult.ok ? 'var(--mint-bg)' : 'var(--rose-bg)',
+              color: sendResult.ok ? 'var(--mint)' : 'var(--rose)',
+            }}
           >
             {sendResult.ok ? `✓ Test email sent to ${userEmail}` : `✗ ${sendResult.error}`}
           </div>
@@ -148,18 +177,28 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
       </div>
 
       {/* Preview pane */}
-      <div className="glass-card rounded-xl overflow-hidden border border-white/[0.04] min-h-[600px] flex flex-col">
+      <div
+        className="card"
+        style={{
+          overflow: 'hidden',
+          border: '1px solid var(--line-1)',
+          minHeight: '600px',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 0,
+        }}
+      >
         {activeTemplate ? (
           <>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] bg-white/[0.02]">
-              <p className="text-[12px] font-semibold text-gray-400">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--line-1)', background: 'var(--bg-1)' }}>
+              <p className="muted" style={{ fontSize: '12px', fontWeight: 600 }}>
                 Preview — {TEMPLATES.find((t) => t.id === activeTemplate)?.label}
               </p>
               <a
                 href={`/api/v1/email/preview?template=${activeTemplate}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] text-cyan-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
+                style={{ fontSize: '11px', color: 'var(--peri)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
               >
                 Open in new tab
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -172,21 +211,32 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
             <iframe
               key={activeTemplate}
               src={`/api/v1/email/preview?template=${activeTemplate}`}
-              className="flex-1 w-full border-0 bg-white"
+              style={{ flex: 1, width: '100%', border: 'none', background: '#fff', minHeight: '560px' }}
               title={`Preview — ${activeTemplate}`}
-              style={{ minHeight: '560px' }}
             />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div
+                style={{
+                  width: '3rem',
+                  height: '3rem',
+                  borderRadius: '0.75rem',
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--line-1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 0.75rem',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--fg-3)' }}>
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
-              <p className="text-[13px] text-gray-500">Select a template to preview</p>
+              <p className="muted" style={{ fontSize: '13px' }}>Select a template to preview</p>
             </div>
           </div>
         )}

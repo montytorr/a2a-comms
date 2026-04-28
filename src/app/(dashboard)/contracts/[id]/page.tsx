@@ -14,9 +14,11 @@ import ContractAttachmentUpload from './attachment-upload';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
+import { Avatar, KV } from '@/components/atoms';
+import { ChevronRight, X } from 'lucide-react';
+
 export const dynamic = 'force-dynamic';
 
-// Pretty-print a schema descriptor with syntax highlighting
 function SchemaDisplay({ schema, depth = 0 }: { schema: Record<string, unknown>; depth?: number }) {
   const indent = '  '.repeat(depth);
   const type = schema.type as string;
@@ -25,32 +27,29 @@ function SchemaDisplay({ schema, depth = 0 }: { schema: Record<string, unknown>;
     const props = schema.properties as Record<string, Record<string, unknown>>;
     const entries = Object.entries(props);
     return (
-      <pre className="text-[11px] font-mono leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
-        {indent}<span className="text-purple-400">{'{'}</span>{'\n'}
+      <pre style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-1)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+        {indent}<span style={{ color: 'var(--peri)' }}>{'{'}</span>{'\n'}
         {entries.map(([key, val], i) => {
           const isOptional = val.optional === true;
           return (
             <span key={key}>
-              {indent}  <span className="text-cyan-400">{key}</span>
-              {isOptional && <span className="text-gray-600">?</span>}
-              <span className="text-gray-600">: </span>
+              {indent}  <span style={{ color: 'var(--amber)' }}>{key}</span>
+              {isOptional && <span style={{ color: 'var(--fg-3)' }}>?</span>}
+              <span style={{ color: 'var(--fg-3)' }}>: </span>
               <SchemaTypeLabel schema={val} />
-              {i < entries.length - 1 && <span className="text-gray-600">,</span>}
+              {i < entries.length - 1 && <span style={{ color: 'var(--fg-3)' }}>,</span>}
               {'\n'}
             </span>
           );
         })}
-        {indent}<span className="text-purple-400">{'}'}</span>
+        {indent}<span style={{ color: 'var(--peri)' }}>{'}'}</span>
       </pre>
     );
   }
 
-  // Simple type display
   return (
-    <pre className="text-[11px] font-mono leading-relaxed whitespace-pre-wrap selection:bg-cyan-500/20">
-      {JSON.stringify(schema, null, 2).split('\n').map((line, i) => (
-        <span key={i} className="text-gray-400">{line}{'\n'}</span>
-      ))}
+    <pre style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-2)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+      {JSON.stringify(schema, null, 2)}
     </pre>
   );
 }
@@ -58,63 +57,42 @@ function SchemaDisplay({ schema, depth = 0 }: { schema: Record<string, unknown>;
 function SchemaTypeLabel({ schema }: { schema: Record<string, unknown> }) {
   const type = schema.type as string;
   switch (type) {
-    case 'string':
-      return <span className="text-emerald-400">string</span>;
-    case 'number':
-      return <span className="text-amber-400">number</span>;
-    case 'boolean':
-      return <span className="text-blue-400">boolean</span>;
+    case 'string': return <span style={{ color: 'var(--mint)' }}>string</span>;
+    case 'number': return <span style={{ color: 'var(--amber)' }}>number</span>;
+    case 'boolean': return <span style={{ color: 'var(--peri)' }}>boolean</span>;
     case 'enum':
       return (
         <span>
-          <span className="text-orange-400">enum</span>
-          <span className="text-gray-600">(</span>
+          <span style={{ color: 'var(--amber)' }}>enum</span>
+          <span style={{ color: 'var(--fg-3)' }}>(</span>
           {(schema.values as string[]).map((v, i) => (
             <span key={v}>
-              <span className="text-yellow-300">&quot;{v}&quot;</span>
-              {i < (schema.values as string[]).length - 1 && <span className="text-gray-600"> | </span>}
+              <span style={{ color: 'var(--amber)' }}>&quot;{v}&quot;</span>
+              {i < (schema.values as string[]).length - 1 && <span style={{ color: 'var(--fg-3)' }}> | </span>}
             </span>
           ))}
-          <span className="text-gray-600">)</span>
+          <span style={{ color: 'var(--fg-3)' }}>)</span>
         </span>
       );
     case 'array':
       return (
         <span>
           <SchemaTypeLabel schema={schema.items as Record<string, unknown>} />
-          <span className="text-gray-600">[]</span>
+          <span style={{ color: 'var(--fg-3)' }}>[]</span>
         </span>
       );
     case 'object':
-      if (schema.properties) {
-        return <span className="text-purple-400">{'{ ... }'}</span>;
-      }
-      return <span className="text-purple-400">object</span>;
-    default:
-      return <span className="text-gray-400">{type}</span>;
+      return <span style={{ color: 'var(--peri)' }}>{schema.properties ? '{ ... }' : 'object'}</span>;
+    default: return <span style={{ color: 'var(--fg-3)' }}>{type}</span>;
   }
 }
 
-const avatarColors = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
-];
-
-function getAvatarColor(name: string): string {
+const toneForName = (name: string): 'amber' | 'mint' | 'peri' | 'rose' => {
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return avatarColors[Math.abs(hash) % avatarColors.length];
-}
-
-function getInitials(name: string): string {
-  return name.split(/[\s-_]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const tones: Array<'amber' | 'mint' | 'peri' | 'rose'> = ['amber', 'mint', 'peri', 'rose'];
+  return tones[Math.abs(hash) % tones.length];
+};
 
 interface ContractParticipant {
   id: string;
@@ -145,7 +123,6 @@ export default async function ContractDetailPage({
   const supabase = createServerClient();
   noStore();
 
-  // Check access: non-admin users must be a participant
   if (!user.isSuperAdmin) {
     const { data: participation } = await supabase
       .from('contract_participants')
@@ -153,9 +130,7 @@ export default async function ContractDetailPage({
       .eq('contract_id', id)
       .in('agent_id', auth.agentScope)
       .limit(1);
-    if (!participation || participation.length === 0) {
-      notFound();
-    }
+    if (!participation || participation.length === 0) notFound();
   }
 
   const { data: contract, error: contractError } = await supabase
@@ -164,26 +139,18 @@ export default async function ContractDetailPage({
       *,
       proposer:agents!contracts_proposer_id_fkey(id, name, display_name),
       contract_participants(
-        id,
-        role,
-        status,
-        responded_at,
+        id, role, status, responded_at,
         agent:agents(id, name, display_name)
       )
     `)
     .eq('id', id)
     .single();
 
-  if (contractError || !contract) {
-    notFound();
-  }
+  if (contractError || !contract) notFound();
 
   const { data: messages } = await supabase
     .from('messages')
-    .select(`
-      *,
-      sender:agents!messages_sender_id_fkey(id, name, display_name)
-    `)
+    .select(`*, sender:agents!messages_sender_id_fkey(id, name, display_name)`)
     .eq('contract_id', id)
     .order('created_at', { ascending: true });
 
@@ -191,35 +158,32 @@ export default async function ContractDetailPage({
   const { threadMessages, observerNotes } = splitContractMessagesByVisibility(messageList);
   const participants = (contract.contract_participants || []) as ContractParticipant[];
   const attachments = ((contract as Record<string, unknown>).attachments || []) as Array<Record<string, unknown>>;
-  const isObserverParticipant = participants.some((participant) => auth.agentScope.includes(participant.agent?.id || '') && participant.role === 'observer');
+  const isObserverParticipant = participants.some((p) => auth.agentScope.includes(p.agent?.id || '') && p.role === 'observer');
+
+  const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
+  const contractIdShort = id.slice(0, 6) + '…' + id.slice(-4);
 
   return (
     <AutoRefresh intervalMs={10000}>
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Back link */}
-      <Link href="/contracts" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">
-          <path d="M19 12H5" />
-          <path d="M12 19l-7-7 7-7" />
-        </svg>
-        Back to Contracts
-      </Link>
+      <div style={{ padding: '28px 32px 60px', maxWidth: 1100, margin: '0 auto' }}>
+        {/* Breadcrumb */}
+        <div className="row gap-2" style={{ marginBottom: 14, fontSize: 12 }}>
+          <Link href="/contracts" className="dim" style={{ cursor: 'pointer', textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
+          <ChevronRight size={11} style={{ color: 'var(--fg-3)' }} />
+          <span style={{ color: 'var(--fg-1)' }}>{contractIdShort}</span>
+        </div>
 
-      {/* Contract Header */}
-      <div className="rounded-2xl glass-card overflow-hidden mb-8 animate-fade-in">
-        {/* Top accent */}
-        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-
-        <div className="p-7">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-xl font-bold text-white tracking-tight">{contract.title}</h1>
+        {/* Contract header card */}
+        <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <div className="col gap-2" style={{ flex: 1 }}>
+              <div className="row gap-2" style={{ alignItems: 'center' }}>
+                <h1 className="h1">{contract.title}</h1>
                 <StatusBadge status={contract.status} />
               </div>
               {contract.description && (
-                <div className="max-w-2xl">
-                  <MarkdownPreview content={contract.description} className="text-[13px] text-gray-500 leading-relaxed" />
+                <div className="muted" style={{ fontSize: 13 }}>
+                  <MarkdownPreview content={contract.description} className="" />
                 </div>
               )}
             </div>
@@ -228,214 +192,159 @@ export default async function ContractDetailPage({
             )}
           </div>
 
-          {/* Metadata Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 pt-6 border-t border-white/[0.04]">
-            <div>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Proposer</p>
-              <p className="text-[13px] font-medium text-cyan-400">{contract.proposer?.display_name || contract.proposer?.name}</p>
+          {/* Metadata */}
+          <div className="card card--inset" style={{ padding: 14, marginTop: 18 }}>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <KV label="Proposer">
+                <div className="row gap-2">
+                  <Avatar name={proposerName} tone="amber" size={20} />
+                  <span>{proposerName}</span>
+                </div>
+              </KV>
+              <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
+              <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
+              <KV label="Expires" align="right">
+                <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>
+              </KV>
             </div>
-            <div>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Turns</p>
-              <p className="text-[13px] text-gray-200 font-mono tabular-nums">
-                <span className="text-white font-semibold">{contract.current_turns}</span>
-                <span className="text-gray-600"> / {contract.max_turns}</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Created</p>
-              <p className="text-[13px] text-gray-400 font-mono tabular-nums">
-                {formatDateTime(contract.created_at)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Expires</p>
-              <p className="text-[13px] text-gray-400 font-mono tabular-nums">
-                {contract.expires_at
-                  ? formatDate(contract.expires_at)
-                  : '—'}
-              </p>
-            </div>
-          </div>
 
-          {isObserverParticipant && (
-            <div className="mt-6 pt-6 border-t border-white/[0.04]">
-              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] px-4 py-3 text-[11px] text-cyan-100/90">
-                You are attached as a read-only observer on this contract. You can inspect the thread, schema, and artifacts, but contract mutations stay participant-only.
-              </div>
-            </div>
-          )}
-
-          {/* Participants */}
-          <div className="mt-6 pt-6 border-t border-white/[0.04]">
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-3">Participants</p>
-            <div className="flex flex-wrap gap-3">
-              {participants.map((p: ContractParticipant) => {
+            {/* Participants */}
+            <div className="row gap-3" style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line-1)', flexWrap: 'wrap' }}>
+              <div className="upper" style={{ alignSelf: 'center' }}>Participants</div>
+              {participants.map((p) => {
                 const name = p.agent?.display_name || p.agent?.name || 'Unknown';
-                const gradient = getAvatarColor(name);
+                const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
                 return (
-                  <div
-                    key={p.id}
-                    className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.04] rounded-xl px-4 py-2.5 hover:bg-white/[0.04] hover:border-white/[0.06] transition-all duration-300"
-                  >
-                    <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
-                      <span className="text-[9px] font-bold text-white">{getInitials(name)}</span>
-                    </div>
-                    <span className="text-[13px] text-gray-200 font-medium">{name}</span>
-                    <StatusBadge status={p.status} variant="participant" />
-                    <span className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold bg-white/[0.03] px-2 py-0.5 rounded">{participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role}</span>
-                  </div>
+                  <span key={p.id} className="pill pill--amber">
+                    <Avatar name={name} tone={toneForName(name)} size={14} />
+                    {name} · {desc}
+                  </span>
                 );
               })}
             </div>
           </div>
 
-          {/* Close reason */}
+          {isObserverParticipant && (
+            <div className="card card--inset" style={{ padding: 12, marginTop: 14, borderColor: 'oklch(0.50 0.08 265 / 0.5)' }}>
+              <div style={{ fontSize: 11, color: 'var(--peri)' }}>
+                You are attached as a read-only observer on this contract.
+              </div>
+            </div>
+          )}
+
           {contract.close_reason && (
-            <div className="mt-6 pt-6 border-t border-white/[0.04]">
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] mb-1.5">Close Reason</p>
-              <p className="text-[13px] text-gray-400">{contract.close_reason}</p>
+            <div style={{ marginTop: 18 }}>
+              <div className="upper" style={{ marginBottom: 4 }}>Close Reason</div>
+              <div style={{ fontSize: 13, color: 'var(--fg-1)' }}>{contract.close_reason}</div>
             </div>
           )}
 
-          {/* Message Schema */}
+          {/* Schema */}
           {contract.message_schema && Object.keys(contract.message_schema).length > 0 && (
-            <div className="mt-6 pt-6 border-t border-white/[0.04]">
-              <details open>
-                <summary className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] cursor-pointer hover:text-gray-400 transition-colors duration-200 select-none flex items-center gap-2">
-                  Message Schema
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Zod Enforced
-                  </span>
-                </summary>
-                <div className="mt-3 bg-[#06060b]/80 border border-white/[0.03] rounded-xl p-4 overflow-x-auto">
-                  <SchemaDisplay schema={contract.message_schema} />
-                </div>
-              </details>
+            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
+              <div className="row gap-2" style={{ marginBottom: 8, alignItems: 'center' }}>
+                <div className="upper">Message Schema</div>
+                <span className="pill pill--mint" style={{ height: 16, fontSize: 9 }}>Zod Enforced</span>
+              </div>
+              <div className="card card--inset" style={{ padding: 14, overflow: 'auto' }}>
+                <SchemaDisplay schema={contract.message_schema} />
+              </div>
             </div>
           )}
-          {/* No schema = no enforcement */}
           {(!contract.message_schema || Object.keys(contract.message_schema).length === 0) && (
-            <div className="mt-6 pt-6 border-t border-white/[0.04]">
-              <div className="flex items-center gap-2">
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em]">Message Schema</p>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest bg-gray-500/10 text-gray-500 border border-gray-500/20">
-                  None — Free-form
-                </span>
+            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
+              <div className="row gap-2" style={{ alignItems: 'center' }}>
+                <div className="upper">Message Schema</div>
+                <span className="pill pill--ghost" style={{ height: 16, fontSize: 9 }}>None — Free-form</span>
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      <div className="rounded-2xl glass-card overflow-hidden mb-8 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <div className="px-7 py-4 border-b border-white/[0.04]">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight">Attachments</h2>
-              <p className="text-[10px] text-gray-600 mt-0.5">Artifacts shared on this contract. Observer access is read-only.</p>
+        {/* Attachments */}
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+            <div className="col gap-1">
+              <div className="h3">Attachments</div>
+              <div className="dim" style={{ fontSize: 11 }}>Artifacts shared on this contract</div>
+            </div>
+          </div>
+          <div style={{ padding: 22 }}>
+            {isObserverParticipant ? (
+              <div className="dim" style={{ fontSize: 11 }}>Observers can inspect artifacts but cannot upload.</div>
+            ) : (
+              <ContractAttachmentUpload contractId={contract.id} />
+            )}
+            <div style={{ marginTop: 12 }}>
+              <AttachmentList attachments={attachments as never[]} emptyLabel="No contract artifacts yet." />
             </div>
           </div>
         </div>
-        <div className="p-6">
-          {isObserverParticipant ? (
-            <p className="text-[11px] text-gray-500">Observers can inspect contract artifacts but cannot upload new ones or close the contract.</p>
-          ) : (
-            <ContractAttachmentUpload contractId={contract.id} />
-          )}
-          <div className="mt-4">
-            <AttachmentList attachments={attachments as never[]} emptyLabel="No contract artifacts yet." />
-          </div>
-        </div>
-      </div>
 
-      {/* Message Thread */}
-      <div className="rounded-2xl glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <div className="px-7 py-4 border-b border-white/[0.04] flex items-center justify-between">
-          <div>
-            <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight">Message Thread</h2>
-            <p className="text-[10px] text-gray-600 mt-0.5">{threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</p>
+        {/* Message Thread */}
+        <div className="card">
+          <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+            <div className="h3">Message Thread <span className="dim" style={{ fontWeight: 400, fontSize: 12 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></div>
           </div>
-        </div>
 
-        <div className="p-4 space-y-1">
           {threadMessages.length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-600 font-medium">No messages yet</p>
-              <p className="text-[11px] text-gray-700 mt-1">Messages will appear here once exchanged</p>
+            <div style={{ padding: 60, textAlign: 'center' }}>
+              <div className="h3" style={{ marginTop: 14 }}>No messages yet</div>
+              <div className="dim" style={{ fontSize: 13, marginTop: 4 }}>Messages will appear here once exchanged</div>
             </div>
           ) : (
-            threadMessages.map((msg: ContractMessage) => {
+            threadMessages.map((msg, i) => {
               const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
-              const gradient = getAvatarColor(senderName);
               return (
-                <div key={msg.id} className="group rounded-xl px-5 py-4 hover:bg-white/[0.015] transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-3">
-                    {/* Avatar */}
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shrink-0`}>
-                      <span className="text-[10px] font-bold text-white">{getInitials(senderName)}</span>
+                <div key={msg.id} style={{ padding: 22, borderBottom: i === threadMessages.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
+                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
+                    <Avatar name={senderName} tone={toneForName(senderName)} size={32} />
+                    <div className="col" style={{ flex: 1, gap: 8 }}>
+                      <div className="row gap-2" style={{ alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                        <StatusBadge status={msg.message_type} variant="message" />
+                        <span className="dim mono num" style={{ fontSize: 11, marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
+                      </div>
+                      <div style={{ fontSize: 13.5, color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                        <MessageCard content={msg.content} />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-[13px] font-semibold text-gray-200">{senderName}</span>
-                      <StatusBadge status={msg.message_type} variant="message" />
-                    </div>
-                    <span className="text-[10px] text-gray-700 font-mono tabular-nums shrink-0">
-                      {formatDateTime(msg.created_at)}
-                    </span>
-                  </div>
-                  {/* Message content */}
-                  <div className="ml-11">
-                    <MessageCard content={msg.content} />
                   </div>
                 </div>
               );
             })
           )}
         </div>
-      </div>
 
-      {observerNotes.length > 0 && (
-        <div className="rounded-2xl glass-card overflow-hidden animate-fade-in mt-8" style={{ animationDelay: '0.15s' }}>
-          <div className="px-7 py-4 border-b border-white/[0.04] flex items-center justify-between">
-            <div>
-              <h2 className="text-[13px] font-semibold text-cyan-200 tracking-tight">Observer Notes</h2>
-              <p className="text-[10px] text-gray-600 mt-0.5">Kept separate from the main contract thread so read-only commentary stays distinct.</p>
+        {/* Observer Notes */}
+        {observerNotes.length > 0 && (
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+              <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim" style={{ fontWeight: 400, fontSize: 12 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
             </div>
-            <span className="text-[10px] text-gray-600">{observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span>
-          </div>
-          <div className="p-4 space-y-1">
-            {observerNotes.map((msg: ContractMessage) => {
+            {observerNotes.map((msg, i) => {
               const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
-              const gradient = getAvatarColor(senderName);
               return (
-                <div key={msg.id} className="group rounded-xl px-5 py-4 hover:bg-white/[0.015] transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shrink-0`}>
-                      <span className="text-[10px] font-bold text-white">{getInitials(senderName)}</span>
+                <div key={msg.id} style={{ padding: 22, borderBottom: i === observerNotes.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
+                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
+                    <Avatar name={senderName} tone={toneForName(senderName)} size={32} />
+                    <div className="col" style={{ flex: 1, gap: 8 }}>
+                      <div className="row gap-2" style={{ alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                        <span className="pill pill--peri" style={{ height: 16, fontSize: 9 }}>observer note</span>
+                        <span className="dim mono num" style={{ fontSize: 11, marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
+                      </div>
+                      <div style={{ fontSize: 13.5, color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                        <MessageCard content={msg.content} />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-[13px] font-semibold text-gray-200">{senderName}</span>
-                      <span className="text-[9px] font-semibold uppercase tracking-wider text-cyan-500/80 bg-cyan-500/[0.06] border border-cyan-500/[0.1] px-2 py-0.5 rounded-md">observer note</span>
-                    </div>
-                    <span className="text-[10px] text-gray-700 font-mono tabular-nums shrink-0">{formatDateTime(msg.created_at)}</span>
-                  </div>
-                  <div className="ml-11">
-                    <MessageCard content={msg.content} />
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     </AutoRefresh>
   );
 }

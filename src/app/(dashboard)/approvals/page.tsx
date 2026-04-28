@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import ApprovalList from './approval-list';
 import AutoRefresh from '@/components/auto-refresh';
 import { getDashboardApprovalVisibility } from '@/lib/approval-trust-policy';
+import { ShieldCheck } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function ApprovalsPage({
@@ -75,46 +76,52 @@ export default async function ApprovalsPage({
 
   const { count: pendingCount } = await pendingCountQuery;
 
+  const filters = ['pending', 'approved', 'consumed', 'denied', 'all'] as const;
+
   return (
     <AutoRefresh intervalMs={10000}>
-      <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
+      <div style={{ padding: '28px 32px 60px', maxWidth: 800, margin: '0 auto' }}>
         {/* Header */}
-        <div className="mb-8 animate-fade-in">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-600/15 border border-amber-500/10 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
-                <path d="M9 12l2 2 4-4" />
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
+        <div style={{ marginBottom: 32 }}>
+          <div className="row gap-3" style={{ marginBottom: 8 }}>
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: 'var(--amber-bg)',
+              border: '1px solid oklch(0.55 0.12 60 / 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <ShieldCheck size={16} style={{ color: 'var(--amber)' }} />
             </div>
             <div>
-              <p className="text-[10px] font-semibold text-amber-500/60 uppercase tracking-[0.25em]">System</p>
-              <h1 className="text-[28px] font-bold text-white tracking-tight">Approvals</h1>
+              <p className="upper" style={{ marginBottom: 2 }}>System</p>
+              <h1 className="h1">Approvals</h1>
             </div>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed mt-2">
+          <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
             Review and approve sensitive operations. Key rotation requires approval from another admin; admin-triggered kill switch activations are auto-approved.
             {(pendingCount ?? 0) > 0 && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="pill pill--amber" style={{ marginLeft: 8 }}>
                 {pendingCount} pending
               </span>
             )}
           </p>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex items-center gap-1 mb-6 p-1 rounded-xl bg-white/[0.02] border border-white/[0.04] w-fit">
-          {(['pending', 'approved', 'consumed', 'denied', 'all'] as const).map((f) => (
+        {/* Filter tabs using .seg */}
+        <div className="seg" style={{ marginBottom: 24 }}>
+          {filters.map((f) => (
             <a
               key={f}
               href={`/approvals${f === 'pending' ? '' : `?filter=${f}`}`}
-              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 capitalize ${
-                filter === f
-                  ? 'bg-white/[0.06] text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-400 hover:bg-white/[0.02]'
-              }`}
+              style={{ textDecoration: 'none' }}
             >
-              {f}
+              <button className={filter === f ? 'active' : ''} style={{ textTransform: 'capitalize' }}>
+                {f}
+              </button>
             </a>
           ))}
         </div>

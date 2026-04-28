@@ -16,7 +16,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const supabase = createBrowserClient();
 
-    async function checkAuth() {
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.replace('/login');
@@ -24,7 +24,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         setIsAuthenticated(true);
       }
       setIsLoading(false);
-    }
+    };
 
     checkAuth();
 
@@ -42,10 +42,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-950">
-        <div className="flex items-center gap-3 text-gray-500">
-          <div className="w-4 h-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-          <span className="text-sm">Authenticating…</span>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: 'var(--bg-0)',
+      }}>
+        <div className="row gap-3" style={{ color: 'var(--fg-3)' }}>
+          <span className="dot dot--amber pulse" />
+          <span style={{ fontSize: 13 }}>Authenticating…</span>
         </div>
       </div>
     );

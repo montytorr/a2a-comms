@@ -4,19 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useCallback, useRef, useState } from 'react';
 
 interface AutoRefreshProps {
-  /** Polling interval in milliseconds (default: 15000 = 15s) */
   intervalMs?: number;
-  /** Only refresh when tab is visible (default: true) */
   onlyWhenVisible?: boolean;
   children: React.ReactNode;
 }
 
-/**
- * Wraps children and periodically calls router.refresh() to re-fetch
- * server component data without a full page reload.
- *
- * Shows a "● LIVE" status indicator in the top-right area of the page header.
- */
 export default function AutoRefresh({
   intervalMs = 15000,
   onlyWhenVisible = true,
@@ -41,7 +33,6 @@ export default function AutoRefresh({
   }, []);
 
   useEffect(() => {
-    // Start the polling interval directly (avoids calling setState in effect body)
     if (!intervalRef.current) {
       intervalRef.current = setInterval(() => {
         if (onlyWhenVisible && !isVisible.current) return;
@@ -51,9 +42,7 @@ export default function AutoRefresh({
 
     const handleVisibility = () => {
       isVisible.current = document.visibilityState === 'visible';
-      if (isVisible.current) {
-        doRefresh();
-      }
+      if (isVisible.current) doRefresh();
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
@@ -67,19 +56,19 @@ export default function AutoRefresh({
   const seconds = Math.round(intervalMs / 1000);
 
   return (
-    <div className="relative">
-      {/* Status indicator — matches Feed page "CONNECTED" style */}
-      <div className="absolute top-3 right-4 z-10 flex items-center gap-2">
-        <div className="relative">
-          <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-cyan-300' : 'bg-emerald-400'}`} />
-          <div className={`absolute inset-0 w-2 h-2 rounded-full opacity-30 ${refreshing ? 'bg-cyan-300 animate-ping' : 'bg-emerald-400 animate-ping'}`} />
-        </div>
-        <span className={`text-[10px] font-semibold uppercase tracking-wider ${refreshing ? 'text-cyan-300' : 'text-emerald-400'}`}>
+    <div style={{ position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }}
+        className="row gap-2">
+        <span className={`dot dot--${refreshing ? 'amber' : 'mint'} pulse`} />
+        <span className="mono" style={{
+          fontSize: 10,
+          color: refreshing ? 'var(--amber)' : 'var(--mint)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}>
           {refreshing ? 'Syncing' : 'Live'}
         </span>
-        <span className="text-[10px] text-gray-600 font-mono tabular-nums">
-          {seconds}s
-        </span>
+        <span className="mono num dim" style={{ fontSize: 10 }}>{seconds}s</span>
       </div>
       {children}
     </div>

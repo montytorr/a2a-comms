@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
+import { MessageSquare, ChevronRight } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
@@ -9,18 +10,17 @@ import { extractMessagePreview } from '@/lib/message-preview';
 import MessageFilters from './message-filters';
 export const dynamic = 'force-dynamic';
 
-const avatarColors = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
+const avatarPalette = [
+  { bg: 'var(--mint-bg)', color: 'var(--mint)' },
+  { bg: 'var(--peri-bg)', color: 'var(--peri)' },
+  { bg: 'var(--amber-bg)', color: 'var(--amber)' },
+  { bg: 'var(--rose-bg)', color: 'var(--rose)' },
 ];
 
-function getAvatarColor(name: string): string {
+function getAvatarTone(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return avatarColors[Math.abs(hash) % avatarColors.length];
+  return avatarPalette[Math.abs(hash) % avatarPalette.length];
 }
 
 function timeAgo(dateStr: string): string {
@@ -32,6 +32,14 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
 }
+
+const typePillTone: Record<string, string> = {
+  message: 'pill--ghost',
+  request: 'pill--mint',
+  response: 'pill--mint',
+  update: 'pill--peri',
+  status: 'pill--amber',
+};
 
 export default async function MessagesPage({
   searchParams,
@@ -116,97 +124,124 @@ export default async function MessagesPage({
 
   const allMessages = messages || [];
 
-  const typeColors: Record<string, string> = {
-    message: 'text-gray-400 bg-gray-500/10',
-    request: 'text-cyan-400 bg-cyan-500/10',
-    response: 'text-emerald-400 bg-emerald-500/10',
-    update: 'text-violet-400 bg-violet-500/10',
-    status: 'text-amber-400 bg-amber-500/10',
-  };
-
   return (
     <AutoRefresh intervalMs={10000}>
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px]">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-white tracking-tight">Messages</h1>
-        <p className="text-sm text-white/30 mt-1">
-          All messages across contracts
-          {allMessages.length > 0 && (
-            <span className="text-white/20"> · <span className="text-white/40 tabular-nums">{allMessages.length}</span> shown</span>
-          )}
-        </p>
-      </div>
-
-      {/* Filters */}
-      <MessageFilters agents={[...agentMap.values()]} />
-
-      {/* Messages */}
-      <div className="glass-card rounded-2xl overflow-hidden">
-        {allMessages.length === 0 ? (
-          <div className="py-24 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/20">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+      <div style={{ padding: '28px 32px 60px', maxWidth: '1100px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '28px' }}>
+          <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h1 className="h1">Messages</h1>
+              <p className="dim" style={{ fontSize: '13px', marginTop: '4px' }}>
+                All messages across contracts
+                {allMessages.length > 0 && (
+                  <span className="mono num" style={{ marginLeft: '6px', color: 'var(--fg-3)' }}>· {allMessages.length} shown</span>
+                )}
+              </p>
             </div>
-            <p className="text-white/30 text-sm">No messages found</p>
-            <p className="text-white/15 text-xs mt-1">Try adjusting your filters</p>
           </div>
-        ) : (
-          <div className="divide-y divide-white/[0.04]">
-            {allMessages.map((msg) => {
-              const sender = agentMap.get(msg.sender_id);
-              const contract = contractMap.get(msg.contract_id);
-              const senderName = sender?.display_name || 'Unknown';
-              const initial = senderName[0]?.toUpperCase() || '?';
-              const color = getAvatarColor(senderName);
+        </div>
 
-              const preview = extractMessagePreview(msg.content);
+        {/* Filters */}
+        <MessageFilters agents={[...agentMap.values()]} />
 
-              return (
-                <Link
-                  key={msg.id}
-                  href={`/contracts/${msg.contract_id}`}
-                  className="flex items-start gap-4 px-6 py-4 hover:bg-white/[0.02] transition-all duration-200 group"
-                >
-                  {/* Avatar */}
-                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                    <span className="text-white text-xs font-bold">{initial}</span>
-                  </div>
+        {/* Messages */}
+        <div className="card">
+          {allMessages.length === 0 ? (
+            <div style={{ padding: '80px 24px', textAlign: 'center' }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '8px',
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--line-1)',
+                  marginBottom: '14px',
+                }}
+              >
+                <MessageSquare size={20} style={{ color: 'var(--fg-4)' }} />
+              </div>
+              <p className="muted" style={{ fontSize: '13px', fontWeight: 500 }}>No messages found</p>
+              <p className="dim" style={{ fontSize: '11px', marginTop: '4px' }}>Try adjusting your filters</p>
+            </div>
+          ) : (
+            <div>
+              {allMessages.map((msg, idx) => {
+                const sender = agentMap.get(msg.sender_id);
+                const contract = contractMap.get(msg.contract_id);
+                const senderName = sender?.display_name || 'Unknown';
+                const initial = senderName[0]?.toUpperCase() || '?';
+                const tone = getAvatarTone(senderName);
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-white">{senderName}</span>
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${typeColors[msg.message_type] || typeColors.message}`}>
-                        {msg.message_type}
-                      </span>
-                      {contract && (
-                        <span className="text-[11px] text-white/20 truncate">
-                          in {contract.title}
-                        </span>
-                      )}
+                const preview = extractMessagePreview(msg.content);
+
+                return (
+                  <Link
+                    key={msg.id}
+                    href={`/contracts/${msg.contract_id}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '14px',
+                      padding: '14px 20px',
+                      borderBottom: idx < allMessages.length - 1 ? '1px solid var(--line-1)' : 'none',
+                      transition: 'background 0.12s',
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {/* Avatar */}
+                    <div
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '50%',
+                        background: tone.bg,
+                        border: `1px solid ${tone.color}40`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span className="mono" style={{ fontSize: '12px', fontWeight: 700, color: tone.color }}>{initial}</span>
                     </div>
-                    <CompactMarkdownPreview content={preview} />
-                  </div>
 
-                  {/* Time + arrow */}
-                  <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
-                    <span className="text-[11px] text-white/20 font-medium">
-                      {timeAgo(msg.created_at)}
-                    </span>
-                    <svg className="w-3.5 h-3.5 text-white/10 group-hover:text-cyan-400/50 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="row gap-2" style={{ marginBottom: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                        <span className={`pill ${typePillTone[msg.message_type] || 'pill--ghost'}`}>
+                          {msg.message_type}
+                        </span>
+                        {contract && (
+                          <span className="dim" style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            in {contract.title}
+                          </span>
+                        )}
+                      </div>
+                      <CompactMarkdownPreview content={preview} />
+                    </div>
+
+                    {/* Time + arrow */}
+                    <div className="row gap-2" style={{ flexShrink: 0, paddingTop: '2px', alignItems: 'center' }}>
+                      <span className="mono num dim" style={{ fontSize: '11px' }}>
+                        {timeAgo(msg.created_at)}
+                      </span>
+                      <ChevronRight size={14} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </AutoRefresh>
   );
 }

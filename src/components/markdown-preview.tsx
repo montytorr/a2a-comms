@@ -15,60 +15,93 @@ export default function MarkdownPreview({ content, className = '' }: MarkdownPre
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
-            <h1 className="text-[18px] font-bold text-white mt-4 mb-2 first:mt-0">{children}</h1>
+            <h1 className="h2" style={{ marginTop: 16, marginBottom: 8 }}>{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-[15px] font-semibold text-white mt-4 mb-2 first:mt-0">{children}</h2>
+            <h2 className="h3" style={{ fontSize: 15, marginTop: 16, marginBottom: 8 }}>{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-[13px] font-semibold text-gray-200 mt-3 mb-1.5 first:mt-0">{children}</h3>
+            <h3 className="h3" style={{ marginTop: 12, marginBottom: 6 }}>{children}</h3>
           ),
           h4: ({ children }) => (
-            <h4 className="text-[12px] font-semibold text-gray-300 mt-2 mb-1 first:mt-0">{children}</h4>
+            <h4 style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)', marginTop: 8, marginBottom: 4 }}>{children}</h4>
           ),
           p: ({ children }) => (
-            <p className="text-[13px] text-gray-400 leading-relaxed mb-3 last:mb-0">{children}</p>
+            <p style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6, marginBottom: 12 }}>{children}</p>
           ),
           ul: ({ children }) => (
-            <ul className="list-none space-y-1 mb-3 last:mb-0">{children}</ul>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>{children}</ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-inside space-y-1 mb-3 last:mb-0 text-[13px] text-gray-400">{children}</ol>
+            <ol style={{ listStyleType: 'decimal', listStylePosition: 'inside', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12, fontSize: 13, color: 'var(--fg-2)' }}>{children}</ol>
           ),
           li: ({ children }) => (
-            <li className="flex items-start gap-2 text-[13px] text-gray-400">
-              <span className="text-gray-600 mt-[3px] shrink-0">•</span>
+            <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--fg-2)' }}>
+              <span style={{ color: 'var(--fg-3)', marginTop: 3, flexShrink: 0 }}>•</span>
               <span>{children}</span>
             </li>
           ),
           strong: ({ children }) => (
-            <strong className="font-semibold text-gray-200">{children}</strong>
+            <strong style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{children}</strong>
           ),
           em: ({ children }) => (
-            <em className="italic text-gray-400">{children}</em>
+            <em style={{ fontStyle: 'italic', color: 'var(--fg-2)' }}>{children}</em>
           ),
-          code: ({ children, className }) => {
-            const isBlock = className?.includes('language-');
+          code: ({ children, className: codeClassName }) => {
+            const isBlock = codeClassName?.includes('language-');
             if (isBlock) {
               return (
-                <code className="block bg-white/[0.04] border border-white/[0.06] rounded-lg px-4 py-3 text-[12px] font-mono text-cyan-300 overflow-x-auto my-3">
+                <code style={{
+                  display: 'block',
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--line-1)',
+                  borderRadius: 6,
+                  padding: '12px 16px',
+                  fontSize: 12,
+                  fontFamily: 'var(--mono)',
+                  color: 'var(--amber)',
+                  overflowX: 'auto',
+                  margin: '12px 0',
+                }}>
                   {children}
                 </code>
               );
             }
             return (
-              <code className="bg-white/[0.06] px-1.5 py-0.5 rounded text-[11px] font-mono text-cyan-300">
+              <code style={{
+                background: 'var(--bg-2)',
+                padding: '1px 6px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontFamily: 'var(--mono)',
+                color: 'var(--amber)',
+              }}>
                 {children}
               </code>
             );
           },
           pre: ({ children }) => (
-            <pre className="bg-white/[0.04] border border-white/[0.06] rounded-lg px-4 py-3 text-[12px] font-mono overflow-x-auto my-3">
+            <pre style={{
+              background: 'var(--bg-2)',
+              border: '1px solid var(--line-1)',
+              borderRadius: 6,
+              padding: '12px 16px',
+              fontSize: 12,
+              fontFamily: 'var(--mono)',
+              overflowX: 'auto',
+              margin: '12px 0',
+            }}>
               {children}
             </pre>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-cyan-500/40 pl-4 my-3 italic text-gray-500">
+            <blockquote style={{
+              borderLeft: '2px solid var(--line-2)',
+              paddingLeft: 16,
+              margin: '12px 0',
+              fontStyle: 'italic',
+              color: 'var(--fg-3)',
+            }}>
               {children}
             </blockquote>
           ),
@@ -77,32 +110,32 @@ export default function MarkdownPreview({ content, className = '' }: MarkdownPre
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors"
+              style={{ color: 'var(--amber)', textDecoration: 'underline', textUnderlineOffset: 2 }}
             >
               {children}
             </a>
           ),
           table: ({ children }) => (
-            <div className="overflow-x-auto my-3">
-              <table className="w-full text-[12px] border-collapse">{children}</table>
+            <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>{children}</table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="border-b border-white/[0.08]">{children}</thead>
+            <thead style={{ borderBottom: '1px solid var(--line-1)' }}>{children}</thead>
           ),
           tbody: ({ children }) => <tbody>{children}</tbody>,
           tr: ({ children }) => (
-            <tr className="border-b border-white/[0.04] hover:bg-white/[0.02]">{children}</tr>
+            <tr style={{ borderBottom: '1px solid var(--line-1)' }}>{children}</tr>
           ),
           th: ({ children }) => (
-            <th className="text-left py-2 px-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+            <th className="upper" style={{ textAlign: 'left', padding: '8px 12px', fontSize: 10 }}>
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="py-2 px-3 text-gray-400">{children}</td>
+            <td style={{ padding: '8px 12px', color: 'var(--fg-2)' }}>{children}</td>
           ),
-          hr: () => <hr className="border-white/[0.06] my-4" />,
+          hr: () => <hr style={{ border: 'none', borderTop: '1px solid var(--line-1)', margin: '16px 0' }} />,
         }}
       >
         {content}

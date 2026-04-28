@@ -4,13 +4,15 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import type { TaskStatus } from '@/lib/types';
 import { updateTaskStatus } from '../../actions';
 
-const statusConfig: Record<TaskStatus, { bg: string; text: string; dot: string }> = {
-  backlog: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', dot: 'bg-gray-500' },
-  todo: { bg: 'bg-blue-500/[0.08]', text: 'text-blue-400', dot: 'bg-blue-400' },
-  'in-progress': { bg: 'bg-cyan-500/[0.08]', text: 'text-cyan-400', dot: 'bg-cyan-400' },
-  'in-review': { bg: 'bg-amber-500/[0.08]', text: 'text-amber-400', dot: 'bg-amber-400' },
-  done: { bg: 'bg-emerald-500/[0.08]', text: 'text-emerald-400', dot: 'bg-emerald-400' },
-  cancelled: { bg: 'bg-red-500/[0.08]', text: 'text-red-400', dot: 'bg-red-400' },
+type StatusMeta = { dotClass: string; pillClass: string; textColor: string };
+
+const statusMeta: Record<TaskStatus, StatusMeta> = {
+  backlog:      { dotClass: '',           pillClass: 'pill',           textColor: 'var(--fg-3)' },
+  todo:         { dotClass: 'dot--peri',  pillClass: 'pill pill--peri', textColor: 'var(--peri)' },
+  'in-progress':{ dotClass: 'dot--amber', pillClass: 'pill pill--amber', textColor: 'var(--amber)' },
+  'in-review':  { dotClass: 'dot--amber', pillClass: 'pill pill--amber', textColor: 'var(--amber)' },
+  done:         { dotClass: 'dot--mint',  pillClass: 'pill pill--mint', textColor: 'var(--mint)' },
+  cancelled:    { dotClass: 'dot--rose',  pillClass: 'pill pill--rose', textColor: 'var(--rose)' },
 };
 
 const allStatuses: TaskStatus[] = ['backlog', 'todo', 'in-progress', 'in-review', 'done', 'cancelled'];
@@ -26,7 +28,7 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
   const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
 
-  const sc = statusConfig[currentStatus as TaskStatus] || statusConfig.backlog;
+  const meta = statusMeta[currentStatus as TaskStatus] || statusMeta.backlog;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -56,34 +58,72 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all cursor-pointer hover:ring-1 hover:ring-white/[0.1] ${sc.bg} ${sc.text} ${isPending ? 'opacity-50' : ''}`}
+        className={meta.pillClass}
+        style={{ cursor: 'pointer', opacity: isPending ? 0.5 : 1 }}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} ${isPending ? 'animate-pulse' : ''}`} />
+        <span className={`dot ${meta.dotClass} ${isPending ? 'pulse' : ''}`} />
         {isPending ? 'Updating…' : currentStatus}
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform ${open ? 'rotate-180' : ''}`}>
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          style={{ transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        >
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 z-50 min-w-[160px] rounded-xl border border-white/[0.06] bg-[#0a0a14]/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-fade-in">
+        <div
+          className="animate-fade-in"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            zIndex: 50,
+            minWidth: 160,
+            borderRadius: 8,
+            border: '1px solid var(--line-1)',
+            background: 'var(--bg-1)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+            overflow: 'hidden',
+          }}
+        >
           {allStatuses.map((status) => {
-            const sOpt = statusConfig[status];
+            const opt = statusMeta[status];
             const isSelected = status === currentStatus;
             return (
               <button
                 key={status}
                 onClick={() => handleSelect(status)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] font-medium transition-colors ${
-                  isSelected
-                    ? `${sOpt.text} bg-white/[0.04]`
-                    : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-                }`}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  background: isSelected ? 'var(--bg-3)' : 'transparent',
+                  color: isSelected ? opt.textColor : 'var(--fg-2)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  transition: 'background 0.1s, color 0.1s',
+                }}
+                onMouseEnter={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
+                onMouseLeave={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${sOpt.dot}`} />
-                <span className="uppercase tracking-wider font-semibold">{status}</span>
+                <span className={`dot ${opt.dotClass}`} />
+                <span>{status}</span>
                 {isSelected && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 )}

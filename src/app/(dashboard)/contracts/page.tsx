@@ -2,22 +2,14 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
-import StatusBadge from '@/components/status-badge';
 import type { Contract, ContractStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 import ContractRow from './contract-row';
 import { formatDate } from '@/lib/format-date';
-export const dynamic = 'force-dynamic';
+import { HashChip, Avatar } from '@/components/atoms';
 
-const COL = {
-  title: 'w-[30%]',
-  proposer: 'w-[15%]',
-  participants: 'w-[18%]',
-  status: 'w-[12%]',
-  turns: 'w-[12%]',
-  created: 'w-[13%]',
-} as const;
+export const dynamic = 'force-dynamic';
 
 interface ContractWithRelations extends Contract {
   proposer: { name: string; display_name: string } | null;
@@ -27,6 +19,15 @@ interface ContractWithRelations extends Contract {
     status: string;
   }>;
 }
+
+const statusTone: Record<string, string> = {
+  proposed: 'amber',
+  active: 'amber',
+  completed: 'mint',
+  closed: 'ghost',
+  expired: 'rose',
+  rejected: 'rose',
+};
 
 export default async function ContractsPage({
   searchParams,
@@ -44,7 +45,6 @@ export default async function ContractsPage({
   const supabase = createServerClient();
   noStore();
 
-  // For non-admin users, first get contract IDs where their agents participate
   let scopedContractIds: string[] | null = null;
   if (!user.isSuperAdmin) {
     const { data: participantContracts } = await supabase
@@ -66,7 +66,6 @@ export default async function ContractsPage({
       )
     `);
 
-  // Scope to user's contracts if not admin
   if (scopedContractIds !== null) {
     if (scopedContractIds.length > 0) {
       query = query.in('id', scopedContractIds);
@@ -83,7 +82,6 @@ export default async function ContractsPage({
     query = query.ilike('title', `%${searchFilter}%`);
   }
 
-  // Apply sort
   if (sortFilter === 'oldest') {
     query = query.order('created_at', { ascending: true });
   } else if (sortFilter === 'most-turns') {
@@ -92,108 +90,107 @@ export default async function ContractsPage({
     query = query.order('created_at', { ascending: false });
   }
 
-  const { data: contracts, error } = await query;
-
-  if (error) {
-    console.error('Error fetching contracts:', error);
-  }
-
+  const { data: contracts } = await query;
   const rows = (contracts || []) as ContractWithRelations[];
 
   return (
     <AutoRefresh intervalMs={15000}>
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Header */}
-      <div className="flex items-end justify-between mb-8 animate-fade-in">
-        <div>
-          <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Management</p>
-          <h1 className="text-[32px] font-bold text-white tracking-tight">Contracts</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            <span className="text-gray-400 tabular-nums font-medium">{rows.length}</span> contract{rows.length !== 1 ? 's' : ''}
-          </p>
+      <div style={{ padding: '28px 32px 60px' }}>
+        {/* Header */}
+        <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
+          <div className="col gap-1">
+            <div className="upper">Communication</div>
+            <div className="h1">Contracts</div>
+            <div className="muted" style={{ fontSize: 13 }}>
+              <span className="num">{rows.length}</span> contract{rows.length !== 1 ? 's' : ''}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Filters */}
-      <ContractFilters current={statusFilter} />
+        <ContractFilters current={statusFilter} />
 
-      {/* Table */}
-      <div className="rounded-2xl glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px] table-fixed">
-          <thead>
-            <tr className="border-b border-white/[0.04]">
-              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.title}`}>Title</th>
-              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.proposer}`}>Proposer</th>
-              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.participants}`}>Participants</th>
-              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.status}`}>Status</th>
-              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.turns}`}>Turns</th>
-              <th className={`text-left px-6 py-3 text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] ${COL.created}`}>Created</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/[0.03]">
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-20 text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M14 2v6h6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+        {/* Table */}
+        <div className="card" style={{ overflow: 'hidden', marginTop: 16 }}>
+          {/* Header row */}
+          <div className="row" style={{
+            padding: '8px 18px',
+            background: 'var(--bg-2)',
+            borderBottom: '1px solid var(--line-1)',
+            fontFamily: 'var(--mono)',
+            fontSize: 10,
+            color: 'var(--fg-3)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+          }}>
+            <span style={{ width: '30%' }}>Title</span>
+            <span style={{ width: '15%' }}>Proposer</span>
+            <span style={{ width: '20%' }}>Participants</span>
+            <span style={{ width: '10%' }}>Status</span>
+            <span style={{ width: '10%' }}>Turns</span>
+            <span style={{ width: '15%', textAlign: 'right' }}>Created</span>
+          </div>
+
+          {rows.length === 0 ? (
+            <div style={{ padding: 60, textAlign: 'center' }}>
+              <div className="h3" style={{ marginTop: 14 }}>No contracts found</div>
+              <div className="dim" style={{ fontSize: 13, marginTop: 4 }}>Try adjusting your filters</div>
+            </div>
+          ) : (
+            rows.map((contract, i) => {
+              const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
+              const participants = (contract.contract_participants || [])
+                .map((p) => {
+                  const label = p.agent?.display_name || p.agent?.name;
+                  if (!label) return null;
+                  return { name: label, role: p.role, status: p.status };
+                })
+                .filter(Boolean);
+              const tone = statusTone[contract.status] || 'ghost';
+
+              return (
+                <ContractRow key={contract.id} id={contract.id}>
+                  <div className="row" style={{
+                    padding: '10px 18px',
+                    borderBottom: i === rows.length - 1 ? 'none' : '1px solid oklch(0.19 0.012 250)',
+                    alignItems: 'center',
+                    fontSize: 12.5,
+                    cursor: 'pointer',
+                    transition: 'background 0.1s',
+                    width: '100%',
+                  }}>
+                    <span style={{ width: '30%', color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contract.title}
+                    </span>
+                    <span className="mono" style={{ width: '15%', color: 'var(--fg-2)' }}>{proposerName}</span>
+                    <span style={{ width: '20%' }}>
+                      <div className="row gap-1">
+                        {participants.slice(0, 3).map((p, j) => (
+                          <Avatar key={j} name={p!.name} tone={j === 0 ? 'amber' : 'peri'} size={20} />
+                        ))}
+                        {participants.length > 3 && (
+                          <span className="dim mono" style={{ fontSize: 11 }}>+{participants.length - 3}</span>
+                        )}
+                      </div>
+                    </span>
+                    <span style={{ width: '10%' }}>
+                      <span className={`pill pill--${tone}`} style={{ height: 18, fontSize: 9.5 }}>
+                        <span className={`dot dot--${tone}`} style={{ width: 4, height: 4 }} />
+                        {contract.status}
+                      </span>
+                    </span>
+                    <span className="mono num" style={{ width: '10%', color: 'var(--fg-1)' }}>
+                      {contract.current_turns}/{contract.max_turns}
+                    </span>
+                    <span className="mono dim num" style={{ width: '15%', textAlign: 'right', fontSize: 11 }}>
+                      {formatDate(contract.created_at)}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-600 font-medium">No contracts found</p>
-                  <p className="text-[11px] text-gray-700 mt-1">Try adjusting your filters</p>
-                </td>
-              </tr>
-            ) : (
-              rows.map((contract: ContractWithRelations) => {
-                const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
-                const participants = (contract.contract_participants || [])
-                  .map((p) => {
-                    const label = p.agent?.display_name || p.agent?.name;
-                    if (!label) return null;
-                    return p.role === 'observer' ? `${label} (observer)` : label;
-                  })
-                  .filter(Boolean)
-                  .join(', ');
-
-                return (
-                  <ContractRow key={contract.id} id={contract.id} col={COL}>
-                    <td className={`px-6 py-4 ${COL.title}`}>
-                      <span className="text-[13px] font-medium text-gray-200 group-hover:text-cyan-400 transition-colors duration-200 truncate block">
-                        {contract.title}
-                      </span>
-                    </td>
-                    <td className={`px-6 py-4 ${COL.proposer}`}>
-                      <span className="text-[13px] text-gray-500 truncate block">{proposerName}</span>
-                    </td>
-                    <td className={`px-6 py-4 ${COL.participants}`}>
-                      <span className="text-[13px] text-gray-500 truncate block">{participants || '—'}</span>
-                    </td>
-                    <td className={`px-6 py-4 ${COL.status}`}>
-                      <StatusBadge status={contract.status} />
-                    </td>
-                    <td className={`px-6 py-4 ${COL.turns}`}>
-                      <span className="text-[13px] text-gray-500 font-mono tabular-nums">
-                        <span className="text-gray-300">{contract.current_turns}</span>
-                        <span className="text-gray-700 mx-0.5">/</span>
-                        <span className="text-gray-600">{contract.max_turns}</span>
-                      </span>
-                    </td>
-                    <td className={`px-6 py-4 ${COL.created}`}>
-                      <span className="text-[11px] text-gray-600 font-mono tabular-nums">
-                        {formatDate(contract.created_at)}
-                      </span>
-                    </td>
-                  </ContractRow>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                </ContractRow>
+              );
+            })
+          )}
         </div>
       </div>
-    </div>
     </AutoRefresh>
   );
 }

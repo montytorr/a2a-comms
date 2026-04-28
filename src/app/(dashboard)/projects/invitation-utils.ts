@@ -19,15 +19,15 @@ export interface InvitationLike {
 export function getInvitationStatusTone(status: ProjectInvitationStatus): string {
   switch (status) {
     case 'pending':
-      return 'border-amber-500/20 bg-amber-500/[0.06] text-amber-300';
+      return 'pill--amber';
     case 'accepted':
-      return 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300';
+      return 'pill--mint';
     case 'declined':
-      return 'border-red-500/20 bg-red-500/[0.06] text-red-300';
+      return 'pill--rose';
     case 'cancelled':
-      return 'border-gray-500/20 bg-gray-500/[0.06] text-gray-300';
+      return 'pill--ghost';
     case 'expired':
-      return 'border-orange-500/20 bg-orange-500/[0.06] text-orange-300';
+      return 'pill--ghost';
   }
 }
 

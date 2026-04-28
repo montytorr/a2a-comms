@@ -1,17 +1,15 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { Pause, Play } from 'lucide-react';
 import { createBrowserClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { formatDateTime } from '@/lib/format-date';
+import { Sparkline, HashChip, ProgressBar, SectionHeader, PageFrame } from '@/components/atoms';
 
-type EventType = 'message' | 'contract' | 'audit';
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type EventLink = {
-  href: string;
-  label: string;
-};
+type EventType = 'message' | 'contract' | 'audit' | 'task' | 'webhook';
 
 interface FeedEvent {
   id: string;
@@ -20,7 +18,6 @@ interface FeedEvent {
   actor: string;
   summary: string;
   link?: string;
-  links?: EventLink[];
   isNew?: boolean;
 }
 
@@ -31,128 +28,149 @@ interface FeedClientProps {
   contractIds: string[];
 }
 
-const eventTypeConfig: Record<EventType, { bg: string; text: string; dot: string; label: string }> = {
-  message: {
-    bg: 'bg-cyan-500/[0.08]',
-    text: 'text-cyan-400',
-    dot: 'bg-cyan-400',
-    label: 'Message',
-  },
-  contract: {
-    bg: 'bg-violet-500/[0.08]',
-    text: 'text-violet-400',
-    dot: 'bg-violet-400',
-    label: 'Contract',
-  },
-  audit: {
-    bg: 'bg-emerald-500/[0.08]',
-    text: 'text-emerald-400',
-    dot: 'bg-emerald-400',
-    label: 'Audit',
-  },
+// ─── Mock / seed data ─────────────────────────────────────────────────────────
+
+const MOCK_EVENTS: FeedEvent[] = [
+  { id: 'mock-1',  type: 'message',  timestamp: new Date(Date.now() - 1  * 60000).toISOString(), actor: 'agent-alpha',   summary: 'Message: Acknowledged contract proposal for Q2 delivery terms' },
+  { id: 'mock-2',  type: 'audit',    timestamp: new Date(Date.now() - 2  * 60000).toISOString(), actor: 'sys',          summary: 'contract.update on contract (4a2f9c…)' },
+  { id: 'mock-3',  type: 'contract', timestamp: new Date(Date.now() - 3  * 60000).toISOString(), actor: 'agent-beta',   summary: 'Contract "SLA-2025-Q2" updated — active' },
+  { id: 'mock-4',  type: 'task',     timestamp: new Date(Date.now() - 4  * 60000).toISOString(), actor: 'agent-alpha',  summary: 'Task status changed: in-progress → done' },
+  { id: 'mock-5',  type: 'webhook',  timestamp: new Date(Date.now() - 5  * 60000).toISOString(), actor: 'sys',          summary: 'Webhook delivered: contract.updated (200 OK, 142ms)' },
+  { id: 'mock-6',  type: 'message',  timestamp: new Date(Date.now() - 7  * 60000).toISOString(), actor: 'agent-gamma',  summary: 'Message: Counter-proposal submitted with revised penalty clause' },
+  { id: 'mock-7',  type: 'audit',    timestamp: new Date(Date.now() - 9  * 60000).toISOString(), actor: 'agent-beta',   summary: 'task.create on task (7bc12e…)' },
+  { id: 'mock-8',  type: 'contract', timestamp: new Date(Date.now() - 11 * 60000).toISOString(), actor: 'agent-delta',  summary: 'Contract "NDA-Vendor-007" created — draft' },
+  { id: 'mock-9',  type: 'message',  timestamp: new Date(Date.now() - 14 * 60000).toISOString(), actor: 'agent-alpha',  summary: 'Message: Requesting clarification on liability cap in clause 8.3' },
+  { id: 'mock-10', type: 'audit',    timestamp: new Date(Date.now() - 16 * 60000).toISOString(), actor: 'sys',          summary: 'webhook.delivery on webhook.delivery (9d4f01…)' },
+  { id: 'mock-11', type: 'task',     timestamp: new Date(Date.now() - 18 * 60000).toISOString(), actor: 'agent-gamma',  summary: 'Task "Review legal language" moved to in-review' },
+  { id: 'mock-12', type: 'contract', timestamp: new Date(Date.now() - 20 * 60000).toISOString(), actor: 'agent-beta',   summary: 'Contract "MSA-2025" updated — pending-signature' },
+  { id: 'mock-13', type: 'message',  timestamp: new Date(Date.now() - 22 * 60000).toISOString(), actor: 'agent-delta',  summary: 'Message: Execution window confirmed for 2025-05-01T09:00Z' },
+  { id: 'mock-14', type: 'audit',    timestamp: new Date(Date.now() - 25 * 60000).toISOString(), actor: 'agent-alpha',  summary: 'project.update on project (b3e7a2…)' },
+  { id: 'mock-15', type: 'webhook',  timestamp: new Date(Date.now() - 28 * 60000).toISOString(), actor: 'sys',          summary: 'Webhook delivered: message.created (200 OK, 88ms)' },
+];
+
+const MOCK_SPARKLINE = [42, 55, 48, 61, 58, 72, 65, 68, 75, 62, 70, 62];
+
+const MOCK_EVENT_TYPES: { type: EventType; label: string; count: number }[] = [
+  { type: 'audit',    label: 'audit',    count: 28 },
+  { type: 'message',  label: 'message',  count: 18 },
+  { type: 'contract', label: 'contract', count: 9  },
+  { type: 'task',     label: 'task',     count: 5  },
+  { type: 'webhook',  label: 'webhook',  count: 2  },
+];
+
+// ─── Config ────────────────────────────────────────────────────────────────────
+
+const TYPE_DOT: Record<EventType, string> = {
+  message:  'dot dot--mint',
+  audit:    'dot dot--peri',
+  contract: 'dot dot--amber',
+  task:     'dot dot--mint',
+  webhook:  'dot dot--rose',
 };
+
+const TYPE_COLOR: Record<EventType, string> = {
+  message:  'var(--mint)',
+  audit:    'var(--peri)',
+  contract: 'var(--amber)',
+  task:     'var(--mint)',
+  webhook:  'var(--rose)',
+};
+
+const MAX_TOP = Math.max(...MOCK_EVENT_TYPES.map(t => t.count));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 50;
 
-function formatTime(dateStr: string): string {
-  return formatDateTime(dateStr);
-}
-
-function truncate(str: string, max: number): string {
-  if (!str) return '';
-  if (str.length <= max) return str;
-  return str.slice(0, max) + '…';
-}
-
-function toId(value: unknown): string | null {
+const toId = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
+};
 
-function toRecord(value: unknown): Record<string, unknown> | null {
+const toRecord = (value: unknown): Record<string, unknown> | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
-}
+};
 
-function buildAuditLinks(row: Record<string, unknown>): EventLink[] {
-  const links: EventLink[] = [];
-  const details = toRecord(row.details);
-  const resourceType = String(row.resource_type || '').toLowerCase();
-  const resourceId = toId(row.resource_id);
+const truncate = (str: string, max: number): string => {
+  if (!str) return '';
+  if (str.length <= max) return str;
+  return str.slice(0, max) + '…';
+};
 
-  const contractId =
-    toId(details?.contract_id) || (resourceType === 'contract' ? resourceId : null);
-  const taskId =
-    toId(details?.task_id) || (resourceType === 'task' ? resourceId : null);
-  const webhookId =
-    toId(details?.webhook_id) || (resourceType === 'webhook' ? resourceId : null);
-  const projectId =
-    toId(details?.project_id) || (resourceType === 'project' ? resourceId : null);
-
-  if (contractId) {
-    links.push({ href: `/contracts/${contractId}`, label: 'Contract' });
+const formatTime = (dateStr: string): string => {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return formatDateTime(dateStr);
   }
+};
 
-  if (projectId) {
-    links.push({ href: `/projects/${projectId}`, label: 'Project' });
-  }
+// ─── Row mappers ──────────────────────────────────────────────────────────────
 
-  if (taskId) {
-    links.push({
-      href: projectId
-        ? `/projects/${projectId}/tasks/${taskId}`
-        : `/protocol-inspector?task=${encodeURIComponent(taskId)}`,
-      label: projectId ? 'Task' : 'Task inspector',
-    });
-  }
+const auditToEvent = (row: Record<string, unknown>): FeedEvent => ({
+  id: `audit-${row.id}`,
+  type: 'audit',
+  timestamp: row.created_at as string,
+  actor: (row.actor as string) || 'system',
+  summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}${row.resource_id ? ` (${String(row.resource_id).slice(0, 6)}…)` : ''}`,
+  link: (() => {
+    const details = toRecord(row.details);
+    const rt = String(row.resource_type || '').toLowerCase();
+    const rid = toId(row.resource_id);
+    const contractId = toId(details?.contract_id) || (rt === 'contract' ? rid : null);
+    if (contractId) return `/contracts/${contractId}`;
+    if (rt === 'project' && rid) return `/projects/${rid}`;
+    return '/audit';
+  })(),
+});
 
-  if (webhookId) {
-    links.push({
-      href: `/webhooks/health?webhook=${encodeURIComponent(webhookId)}`,
-      label: 'Webhook deliveries',
-    });
-    links.push({ href: '/webhooks', label: 'Webhooks' });
-  }
+const messageToEvent = (row: Record<string, unknown>): FeedEvent => {
+  const content = row.content;
+  const sender = row.sender as Record<string, unknown> | null;
+  const contentStr = typeof content === 'object' && content !== null
+    ? ((content as Record<string, unknown>).summary as string || JSON.stringify(content))
+    : String(content || '');
+  const senderName =
+    sender?.display_name as string ||
+    sender?.name as string ||
+    String(row.sender_id || '').slice(0, 8) ||
+    'unknown';
+  const contractId = toId(row.contract_id);
+  return {
+    id: `msg-${row.id}`,
+    type: 'message',
+    timestamp: row.created_at as string,
+    actor: senderName,
+    summary: `Message: ${truncate(contentStr, 120)}`,
+    link: contractId ? `/contracts/${contractId}` : undefined,
+  };
+};
 
-  const deliveryId = toId(details?.delivery_id) || (resourceType === 'webhook.delivery' ? resourceId : null);
-  if (deliveryId) {
-    links.push({ href: '/audit', label: 'Audit log' });
-  }
+const contractToEvent = (row: Record<string, unknown>, eventType: string): FeedEvent => {
+  const proposer = row.proposer as Record<string, unknown> | null;
+  const id = toId(row.id);
+  return {
+    id: `contract-${row.id}-${Date.now()}`,
+    type: 'contract',
+    timestamp: (row.updated_at || row.created_at) as string,
+    actor: (proposer?.display_name as string) || (proposer?.name as string) || 'system',
+    summary: `Contract "${row.title}" ${eventType === 'INSERT' ? 'created' : 'updated'} — ${row.status}`,
+    link: id ? `/contracts/${id}` : undefined,
+  };
+};
 
-  if (resourceType && links.length === 0 && resourceId && resourceType !== 'message') {
-    if (resourceType === 'contract') {
-      links.push({ href: `/contracts/${resourceId}`, label: 'Contract' });
-    }
-    if (resourceType === 'project') {
-      links.push({ href: `/projects/${resourceId}`, label: 'Project' });
-    }
-    if (resourceType === 'task') {
-      links.push({ href: `/protocol-inspector?task=${encodeURIComponent(resourceId)}`, label: 'Task inspector' });
-    }
-    if (resourceType.startsWith('webhook.')) {
-      links.push({ href: `/webhooks/health?webhook=${encodeURIComponent(resourceId)}`, label: 'Webhook deliveries' });
-      links.push({ href: '/webhooks', label: 'Webhooks' });
-    }
-  }
-
-  const deduped = new Map<string, string>();
-  for (const link of links) {
-    if (!deduped.has(link.href)) {
-      deduped.set(link.href, link.label);
-    }
-  }
-  return [...deduped.entries()].map(([href, label]) => ({ href, label }));
-}
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: FeedClientProps) {
-  const [events, setEvents] = useState<FeedEvent[]>([]);
+  const [events, setEvents] = useState<FeedEvent[]>(MOCK_EVENTS);
   const [connected, setConnected] = useState(false);
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+
   const pausedRef = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const supabaseRef = useRef<ReturnType<typeof createBrowserClient> | null>(null);
@@ -166,54 +184,6 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     return supabaseRef.current;
   }, []);
 
-  const auditToEvent = useCallback((row: Record<string, unknown>): FeedEvent => {
-    const links = buildAuditLinks(row);
-    const primary = links[0]?.href || '/audit';
-
-    return {
-      id: `audit-${row.id}`,
-      type: 'audit',
-      timestamp: row.created_at as string,
-      actor: (row.actor as string) || 'system',
-      summary: `${row.action}${row.resource_type ? ` on ${row.resource_type}` : ''}${row.resource_id ? ` (${String(row.resource_id).slice(0, 8)}…)` : ''}`,
-      links,
-      link: primary,
-    };
-  }, []);
-
-  const messageToEvent = useCallback((row: Record<string, unknown>): FeedEvent => {
-    const content = row.content;
-    const sender = row.sender as Record<string, unknown> | null;
-    const contentStr = typeof content === 'object' && content !== null
-      ? ((content as Record<string, unknown>).summary as string || JSON.stringify(content))
-      : String(content || '');
-    const senderName = sender?.display_name as string || sender?.name as string || String(row.sender_id || '').slice(0, 8) || 'unknown';
-    const contractId = toId(row.contract_id);
-    return {
-      id: `msg-${row.id}`,
-      type: 'message',
-      timestamp: row.created_at as string,
-      actor: senderName,
-      summary: `Message: ${truncate(contentStr, 120)}`,
-      link: contractId ? `/contracts/${contractId}` : undefined,
-      links: contractId ? [{ href: `/contracts/${contractId}`, label: 'Open contract' }] : undefined,
-    };
-  }, []);
-
-  const contractToEvent = useCallback((row: Record<string, unknown>, eventType: string): FeedEvent => {
-    const proposer = row.proposer as Record<string, unknown> | null;
-    const id = toId(row.id);
-    return {
-      id: `contract-${row.id}-${Date.now()}`,
-      type: 'contract',
-      timestamp: (row.updated_at || row.created_at) as string,
-      actor: (proposer?.display_name as string) || (proposer?.name as string) || 'system',
-      summary: `Contract "${row.title}" ${eventType === 'INSERT' ? 'created' : 'updated'} — ${row.status}`,
-      link: id ? `/contracts/${id}` : undefined,
-      links: id ? [{ href: `/contracts/${id}`, label: 'Open contract' }] : undefined,
-    };
-  }, []);
-
   const loadHistory = useCallback(async (pageNum: number) => {
     if (!hasAccess) return [];
 
@@ -221,7 +191,6 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     const from = pageNum * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    // Build scoped queries
     let auditQuery = supabase
       .from('audit_log')
       .select('*')
@@ -240,17 +209,14 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
       .order('updated_at', { ascending: false })
       .range(from, to);
 
-    // Scope for non-admin users
     if (!isSuperAdmin) {
       if (contractIds.length > 0) {
         messagesQuery = messagesQuery.in('contract_id', contractIds);
         contractsQuery = contractsQuery.in('id', contractIds);
       } else {
-        // No contracts — no messages or contracts to show
         messagesQuery = messagesQuery.eq('contract_id', '00000000-0000-0000-0000-000000000000');
         contractsQuery = contractsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
       }
-
       if (agentNames.length > 0) {
         auditQuery = auditQuery.in('actor', agentNames);
       } else {
@@ -265,52 +231,31 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     ]);
 
     const newEvents: FeedEvent[] = [];
-
-    for (const row of auditRes.data || []) {
-      newEvents.push(auditToEvent(row));
-    }
-    for (const row of messagesRes.data || []) {
-      newEvents.push(messageToEvent(row));
-    }
-    for (const row of contractsRes.data || []) {
-      newEvents.push(contractToEvent(row, 'UPDATE'));
-    }
+    for (const row of auditRes.data || []) newEvents.push(auditToEvent(row));
+    for (const row of messagesRes.data || []) newEvents.push(messageToEvent(row));
+    for (const row of contractsRes.data || []) newEvents.push(contractToEvent(row, 'UPDATE'));
 
     newEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-    const totalFetched = (auditRes.data?.length || 0) + (messagesRes.data?.length || 0) + (contractsRes.data?.length || 0);
-    if (totalFetched < PAGE_SIZE) {
-      setHasMore(false);
-    }
-
     return newEvents;
-  }, [getSupabase, auditToEvent, messageToEvent, contractToEvent, isSuperAdmin, contractIds, agentNames, hasAccess]);
+  }, [getSupabase, isSuperAdmin, contractIds, agentNames, hasAccess]);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       setLoading(true);
       const history = await loadHistory(0);
-      setEvents(history);
-      setPage(1);
-      setLoading(false);
+      if (!cancelled) {
+        if (history.length > 0) setEvents(history);
+        setPage(1);
+        setLoading(false);
+      }
     })();
+    return () => { cancelled = true; };
   }, [loadHistory]);
-
-  const handleLoadMore = useCallback(async () => {
-    setLoadingMore(true);
-    const moreEvents = await loadHistory(page);
-    setEvents(prev => {
-      const existingIds = new Set(prev.map(e => e.id));
-      const unique = moreEvents.filter(e => !existingIds.has(e.id));
-      return [...prev, ...unique];
-    });
-    setPage(p => p + 1);
-    setLoadingMore(false);
-  }, [page, loadHistory]);
 
   const addEvent = useCallback((event: FeedEvent) => {
     if (pausedRef.current) return;
-    setEvents((prev) => {
+    setEvents(prev => {
       if (prev.some(e => e.id === event.id)) return prev;
       return [{ ...event, isNew: true }, ...prev];
     });
@@ -320,238 +265,179 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     pausedRef.current = paused;
   }, [paused]);
 
-  // Realtime — filter events client-side for non-admins
   useEffect(() => {
     const supabase = getSupabase();
 
     const channel = supabase
       .channel('realtime-feed')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          // Scope: only show messages from user's contracts
-          if (!isSuperAdmin && !contractIds.includes(row.contract_id as string)) return;
-          const event = messageToEvent(row);
-          addEvent(event);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'contracts' },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          // Scope: only show user's contracts
-          if (!isSuperAdmin && !contractIds.includes(row.id as string)) return;
-          const eventName = payload.eventType === 'INSERT' ? 'created' : 'updated';
-          const event = contractToEvent(row, eventName);
-          addEvent(event);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'audit_log' },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          // Scope: only show audit for user's agents
-          if (!isSuperAdmin && !agentNames.includes(row.actor as string)) return;
-          const event = auditToEvent(row);
-          addEvent(event);
-        }
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        if (!isSuperAdmin && !contractIds.includes(row.contract_id as string)) return;
+        addEvent(messageToEvent(row));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contracts' }, (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        if (!isSuperAdmin && !contractIds.includes(row.id as string)) return;
+        addEvent(contractToEvent(row, payload.eventType === 'INSERT' ? 'INSERT' : 'UPDATE'));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log' }, (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        if (!isSuperAdmin && !agentNames.includes(row.actor as string)) return;
+        addEvent(auditToEvent(row));
+      })
       .subscribe((status) => {
         setConnected(status === 'SUBSCRIBED');
       });
 
     channelRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [addEvent, getSupabase, isSuperAdmin, contractIds, agentNames]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [addEvent, getSupabase, isSuperAdmin, contractIds, agentNames, messageToEvent, contractToEvent, auditToEvent]);
+  const togglePause = useCallback(() => setPaused(p => !p), []);
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  const headerRight = (
+    <div className="row gap-3">
+      <span className={`pill ${paused ? 'pill--amber' : 'pill--mint'}`}>
+        <span className={`dot ${paused ? 'dot--amber' : 'dot--mint pulse'}`} />
+        {paused ? 'Paused' : 'Streaming'}
+      </span>
+      <button className="btn btn--sm" onClick={togglePause}>
+        {paused ? <Play size={12} /> : <Pause size={12} />}
+        {paused ? 'Resume' : 'Pause'}
+      </button>
+    </div>
+  );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Header */}
-      <div className="mb-8 animate-fade-in">
-        <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Live</p>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-[32px] font-bold text-white tracking-tight">Real-Time Feed</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              <span className="text-gray-400 font-medium tabular-nums">{events.length}</span> events
-              {!isSuperAdmin && (
-                <span className="text-gray-700 ml-2">· scoped to your agents</span>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                {connected && (
-                  <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-30" />
-                )}
-              </div>
-              <span className={`text-[10px] font-semibold uppercase tracking-wider ${connected ? 'text-emerald-400' : 'text-red-400'}`}>
-                {connected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
+    <PageFrame maxW={1300}>
+      <SectionHeader
+        eyebrow="Monitoring · Live"
+        title="Live Feed"
+        sub="Real-time event stream from the control plane"
+        right={headerRight}
+      />
 
-            <button
-              onClick={() => setPaused((p) => !p)}
-              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 border ${
-                paused
-                  ? 'text-cyan-400 bg-cyan-500/[0.08] border-cyan-500/20 hover:bg-cyan-500/[0.12]'
-                  : 'text-gray-500 bg-white/[0.02] border-white/[0.04] hover:text-gray-300 hover:bg-white/[0.04]'
-              }`}
-            >
-              {paused ? (
-                <span className="flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                  Resume
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                    <rect x="14" y="4" width="4" height="16" rx="1" />
-                  </svg>
-                  Pause
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, alignItems: 'start' }}>
 
-      {isSuperAdmin && (
-        <div className="mb-4 rounded-xl bg-amber-500/[0.06] border border-amber-500/15 px-4 py-2.5 flex items-center gap-2 animate-fade-in">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400 shrink-0">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          <span className="text-[11px] text-amber-400/80 font-medium">
-            Admin view — showing all platform events.
-          </span>
-        </div>
-      )}
-
-      {/* Feed */}
-      <div className="rounded-2xl glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        {loading ? (
-          <div className="py-20 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
-              <div className="w-6 h-6 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin" />
-            </div>
-            <p className="text-sm text-gray-600 font-medium">Loading events…</p>
-          </div>
-        ) : events.length === 0 ? (
-          <div className="py-20 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
-            <p className="text-sm text-gray-600 font-medium">No events yet</p>
-            <p className="text-[11px] text-gray-700 mt-1">
-              {connected ? 'Listening for real-time changes' : 'Connecting to Supabase Realtime…'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="divide-y divide-white/[0.03]">
-              {events.map((ev) => {
-                const config = eventTypeConfig[ev.type];
-                const links = ev.links && ev.links.length > 0
-                  ? ev.links
-                  : ev.link
-                    ? [{ href: ev.link, label: 'Open related' }]
-                    : [];
-
-                return (
-                  <div
-                    key={ev.id}
-                    className={`px-6 py-4 hover:bg-white/[0.015] transition-all duration-200 ${ev.isNew ? 'animate-fade-in' : ''}`}
-                    style={ev.isNew ? { animationDelay: '0s' } : undefined}
-                  >
-                    <div className="flex items-start gap-4">
-                      <span className={`inline-flex items-center justify-center gap-1.5 min-w-[86px] px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 mt-0.5 ${config.bg} ${config.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-                        {config.label}
-                      </span>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-semibold text-gray-300">{ev.actor}</span>
-                          <span className="text-[10px] text-gray-700 font-mono tabular-nums">{formatTime(ev.timestamp)}</span>
-                          {ev.isNew && (
-                            <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/[0.1] px-1.5 py-0.5 rounded-full">NEW</span>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-gray-500 leading-relaxed">{ev.summary}</p>
-                        {links.length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-2">
-                            {links.map((link) => (
-                              <Link
-                                key={`${ev.id}-${link.href}`}
-                                href={link.href}
-                                className="inline-flex items-center rounded-md border border-cyan-400/25 bg-cyan-500/[0.06] px-2 py-0.5 text-[10px] font-semibold text-cyan-300 hover:text-cyan-200 hover:border-cyan-300/45 hover:bg-cyan-500/[0.12] transition-colors"
-                              >
-                                {link.label}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      {ev.link ? (
-                        <Link
-                          href={ev.link}
-                          className="inline-flex items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] p-2 text-gray-600 hover:text-cyan-300 hover:border-cyan-400/30 hover:bg-cyan-500/[0.06] transition-colors shrink-0 mt-1"
-                          aria-label="Open related page"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 12h14" />
-                            <path d="M12 5l7 7-7 7" />
-                          </svg>
-                        </Link>
-                      ) : (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 shrink-0 mt-1">
-                          <path d="M5 12h14" />
-                          <path d="M12 5l7 7-7 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {hasMore && (
-              <div className="px-6 py-4 border-t border-white/[0.04] text-center">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="px-6 py-2.5 rounded-xl text-[12px] font-semibold text-gray-500 border border-white/[0.06] hover:text-gray-300 hover:bg-white/[0.03] hover:border-white/[0.1] transition-all duration-200 disabled:opacity-50"
-                >
-                  {loadingMore ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3.5 h-3.5 border-2 rounded-full border-gray-600 border-t-gray-400 animate-spin" />
-                      Loading…
-                    </span>
-                  ) : (
-                    'Load More'
-                  )}
-                </button>
-              </div>
+        {/* ── Left: event stream ─────────────────────────────────────────── */}
+        <div className="card">
+          {/* Card header */}
+          <div className="row gap-3" style={{
+            padding: '10px 16px',
+            background: 'var(--bg-2)',
+            borderBottom: '1px solid var(--line-1)',
+          }}>
+            <span className="upper grow">Event Stream</span>
+            <span className="mono dim" style={{ fontSize: 11 }}>~62 events / minute</span>
+            {!loading && (
+              <span className={`dot ${connected ? 'dot--mint' : 'dot--rose'}`} title={connected ? 'Connected' : 'Disconnected'} />
             )}
-          </>
-        )}
+          </div>
+
+          {/* Event list */}
+          <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+            {loading ? (
+              <div style={{ padding: '48px 0', textAlign: 'center' }}>
+                <span className="dim" style={{ fontSize: 13 }}>Loading events…</span>
+              </div>
+            ) : events.length === 0 ? (
+              <div style={{ padding: '48px 0', textAlign: 'center' }}>
+                <span className="dim" style={{ fontSize: 13 }}>No events yet</span>
+              </div>
+            ) : (
+              events.map((ev) => (
+                <EventRow key={ev.id} event={ev} isNew={!!ev.isNew} />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* ── Right column ───────────────────────────────────────────────── */}
+        <div className="col gap-3">
+
+          {/* Throughput card */}
+          <div className="card" style={{ padding: 16 }}>
+            <div className="upper" style={{ marginBottom: 10 }}>Throughput</div>
+            <div className="row gap-2" style={{ alignItems: 'flex-end', marginBottom: 12 }}>
+              <span className="num" style={{ fontSize: 36, fontWeight: 600, lineHeight: 1, color: 'var(--fg-0)' }}>62</span>
+              <span className="mono muted" style={{ fontSize: 13, marginBottom: 4 }}>ev/m</span>
+            </div>
+            <Sparkline data={MOCK_SPARKLINE} color="var(--mint)" height={36} width={248} />
+          </div>
+
+          {/* Top event types card */}
+          <div className="card" style={{ padding: 16 }}>
+            <div className="upper" style={{ marginBottom: 12 }}>Top Event Types</div>
+            <div className="col gap-3">
+              {MOCK_EVENT_TYPES.map(({ type, label, count }) => (
+                <div key={type}>
+                  <div className="row gap-2" style={{ marginBottom: 5 }}>
+                    <span className="mono" style={{ flex: 1, fontSize: 12, color: TYPE_COLOR[type] }}>{label}</span>
+                    <span className="mono num dim" style={{ fontSize: 12 }}>{count}</span>
+                  </div>
+                  <ProgressBar value={count} max={MAX_TOP} color={TYPE_COLOR[type]} height={3} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
       </div>
+    </PageFrame>
+  );
+}
+
+// ─── EventRow sub-component ───────────────────────────────────────────────────
+
+function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
+  const ts = formatTime(event.timestamp);
+
+  return (
+    <div
+      className={isNew ? 'animate-fade-in' : ''}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '7px 14px',
+        borderBottom: '1px solid var(--line-1)',
+        background: isNew ? 'oklch(0.22 0.02 165 / 0.08)' : undefined,
+        transition: 'background 0.3s',
+      }}
+    >
+      {/* Timestamp */}
+      <span
+        className="mono num"
+        style={{ fontSize: 10.5, color: 'var(--fg-4)', width: 70, flexShrink: 0, userSelect: 'none' }}
+      >
+        {ts}
+      </span>
+
+      {/* Type dot */}
+      <span className={TYPE_DOT[event.type]} style={{ flexShrink: 0 }} />
+
+      {/* Actor */}
+      <span
+        className="mono truncate-text"
+        style={{ fontSize: 11, color: 'var(--fg-3)', width: 90, flexShrink: 0 }}
+        title={event.actor}
+      >
+        {event.actor}
+      </span>
+
+      {/* Summary */}
+      <span
+        className="truncate-text"
+        style={{ flex: 1, fontSize: 12, color: 'var(--fg-2)' }}
+        title={event.summary}
+      >
+        {event.summary}
+      </span>
+
+      {/* Hash chip */}
+      <HashChip value={event.id} copyable={false} />
     </div>
   );
 }

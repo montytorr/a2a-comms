@@ -14,13 +14,16 @@ import { categorizeProjectInvitations, type InvitationLike } from './invitation-
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 import { buildProjectCardAccessMap } from '@/lib/project-card-access';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
+import { ProgressBar } from '@/components/atoms';
+import { Users, Layers, Eye, Plus, MoreHorizontal, FolderKanban } from 'lucide-react';
+
 export const dynamic = 'force-dynamic';
 
-const statusConfig: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {
-  planning: { bg: 'bg-amber-500/[0.08]', text: 'text-amber-400', dot: 'bg-amber-400' },
-  active: { bg: 'bg-cyan-500/[0.08]', text: 'text-cyan-400', dot: 'bg-cyan-400' },
-  completed: { bg: 'bg-emerald-500/[0.08]', text: 'text-emerald-400', dot: 'bg-emerald-400' },
-  archived: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', dot: 'bg-gray-500' },
+const statusTone: Record<ProjectStatus, string> = {
+  planning: 'amber',
+  active: 'amber',
+  completed: 'mint',
+  archived: 'ghost',
 };
 
 export default async function ProjectsPage({
@@ -40,7 +43,6 @@ export default async function ProjectsPage({
 
   const agentScope = auth.agentScope;
 
-  // Get project IDs where the signed-in user has access, plus the per-project access mode.
   let scopedProjectIds: string[] | null = null;
   let projectAccessById: Record<string, ReturnType<typeof buildProjectCardAccessMap>[string]> = {};
   if (!user.isSuperAdmin) {
@@ -167,7 +169,6 @@ async function renderProjectsPage({
     rows = rows.filter((project) => historyProjectIds.has(project.id));
   }
 
-  // Get member counts and task stats for all projects
   const projectIds = rows.map(p => p.id);
 
   const activeUser = user!;
@@ -232,29 +233,26 @@ async function renderProjectsPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div className="p-4 sm:p-6 lg:p-10">
-        <div className="flex items-end justify-between mb-8 animate-fade-in">
-          <div>
-            <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Management</p>
-            <h1 className="text-[32px] font-bold text-white tracking-tight">Projects</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              <span className="text-gray-400 tabular-nums font-medium">{rows.length}</span> project{rows.length !== 1 ? 's' : ''}
-            </p>
+      <div style={{ padding: '28px 32px 60px' }}>
+        {/* Header */}
+        <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
+          <div className="col gap-1">
+            <div className="upper">Management</div>
+            <div className="h1">Projects</div>
+            <div className="muted" style={{ fontSize: 13 }}>
+              <span className="num">{rows.length}</span> project{rows.length !== 1 ? 's' : ''}
+            </div>
           </div>
-          <Link
-            href="/projects/new"
-            className="px-4 py-2.5 text-[12px] font-semibold rounded-xl bg-gradient-to-r from-cyan-500/[0.1] to-blue-500/[0.1] border border-cyan-500/20 text-cyan-400 hover:from-cyan-500/[0.18] hover:to-blue-500/[0.18] hover:border-cyan-500/30 transition-all duration-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            New Project
-          </Link>
+          <div className="row gap-2">
+            <Link href="/projects/new" className="btn btn--primary" style={{ textDecoration: 'none' }}>
+              <Plus size={13} />New Project
+            </Link>
+          </div>
         </div>
 
+        {/* Invitations */}
         {(pendingMine.length > 0 || historyMine.length > 0) && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8 animate-fade-in">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
             <InvitationInbox
               title="My project invitations"
               invitations={pendingMine}
@@ -270,21 +268,16 @@ async function renderProjectsPage({
 
         <ProjectFilters current={statusFilter} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Project cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 16 }}>
           {rows.length === 0 ? (
-            <div className="col-span-full rounded-2xl glass-card px-6 py-20 text-center animate-fade-in">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <path d="M3 9h18" />
-                  <path d="M9 21V9" />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-600 font-medium">No projects found</p>
-              <p className="text-[11px] text-gray-700 mt-1">Create a project to start organizing tasks</p>
+            <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}>
+              <FolderKanban size={32} style={{ color: 'var(--fg-3)', margin: '0 auto' }} />
+              <div className="h3" style={{ marginTop: 14 }}>No projects found</div>
+              <div className="dim" style={{ fontSize: 13, marginTop: 4 }}>Create a project to start organizing tasks</div>
             </div>
           ) : (
-            rows.map((project, idx) => {
+            rows.map((project) => {
               const stats = taskStats[project.id] || { total: 0, done: 0 };
               const access = projectAccessById[project.id];
               const members = memberCounts[project.id] || 0;
@@ -293,111 +286,116 @@ async function renderProjectsPage({
               const hiddenPendingInvitations = hiddenPendingInvitationCounts[project.id] || 0;
               const privacyMetadata = normalizeProjectPrivacyMetadata(project.privacy_metadata);
               const canSeeInvitationSummary = !!canSeeInvitationSummaries[project.id];
-              const sc = statusConfig[project.status as ProjectStatus] || statusConfig.planning;
-              const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+              const tone = statusTone[project.status as ProjectStatus] || 'ghost';
+              const isActive = project.status === 'active' || project.status === 'planning';
+              const isComplete = project.status === 'completed';
 
               return (
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="rounded-2xl glass-card-hover overflow-hidden animate-fade-in block group"
-                  style={{ animationDelay: `${idx * 0.05}s` }}
+                  className="card"
+                  style={{
+                    padding: 18,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    display: 'block',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-strong)';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-1)';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  }}
                 >
-                  <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
-                  <div className="p-6">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <h3 className="text-[15px] font-bold text-white tracking-tight group-hover:text-cyan-400 transition-colors duration-200 line-clamp-2">
-                        {project.title}
-                      </h3>
-                      <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${sc.bg} ${sc.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                        {project.status}
-                      </span>
+                  {/* Status pill */}
+                  <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span className={`pill pill--${tone}`}>
+                      <span className={`dot dot--${tone} ${isActive ? 'pulse' : ''}`} />
+                      {project.status}
+                    </span>
+                    <span className="btn btn--ghost btn--sm btn--icon" onClick={(e) => e.preventDefault()} style={{ width: 24, height: 24 }}>
+                      <MoreHorizontal size={13} />
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <div className="h2" style={{ marginBottom: 4 }}>{project.title}</div>
+                  {project.description && (
+                    <div className="dim" style={{
+                      fontSize: 12,
+                      marginBottom: 14,
+                      lineHeight: 1.5,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}>
+                      <MarkdownPreview content={project.description} className="" />
                     </div>
+                  )}
 
-                    {project.description && (
-                      <div className="overflow-hidden line-clamp-2 mb-4">
-                        <MarkdownPreview content={project.description} className="text-[11px] text-gray-500 leading-relaxed" />
-                      </div>
+                  {/* Tags */}
+                  <div className="row gap-1" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
+                    {activeSprint && (
+                      <span className="pill pill--ghost" style={{ fontSize: 10 }}>{activeSprint}</span>
                     )}
+                    <span className="pill pill--ghost" style={{ fontSize: 10 }}>{privacyMetadata.visibility}</span>
+                    <span className="pill pill--ghost" style={{ fontSize: 10 }}>{privacyMetadata.retention_days}d retention</span>
+                  </div>
 
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      {activeSprint && (
-                        <span className="text-[10px] font-medium text-cyan-400/70 bg-cyan-500/[0.06] px-2 py-0.5 rounded-full border border-cyan-500/10">
-                          🏃 {activeSprint}
+                  {/* Progress */}
+                  {stats.total > 0 && (
+                    <div className="col gap-2" style={{ marginBottom: 14 }}>
+                      <div className="row" style={{ justifyContent: 'space-between' }}>
+                        <span className="upper" style={{ fontSize: 10 }}>Progress</span>
+                        <span className="mono num" style={{ fontSize: 11, color: 'var(--fg-1)' }}>
+                          {stats.done}/{stats.total}
                         </span>
-                      )}
-                      <span className="text-[10px] font-medium text-fuchsia-200 bg-fuchsia-500/[0.08] px-2 py-0.5 rounded-full border border-fuchsia-500/10">
-                        {privacyMetadata.visibility}
-                      </span>
-                      <span className="text-[10px] font-medium text-gray-300 bg-white/[0.03] px-2 py-0.5 rounded-full border border-white/[0.06]">
-                        {privacyMetadata.retention_days}d retention
-                      </span>
-                      {!privacyMetadata.allow_observer_access && (
-                        <span className="text-[10px] font-medium text-amber-200 bg-amber-500/[0.08] px-2 py-0.5 rounded-full border border-amber-500/10">
-                          observer restricted
-                        </span>
-                      )}
+                      </div>
+                      <ProgressBar
+                        value={stats.done}
+                        max={stats.total}
+                        color={isComplete ? 'var(--mint)' : 'var(--amber)'}
+                        height={3}
+                      />
                     </div>
+                  )}
 
-                    {stats.total > 0 && (
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Progress</span>
-                          <span className="text-[11px] font-mono text-gray-400 tabular-nums">
-                            {stats.done}/{stats.total}
-                          </span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-500"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
+                  {/* Hidden invitations summary */}
+                  {canSeeInvitationSummary && hiddenPendingInvitations > 0 && (
+                    <div className="card card--inset" style={{ padding: '8px 12px', marginBottom: 14 }}>
+                      <div className="upper" style={{ fontSize: 9 }}>Restricted invitation summary</div>
+                      <div className="dim" style={{ fontSize: 11, marginTop: 2 }}>
+                        {hiddenPendingInvitations} pending invitation{hiddenPendingInvitations !== 1 ? 's' : ''} hidden by trust policy
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {canSeeInvitationSummary && hiddenPendingInvitations > 0 && (
-                      <div className="mb-4 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-gray-500">Restricted invitation summary</p>
-                        <p className="mt-1 text-[11px] text-gray-400">
-                          {hiddenPendingInvitations} pending invitation{hiddenPendingInvitations !== 1 ? 's are' : ' is'} hidden by trust policy for this observer-visible project.
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-4 pt-4 border-t border-white/[0.04]">
+                  {/* Footer */}
+                  <div className="row" style={{ justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line-1)' }}>
+                    <div className="row gap-3">
                       {access?.canSeeParticipantCounts !== false && (
                         <>
-                          <div className="flex items-center gap-1.5">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                              <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            <span className="text-[11px] text-gray-500 font-medium">{members}</span>
-                          </div>
+                          <span className="mono dim" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Users size={11} /> {members}
+                          </span>
                           {observers > 0 && (
-                            <div className="flex items-center gap-1.5">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                              <span className="text-[11px] text-gray-500 font-medium">{observers} observer{observers !== 1 ? 's' : ''}</span>
-                            </div>
+                            <span className="mono dim" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Eye size={11} /> {observers}
+                            </span>
                           )}
                         </>
                       )}
-                      <div className="flex items-center gap-1.5">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                          <path d="M9 11l3 3L22 4" />
-                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                        </svg>
-                        <span className="text-[11px] text-gray-500 font-medium">{stats.total} tasks</span>
-                      </div>
-                      <span className="text-[10px] text-gray-700 ml-auto font-mono tabular-nums">
-                        {formatDate(project.created_at)}
+                      <span className="mono dim" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Layers size={11} /> {stats.total} tasks
                       </span>
                     </div>
+                    <span className="mono dim" style={{ fontSize: 11 }}>{formatDate(project.created_at)}</span>
                   </div>
                 </Link>
               );

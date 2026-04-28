@@ -24,44 +24,51 @@ interface AnalyticsChartsProps {
 }
 
 const statusColors: Record<string, string> = {
-  active: '#06b6d4',    // cyan
-  proposed: '#f59e0b',  // amber
-  closed: '#6b7280',    // gray
-  rejected: '#ef4444',  // red
-  expired: '#f97316',   // orange
-  cancelled: '#4b5563', // dark gray
+  active: 'var(--mint)',
+  proposed: 'var(--amber)',
+  closed: 'var(--fg-4)',
+  rejected: 'var(--rose)',
+  expired: 'var(--amber-2)',
+  cancelled: 'var(--fg-4)',
 };
 
-const statusBgColors: Record<string, string> = {
-  active: 'bg-cyan-500/[0.08] text-cyan-400 border-cyan-500/10',
-  proposed: 'bg-amber-500/[0.08] text-amber-400 border-amber-500/10',
-  closed: 'bg-gray-500/[0.06] text-gray-500 border-gray-500/10',
-  rejected: 'bg-red-500/[0.08] text-red-400 border-red-500/10',
-  expired: 'bg-orange-500/[0.08] text-orange-400 border-orange-500/10',
-  cancelled: 'bg-gray-500/[0.06] text-gray-600 border-gray-600/10',
+const statusPillTone: Record<string, string> = {
+  active: 'pill--mint',
+  proposed: 'pill--amber',
+  closed: 'pill--ghost',
+  rejected: 'pill--rose',
+  expired: 'pill--amber',
+  cancelled: 'pill--ghost',
 };
 
 const taskStatusColors: Record<string, string> = {
-  backlog: '#6b7280',
-  todo: '#f59e0b',
-  'in-progress': '#06b6d4',
-  'in-review': '#8b5cf6',
-  done: '#10b981',
-  cancelled: '#4b5563',
+  backlog: 'var(--fg-4)',
+  todo: 'var(--amber)',
+  'in-progress': 'var(--mint)',
+  'in-review': 'var(--peri)',
+  done: 'var(--mint)',
+  cancelled: 'var(--fg-4)',
 };
 
-const barColors = ['#06b6d4', '#8b5cf6', '#10b981', '#f97316', '#ef4444', '#f59e0b'];
+const barColorVars = [
+  'var(--mint)',
+  'var(--peri)',
+  'var(--amber)',
+  'var(--rose)',
+  'var(--mint-2)',
+  'var(--amber-2)',
+];
 
 function buildConicGradient(data: Record<string, number>, colorMap: Record<string, string>): string {
   const total = Object.values(data).reduce((s, v) => s + v, 0);
-  if (total === 0) return 'conic-gradient(rgba(255,255,255,0.05) 0deg 360deg)';
+  if (total === 0) return `conic-gradient(var(--line-1) 0deg 360deg)`;
 
   const segments: string[] = [];
   let currentDeg = 0;
 
   for (const [status, count] of Object.entries(data)) {
     const deg = (count / total) * 360;
-    const color = colorMap[status] || '#6b7280';
+    const color = colorMap[status] || 'var(--fg-4)';
     segments.push(`${color} ${currentDeg}deg ${currentDeg + deg}deg`);
     currentDeg += deg;
   }
@@ -102,29 +109,26 @@ export default function AnalyticsCharts({
   const dayTabs = [7, 14, 30];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10">
+    <div style={{ padding: '28px 32px 60px' }}>
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
-        <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Insights</p>
-        <div className="flex items-center justify-between">
+      <div style={{ marginBottom: '32px' }} className="animate-fade-in">
+        <p className="upper" style={{ marginBottom: '6px' }}>Insights</p>
+        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <h1 className="text-[32px] font-bold text-white tracking-tight">Analytics</h1>
-            <p className="text-sm text-gray-600 mt-1">Platform activity overview</p>
+            <h1 className="h1">Analytics</h1>
+            <p className="dim" style={{ marginTop: '4px', fontSize: '13px' }}>Platform activity overview</p>
           </div>
 
-          {/* Day tabs */}
-          <div className="flex items-center gap-1 bg-white/[0.02] border border-white/[0.04] rounded-xl p-1">
+          {/* Day tabs — segmented control */}
+          <div className="seg">
             {dayTabs.map((d) => (
               <Link
                 key={d}
                 href={`/analytics?days=${d}`}
-                className={`px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 ${
-                  days === d
-                    ? 'text-cyan-400 bg-cyan-500/[0.1] shadow-[0_0_10px_rgba(6,182,212,0.1)]'
-                    : 'text-gray-600 hover:text-gray-400 hover:bg-white/[0.03]'
-                }`}
               >
-                {d}d
+                <button className={days === d ? 'active' : ''}>
+                  {d}d
+                </button>
               </Link>
             ))}
           </div>
@@ -132,87 +136,94 @@ export default function AnalyticsCharts({
       </div>
 
       {/* Summary Cards — Row 1 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
         {[
-          { label: 'Total Contracts', value: totalContracts, color: 'text-violet-400' },
-          { label: 'Messages', value: totalMessages, suffix: ` (${days}d)`, color: 'text-cyan-400' },
-          { label: 'Avg Turns', value: avgTurns, color: 'text-emerald-400' },
-          { label: 'Active Agents', value: agentStats.length, color: 'text-orange-400' },
+          { label: 'Total Contracts', value: totalContracts, accentVar: '--peri' },
+          { label: 'Messages', value: totalMessages, suffix: ` (${days}d)`, accentVar: '--mint' },
+          { label: 'Avg Turns', value: avgTurns, accentVar: '--mint' },
+          { label: 'Active Agents', value: agentStats.length, accentVar: '--amber' },
         ].map((card, idx) => (
           <div
             key={card.label}
-            className="rounded-2xl glass-card p-5 animate-fade-in"
-            style={{ animationDelay: `${idx * 0.05}s` }}
+            className="card animate-fade-in"
+            style={{ padding: '18px 20px', animationDelay: `${idx * 0.05}s` }}
           >
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">{card.label}</p>
-            <p className={`text-2xl font-mono font-bold ${card.color} tabular-nums`}>
+            <p className="upper dim" style={{ marginBottom: '8px' }}>{card.label}</p>
+            <p className="mono num" style={{ fontSize: '24px', fontWeight: 700, color: `var(${card.accentVar})` }}>
               {card.value}
-              {card.suffix && <span className="text-[11px] text-gray-600 font-normal">{card.suffix}</span>}
+              {card.suffix && <span className="dim" style={{ fontSize: '11px', fontWeight: 400 }}>{card.suffix}</span>}
             </p>
           </div>
         ))}
       </div>
 
       {/* Summary Cards — Row 2 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '32px' }}>
         {[
-          { label: 'Active Projects', value: activeProjects, color: 'text-teal-400' },
-          { label: 'Tasks Done', value: tasksDone, suffix: ` (${days}d)`, color: 'text-emerald-400' },
-          { label: 'Avg Response Time', value: avgResponseTimeHours !== null ? `${avgResponseTimeHours}h` : '—', color: 'text-indigo-400' },
-          { label: 'Webhooks Fired', value: webhooksFired, suffix: ` (${days}d)`, color: 'text-pink-400' },
+          { label: 'Active Projects', value: activeProjects, accentVar: '--mint' },
+          { label: 'Tasks Done', value: tasksDone, suffix: ` (${days}d)`, accentVar: '--mint' },
+          { label: 'Avg Response Time', value: avgResponseTimeHours !== null ? `${avgResponseTimeHours}h` : '—', accentVar: '--peri' },
+          { label: 'Webhooks Fired', value: webhooksFired, suffix: ` (${days}d)`, accentVar: '--rose' },
         ].map((card, idx) => (
           <div
             key={card.label}
-            className="rounded-2xl glass-card p-5 animate-fade-in"
-            style={{ animationDelay: `${(idx + 4) * 0.05}s` }}
+            className="card animate-fade-in"
+            style={{ padding: '18px 20px', animationDelay: `${(idx + 4) * 0.05}s` }}
           >
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">{card.label}</p>
-            <p className={`text-2xl font-mono font-bold ${card.color} tabular-nums`}>
+            <p className="upper dim" style={{ marginBottom: '8px' }}>{card.label}</p>
+            <p className="mono num" style={{ fontSize: '24px', fontWeight: 700, color: `var(${card.accentVar})` }}>
               {card.value}
-              {card.suffix && <span className="text-[11px] text-gray-600 font-normal">{card.suffix}</span>}
+              {card.suffix && <span className="dim" style={{ fontSize: '11px', fontWeight: 400 }}>{card.suffix}</span>}
             </p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         {/* Donut Chart — Contracts by Status */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Contracts by Status</h2>
-          <p className="text-[10px] text-gray-600 mb-6">All time distribution</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.1s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts by Status</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>All time distribution</p>
 
-          <div className="flex items-center gap-8">
+          <div className="row gap-6">
             {/* Donut */}
-            <div className="relative shrink-0">
+            <div style={{ position: 'relative', flexShrink: 0 }}>
               <div
-                className="w-36 h-36 rounded-full"
                 style={{
+                  width: '144px',
+                  height: '144px',
+                  borderRadius: '50%',
                   background: buildConicGradient(contractsByStatus, statusColors),
                   mask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                   WebkitMask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                 }}
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <span className="text-xl font-mono font-bold text-white tabular-nums">{totalStatusCount}</span>
-                  <p className="text-[9px] text-gray-600 uppercase tracking-wider">Total</p>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <span className="mono num" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-0)' }}>{totalStatusCount}</span>
+                  <p className="upper dim" style={{ marginTop: '2px' }}>Total</p>
                 </div>
               </div>
             </div>
 
             {/* Legend */}
-            <div className="space-y-2 flex-1">
+            <div className="col gap-2" style={{ flex: 1 }}>
               {Object.entries(contractsByStatus).map(([status, count]) => (
-                <div key={status} className="flex items-center gap-3">
+                <div key={status} className="row gap-2">
                   <div
-                    className="w-2.5 h-2.5 rounded-sm shrink-0"
-                    style={{ backgroundColor: statusColors[status] || '#6b7280' }}
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '2px',
+                      flexShrink: 0,
+                      background: statusColors[status] || 'var(--fg-4)',
+                    }}
                   />
-                  <span className={`text-[11px] font-medium flex-1 capitalize ${statusBgColors[status]?.split(' ')[1] || 'text-gray-400'}`}>
+                  <span style={{ fontSize: '11px', fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
                     {status}
                   </span>
-                  <span className="text-[11px] font-mono text-gray-500 tabular-nums">{count}</span>
-                  <span className="text-[10px] text-gray-700 tabular-nums w-10 text-right">
+                  <span className="mono num dim" style={{ fontSize: '11px' }}>{count}</span>
+                  <span className="mono num" style={{ fontSize: '10px', color: 'var(--fg-4)', width: '32px', textAlign: 'right' }}>
                     {totalStatusCount > 0 ? Math.round((count / totalStatusCount) * 100) : 0}%
                   </span>
                 </div>
@@ -222,31 +233,35 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Per Agent Messages */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Messages per Agent</h2>
-          <p className="text-[10px] text-gray-600 mb-6">Last {days} days</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.15s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Agent</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Last {days} days</p>
 
           {agentStats.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-gray-600">No messages in this period</p>
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <p className="dim" style={{ fontSize: '13px' }}>No messages in this period</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="col gap-2">
               {agentStats.map((agent, idx) => (
-                <div key={agent.name} className="group">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-[11px] font-medium text-gray-400 w-24 truncate">{agent.name}</span>
-                    <div className="flex-1 h-6 bg-white/[0.02] rounded-md overflow-hidden relative">
+                <div key={agent.name}>
+                  <div className="row gap-2" style={{ marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--fg-2)', width: '96px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {agent.name}
+                    </span>
+                    <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
                       <div
-                        className="h-full rounded-md transition-all duration-700 ease-out"
                         style={{
+                          height: '100%',
+                          borderRadius: '4px',
+                          transition: 'width 0.7s ease-out',
                           width: `${Math.max(4, (agent.count / maxAgentCount) * 100)}%`,
-                          backgroundColor: barColors[idx % barColors.length],
-                          opacity: 0.7,
+                          background: barColorVars[idx % barColorVars.length],
+                          opacity: 0.6,
                         }}
                       />
                     </div>
-                    <span className="text-[11px] font-mono text-gray-500 tabular-nums w-8 text-right">{agent.count}</span>
+                    <span className="mono num dim" style={{ fontSize: '11px', width: '28px', textAlign: 'right' }}>{agent.count}</span>
                   </div>
                 </div>
               ))}
@@ -255,32 +270,41 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Messages per Day */}
-        <div className="rounded-2xl glass-card p-6 lg:col-span-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Messages per Day</h2>
-          <p className="text-[10px] text-gray-600 mb-6">Last {days} days</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.2s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Day</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Last {days} days</p>
 
-          <div className="flex items-end gap-[2px] h-40">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '160px' }}>
             {dayLabels.map((label, idx) => {
               const count = dayCounts[idx];
               const heightPct = maxDayCount > 0 ? (count / maxDayCount) * 100 : 0;
               const showLabel = days <= 14 || idx % Math.ceil(days / 14) === 0;
               return (
-                <div key={label} className="flex-1 flex flex-col items-center gap-1 group" title={`${formatShortDate(label)}: ${count}`}>
-                  <span className="text-[9px] font-mono text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">
+                <div
+                  key={label}
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                  className="group"
+                  title={`${formatShortDate(label)}: ${count}`}
+                >
+                  <span className="mono num" style={{ fontSize: '9px', color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
                     {count}
                   </span>
-                  <div className="w-full relative" style={{ height: '120px' }}>
+                  <div style={{ width: '100%', position: 'relative', height: '120px' }}>
                     <div
-                      className="absolute bottom-0 w-full rounded-t-sm transition-all duration-500 ease-out hover:opacity-100"
                       style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        width: '100%',
+                        borderRadius: '2px 2px 0 0',
+                        transition: 'height 0.5s ease-out',
                         height: `${Math.max(heightPct > 0 ? 2 : 0, heightPct)}%`,
-                        backgroundColor: '#06b6d4',
-                        opacity: 0.6,
+                        background: 'var(--mint)',
+                        opacity: 0.55,
                       }}
                     />
                   </div>
                   {showLabel && (
-                    <span className="text-[8px] text-gray-700 font-mono tabular-nums whitespace-nowrap">
+                    <span className="mono num" style={{ fontSize: '8px', color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
                       {formatShortDate(label)}
                     </span>
                   )}
@@ -291,32 +315,41 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Contracts Created per Day */}
-        <div className="rounded-2xl glass-card p-6 lg:col-span-2 animate-fade-in" style={{ animationDelay: '0.25s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Contracts Created per Day</h2>
-          <p className="text-[10px] text-gray-600 mb-6">Last {days} days</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.25s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts Created per Day</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Last {days} days</p>
 
-          <div className="flex items-end gap-[2px] h-40">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '160px' }}>
             {dayLabels.map((label, idx) => {
               const count = contractDayCounts[idx];
               const heightPct = maxContractDayCount > 0 ? (count / maxContractDayCount) * 100 : 0;
               const showLabel = days <= 14 || idx % Math.ceil(days / 14) === 0;
               return (
-                <div key={label} className="flex-1 flex flex-col items-center gap-1 group" title={`${formatShortDate(label)}: ${count}`}>
-                  <span className="text-[9px] font-mono text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">
+                <div
+                  key={label}
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                  className="group"
+                  title={`${formatShortDate(label)}: ${count}`}
+                >
+                  <span className="mono num" style={{ fontSize: '9px', color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
                     {count}
                   </span>
-                  <div className="w-full relative" style={{ height: '120px' }}>
+                  <div style={{ width: '100%', position: 'relative', height: '120px' }}>
                     <div
-                      className="absolute bottom-0 w-full rounded-t-sm transition-all duration-500 ease-out hover:opacity-100"
                       style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        width: '100%',
+                        borderRadius: '2px 2px 0 0',
+                        transition: 'height 0.5s ease-out',
                         height: `${Math.max(heightPct > 0 ? 2 : 0, heightPct)}%`,
-                        backgroundColor: '#8b5cf6',
-                        opacity: 0.6,
+                        background: 'var(--peri)',
+                        opacity: 0.55,
                       }}
                     />
                   </div>
                   {showLabel && (
-                    <span className="text-[8px] text-gray-700 font-mono tabular-nums whitespace-nowrap">
+                    <span className="mono num" style={{ fontSize: '8px', color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
                       {formatShortDate(label)}
                     </span>
                   )}
@@ -327,45 +360,52 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Donut Chart — Task Status Distribution */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Task Status Distribution</h2>
-          <p className="text-[10px] text-gray-600 mb-6">All tasks</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.3s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Task Status Distribution</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>All tasks</p>
 
           {totalTaskStatusCount === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-gray-600">No tasks yet</p>
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <p className="dim" style={{ fontSize: '13px' }}>No tasks yet</p>
             </div>
           ) : (
-            <div className="flex items-center gap-8">
-              <div className="relative shrink-0">
+            <div className="row gap-6">
+              <div style={{ position: 'relative', flexShrink: 0 }}>
                 <div
-                  className="w-36 h-36 rounded-full"
                   style={{
+                    width: '144px',
+                    height: '144px',
+                    borderRadius: '50%',
                     background: buildConicGradient(tasksByStatus, taskStatusColors),
                     mask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                     WebkitMask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                   }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <span className="text-xl font-mono font-bold text-white tabular-nums">{totalTaskStatusCount}</span>
-                    <p className="text-[9px] text-gray-600 uppercase tracking-wider">Total</p>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <span className="mono num" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-0)' }}>{totalTaskStatusCount}</span>
+                    <p className="upper dim" style={{ marginTop: '2px' }}>Total</p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2 flex-1">
+              <div className="col gap-2" style={{ flex: 1 }}>
                 {Object.entries(tasksByStatus).map(([status, count]) => (
-                  <div key={status} className="flex items-center gap-3">
+                  <div key={status} className="row gap-2">
                     <div
-                      className="w-2.5 h-2.5 rounded-sm shrink-0"
-                      style={{ backgroundColor: taskStatusColors[status] || '#6b7280' }}
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '2px',
+                        flexShrink: 0,
+                        background: taskStatusColors[status] || 'var(--fg-4)',
+                      }}
                     />
-                    <span className="text-[11px] font-medium flex-1 text-gray-400 capitalize">
+                    <span style={{ fontSize: '11px', fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
                       {status}
                     </span>
-                    <span className="text-[11px] font-mono text-gray-500 tabular-nums">{count}</span>
-                    <span className="text-[10px] text-gray-700 tabular-nums w-10 text-right">
+                    <span className="mono num dim" style={{ fontSize: '11px' }}>{count}</span>
+                    <span className="mono num" style={{ fontSize: '10px', color: 'var(--fg-4)', width: '32px', textAlign: 'right' }}>
                       {totalTaskStatusCount > 0 ? Math.round((count / totalTaskStatusCount) * 100) : 0}%
                     </span>
                   </div>
@@ -376,33 +416,38 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Horizontal Bar Chart — Top Contracts by Messages */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.35s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Top Contracts by Messages</h2>
-          <p className="text-[10px] text-gray-600 mb-6">Top 5 in last {days} days</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.35s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Top Contracts by Messages</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Top 5 in last {days} days</p>
 
           {topContractsByMessages.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-gray-600">No messages in this period</p>
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <p className="dim" style={{ fontSize: '13px' }}>No messages in this period</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="col gap-2">
               {topContractsByMessages.map((contract, idx) => (
-                <div key={contract.title} className="group">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-[11px] font-medium text-gray-400 w-28 truncate" title={contract.title}>
+                <div key={contract.title}>
+                  <div className="row gap-2">
+                    <span
+                      style={{ fontSize: '11px', fontWeight: 500, color: 'var(--fg-2)', width: '112px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      title={contract.title}
+                    >
                       {contract.title}
                     </span>
-                    <div className="flex-1 h-6 bg-white/[0.02] rounded-md overflow-hidden relative">
+                    <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
                       <div
-                        className="h-full rounded-md transition-all duration-700 ease-out"
                         style={{
+                          height: '100%',
+                          borderRadius: '4px',
+                          transition: 'width 0.7s ease-out',
                           width: `${Math.max(4, (contract.count / maxTopContractMessages) * 100)}%`,
-                          backgroundColor: barColors[idx % barColors.length],
-                          opacity: 0.7,
+                          background: barColorVars[idx % barColorVars.length],
+                          opacity: 0.6,
                         }}
                       />
                     </div>
-                    <span className="text-[11px] font-mono text-gray-500 tabular-nums w-8 text-right">{contract.count}</span>
+                    <span className="mono num dim" style={{ fontSize: '11px', width: '28px', textAlign: 'right' }}>{contract.count}</span>
                   </div>
                 </div>
               ))}
@@ -411,27 +456,35 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Hourly Activity Heatmap */}
-        <div className="rounded-2xl glass-card p-6 lg:col-span-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <h2 className="text-[13px] font-semibold text-gray-300 tracking-tight mb-1">Hourly Activity Heatmap</h2>
-          <p className="text-[10px] text-gray-600 mb-6">Message distribution by hour (UTC) — last {days} days</p>
+        <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.4s' }}>
+          <h2 className="h3" style={{ marginBottom: '2px' }}>Hourly Activity Heatmap</h2>
+          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Message distribution by hour (UTC) — last {days} days</p>
 
-          <div className="flex items-end gap-1">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
             {hourlyMessageCounts.map((count, hour) => {
               const intensity = maxHourlyCount > 0 ? count / maxHourlyCount : 0;
               return (
-                <div key={hour} className="flex-1 flex flex-col items-center gap-2 group" title={`${hour}:00 UTC — ${count} messages`}>
-                  <span className="text-[9px] font-mono text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">
+                <div
+                  key={hour}
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
+                  className="group"
+                  title={`${hour}:00 UTC — ${count} messages`}
+                >
+                  <span className="mono num" style={{ fontSize: '9px', color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
                     {count}
                   </span>
                   <div
-                    className="w-full h-10 rounded-sm transition-all duration-300 group-hover:ring-1 group-hover:ring-cyan-500/30"
                     style={{
-                      backgroundColor: count === 0
-                        ? 'rgba(255,255,255,0.02)'
-                        : `rgba(6, 182, 212, ${0.15 + intensity * 0.7})`,
+                      width: '100%',
+                      height: '40px',
+                      borderRadius: '3px',
+                      transition: 'background 0.3s',
+                      background: count === 0
+                        ? 'var(--bg-2)'
+                        : `oklch(0.82 0.14 165 / ${0.12 + intensity * 0.65})`,
                     }}
                   />
-                  <span className="text-[8px] text-gray-700 font-mono tabular-nums">
+                  <span className="mono num" style={{ fontSize: '8px', color: 'var(--fg-4)' }}>
                     {hour.toString().padStart(2, '0')}
                   </span>
                 </div>

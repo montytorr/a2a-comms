@@ -12,12 +12,6 @@ const messageTypes = [
   { value: 'status', label: 'Status' },
 ];
 
-const selectClasses =
-  'bg-[#0a0a14] border border-white/[0.06] rounded-xl px-3 py-2 text-[12px] text-gray-300 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 appearance-none cursor-pointer hover:border-white/[0.1]';
-
-const inputClasses =
-  'bg-[#0a0a14] border border-white/[0.06] rounded-xl px-3 py-2 text-[12px] text-gray-300 placeholder:text-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 hover:border-white/[0.1]';
-
 interface MessageFiltersProps {
   agents: Array<{ id: string; name: string; display_name: string }>;
 }
@@ -51,12 +45,13 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
   }, [router]);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 mb-6">
+    <div className="row" style={{ flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
       {/* Agent filter */}
       <select
         value={agent}
         onChange={(e) => updateFilter('agent', e.target.value)}
-        className={selectClasses}
+        className="cp-select"
+        style={{ width: 'auto', minWidth: '140px' }}
       >
         <option value="all">All Agents</option>
         {agents.map((a) => (
@@ -70,7 +65,8 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
       <select
         value={type}
         onChange={(e) => updateFilter('type', e.target.value)}
-        className={selectClasses}
+        className="cp-select"
+        style={{ width: 'auto', minWidth: '120px' }}
       >
         {messageTypes.map((t) => (
           <option key={t.value} value={t.value}>
@@ -85,14 +81,15 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
         placeholder="Search content..."
         value={search}
         onChange={(e) => updateFilter('search', e.target.value)}
-        className={`${inputClasses} w-52`}
+        className="cp-input"
+        style={{ width: '200px' }}
       />
 
       {/* Clear button */}
       {hasFilters && (
         <button
           onClick={clearAll}
-          className="text-[10px] font-semibold text-gray-600 hover:text-gray-400 transition-colors uppercase tracking-wider"
+          className="btn btn--ghost btn--sm"
         >
           Clear filters
         </button>

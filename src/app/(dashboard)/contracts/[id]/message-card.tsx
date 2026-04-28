@@ -15,22 +15,34 @@ function SyntaxJson({ data }: { data: unknown }) {
   const parts = json.split(/("(?:[^"\\]|\\.)*")/g);
 
   return (
-    <pre className="text-[12px] bg-[#06060b]/80 border border-white/[0.03] rounded-xl p-4 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed selection:bg-cyan-500/20 animate-fade-in" style={{ animationDuration: '0.15s' }}>
+    <pre
+      className="mono"
+      style={{
+        fontSize: '12px',
+        background: 'var(--bg-0)',
+        border: '1px solid var(--line-1)',
+        borderRadius: '0.75rem',
+        padding: '1rem',
+        overflowX: 'auto',
+        whiteSpace: 'pre-wrap',
+        lineHeight: 1.6,
+      }}
+    >
       {parts.map((part, i) => {
         if (part.startsWith('"') && part.endsWith('"')) {
           const next = parts[i + 1];
           if (next && next.trimStart().startsWith(':')) {
-            return <span key={i} className="text-cyan-400">{part}</span>;
+            return <span key={i} style={{ color: 'var(--peri)' }}>{part}</span>;
           }
-          return <span key={i} className="text-emerald-400">{part}</span>;
+          return <span key={i} style={{ color: 'var(--mint)' }}>{part}</span>;
         }
         return (
           <span key={i}>
             {part.split(/(\b(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b)/g).map((sub, j) => {
-              if (/^(true|false)$/.test(sub)) return <span key={j} className="text-amber-400">{sub}</span>;
-              if (sub === 'null') return <span key={j} className="text-gray-600">{sub}</span>;
-              if (/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(sub)) return <span key={j} className="text-violet-400">{sub}</span>;
-              return <span key={j} className="text-gray-500">{sub}</span>;
+              if (/^(true|false)$/.test(sub)) return <span key={j} style={{ color: 'var(--amber)' }}>{sub}</span>;
+              if (sub === 'null') return <span key={j} style={{ color: 'var(--fg-3)' }}>{sub}</span>;
+              if (/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(sub)) return <span key={j} style={{ color: 'var(--rose)' }}>{sub}</span>;
+              return <span key={j} style={{ color: 'var(--fg-2)' }}>{sub}</span>;
             })}
           </span>
         );
@@ -43,16 +55,13 @@ function SyntaxJson({ data }: { data: unknown }) {
 
 function RichText({ text, className }: { text: string; className?: string }) {
   return (
-    <div className={`text-[13px] text-gray-300 leading-relaxed prose prose-invert prose-sm max-w-none
-      prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5
-      prose-headings:text-gray-200 prose-headings:text-sm prose-headings:font-semibold prose-headings:mt-2 prose-headings:mb-1
-      prose-code:text-cyan-400 prose-code:bg-gray-800/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
-      prose-pre:bg-gray-900 prose-pre:border prose-pre:border-white/[0.04] prose-pre:rounded-md prose-pre:p-3
-      prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
-      prose-strong:text-gray-200 prose-em:text-gray-300
-      prose-blockquote:border-l-cyan-500/30 prose-blockquote:text-gray-400
-      prose-table:text-xs prose-th:text-gray-400 prose-td:text-gray-300
-      ${className || ''}`}>
+    <div
+      className={`prose prose-invert prose-sm max-w-none
+        prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5
+        prose-headings:text-sm prose-headings:font-semibold prose-headings:mt-2 prose-headings:mb-1
+        ${className || ''}`}
+      style={{ fontSize: '13px', color: 'var(--fg-1)', lineHeight: 1.6 }}
+    >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   );
@@ -63,8 +72,8 @@ function RichText({ text, className }: { text: string; className?: string }) {
 function Field({ label, children, accent }: { label: string; children: React.ReactNode; accent?: boolean }) {
   return (
     <div>
-      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">{label}</p>
-      <div className={accent ? 'text-[13px] text-cyan-400' : 'text-[13px] text-gray-300'}>
+      <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.25rem' }}>{label}</p>
+      <div style={{ fontSize: '13px', color: accent ? 'var(--peri)' : 'var(--fg-1)' }}>
         {children}
       </div>
     </div>
@@ -74,20 +83,31 @@ function Field({ label, children, accent }: { label: string; children: React.Rea
 // ── Helper: status pill ──
 
 function StatusPill({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    accepted: 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/[0.12]',
-    confirmed: 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/[0.12]',
-    done: 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/[0.12]',
-    completed: 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/[0.12]',
-    both_tasks_done: 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/[0.12]',
-    rejected: 'text-red-400 bg-red-500/[0.08] border-red-500/[0.12]',
-    failed: 'text-red-400 bg-red-500/[0.08] border-red-500/[0.12]',
-    pending: 'text-amber-400 bg-amber-500/[0.08] border-amber-500/[0.12]',
-    in_progress: 'text-blue-400 bg-blue-500/[0.08] border-blue-500/[0.12]',
+  const toneMap: Record<string, string> = {
+    accepted: 'mint',
+    confirmed: 'mint',
+    done: 'mint',
+    completed: 'mint',
+    both_tasks_done: 'mint',
+    rejected: 'rose',
+    failed: 'rose',
+    pending: 'amber',
+    in_progress: 'peri',
   };
-  const style = colors[status.toLowerCase()] || 'text-gray-400 bg-white/[0.04] border-white/[0.06]';
+  const tone = toneMap[status.toLowerCase()] || 'fg';
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${style}`}>
+    <span
+      style={{
+        fontSize: '10px',
+        fontWeight: 600,
+        padding: '0.125rem 0.5rem',
+        borderRadius: '0.375rem',
+        border: `1px solid var(--${tone})`,
+        background: `var(--${tone}-bg, var(--bg-2))`,
+        color: `var(--${tone})`,
+        display: 'inline-block',
+      }}
+    >
       {status.replace(/_/g, ' ')}
     </span>
   );
@@ -100,7 +120,7 @@ const TASK_HEADER_KEYS = new Set(['id', 'title', 'status', 'priority', 'solution
 
 function TaskList({ tasks }: { tasks: Array<Record<string, unknown>> }) {
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       {tasks.map((task, i) => {
         const id = typeof task.id === 'string' ? task.id : null;
         const title = typeof task.title === 'string' ? task.title : null;
@@ -112,17 +132,17 @@ function TaskList({ tasks }: { tasks: Array<Record<string, unknown>> }) {
         const hasHeader = id || title || taskStatus || priority;
 
         return (
-          <div key={i} className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-3">
+          <div key={i} style={{ borderRadius: '0.5rem', background: 'var(--bg-2)', border: '1px solid var(--line-1)', padding: '0.75rem' }}>
             {hasHeader && (
-              <div className="flex items-center gap-2 mb-1">
-                {id && <span className="text-[10px] font-mono text-gray-600">{id.slice(0, 8)}</span>}
-                {title && <span className="text-[12px] font-semibold text-gray-200">{title}</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                {id && <span className="mono" style={{ fontSize: '10px', color: 'var(--fg-3)' }}>{id.slice(0, 8)}</span>}
+                {title && <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--fg-0)' }}>{title}</span>}
                 {taskStatus && <StatusPill status={taskStatus} />}
-                {priority && <span className="text-[10px] text-gray-500 font-mono">{priority}</span>}
+                {priority && <span className="mono" style={{ fontSize: '10px', color: 'var(--fg-2)' }}>{priority}</span>}
               </div>
             )}
-            {solution && <RichText text={solution} className="text-[12px] text-gray-400 mt-1" />}
-            {description && <RichText text={description} className="text-[12px] text-gray-400 mt-1" />}
+            {solution && <RichText text={solution} />}
+            {description && <RichText text={description} />}
             {/* Render all remaining keys not handled above */}
             <ObjectFields obj={task} exclude={TASK_HEADER_KEYS} />
           </div>
@@ -142,14 +162,14 @@ function ObjectFields({ obj, exclude }: { obj: ContentObj; exclude?: Set<string>
   if (entries.length === 0) return null;
 
   return (
-    <div className="space-y-2.5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
       {entries.map(([key, value]) => {
         // Nested object — render recursively or as structured
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           return (
             <div key={key}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1.5">{key.replace(/_/g, ' ')}</p>
-              <div className="pl-3 border-l-2 border-white/[0.04]">
+              <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{key.replace(/_/g, ' ')}</p>
+              <div style={{ paddingLeft: '0.75rem', borderLeft: '2px solid var(--line-1)' }}>
                 <ObjectFields obj={value as ContentObj} />
               </div>
             </div>
@@ -159,7 +179,7 @@ function ObjectFields({ obj, exclude }: { obj: ContentObj; exclude?: Set<string>
         if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
           return (
             <div key={key}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1.5">{key.replace(/_/g, ' ')}</p>
+              <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{key.replace(/_/g, ' ')}</p>
               <TaskList tasks={value as Array<Record<string, unknown>>} />
             </div>
           );
@@ -168,10 +188,10 @@ function ObjectFields({ obj, exclude }: { obj: ContentObj; exclude?: Set<string>
         if (Array.isArray(value)) {
           return (
             <div key={key}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-1">{key.replace(/_/g, ' ')}</p>
-              <div className="flex flex-wrap gap-1.5">
+              <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.25rem' }}>{key.replace(/_/g, ' ')}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                 {value.map((item, i) => (
-                  <span key={i} className="text-[11px] text-gray-300 bg-white/[0.03] border border-white/[0.05] rounded-md px-2 py-0.5">
+                  <span key={i} style={{ fontSize: '11px', color: 'var(--fg-1)', background: 'var(--bg-2)', border: '1px solid var(--line-1)', borderRadius: '0.375rem', padding: '0.125rem 0.5rem' }}>
                     {String(item)}
                   </span>
                 ))}
@@ -182,16 +202,16 @@ function ObjectFields({ obj, exclude }: { obj: ContentObj; exclude?: Set<string>
         // Boolean
         if (typeof value === 'boolean') {
           return (
-            <div key={key} className="flex items-center gap-2">
-              <span className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">{key.replace(/_/g, ' ')}</span>
-              <span className={`text-[11px] font-semibold ${value ? 'text-emerald-400' : 'text-red-400'}`}>{value ? 'Yes' : 'No'}</span>
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>{key.replace(/_/g, ' ')}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: value ? 'var(--mint)' : 'var(--rose)' }}>{value ? 'Yes' : 'No'}</span>
             </div>
           );
         }
         // String or number
         return (
           <Field key={key} label={key.replace(/_/g, ' ')}>
-            <RichText text={String(value)} className="text-[12px]" />
+            <RichText text={String(value)} />
           </Field>
         );
       })}
@@ -210,8 +230,8 @@ export default function MessageCard({ content }: { content: unknown }) {
   const obj = typeof content === 'object' && content !== null ? content as ContentObj : null;
   if (!obj) {
     return (
-      <div className="space-y-2">
-        <p className="text-[13px] text-gray-400">{String(content)}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <p style={{ fontSize: '13px', color: 'var(--fg-2)' }}>{String(content)}</p>
       </div>
     );
   }
@@ -234,22 +254,34 @@ export default function MessageCard({ content }: { content: unknown }) {
   const handledPayloadKeys = new Set(['message', 'status']);
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       {/* Header: type badge + status + from */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
         {msgType && (
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-cyan-500/80 bg-cyan-500/[0.06] border border-cyan-500/[0.1] px-2 py-0.5 rounded-md">
+          <span
+            style={{
+              fontSize: '9px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--peri)',
+              background: 'var(--peri-bg)',
+              border: '1px solid var(--peri)',
+              padding: '0.125rem 0.5rem',
+              borderRadius: '0.375rem',
+            }}
+          >
             {msgType.replace(/_/g, ' ')}
           </span>
         )}
         {(status || payloadStatus) && <StatusPill status={(status || payloadStatus)!} />}
         {sender && (
-          <span className="text-[9px] text-gray-600">
-            from <span className="text-gray-500 font-medium">{sender}</span>
+          <span style={{ fontSize: '9px', color: 'var(--fg-3)' }}>
+            from <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{sender}</span>
           </span>
         )}
         {projectId && (
-          <span className="text-[9px] text-gray-700 font-mono">
+          <span className="mono" style={{ fontSize: '9px', color: 'var(--fg-3)' }}>
             project {projectId.slice(0, 8)}
           </span>
         )}
@@ -266,7 +298,7 @@ export default function MessageCard({ content }: { content: unknown }) {
 
       {/* Payload structured fields */}
       {payload && (
-        <div className="mt-1">
+        <div style={{ marginTop: '0.25rem' }}>
           <ObjectFields obj={payload} exclude={handledPayloadKeys} />
         </div>
       )}
@@ -275,10 +307,22 @@ export default function MessageCard({ content }: { content: unknown }) {
       <ObjectFields obj={obj} exclude={HANDLED_KEYS} />
 
       {/* Raw JSON toggle */}
-      <div className="pt-1">
+      <div style={{ paddingTop: '0.25rem' }}>
         <button
           onClick={() => setShowRaw(!showRaw)}
-          className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-gray-600 hover:text-gray-400 transition-colors duration-200 uppercase tracking-wider"
+          className="upper"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            fontSize: '10px',
+            fontWeight: 600,
+            color: 'var(--fg-3)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            letterSpacing: '0.08em',
+          }}
         >
           <svg
             width="10"
@@ -289,13 +333,13 @@ export default function MessageCard({ content }: { content: unknown }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={`transition-transform duration-200 ${showRaw ? 'rotate-90' : ''}`}
+            style={{ transform: showRaw ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
           >
             <polyline points="9 18 15 12 9 6" />
           </svg>
           {showRaw ? 'Hide' : 'Show'} raw JSON
         </button>
-        {showRaw && <div className="mt-2"><SyntaxJson data={content} /></div>}
+        {showRaw && <div style={{ marginTop: '0.5rem' }}><SyntaxJson data={content} /></div>}
       </div>
     </div>
   );

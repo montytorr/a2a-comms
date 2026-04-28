@@ -1,14 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { BootScreen } from '@/components/boot-screen';
 
-const inter = Inter({
+const geist = Geist({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-geist',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
 });
 
 export const metadata: Metadata = {
-  title: 'A2A Comms — Control Panel',
+  title: 'A2A Comms — Control Plane',
   description: 'Agent-to-agent communication platform',
   manifest: '/manifest.json',
   icons: {
@@ -24,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#06b6d4',
+  themeColor: '#1a1a2e',
 };
 
 export default function RootLayout({
@@ -33,14 +39,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable}`}>
-      <body className="bg-[#06060b] text-gray-100 antialiased font-[family-name:var(--font-inter)]">
-        {/* Animated mesh gradient background */}
-        <div className="mesh-gradient-bg" />
-        {/* Noise texture overlay */}
-        <div className="noise-overlay" />
-        {/* Content */}
-        <div className="relative z-10">
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+      <body>
+        <BootScreen />
+        <div id="app-root">
           {children}
         </div>
       </body>

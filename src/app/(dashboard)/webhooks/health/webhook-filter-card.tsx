@@ -64,7 +64,6 @@ export default function WebhookFilterCard({
 
   function handleClick() {
     if (isSelected) {
-      // Clicking again clears filter
       router.push('/webhooks/health');
     } else {
       router.push(`/webhooks/health?webhook=${webhookId}`);
@@ -76,91 +75,106 @@ export default function WebhookFilterCard({
   return (
     <button
       onClick={handleClick}
-      className={`w-full text-left rounded-2xl glass-card px-5 py-4 animate-fade-in transition-all duration-200 cursor-pointer ${
-        isSelected
-          ? 'ring-1 ring-cyan-500/40 bg-cyan-500/[0.04]'
-          : 'hover:bg-white/[0.02]'
-      }`}
-      style={{ animationDelay }}
+      className="card animate-fade-in"
+      style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        padding: '16px 20px',
+        cursor: 'pointer',
+        animationDelay,
+        transition: 'all 0.15s ease',
+        outline: isSelected ? `1px solid var(--peri)` : 'none',
+        background: isSelected ? 'var(--peri-bg)' : 'var(--bg-1)',
+      }}
       title={isSelected ? 'Click to clear filter' : 'Click to filter deliveries to this webhook'}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-gray-600'}`} />
-            <span className="text-[11px] font-mono text-gray-400 truncate" title={url}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="row gap-2" style={{ marginBottom: 6 }}>
+            <span className="dot" style={{ background: isActive ? 'var(--mint)' : 'var(--fg-4)' }} />
+            <span className="mono" style={{ fontSize: 12, color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={url}>
               {truncateUrl(url, 50)}
             </span>
             {isSelected && (
-              <span className="text-[9px] font-semibold text-cyan-400 bg-cyan-500/[0.1] px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                Filtered
-              </span>
+              <span className="pill pill--peri" style={{ fontSize: 10, flexShrink: 0 }}>Filtered</span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-gray-600">
-            <span className="font-mono">{agentId.slice(0, 8)}...</span>
+          <div className="row gap-2" style={{ fontSize: 11, color: 'var(--fg-4)' }}>
+            <span className="mono">{agentId.slice(0, 8)}...</span>
             {failureCount > 0 && (
-              <span className="text-red-400/70">
+              <span style={{ color: 'var(--rose)' }}>
                 {failureCount} consecutive failure{failureCount !== 1 ? 's' : ''}
               </span>
             )}
           </div>
         </div>
-        <div className="text-right ml-4 shrink-0">
-          <p className={`text-lg font-bold tabular-nums ${rate >= 90 ? 'text-emerald-400' : rate >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+        <div style={{ textAlign: 'right', marginLeft: 16, flexShrink: 0 }}>
+          <p className="num" style={{ fontSize: 18, fontWeight: 700, color: rate >= 90 ? 'var(--mint)' : rate >= 70 ? 'var(--amber)' : 'var(--rose)' }}>
             {rate}%
           </p>
-          <p className="text-[9px] text-gray-600 uppercase tracking-wider">success</p>
+          <p className="upper" style={{ fontSize: 10 }}>success</p>
         </div>
       </div>
-      <div className="flex items-center gap-4 text-[11px]">
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span className="text-gray-500">{successCount24h}</span>
+      <div className="row gap-4" style={{ fontSize: 12 }}>
+        <div className="row gap-1">
+          <span className="dot dot--mint" />
+          <span style={{ color: 'var(--fg-3)' }}>{successCount24h}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-          <span className="text-gray-500">{failedCount24h}</span>
+        <div className="row gap-1">
+          <span className="dot dot--rose" />
+          <span style={{ color: 'var(--fg-3)' }}>{failedCount24h}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span className="text-gray-500">{pendingCount24h}</span>
+        <div className="row gap-1">
+          <span className="dot dot--amber" />
+          <span style={{ color: 'var(--fg-3)' }}>{pendingCount24h}</span>
         </div>
         {retryCount24h > 0 && (
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-            <span className="text-gray-500">{retryCount24h}</span>
+          <div className="row gap-1">
+            <span className="dot dot--peri" />
+            <span style={{ color: 'var(--fg-3)' }}>{retryCount24h}</span>
           </div>
         )}
-        <span className="ml-auto text-[10px] text-gray-700 font-mono">
+        <span className="mono num dim" style={{ marginLeft: 'auto', fontSize: 11 }}>
           {lastDeliveryAt ? timeAgo(lastDeliveryAt) : 'never'}
         </span>
       </div>
       {/* Progress bar */}
-      <div className="mt-3 h-1 rounded-full bg-white/[0.04] overflow-hidden flex">
+      <div style={{
+        marginTop: 12,
+        height: 4,
+        borderRadius: 2,
+        background: 'var(--bg-3)',
+        overflow: 'hidden',
+        display: 'flex',
+      }}>
         {successCount24h > 0 && (
-          <div
-            className="h-full bg-emerald-500/60 rounded-l-full"
-            style={{ width: `${(successCount24h / totalCount24h) * 100}%` }}
-          />
+          <div style={{
+            height: '100%',
+            background: 'var(--mint-2)',
+            width: `${(successCount24h / totalCount24h) * 100}%`,
+          }} />
         )}
         {pendingCount24h > 0 && (
-          <div
-            className="h-full bg-amber-500/60"
-            style={{ width: `${(pendingCount24h / totalCount24h) * 100}%` }}
-          />
+          <div style={{
+            height: '100%',
+            background: 'var(--amber-2)',
+            width: `${(pendingCount24h / totalCount24h) * 100}%`,
+          }} />
         )}
         {retryCount24h > 0 && (
-          <div
-            className="h-full bg-blue-500/60"
-            style={{ width: `${(retryCount24h / totalCount24h) * 100}%` }}
-          />
+          <div style={{
+            height: '100%',
+            background: 'var(--peri)',
+            width: `${(retryCount24h / totalCount24h) * 100}%`,
+          }} />
         )}
         {failedCount24h > 0 && (
-          <div
-            className="h-full bg-red-500/60 rounded-r-full"
-            style={{ width: `${(failedCount24h / totalCount24h) * 100}%` }}
-          />
+          <div style={{
+            height: '100%',
+            background: 'var(--rose)',
+            width: `${(failedCount24h / totalCount24h) * 100}%`,
+          }} />
         )}
       </div>
     </button>

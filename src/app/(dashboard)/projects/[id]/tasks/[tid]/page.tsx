@@ -27,53 +27,51 @@ import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { listTaskActivityEvents } from '@/lib/task-activity';
 export const dynamic = 'force-dynamic';
 
-const dependencySectionStyles = {
+const dependencySectionStyles: Record<string, { label: string; accentColor: string; pillTone: string; cardBorder: string; cardBg: string }> = {
   blockedBy: {
     label: 'Blocked by',
-    accent: 'text-red-400/80',
-    pill: 'text-red-300 bg-red-500/[0.08] border-red-500/20',
-    card: 'border-red-500/10 bg-red-500/[0.03]',
+    accentColor: 'var(--rose)',
+    pillTone: 'rose',
+    cardBorder: 'var(--rose)',
+    cardBg: 'var(--rose-bg)',
   },
   blocks: {
     label: 'Blocks',
-    accent: 'text-amber-400/80',
-    pill: 'text-amber-300 bg-amber-500/[0.08] border-amber-500/20',
-    card: 'border-amber-500/10 bg-amber-500/[0.03]',
+    accentColor: 'var(--amber)',
+    pillTone: 'amber',
+    cardBorder: 'var(--amber)',
+    cardBg: 'var(--amber-bg)',
   },
   sequenceAfter: {
     label: 'Sequence after',
-    accent: 'text-indigo-300/80',
-    pill: 'text-indigo-200 bg-indigo-500/[0.08] border-indigo-500/20',
-    card: 'border-indigo-500/10 bg-indigo-500/[0.03]',
+    accentColor: 'var(--peri)',
+    pillTone: 'peri',
+    cardBorder: 'var(--peri)',
+    cardBg: 'var(--peri-bg)',
   },
   sequenceBefore: {
     label: 'Sequence before',
-    accent: 'text-sky-300/80',
-    pill: 'text-sky-200 bg-sky-500/[0.08] border-sky-500/20',
-    card: 'border-sky-500/10 bg-sky-500/[0.03]',
+    accentColor: 'var(--peri)',
+    pillTone: 'peri',
+    cardBorder: 'var(--peri)',
+    cardBg: 'var(--peri-bg)',
   },
   related: {
     label: 'Related tasks',
-    accent: 'text-violet-300/80',
-    pill: 'text-violet-200 bg-violet-500/[0.08] border-violet-500/20',
-    card: 'border-violet-500/10 bg-violet-500/[0.03]',
+    accentColor: 'var(--mint)',
+    pillTone: 'mint',
+    cardBorder: 'var(--mint)',
+    cardBg: 'var(--mint-bg)',
   },
-} as const;
-
-const statusConfig: Record<TaskStatus, { bg: string; text: string; dot: string }> = {
-  backlog: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', dot: 'bg-gray-500' },
-  todo: { bg: 'bg-blue-500/[0.08]', text: 'text-blue-400', dot: 'bg-blue-400' },
-  'in-progress': { bg: 'bg-cyan-500/[0.08]', text: 'text-cyan-400', dot: 'bg-cyan-400' },
-  'in-review': { bg: 'bg-amber-500/[0.08]', text: 'text-amber-400', dot: 'bg-amber-400' },
-  done: { bg: 'bg-emerald-500/[0.08]', text: 'text-emerald-400', dot: 'bg-emerald-400' },
-  cancelled: { bg: 'bg-red-500/[0.08]', text: 'text-red-400', dot: 'bg-red-400' },
 };
 
-const priorityConfig: Record<TaskPriority, { bg: string; text: string; icon: string }> = {
-  urgent: { bg: 'bg-red-500/[0.1]', text: 'text-red-400', icon: '🔴' },
-  high: { bg: 'bg-orange-500/[0.1]', text: 'text-orange-400', icon: '🟠' },
-  medium: { bg: 'bg-blue-500/[0.08]', text: 'text-blue-400', icon: '🔵' },
-  low: { bg: 'bg-gray-500/[0.06]', text: 'text-gray-500', icon: '⚪' },
+const statusDotColor: Record<string, string> = {
+  backlog: 'var(--fg-3)',
+  todo: 'var(--peri)',
+  'in-progress': 'var(--mint)',
+  'in-review': 'var(--amber)',
+  done: 'var(--mint)',
+  cancelled: 'var(--rose)',
 };
 
 export default async function TaskDetailPage({
@@ -271,7 +269,6 @@ export default async function TaskDetailPage({
   const attachments = (attachmentsRes || []) as TaskAttachment[];
   const taskActivity = (activityRes || []) as TaskActivityEvent[];
 
-  const _pc = priorityConfig[task.priority as TaskPriority] || priorityConfig.medium;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
   const blockerState = blockedBy.length > 0
     ? getBlockedTaskNotificationState({
@@ -293,7 +290,7 @@ export default async function TaskDetailPage({
     {
       label: 'Assignee',
       value: hasReadOnlyObserverAccess ? (
-        <span className="text-[13px] text-gray-300 font-medium">{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
+        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
       ) : (
         <AssigneePicker
           currentId={task.assignee_agent_id}
@@ -306,7 +303,7 @@ export default async function TaskDetailPage({
     {
       label: 'Sprint',
       value: hasReadOnlyObserverAccess ? (
-        <span className="text-[13px] text-gray-300 font-medium">{_sprint ? _sprint.title : 'Backlog'}</span>
+        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{_sprint ? _sprint.title : 'Backlog'}</span>
       ) : (
         <SprintPicker currentSprintId={task.sprint_id} sprints={sprints} projectId={projectId} taskId={tid} />
       ),
@@ -314,7 +311,7 @@ export default async function TaskDetailPage({
     {
       label: 'Due date',
       value: hasReadOnlyObserverAccess ? (
-        <span className="text-[13px] text-gray-300 font-medium">{task.due_date || 'None'}</span>
+        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{task.due_date || 'None'}</span>
       ) : (
         <DueDatePicker value={task.due_date} projectId={projectId} taskId={tid} isOverdue={!!isOverdue} />
       ),
@@ -325,92 +322,164 @@ export default async function TaskDetailPage({
     {
       label: 'Reporter',
       value: reporter ? (
-        <span className="text-[13px] text-gray-300 font-medium">{reporter.display_name || reporter.name}</span>
+        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{reporter.display_name || reporter.name}</span>
       ) : (
-        <span className="text-[12px] text-gray-600 italic">Unknown</span>
+        <span style={{ fontSize: '12px', color: 'var(--fg-3)', fontStyle: 'italic' }}>Unknown</span>
       ),
     },
     {
       label: 'Created',
-      value: <span className="text-[11px] text-gray-500 font-mono tabular-nums">{formatDate(task.created_at)}</span>,
+      value: <span className="mono" style={{ fontSize: '11px', color: 'var(--fg-2)' }}>{formatDate(task.created_at)}</span>,
     },
     {
       label: 'Last updated',
-      value: <span className="text-[11px] text-gray-500 font-mono tabular-nums">{formatDateTime(task.updated_at)}</span>,
+      value: <span className="mono" style={{ fontSize: '11px', color: 'var(--fg-2)' }}>{formatDateTime(task.updated_at)}</span>,
     },
   ];
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div className="mx-auto max-w-[1500px] px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+      <div style={{ maxWidth: '1500px', margin: '0 auto', padding: '1rem 1.5rem' }} className="lg:px-10 lg:py-8">
+        {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 animate-fade-in">
-          <Link href="/projects" className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">Projects</Link>
-          <span className="text-gray-700 text-[10px]">›</span>
-          <Link href={`/projects/${projectId}`} className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">
+          <Link href="/projects" style={{ fontSize: '11px', color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
+          <span style={{ color: 'var(--fg-3)', fontSize: '10px' }}>›</span>
+          <Link href={`/projects/${projectId}`} style={{ fontSize: '11px', color: 'var(--fg-3)', textDecoration: 'none' }}>
             {project?.title || 'Project'}
           </Link>
-          <span className="text-gray-700 text-[10px]">›</span>
-          <span className="text-[11px] text-gray-400">Task</span>
+          <span style={{ color: 'var(--fg-3)', fontSize: '10px' }}>›</span>
+          <span style={{ fontSize: '11px', color: 'var(--fg-2)' }}>Task</span>
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)] 2xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.9fr)]">
           <div className="space-y-6">
-            <section className="rounded-2xl glass-card p-6 animate-fade-in">
-              <div className="min-w-0">
+            {/* Main task card */}
+            <section className="card animate-fade-in" style={{ padding: '1.5rem' }}>
+              <div style={{ minWidth: 0 }}>
                 {hasReadOnlyObserverAccess ? (
-                  <h1 className="text-[28px] font-bold text-white tracking-tight sm:text-[32px]">{task.title}</h1>
+                  <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>{task.title}</h1>
                 ) : (
                   <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
                 )}
-                <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.625rem' }}>
                   {hasReadOnlyObserverAccess ? (
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${statusConfig[task.status as TaskStatus]?.bg || statusConfig.backlog.bg} ${statusConfig[task.status as TaskStatus]?.text || statusConfig.backlog.text}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[task.status as TaskStatus]?.dot || statusConfig.backlog.dot}`} />
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        padding: '0.125rem 0.5rem',
+                        borderRadius: '9999px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: statusDotColor[task.status as TaskStatus] ?? 'var(--fg-2)',
+                        background: 'var(--bg-2)',
+                        border: '1px solid var(--line-1)',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '0.375rem',
+                          height: '0.375rem',
+                          borderRadius: '50%',
+                          background: statusDotColor[task.status as TaskStatus] ?? 'var(--fg-3)',
+                          display: 'inline-block',
+                        }}
+                      />
                       {task.status}
                     </span>
                   ) : (
                     <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
                   )}
                   {hasReadOnlyObserverAccess ? (
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${_pc.bg} ${_pc.text}`}>
-                      <span>{_pc.icon}</span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        borderRadius: '9999px',
+                        padding: '0.25rem 0.625rem',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        background: 'var(--bg-2)',
+                        border: '1px solid var(--line-1)',
+                        color: 'var(--fg-1)',
+                      }}
+                    >
                       {task.priority}
                     </span>
                   ) : (
-                    <PriorityPicker value={task.priority} projectId={projectId} taskId={tid} />
+                    <PriorityPicker value={task.priority as TaskPriority} projectId={projectId} taskId={tid} />
                   )}
                   {isOverdue && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 bg-red-500/[0.1] border border-red-500/20">
-                      ⚠ Overdue
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0.25rem 0.625rem',
+                        borderRadius: '9999px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: 'var(--rose)',
+                        background: 'var(--rose-bg)',
+                        border: '1px solid var(--rose)',
+                      }}
+                    >
+                      Overdue
                     </span>
                   )}
                   {blockerState && (
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0.25rem 0.625rem',
+                        borderRadius: '9999px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        border: '1px solid',
+                        color: blockerState.tone === 'stale' ? 'var(--rose)' : blockerState.tone === 'follow-through' ? 'var(--amber)' : 'var(--rose)',
+                        background: blockerState.tone === 'stale' ? 'var(--rose-bg)' : blockerState.tone === 'follow-through' ? 'var(--amber-bg)' : 'var(--rose-bg)',
+                        borderColor: blockerState.tone === 'stale' ? 'var(--rose)' : blockerState.tone === 'follow-through' ? 'var(--amber)' : 'var(--rose)',
+                      }}
+                    >
                       {blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-white/[0.06] pt-5">
-                <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+              <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--line-1)', paddingTop: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                   <div>
-                    <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Description</p>
-                    <p className="text-[12px] text-gray-500 mt-2">Keep the brief close to the task metadata instead of pushing it further down the page.</p>
+                    <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Description</p>
+                    <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Keep the brief close to the task metadata instead of pushing it further down the page.</p>
                   </div>
                 </div>
                 {hasReadOnlyObserverAccess ? (
-                  <div className="text-[13px] text-gray-400 leading-relaxed whitespace-pre-wrap">{task.description || 'No description yet.'}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{task.description || 'No description yet.'}</div>
                 ) : (
                   <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
                 )}
               </div>
             </section>
 
+            {/* Observer mode banner */}
             {hasReadOnlyObserverAccess && (
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.08] px-4 py-3 animate-fade-in" style={{ animationDelay: '0.04s' }}>
-                <p className="text-[11px] font-semibold text-cyan-200 uppercase tracking-[0.15em]">Observer mode</p>
-                <p className="text-[12px] text-cyan-100/80 mt-2">
+              <div
+                className="animate-fade-in"
+                style={{
+                  borderRadius: '1rem',
+                  border: '1px solid var(--peri)',
+                  background: 'var(--peri-bg)',
+                  padding: '0.75rem 1rem',
+                  animationDelay: '0.04s',
+                }}
+              >
+                <p className="upper" style={{ fontSize: '11px', fontWeight: 600, color: 'var(--peri)' }}>Observer mode</p>
+                <p style={{ fontSize: '12px', color: 'var(--fg-1)', marginTop: '0.5rem' }}>
                   You can inspect execution state, checkpoints, attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state.
                 </p>
               </div>
@@ -419,27 +488,32 @@ export default async function TaskDetailPage({
             <div className="space-y-6">
               <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} attachments={attachments} />
 
+              {/* Dependencies */}
               {dependencySections.length > 0 && (
-                <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.12s' }}>
-                  <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+                <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.12s' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                     <div>
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task links and dependency graph</p>
-                      <p className="text-[12px] text-gray-400 mt-2">
+                      <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Task links and dependency graph</p>
+                      <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.5rem' }}>
                         Full visibility into blocker, downstream, sequencing, and related-task context for this task.
                       </p>
-                      {blockerState && <p className="text-[12px] text-gray-500 mt-2">{blockerState.meta}</p>}
+                      {blockerState && <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>{blockerState.meta}</p>}
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                       {dependencySections.map((section) => (
                         <span
                           key={section.key}
-                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${section.config.pill}`}
+                          className={`pill pill--${section.config.pillTone}`}
+                          style={{ fontSize: '10px', fontWeight: 600 }}
                         >
                           {section.config.label} · {section.items.length}
                         </span>
                       ))}
                       {blockerState && (
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold border ${blockerState.tone === 'stale' ? 'text-red-300 bg-red-500/[0.12] border-red-500/25' : blockerState.tone === 'follow-through' ? 'text-amber-300 bg-amber-500/[0.1] border-amber-500/20' : 'text-rose-300 bg-rose-500/[0.08] border-rose-500/20'}`}>
+                        <span
+                          className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'}`}
+                          style={{ fontSize: '10px', fontWeight: 600 }}
+                        >
                           {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
                         </span>
                       )}
@@ -448,63 +522,66 @@ export default async function TaskDetailPage({
 
                   {blockerState && (
                     <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-4 text-[11px]">
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Blocked since</p>
-                          <p className="text-gray-300">{formatDateTime(blockerState.blockedSince)}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Unblock owner</p>
-                          <p className="text-gray-300">{blockerState.blockerResolutionOwner || 'Unassigned'}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:col-span-2 xl:col-span-1">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Expected follow-up</p>
-                          <p className="text-gray-300">{blockerState.blockerResolutionDueAt ? formatDateTime(blockerState.blockerResolutionDueAt) : 'Not scheduled'}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:col-span-2 xl:col-span-3">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Next action</p>
-                          <p className="text-gray-300 leading-relaxed">{blockerState.blockerResolutionAction || 'No unblock plan logged yet'}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Last follow-up</p>
-                          <p className="text-gray-300">{blockerState.blockerFollowedThroughAt ? formatDateTime(blockerState.blockerFollowedThroughAt) : 'None logged'}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Escalation</p>
-                          <p className="text-gray-300">{blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated'}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                          <p className="text-gray-600 uppercase tracking-[0.12em] text-[9px] font-semibold mb-1">Workflow state</p>
-                          <p className="text-gray-300">{blockerState.blockerResolutionStatus || 'Blocked'}</p>
-                        </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem', fontSize: '11px' }}>
+                        {[
+                          { label: 'Blocked since', value: formatDateTime(blockerState.blockedSince) },
+                          { label: 'Unblock owner', value: blockerState.blockerResolutionOwner || 'Unassigned' },
+                          { label: 'Expected follow-up', value: blockerState.blockerResolutionDueAt ? formatDateTime(blockerState.blockerResolutionDueAt) : 'Not scheduled' },
+                          { label: 'Next action', value: blockerState.blockerResolutionAction || 'No unblock plan logged yet', wide: true },
+                          { label: 'Last follow-up', value: blockerState.blockerFollowedThroughAt ? formatDateTime(blockerState.blockerFollowedThroughAt) : 'None logged' },
+                          { label: 'Escalation', value: blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated' },
+                          { label: 'Workflow state', value: blockerState.blockerResolutionStatus || 'Blocked' },
+                        ].map((item) => (
+                          <div key={item.label} className="card--inset" style={{ padding: '0.5rem 0.75rem', gridColumn: item.wide ? '1 / -1' : undefined }}>
+                            <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.25rem' }}>{item.label}</p>
+                            <p style={{ color: 'var(--fg-1)', lineHeight: 1.5 }}>{item.value}</p>
+                          </div>
+                        ))}
                       </div>
                       {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} currentAction={blockerState.blockerResolutionAction} currentOwner={blockerState.blockerResolutionOwner} currentDueAt={blockerState.blockerResolutionDueAt} />}
                     </>
                   )}
 
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                     {dependencySections.map((section) => (
-                      <div key={section.key} className={`rounded-xl border p-4 ${section.config.card}`}>
-                        <div className="flex items-center justify-between gap-3 mb-3">
-                          <p className={`text-[11px] font-medium ${section.config.accent}`}>{section.config.label}</p>
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-semibold ${section.config.pill}`}>
+                      <div
+                        key={section.key}
+                        style={{
+                          borderRadius: '0.75rem',
+                          border: `1px solid ${section.config.cardBorder}`,
+                          background: section.config.cardBg,
+                          padding: '1rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                          <p style={{ fontSize: '11px', fontWeight: 500, color: section.config.accentColor }}>{section.config.label}</p>
+                          <span className={`pill pill--${section.config.pillTone}`} style={{ fontSize: '9px', fontWeight: 600 }}>
                             {section.items.length}
                           </span>
                         </div>
-                        <div className="space-y-2">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           {section.items.map((dep) => {
                             const t = dep.tasks;
                             if (!t) return null;
-                            const dsc = statusConfig[t.status as TaskStatus] || statusConfig.backlog;
+                            const dotColor = statusDotColor[t.status as TaskStatus] ?? 'var(--fg-3)';
                             return (
                               <Link
                                 key={`${section.key}-${dep.id}-${t.id}`}
                                 href={`/projects/${t.project_id}/tasks/${t.id}`}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/20 hover:bg-white/[0.04] transition-colors"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  padding: '0.5rem 0.75rem',
+                                  borderRadius: '0.5rem',
+                                  background: 'var(--bg-0)',
+                                  textDecoration: 'none',
+                                  transition: 'background 0.1s',
+                                }}
                               >
-                                <span className={`w-1.5 h-1.5 rounded-full ${dsc.dot}`} />
-                                <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{t.title}</span>
-                                <span className={`text-[9px] font-semibold uppercase ${dsc.text} ml-auto`}>{t.status}</span>
+                                <span style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
+                                <span style={{ fontSize: '12px', color: 'var(--fg-1)', flex: 1 }}>{t.title}</span>
+                                <span className="upper" style={{ fontSize: '9px', fontWeight: 600, color: dotColor }}>{t.status}</span>
                               </Link>
                             );
                           })}
@@ -519,67 +596,71 @@ export default async function TaskDetailPage({
             </div>
           </div>
 
+          {/* Sidebar */}
           <aside className="space-y-6 xl:sticky xl:top-6 self-start">
-            <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            {/* Snapshot */}
+            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.05s' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Task snapshot</p>
-                  <p className="text-[12px] text-gray-500 mt-2">Fast ownership and scheduling context while reading the task.</p>
+                  <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Task snapshot</p>
+                  <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Fast ownership and scheduling context while reading the task.</p>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }} className="xl:grid-cols-1">
                 {detailItems.map((item) => (
-                  <div key={`rail-${item.label}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 mb-1.5">{item.label}</p>
-                    <div className="min-h-[20px]">{item.value}</div>
+                  <div key={`rail-${item.label}`} className="card--inset" style={{ padding: '0.75rem' }}>
+                    <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
+                    <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.06s' }}>
-              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            {/* Labels */}
+            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.06s' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Labels</p>
-                  <p className="text-[12px] text-gray-500 mt-2">Compact taxonomy for routing and filtering.</p>
+                  <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Labels</p>
+                  <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Compact taxonomy for routing and filtering.</p>
                 </div>
               </div>
               {hasReadOnlyObserverAccess ? (
-                <div className="flex flex-wrap gap-1.5">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                   {(task.labels || []).length
                     ? (task.labels || []).map((label: string) => (
-                        <span key={label} className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-gray-300">
+                        <span key={label} className="pill" style={{ fontSize: '11px' }}>
                           {label}
                         </span>
                       ))
-                    : <span className="text-[12px] text-gray-500 italic">No labels</span>}
+                    : <span style={{ fontSize: '12px', color: 'var(--fg-3)', fontStyle: 'italic' }}>No labels</span>}
                 </div>
               ) : (
                 <LabelsEditor labels={task.labels || []} projectId={projectId} taskId={tid} />
               )}
             </div>
 
-            <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.08s' }}>
-              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            {/* Attachments */}
+            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.08s' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">Attachments</p>
-                  <p className="text-[12px] text-gray-400 mt-2">Task artifacts stay handy in the supporting rail.</p>
+                  <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Attachments</p>
+                  <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.5rem' }}>Task artifacts stay handy in the supporting rail.</p>
                 </div>
               </div>
               {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
               {hasReadOnlyObserverAccess && (
-                <p className="text-[11px] text-gray-500">Observers can inspect attachments but cannot upload new artifacts.</p>
+                <p style={{ fontSize: '11px', color: 'var(--fg-3)' }}>Observers can inspect attachments but cannot upload new artifacts.</p>
               )}
-              <div className="mt-4">
+              <div style={{ marginTop: '1rem' }}>
                 <AttachmentList attachments={attachments} />
               </div>
             </div>
 
+            {/* Linked Contracts */}
             {visibleContracts.length > 0 && (
-              <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Linked Contracts</p>
-                <div className="space-y-1.5">
+              <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.1s' }}>
+                <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Linked Contracts</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                   {visibleContracts.map((lc) => {
                     const c = lc.contract;
                     if (!c) return null;
@@ -587,14 +668,23 @@ export default async function TaskDetailPage({
                       <Link
                         key={lc.id}
                         href={`/contracts/${c.id}`}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '0.5rem',
+                          background: 'var(--bg-2)',
+                          textDecoration: 'none',
+                          transition: 'background 0.1s',
+                        }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400/60">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--peri)', flexShrink: 0 }}>
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                           <path d="M14 2v6h6" />
                         </svg>
-                        <span className="text-[12px] text-gray-300 hover:text-cyan-400 transition-colors">{c.title}</span>
-                        <span className="text-[9px] font-semibold uppercase text-gray-500 ml-auto">{c.status}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--fg-1)', flex: 1 }}>{c.title}</span>
+                        <span className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>{c.status}</span>
                       </Link>
                     );
                   })}
@@ -602,26 +692,27 @@ export default async function TaskDetailPage({
               </div>
             )}
 
-            <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.12s' }}>
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Timeline</p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1 mb-4">
+            {/* Timeline */}
+            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.12s' }}>
+              <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Timeline</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }} className="xl:grid-cols-1">
                 {secondaryDetailItems.map((item) => (
-                  <div key={`secondary-${item.label}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 mb-1.5">{item.label}</p>
-                    <div className="min-h-[20px]">{item.value}</div>
+                  <div key={`secondary-${item.label}`} className="card--inset" style={{ padding: '0.75rem' }}>
+                    <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
+                    <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 mb-3">Activity feed</p>
+              <div className="card--inset" style={{ padding: '0.75rem' }}>
+                <p className="upper" style={{ fontSize: '10px', color: 'var(--fg-3)', marginBottom: '0.75rem' }}>Activity feed</p>
                 {taskActivity.length === 0 ? (
-                  <p className="text-[12px] text-gray-500">No activity events captured yet.</p>
+                  <p style={{ fontSize: '12px', color: 'var(--fg-3)' }}>No activity events captured yet.</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {taskActivity.map((event) => (
-                      <div key={event.id} className="border-l border-cyan-500/20 pl-3">
-                        <p className="text-[12px] text-gray-200">{event.summary}</p>
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-gray-600">
+                      <div key={event.id} style={{ borderLeft: '1px solid var(--peri)', paddingLeft: '0.75rem' }}>
+                        <p style={{ fontSize: '12px', color: 'var(--fg-1)' }}>{event.summary}</p>
+                        <p className="upper" style={{ marginTop: '0.25rem', fontSize: '10px', color: 'var(--fg-3)' }}>
                           {event.actor_agent?.display_name || event.actor_agent?.name || event.actor_user?.display_name || 'System'} · {formatDateTime(event.created_at)}
                         </p>
                       </div>
@@ -631,10 +722,11 @@ export default async function TaskDetailPage({
               </div>
             </div>
 
+            {/* Task controls */}
             {!hasReadOnlyObserverAccess && (
-              <div className="rounded-2xl glass-card p-5 animate-fade-in" style={{ animationDelay: '0.14s' }}>
-                <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-4">Task controls</p>
-                <p className="text-[12px] text-gray-500 mb-4">Destructive actions stay tucked into the rail to keep the main flow focused.</p>
+              <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.14s' }}>
+                <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Task controls</p>
+                <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1rem' }}>Destructive actions stay tucked into the rail to keep the main flow focused.</p>
                 <DeleteTaskButton projectId={projectId} taskId={tid} />
               </div>
             )}

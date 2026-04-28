@@ -7,94 +7,69 @@ import MarkdownPreview from '@/components/markdown-preview';
 import type { TaskAttachment } from '@/lib/types';
 import { formatDateTime } from '@/lib/format-date';
 
-function humanSize(size: number) {
+const humanSize = (size: number) => {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
+};
 
-function extensionOf(name: string) {
+const extensionOf = (name: string) => {
   const parts = name.toLowerCase().split('.');
   return parts.length > 1 ? parts.pop() || '' : '';
-}
+};
 
-function isImageAttachment(attachment: TaskAttachment) {
-  return attachment.mime_type.startsWith('image/');
-}
+const isImageAttachment = (a: TaskAttachment) => a.mime_type.startsWith('image/');
+const isTextAttachment = (a: TaskAttachment) => {
+  const ext = extensionOf(a.original_name || a.filename || '');
+  return a.mime_type.startsWith('text/') || ['md', 'markdown', 'txt', 'json', 'log', 'yaml', 'yml', 'csv'].includes(ext);
+};
+const isMarkdownAttachment = (a: TaskAttachment) => {
+  const ext = extensionOf(a.original_name || a.filename || '');
+  return a.mime_type === 'text/markdown' || a.mime_type === 'text/x-markdown' || ['md', 'markdown'].includes(ext);
+};
+const isPdfAttachment = (a: TaskAttachment) => a.mime_type === 'application/pdf' || extensionOf(a.original_name || a.filename || '') === 'pdf';
+const isVideoAttachment = (a: TaskAttachment) => a.mime_type.startsWith('video/');
+const isAudioAttachment = (a: TaskAttachment) => a.mime_type.startsWith('audio/');
+const isPreviewableDocument = (a: TaskAttachment) => isTextAttachment(a) || isPdfAttachment(a) || isVideoAttachment(a) || isAudioAttachment(a);
 
-function isTextAttachment(attachment: TaskAttachment) {
-  const ext = extensionOf(attachment.original_name || attachment.filename || '');
-  return attachment.mime_type.startsWith('text/') || ['md', 'markdown', 'txt', 'json', 'log', 'yaml', 'yml', 'csv'].includes(ext);
-}
-
-function isMarkdownAttachment(attachment: TaskAttachment) {
-  const ext = extensionOf(attachment.original_name || attachment.filename || '');
-  return attachment.mime_type === 'text/markdown' || attachment.mime_type === 'text/x-markdown' || ['md', 'markdown'].includes(ext);
-}
-
-function isPdfAttachment(attachment: TaskAttachment) {
-  return attachment.mime_type === 'application/pdf' || extensionOf(attachment.original_name || attachment.filename || '') === 'pdf';
-}
-
-function isVideoAttachment(attachment: TaskAttachment) {
-  return attachment.mime_type.startsWith('video/');
-}
-
-function isAudioAttachment(attachment: TaskAttachment) {
-  return attachment.mime_type.startsWith('audio/');
-}
-
-function isPreviewableDocument(attachment: TaskAttachment) {
-  return isTextAttachment(attachment) || isPdfAttachment(attachment) || isVideoAttachment(attachment) || isAudioAttachment(attachment);
-}
-
-function typeLabel(attachment: TaskAttachment) {
-  if (isImageAttachment(attachment)) return 'Image';
-  if (isPdfAttachment(attachment)) return 'PDF';
-  if (isVideoAttachment(attachment)) return 'Video';
-  if (isAudioAttachment(attachment)) return 'Audio';
-  if (isTextAttachment(attachment)) return 'Text';
+const typeLabel = (a: TaskAttachment) => {
+  if (isImageAttachment(a)) return 'Image';
+  if (isPdfAttachment(a)) return 'PDF';
+  if (isVideoAttachment(a)) return 'Video';
+  if (isAudioAttachment(a)) return 'Audio';
+  if (isTextAttachment(a)) return 'Text';
   return 'File';
-}
+};
 
-function actionLabel(attachment: TaskAttachment) {
-  if (isImageAttachment(attachment)) return 'Preview';
-  if (isPreviewableDocument(attachment)) return 'Open';
+const actionLabel = (a: TaskAttachment) => {
+  if (isImageAttachment(a)) return 'Preview';
+  if (isPreviewableDocument(a)) return 'Open';
   return 'Download';
-}
+};
 
-function previewHrefOf(attachment: TaskAttachment) {
-  return attachment.preview_url || attachment.download_url;
-}
-
-function openHrefOf(attachment: TaskAttachment) {
-  if (isImageAttachment(attachment) || isPreviewableDocument(attachment)) {
-    return previewHrefOf(attachment);
-  }
-  return attachment.download_url;
-}
-
-function fileKindLabel(attachment: TaskAttachment) {
-  if (isImageAttachment(attachment)) return 'image';
-  if (isPdfAttachment(attachment)) return 'PDF';
-  if (isVideoAttachment(attachment)) return 'video';
-  if (isAudioAttachment(attachment)) return 'audio';
-  if (isTextAttachment(attachment)) return 'text';
+const previewHrefOf = (a: TaskAttachment) => a.preview_url || a.download_url;
+const openHrefOf = (a: TaskAttachment) => {
+  if (isImageAttachment(a) || isPreviewableDocument(a)) return previewHrefOf(a);
+  return a.download_url;
+};
+const fileKindLabel = (a: TaskAttachment) => {
+  if (isImageAttachment(a)) return 'image';
+  if (isPdfAttachment(a)) return 'PDF';
+  if (isVideoAttachment(a)) return 'video';
+  if (isAudioAttachment(a)) return 'audio';
+  if (isTextAttachment(a)) return 'text';
   return 'file';
-}
+};
 
-function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
+const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
   const href = previewHrefOf(attachment);
   const isText = isTextAttachment(attachment);
-  const isMarkdown = isMarkdownAttachment(attachment);
-  const [textContent, setTextContent] = useState<string>('');
+  const isMd = isMarkdownAttachment(attachment);
+  const [textContent, setTextContent] = useState('');
   const [textError, setTextError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!href || !isText) {
-      return;
-    }
-
+    if (!href || !isText) return;
     let cancelled = false;
     fetch(href)
       .then(async (res) => {
@@ -110,276 +85,202 @@ function InlinePreview({ attachment }: { attachment: TaskAttachment }) {
         setTextContent('');
         setTextError(err instanceof Error ? err.message : 'Unable to load preview');
       });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [href, isText]);
 
-  if (!href) {
-    return <p className="text-sm text-gray-400">Preview unavailable for this file.</p>;
-  }
+  if (!href) return <p className="dim" style={{ fontSize: 13 }}>Preview unavailable for this file.</p>;
 
   if (isImageAttachment(attachment)) {
     return (
-      <div className="relative flex h-full min-h-0 w-full items-center justify-center overflow-auto rounded-[28px] border border-white/[0.08] bg-black/20 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-3 lg:p-4">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'oklch(0.10 0.01 250)', padding: 8 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={href}
-          alt={attachment.original_name}
-          className="block h-auto max-h-full w-auto max-w-full rounded-[22px] object-contain shadow-[0_28px_80px_rgba(0,0,0,0.5)]"
-        />
+        <img src={href} alt={attachment.original_name} style={{ display: 'block', maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 6 }} />
       </div>
     );
   }
 
   if (isPdfAttachment(attachment)) {
-    return (
-      <iframe
-        src={href}
-        title={attachment.original_name}
-        className="h-full min-h-0 w-full rounded-[28px] border border-white/[0.08] bg-white"
-      />
-    );
+    return <iframe src={href} title={attachment.original_name} style={{ height: '100%', minHeight: 0, width: '100%', borderRadius: 8, border: '1px solid var(--line-1)' }} />;
   }
-
   if (isVideoAttachment(attachment)) {
-    return (
-      <video
-        src={href}
-        controls
-        className="h-full min-h-0 w-full rounded-[28px] border border-white/[0.08] bg-black shadow-[0_28px_80px_rgba(0,0,0,0.5)]"
-      />
-    );
+    return <video src={href} controls style={{ height: '100%', minHeight: 0, width: '100%', borderRadius: 8, border: '1px solid var(--line-1)', background: 'black' }} />;
   }
-
   if (isAudioAttachment(attachment)) {
     return (
-      <div className="flex h-full min-h-[260px] w-full items-center justify-center rounded-[28px] border border-white/[0.08] bg-black/25 p-6 sm:p-8">
-        <audio src={href} controls className="w-full max-w-3xl" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 260, width: '100%', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-2)', padding: 24 }}>
+        <audio src={href} controls style={{ width: '100%', maxWidth: 600 }} />
       </div>
     );
   }
-
-  if (isTextAttachment(attachment)) {
-    if (textError) return <p className="text-sm text-red-200">{textError}</p>;
-    if (!textContent) return <p className="text-sm text-gray-400">Loading text preview…</p>;
-    if (isMarkdown) {
+  if (isText) {
+    if (textError) return <p style={{ fontSize: 13, color: 'var(--rose)' }}>{textError}</p>;
+    if (!textContent) return <p className="dim" style={{ fontSize: 13 }}>Loading text preview…</p>;
+    if (isMd) {
       return (
-        <div className="h-full min-h-0 w-full overflow-auto rounded-[28px] border border-white/[0.08] bg-[#05070d]/96 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-5 lg:p-7">
-          <MarkdownPreview content={textContent} className="max-w-none" />
+        <div style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20 }}>
+          <MarkdownPreview content={textContent} className="" />
         </div>
       );
     }
     return (
-      <pre className="h-full min-h-0 w-full overflow-auto rounded-[28px] border border-white/[0.08] bg-[#05070d]/96 p-4 text-[12px] leading-6 text-gray-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] whitespace-pre-wrap break-words sm:p-5 lg:p-7">
+      <pre className="mono" style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20, fontSize: 12, lineHeight: 1.6, color: 'var(--fg-1)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
         {textContent}
       </pre>
     );
   }
 
   return (
-    <div className="flex h-full min-h-[260px] w-full flex-col items-center justify-center rounded-[28px] border border-dashed border-white/[0.12] bg-black/20 p-8 text-center">
-      <p className="text-sm font-medium text-gray-100">No inline preview for this file type yet.</p>
-      <p className="mt-2 text-sm text-gray-400">Open it in a new tab or download it to inspect locally.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 260, width: '100%', borderRadius: 8, border: '1px dashed var(--line-2)', background: 'var(--bg-2)', padding: 32, textAlign: 'center' }}>
+      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-1)' }}>No inline preview for this file type yet.</div>
+      <div className="dim" style={{ fontSize: 13, marginTop: 8 }}>Open it in a new tab or download it to inspect locally.</div>
     </div>
   );
-}
+};
 
-function PreviewMetaPanel({ attachment }: { attachment: TaskAttachment }) {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Type</p>
-          <p className="mt-2 text-sm font-medium text-gray-100">{typeLabel(attachment)}</p>
-        </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Size</p>
-          <p className="mt-2 text-sm font-medium text-gray-100">{humanSize(attachment.size_bytes)}</p>
-        </div>
+const PreviewMetaPanel = ({ attachment }: { attachment: TaskAttachment }) => (
+  <div className="col gap-4">
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="card" style={{ padding: 12 }}>
+        <div className="upper" style={{ fontSize: 10 }}>Type</div>
+        <div style={{ marginTop: 8, fontSize: 13, fontWeight: 500, color: 'var(--fg-1)' }}>{typeLabel(attachment)}</div>
       </div>
-
-      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Added</p>
-        <p className="mt-2 text-sm leading-6 text-gray-200">{formatDateTime(attachment.created_at)}</p>
+      <div className="card" style={{ padding: 12 }}>
+        <div className="upper" style={{ fontSize: 10 }}>Size</div>
+        <div style={{ marginTop: 8, fontSize: 13, fontWeight: 500, color: 'var(--fg-1)' }}>{humanSize(attachment.size_bytes)}</div>
       </div>
-
-      {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 ? (
-        <div className="rounded-2xl border border-cyan-400/12 bg-cyan-400/[0.05] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-200/80">Attachment note</p>
-          <p className="mt-2 text-sm leading-6 text-gray-100 whitespace-pre-wrap">{attachment.metadata.note}</p>
-        </div>
-      ) : null}
-
-      {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 ? (
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Observer note</p>
-          <p className="mt-2 text-sm leading-6 text-cyan-100/90 whitespace-pre-wrap">{attachment.metadata.observer_note}</p>
-        </div>
-      ) : null}
     </div>
-  );
-}
+    <div className="card" style={{ padding: 16 }}>
+      <div className="upper" style={{ fontSize: 10 }}>Added</div>
+      <div className="mono num" style={{ marginTop: 8, fontSize: 13, color: 'var(--fg-1)' }}>{formatDateTime(attachment.created_at)}</div>
+    </div>
+    {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
+      <div className="card" style={{ padding: 16, borderColor: 'oklch(0.50 0.10 165 / 0.3)' }}>
+        <div className="upper" style={{ fontSize: 10, color: 'var(--mint)' }}>Attachment note</div>
+        <div style={{ marginTop: 8, fontSize: 13, color: 'var(--fg-1)', whiteSpace: 'pre-wrap' }}>{attachment.metadata.note}</div>
+      </div>
+    )}
+    {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
+      <div className="card" style={{ padding: 16 }}>
+        <div className="upper" style={{ fontSize: 10 }}>Observer note</div>
+        <div style={{ marginTop: 8, fontSize: 13, color: 'var(--peri)', whiteSpace: 'pre-wrap' }}>{attachment.metadata.observer_note}</div>
+      </div>
+    )}
+  </div>
+);
 
-function AttachmentPreviewModal({
-  attachment,
-  detailsOpen,
-  onClose,
-  onToggleDetails,
+const AttachmentPreviewModal = ({
+  attachment, detailsOpen, onClose, onToggleDetails,
 }: {
   attachment: TaskAttachment;
   detailsOpen: boolean;
   onClose: () => void;
   onToggleDetails: () => void;
-}) {
+}) => {
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (detailsOpen) {
-          onToggleDetails();
-          return;
-        }
-        onClose();
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { detailsOpen ? onToggleDetails() : onClose(); }
     };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [detailsOpen, onClose, onToggleDetails]);
 
-  if (typeof document === 'undefined') {
-    return null;
-  }
+  if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <div data-attachment-preview-portal="true" className="fixed inset-0 z-[2147483647] isolate" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/95 backdrop-blur-md" />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2147483647, isolation: 'isolate' }} onClick={onClose}>
+      <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.05 0.01 250 / 0.95)', backdropFilter: 'blur(12px)' }} />
       <div
-        className="relative flex h-dvh min-h-screen w-screen max-w-none flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_28%),linear-gradient(180deg,_rgba(8,10,16,0.98),_rgba(2,4,8,1))]"
-        onClick={(event) => event.stopPropagation()}
+        style={{ position: 'relative', display: 'flex', height: '100dvh', width: '100vw', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-0)' }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04)_0%,transparent_24%,transparent_76%,rgba(255,255,255,0.03)_100%)]" />
-
-        <header className="relative z-10 flex items-start justify-between gap-3 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 lg:px-8">
-          <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2 backdrop-blur-xl sm:px-4 sm:py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-300/85 sm:text-[11px]">Attachment preview</p>
-            <p className="mt-1 max-w-[min(72vw,920px)] truncate text-sm font-semibold text-white sm:text-base">{attachment.original_name}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-gray-300 sm:text-[11px]">
+        {/* Header */}
+        <header className="row" style={{ justifyContent: 'space-between', gap: 12, padding: '12px 16px', zIndex: 10 }}>
+          <div className="card card--inset" style={{ padding: '8px 14px' }}>
+            <div className="upper" style={{ fontSize: 10 }}>Attachment preview</div>
+            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: 'var(--fg-0)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60vw' }}>
+              {attachment.original_name}
+            </div>
+            <div className="row gap-2 mono dim" style={{ marginTop: 4, fontSize: 11 }}>
               <span>{typeLabel(attachment)}</span>
-              <span className="text-gray-500">•</span>
+              <span style={{ color: 'var(--fg-4)' }}>·</span>
               <span>{humanSize(attachment.size_bytes)}</span>
-              <span className="text-gray-500">•</span>
+              <span style={{ color: 'var(--fg-4)' }}>·</span>
               <span>{formatDateTime(attachment.created_at)}</span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onToggleDetails}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-100 backdrop-blur-xl transition hover:bg-black/50"
-            >
+          <div className="row gap-2">
+            <button onClick={onToggleDetails} className="btn btn--sm">
               {detailsOpen ? 'Hide details' : 'Show details'}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-sm font-semibold text-gray-100 backdrop-blur-xl transition hover:bg-black/50"
-              aria-label="Close attachment preview"
-            >
+            <button onClick={onClose} className="btn btn--sm btn--icon" aria-label="Close preview" style={{ width: 32, height: 32 }}>
               ✕
             </button>
           </div>
         </header>
 
-        <div className="relative z-0 flex min-h-0 flex-1 px-2 pb-2 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6">
-          <div className="relative flex min-h-0 flex-1 items-stretch justify-center overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/25 shadow-[0_32px_90px_rgba(0,0,0,0.62)]">
-            <div className="absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/35 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/35 to-transparent" />
-            <div className="relative z-0 flex h-full min-h-0 w-full items-center justify-center p-2 sm:p-3 lg:p-4">
-              <InlinePreview attachment={attachment} />
-            </div>
+        {/* Preview area */}
+        <div style={{ flex: 1, minHeight: 0, padding: '0 8px 8px', display: 'flex' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-2)', padding: 8 }}>
+            <InlinePreview attachment={attachment} />
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 lg:px-8">
-          <div className="pointer-events-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2 text-[11px] text-gray-200 backdrop-blur-xl sm:px-4 sm:py-3">
-              Preserve the full-screen canvas while keeping open and download actions close at hand.
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Link
-                href={openHrefOf(attachment) || '#'}
-                target="_blank"
-                className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.14] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-400/[0.2]"
-              >
-                Open full {fileKindLabel(attachment)}
-              </Link>
-              <Link
-                href={attachment.download_url || openHrefOf(attachment) || '#'}
-                target="_blank"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-100 transition hover:bg-white/[0.1]"
-              >
-                Download file
-              </Link>
-            </div>
-          </div>
+        {/* Bottom actions */}
+        <div className="row gap-2" style={{ justifyContent: 'flex-end', padding: '8px 16px 12px' }}>
+          {openHrefOf(attachment) && (
+            <Link href={openHrefOf(attachment)!} target="_blank" className="btn btn--primary btn--sm" style={{ textDecoration: 'none' }}>
+              Open full {fileKindLabel(attachment)}
+            </Link>
+          )}
+          {(attachment.download_url || openHrefOf(attachment)) && (
+            <Link href={attachment.download_url || openHrefOf(attachment)!} target="_blank" className="btn btn--sm" style={{ textDecoration: 'none' }}>
+              Download file
+            </Link>
+          )}
         </div>
 
-        {detailsOpen ? (
+        {/* Details sidebar */}
+        {detailsOpen && (
           <>
-            <button
-              type="button"
-              aria-label="Close attachment details"
-              className="absolute inset-0 z-30 bg-black/40"
-              onClick={onToggleDetails}
-            />
-            <aside className="absolute inset-y-0 right-0 z-40 flex h-dvh min-h-screen w-full max-w-[420px] flex-col border-l border-white/[0.08] bg-[#0b0c12]/96 shadow-[-28px_0_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-4 sm:px-5 lg:px-6">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-300/85">Details</p>
-                  <p className="mt-1 truncate text-sm font-medium text-white">{attachment.original_name}</p>
+            <button type="button" aria-label="Close details" style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'oklch(0 0 0 / 0.4)' }} onClick={onToggleDetails} />
+            <aside style={{
+              position: 'absolute', inset: '0 0 0 auto', zIndex: 40,
+              width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column',
+              borderLeft: '1px solid var(--line-1)', background: 'oklch(0.12 0.012 250 / 0.96)', backdropFilter: 'blur(24px)',
+            }}>
+              <div className="row" style={{ justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--line-1)', padding: '16px 20px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div className="upper" style={{ fontSize: 10 }}>Details</div>
+                  <div style={{ marginTop: 4, fontSize: 13, fontWeight: 500, color: 'var(--fg-0)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {attachment.original_name}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={onToggleDetails}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-gray-100 transition hover:bg-white/[0.1]"
-                  aria-label="Close attachment details"
-                >
-                  ✕
-                </button>
+                <button onClick={onToggleDetails} className="btn btn--sm btn--icon" aria-label="Close details" style={{ width: 32, height: 32 }}>✕</button>
               </div>
-              <div className="flex-1 overflow-auto px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+              <div className="scroll" style={{ flex: 1, padding: 20 }}>
                 <PreviewMetaPanel attachment={attachment} />
               </div>
             </aside>
           </>
-        ) : null}
+        )}
       </div>
     </div>,
     document.body,
   );
-}
+};
 
 export default function AttachmentListClient({ attachments }: { attachments: TaskAttachment[]; fallback?: ReactNode }) {
   const [preview, setPreview] = useState<TaskAttachment | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const sorted = useMemo(() => [...attachments].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)), [attachments]);
 
-  if (!sorted.length) {
-    return null;
-  }
+  if (!sorted.length) return null;
 
   return (
     <>
-      <div className="space-y-2.5">
+      <div className="col gap-3">
         {sorted.map((attachment) => {
           const isImage = isImageAttachment(attachment);
           const href = openHrefOf(attachment);
@@ -388,93 +289,62 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
           const canPreviewInline = !!href && (isImage || isPreviewableDocument(attachment));
 
           return (
-            <div
-              key={attachment.id}
-              className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0b0b12] shadow-[0_12px_34px_rgba(0,0,0,0.22)]"
-            >
-              <div className="grid gap-3.5 p-4 md:grid-cols-[auto,minmax(0,1fr),auto] md:items-start md:gap-4">
+            <div key={attachment.id} className="card" style={{ overflow: 'hidden' }}>
+              <div className="row gap-4" style={{ padding: 16, alignItems: 'flex-start' }}>
                 {isImage && href ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      setPreview(attachment);
-                      setDetailsOpen(false);
-                    }}
-                    className="group relative h-16 w-16 overflow-hidden rounded-xl border border-white/[0.07] bg-[#090910] text-left md:h-[72px] md:w-[72px]"
+                    onClick={() => { setPreview(attachment); setDetailsOpen(false); }}
+                    style={{ width: 64, height: 64, overflow: 'hidden', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', flexShrink: 0, cursor: 'pointer', padding: 0 }}
                     aria-label={`Preview ${attachment.original_name}`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={href}
-                      alt={attachment.original_name}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                    <img src={href} alt={attachment.original_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </button>
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03] text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500 md:h-[72px] md:w-[72px]">
+                  <div className="upper" style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-2)', fontSize: 10, flexShrink: 0 }}>
                     {typeLabel(attachment)}
                   </div>
                 )}
 
-                <div className="min-w-0 space-y-2.5">
-                  <div className="min-w-0">
-                    <p className="text-[14px] font-medium leading-5 text-gray-100 break-words md:text-[15px]">{attachment.original_name}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-500">
-                      <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-300">
-                        {typeLabel(attachment)}
-                      </span>
-                      <span>{humanSize(attachment.size_bytes)}</span>
-                      <span className="text-gray-600">•</span>
-                      <span>{formatDateTime(attachment.created_at)}</span>
-                    </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--fg-0)', wordBreak: 'break-word' }}>{attachment.original_name}</div>
+                  <div className="row gap-2" style={{ marginTop: 6, flexWrap: 'wrap' }}>
+                    <span className="pill pill--ghost" style={{ height: 18, fontSize: 9 }}>{typeLabel(attachment)}</span>
+                    <span className="mono dim" style={{ fontSize: 11 }}>{humanSize(attachment.size_bytes)}</span>
+                    <span className="dim" style={{ fontSize: 11 }}>·</span>
+                    <span className="mono dim" style={{ fontSize: 11 }}>{formatDateTime(attachment.created_at)}</span>
                   </div>
-
-                  {note ? (
-                    <p className="text-[12px] leading-relaxed text-gray-400 whitespace-pre-wrap">{note}</p>
-                  ) : null}
-                  {observerNote ? (
-                    <p className="text-[11px] text-cyan-300/75">Observer note: {observerNote}</p>
-                  ) : null}
+                  {note && <div className="dim" style={{ fontSize: 12, marginTop: 8, whiteSpace: 'pre-wrap' }}>{note}</div>}
+                  {observerNote && <div style={{ fontSize: 11, color: 'var(--peri)', marginTop: 6 }}>Observer note: {observerNote}</div>}
                 </div>
 
-                {href ? (
-                  <div className="flex flex-wrap items-center gap-2 md:w-[172px] md:flex-col md:items-stretch">
-                    {canPreviewInline ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreview(attachment);
-                          setDetailsOpen(false);
-                        }}
-                        className="inline-flex items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/[0.08] px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200 hover:bg-cyan-400/[0.14]"
-                      >
+                {href && (
+                  <div className="col gap-2" style={{ flexShrink: 0 }}>
+                    {canPreviewInline && (
+                      <button type="button" onClick={() => { setPreview(attachment); setDetailsOpen(false); }} className="btn btn--sm">
                         {actionLabel(attachment)} {fileKindLabel(attachment)}
                       </button>
-                    ) : null}
-                    <Link
-                      href={href}
-                      target="_blank"
-                      className="inline-flex items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-200 hover:bg-white/[0.08]"
-                    >
-                      {canPreviewInline ? 'Open preview in new tab' : 'Download in new tab'}
+                    )}
+                    <Link href={href} target="_blank" className="btn btn--ghost btn--sm" style={{ textDecoration: 'none' }}>
+                      {canPreviewInline ? 'Open in new tab' : 'Download'}
                     </Link>
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      {preview && previewHrefOf(preview) ? (
+      {preview && previewHrefOf(preview) && (
         <AttachmentPreviewModal
           attachment={preview}
           detailsOpen={detailsOpen}
           onClose={() => setPreview(null)}
-          onToggleDetails={() => setDetailsOpen((current) => !current)}
+          onToggleDetails={() => setDetailsOpen((c) => !c)}
         />
-      ) : null}
+      )}
     </>
   );
 }

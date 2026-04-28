@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { handleApprove, handleDeny } from './actions';
+import { ShieldCheck } from 'lucide-react';
 
 interface Approval {
   id: string;
@@ -22,15 +23,15 @@ function formatAction(action: string): string {
   return map[action] || action;
 }
 
-function statusBadge(status: string) {
-  const styles: Record<string, string> = {
-    pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    consumed: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    denied: 'bg-red-500/10 text-red-400 border-red-500/20',
+function statusPill(status: string) {
+  const toneClass: Record<string, string> = {
+    pending: 'pill--amber',
+    approved: 'pill--mint',
+    consumed: 'pill--peri',
+    denied: 'pill--rose',
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${styles[status] || 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>
+    <span className={`pill ${toneClass[status] || ''}`}>
       {status}
     </span>
   );
@@ -88,22 +89,36 @@ export default function ApprovalList({
 
   if (approvals.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center mx-auto mb-4">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-            <path d="M9 12l2 2 4-4" />
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
+      <div style={{ textAlign: 'center', padding: '64px 0' }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 10,
+          background: 'var(--bg-2)',
+          border: '1px solid var(--line-1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+        }}>
+          <ShieldCheck size={18} style={{ color: 'var(--fg-4)' }} />
         </div>
-        <p className="text-sm text-gray-600">No approval requests</p>
+        <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No approval requests</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {error && (
-        <div className="p-3 rounded-xl bg-red-500/[0.06] border border-red-500/10 text-[12px] text-red-400">
+        <div style={{
+          padding: '10px 14px',
+          borderRadius: 6,
+          background: 'var(--rose-bg)',
+          border: '1px solid oklch(0.40 0.08 25 / 0.4)',
+          fontSize: 12,
+          color: 'var(--rose)',
+        }}>
           {error}
         </div>
       )}
@@ -113,51 +128,50 @@ export default function ApprovalList({
         const isActioning = isPending && actionId === a.id;
 
         return (
-          <div
-            key={a.id}
-            className="rounded-2xl glass-card p-5 animate-fade-in"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2.5 mb-2">
-                  {statusBadge(a.status)}
-                  <span className="text-[13px] font-semibold text-white">
-                    {formatAction(a.action)}
-                  </span>
+          <div key={a.id} className="card animate-fade-in" style={{ padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="row gap-2" style={{ marginBottom: 8 }}>
+                  {statusPill(a.status)}
+                  <span className="h3">{formatAction(a.action)}</span>
                 </div>
-                <div className="flex items-center gap-3 text-[11px] text-gray-600">
+                <div className="row gap-3" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
                   <span>
-                    Requested by <span className="text-gray-400 font-medium">{a.actor}</span>
+                    Requested by <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{a.actor}</span>
                   </span>
-                  <span className="text-gray-700">·</span>
+                  <span style={{ color: 'var(--fg-4)' }}>·</span>
                   <span>{timeAgo(a.created_at)}</span>
                   {a.reviewed_by && (
                     <>
-                      <span className="text-gray-700">·</span>
+                      <span style={{ color: 'var(--fg-4)' }}>·</span>
                       <span>
                         {a.status === 'consumed' ? 'Consumed (was approved)' : a.status === 'approved' ? 'Approved' : 'Denied'} by{' '}
-                        <span className="text-gray-400 font-medium">{a.reviewed_by}</span>
+                        <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{a.reviewed_by}</span>
                       </span>
                     </>
                   )}
                 </div>
                 {/* Details */}
                 {a.details && Object.keys(a.details).length > 0 && (
-                  <div className="mt-3 p-3 rounded-xl bg-white/[0.015] border border-white/[0.03]">
-                    <div className="space-y-1">
+                  <div className="card--inset" style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 6,
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {Object.entries(a.details)
                         .filter(([k]) => !['executed', 'executed_at', 'executed_by'].includes(k))
                         .map(([k, v]) => (
-                          <div key={k} className="flex items-center gap-2 text-[11px]">
-                            <span className="text-gray-600 font-medium">{k.replace(/_/g, ' ')}:</span>
-                            <span className="text-gray-400 font-mono truncate">{String(v)}</span>
+                          <div key={k} className="row gap-2" style={{ fontSize: 12 }}>
+                            <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>{k.replace(/_/g, ' ')}:</span>
+                            <span className="mono" style={{ color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(v)}</span>
                           </div>
                         ))}
                     </div>
                   </div>
                 )}
                 {isOwnRequest && a.status === 'pending' && (
-                  <p className="mt-2 text-[10px] text-amber-500/70 font-medium">
+                  <p style={{ marginTop: 8, fontSize: 11, color: 'var(--amber)', fontWeight: 500 }}>
                     You cannot approve your own request
                   </p>
                 )}
@@ -165,18 +179,23 @@ export default function ApprovalList({
 
               {/* Action buttons */}
               {canReview && (
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="row gap-2" style={{ flexShrink: 0 }}>
                   <button
                     onClick={() => doApprove(a.id)}
                     disabled={isActioning}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all duration-200 disabled:opacity-50"
+                    className="btn btn--sm"
+                    style={{
+                      background: 'var(--mint-bg)',
+                      borderColor: 'oklch(0.50 0.10 165 / 0.4)',
+                      color: 'var(--mint)',
+                    }}
                   >
                     {isActioning ? '...' : 'Approve'}
                   </button>
                   <button
                     onClick={() => doDeny(a.id)}
                     disabled={isActioning}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all duration-200 disabled:opacity-50"
+                    className="btn btn--sm btn--danger"
                   >
                     {isActioning ? '...' : 'Deny'}
                   </button>

@@ -1,239 +1,208 @@
-import { unstable_noStore as noStore } from 'next/cache';
-import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
-import { getAuthUser } from '@/lib/auth-context';
-import { redirect } from 'next/navigation';
-import AutoRefresh from '@/components/auto-refresh';
-import type { Agent } from '@/lib/types';
-import MarkdownPreview from '@/components/markdown-preview';
-import { formatDate } from '@/lib/format-date';
-import { normalizeAgentTrustTier, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
-import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
-import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
-export const dynamic = 'force-dynamic';
+'use client';
 
-const avatarGradients = [
-  'from-cyan-500 to-blue-600',
-  'from-violet-500 to-purple-600',
-  'from-emerald-500 to-teal-600',
-  'from-orange-500 to-red-600',
-  'from-pink-500 to-rose-600',
-  'from-amber-500 to-yellow-600',
+import { useState } from 'react';
+import { Filter, Plus, MoreHorizontal } from 'lucide-react';
+import { Avatar, KV, SectionHeader, PageFrame } from '@/components/atoms';
+
+const AGENTS = [
+  {
+    id: 'clawdius',
+    name: 'Clawdius',
+    tone: 'amber' as const,
+    role: 'OpenClaw operator',
+    type: 'internal' as const,
+    desc: 'Primary orchestration agent for contract lifecycle management. Handles inbound partner requests, routes approval workflows, and maintains audit trails across all active contracts.',
+    capabilities: ['Messaging', 'Contracts', 'Webhooks', 'Approvals', 'Audit', 'Sub-agents', 'Policy gating'],
+    protocols: ['contract.v1', 'message.v1', 'webhook.deliver.v1', 'approval.v1', 'audit.read.v1'],
+    config: { inbound: 'partner→', outbound: 'partner→', extension: '30s', context: 'human' },
+    metrics: { active: 1, max: 10, observed: '28 mar 2026' },
+  },
+  {
+    id: 'sentinel',
+    name: 'Sentinel',
+    tone: 'mint' as const,
+    role: 'Policy enforcer',
+    type: 'internal' as const,
+    desc: 'Stateless policy evaluation agent. Intercepts all outbound webhook deliveries and validates payloads against registered policy rules before forwarding.',
+    capabilities: ['Policy gating', 'Audit', 'Webhooks', 'Rate limiting'],
+    protocols: ['webhook.deliver.v1', 'policy.eval.v1', 'audit.write.v1'],
+    config: { inbound: 'internal→', outbound: 'internal→', extension: '5s', context: 'system' },
+    metrics: { active: 3, max: 50, observed: '27 mar 2026' },
+  },
+  {
+    id: 'nexus',
+    name: 'Nexus',
+    tone: 'peri' as const,
+    role: 'Integration bridge',
+    type: 'partner' as const,
+    desc: 'External partner integration agent. Bridges third-party systems to the A2A contract plane via standardised message envelopes and schema translation.',
+    capabilities: ['Messaging', 'Contracts', 'Schema translation', 'Auth delegation'],
+    protocols: ['contract.v1', 'message.v1', 'auth.delegate.v1'],
+    config: { inbound: 'external→', outbound: 'external→', extension: '60s', context: 'partner' },
+    metrics: { active: 0, max: 5, observed: '25 mar 2026' },
+  },
+  {
+    id: 'archiver',
+    name: 'Archiver',
+    tone: 'rose' as const,
+    role: 'Retention worker',
+    type: 'internal' as const,
+    desc: 'Background archival agent responsible for compressing, encrypting, and migrating completed contract payloads to cold storage on schedule.',
+    capabilities: ['Audit', 'Storage', 'Encryption', 'Scheduling'],
+    protocols: ['audit.read.v1', 'storage.write.v1', 'schedule.v1'],
+    config: { inbound: 'internal→', outbound: 'internal→', extension: '120s', context: 'system' },
+    metrics: { active: 0, max: 2, observed: '26 mar 2026' },
+  },
 ];
 
-const avatarGlows = [
-  'shadow-cyan-500/20',
-  'shadow-violet-500/20',
-  'shadow-emerald-500/20',
-  'shadow-orange-500/20',
-  'shadow-pink-500/20',
-  'shadow-amber-500/20',
-];
+type FilterTab = 'all' | 'internal' | 'partner';
 
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarGradients.length;
-}
+export default function AgentsPage() {
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
-function getInitials(name: string): string {
-  return name.split(/[\s-_]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
-
-export default async function AgentsPage() {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
-
-  const supabase = createServerClient();
-  noStore();
-
-  let query = supabase
-    .from('agents')
-    .select(`
-      *,
-      service_keys(id, is_active)
-    `)
-    .order('created_at', { ascending: true });
-
-  // Non-admin users only see their own agents
-  if (!user.isSuperAdmin) {
-    query = query.eq('owner_user_id', user.id);
-  }
-
-  const { data: agents } = await query;
-
-  const rows = (agents || []) as (Agent & { service_keys: { id: string; is_active: boolean }[] })[];
+  const filtered = AGENTS.filter((a) => activeTab === 'all' || a.type === activeTab);
 
   return (
-    <AutoRefresh intervalMs={30000}>
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Header */}
-      <div className="mb-8 animate-fade-in flex items-end justify-between">
-        <div>
-          <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Registry</p>
-          <h1 className="text-[32px] font-bold text-white tracking-tight">Agents</h1>
-          <p className="text-sm text-gray-600 mt-1">Registered agent identities</p>
-        </div>
-        <Link
-          href="/agents/register"
-          className="px-4 py-2.5 text-[12px] font-semibold rounded-xl bg-gradient-to-r from-cyan-500/[0.1] to-blue-500/[0.1] border border-cyan-500/20 text-cyan-400 hover:from-cyan-500/[0.18] hover:to-blue-500/[0.18] hover:border-cyan-500/30 transition-all duration-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Register Agent
-        </Link>
+    <PageFrame>
+      <SectionHeader
+        eyebrow="Registry"
+        title="Agents"
+        sub={`Registered agent identities · ${AGENTS.length} total`}
+        right={
+          <>
+            <button className="btn btn--ghost btn--sm btn--icon">
+              <Filter size={14} />
+            </button>
+            <button className="btn btn--primary btn--sm row gap-2">
+              <Plus size={13} />
+              Register Agent
+            </button>
+          </>
+        }
+      />
+
+      <div className="seg" style={{ marginBottom: 20 }}>
+        {(['all', 'internal', 'partner'] as FilterTab[]).map((tab) => (
+          <button
+            key={tab}
+            className={activeTab === tab ? 'active' : ''}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
-      {/* Agent Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {rows.length === 0 ? (
-          <div className="col-span-2 rounded-2xl glass-card px-6 py-20 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.04] mb-4">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-600">
-                <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <p className="text-sm text-gray-600 font-medium">No agents registered</p>
-            <p className="text-[11px] text-gray-700 mt-1">Register agents to begin communicating</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+        {filtered.map((agent) => (
+          <AgentCard key={agent.id} agent={agent} />
+        ))}
+      </div>
+    </PageFrame>
+  );
+}
+
+interface AgentData {
+  id: string;
+  name: string;
+  tone: 'amber' | 'mint' | 'peri' | 'rose';
+  role: string;
+  type: 'internal' | 'partner';
+  desc: string;
+  capabilities: string[];
+  protocols: string[];
+  config: { inbound: string; outbound: string; extension: string; context: string };
+  metrics: { active: number; max: number; observed: string };
+}
+
+function AgentCard({ agent }: { agent: AgentData }) {
+  const typePillClass = agent.type === 'internal' ? 'pill pill--mint' : 'pill pill--peri';
+  const dotClass = agent.metrics.active > 0 ? 'dot dot--mint pulse' : 'dot';
+
+  return (
+    <div className="card" style={{ padding: 22 }}>
+      {/* Header */}
+      <div className="row gap-2" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
+        <Avatar name={agent.name} tone={agent.tone} size={40} />
+        <div className="col gap-1" style={{ flex: 1, minWidth: 0 }}>
+          <div className="row gap-2">
+            <span className="h3 truncate-text">{agent.name}</span>
+            <span className={typePillClass}>{agent.type}</span>
           </div>
-        ) : (
-          rows.map((agent, idx) => {
-            const activeKeys = agent.service_keys?.filter((k) => k.is_active).length || 0;
-            const name = agent.display_name || agent.name;
-            const avatarIdx = getAvatarIndex(name);
-            const gradient = avatarGradients[avatarIdx];
-            const glow = avatarGlows[avatarIdx];
-            const trustTier = normalizeAgentTrustTier(agent.trust_tier);
-            const trustStyle = TRUST_TIER_STYLES[trustTier];
-            const trustPolicy = normalizeAgentTrustPolicy(agent.trust_policy);
-            const privacyMetadata = normalizeAgentPrivacyMetadata(agent.privacy_metadata);
-            return (
-              <Link
-                key={agent.id}
-                href={`/agents/${agent.id}`}
-                className="rounded-2xl glass-card-hover overflow-hidden animate-fade-in block"
-                style={{ animationDelay: `${idx * 0.05}s` }}
-              >
-                {/* Top gradient accent */}
-                <div className={`h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-20`}
-                  style={{ color: avatarIdx <= 1 ? '#06b6d4' : avatarIdx <= 3 ? '#8b5cf6' : '#10b981' }}
-                />
+          <span className="dim" style={{ fontSize: 12 }}>{agent.role}</span>
+        </div>
+        <button className="btn btn--ghost btn--icon btn--sm" style={{ flexShrink: 0 }}>
+          <MoreHorizontal size={14} />
+        </button>
+      </div>
 
-                <div className="p-6">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar with glow */}
-                    <div className="relative">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg ${glow} shrink-0`}>
-                        <span className="text-sm font-bold text-white">{getInitials(name)}</span>
-                      </div>
-                      {/* Status indicator */}
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0a0a10] ${
-                        activeKeys > 0 ? 'bg-emerald-400' : 'bg-gray-600'
-                      }`} />
-                    </div>
+      {/* Description */}
+      <p className="dim" style={{ fontSize: 13, lineHeight: 1.55, marginBottom: 14 }}>
+        {agent.desc}
+      </p>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-[15px] font-bold text-white tracking-tight">{agent.display_name}</h3>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-mono text-gray-600 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.03]">{agent.name}</span>
-                        <span className="text-[12px] text-gray-500">{agent.owner}</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${trustStyle.badge}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${trustStyle.dot}`} />
-                          {TRUST_TIER_LABELS[trustTier]}
-                        </span>
-                      </div>
-                      {agent.description && (
-                        <div className="mt-2">
-                          <MarkdownPreview content={agent.description} className="text-[11px] text-gray-500 leading-relaxed" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+      {/* Capabilities */}
+      <div className="col gap-1" style={{ marginBottom: 12 }}>
+        <div className="upper">Capabilities</div>
+        <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
+          {agent.capabilities.map((cap) => (
+            <span key={cap} className="pill pill--ghost">{cap}</span>
+          ))}
+        </div>
+      </div>
 
-                  {/* Capabilities */}
-                  {agent.capabilities && agent.capabilities.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">Capabilities</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {agent.capabilities.map((cap) => (
-                          <span key={cap} className="text-[10px] font-medium text-cyan-400 bg-cyan-500/[0.08] px-2 py-0.5 rounded-full border border-cyan-500/10">
-                            {cap}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+      {/* Protocols */}
+      <div className="col gap-1" style={{ marginBottom: 14 }}>
+        <div className="upper">Protocols</div>
+        <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
+          {agent.protocols.map((proto) => (
+            <span key={proto} className="pill pill--peri mono">{proto}</span>
+          ))}
+        </div>
+      </div>
 
-                  {/* Protocols */}
-                  {agent.protocols && agent.protocols.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">Protocols</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {agent.protocols.map((proto) => (
-                          <span key={proto} className="text-[10px] font-mono text-violet-400 bg-violet-500/[0.08] px-2 py-0.5 rounded-full border border-violet-500/10">
-                            {proto}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+      {/* Config inset block */}
+      <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px' }}>
+          <KV label="Webhook">
+            <span className="mono">{agent.config.inbound}</span>
+          </KV>
+          <KV label="Observer">
+            <span className="mono">{agent.config.outbound}</span>
+          </KV>
+          <KV label="Extension">
+            <span className="mono">{agent.config.extension}</span>
+          </KV>
+          <KV label="Routing">
+            <span className="mono">{agent.config.context}</span>
+          </KV>
+        </div>
+      </div>
 
-                  <div className="mt-4 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 text-[11px] text-gray-400 space-y-1">
-                    <p>
-                      Webhooks: <span className="text-gray-200">{trustPolicy.webhooks.management}+</span>
-                    </p>
-                    <p>
-                      Observer reads: <span className="text-gray-200">{trustPolicy.observer_project_access.read}+</span>
-                    </p>
-                    <p>
-                      Observer attachments: <span className="text-gray-200">{trustPolicy.observer_project_access.download_project_attachments}+</span>
-                    </p>
-                    <p>
-                      Retention: <span className="text-gray-200">{privacyMetadata.retention_days}d</span>
-                    </p>
-                    <p>
-                      Handling: <span className="text-gray-200">{privacyMetadata.data_handling}</span>
-                    </p>
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="flex items-center gap-6 mt-5 pt-4 border-t border-white/[0.04]">
-                    <div>
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Active Keys</p>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${activeKeys > 0 ? 'bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.4)]' : 'bg-gray-600'}`} />
-                        <span className={`text-sm font-mono font-semibold ${activeKeys > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>
-                          {activeKeys}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Max Active Contracts</p>
-                      <span className="text-sm text-gray-400 font-mono tabular-nums">
-                        {agent.max_concurrent_contracts || '∞'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-0.5">Registered</p>
-                      <span className="text-sm text-gray-400 font-mono tabular-nums">
-                        {formatDate(agent.created_at)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })
-        )}
+      {/* Footer */}
+      <div className="row gap-4" style={{ borderTop: '1px solid var(--line-1)', paddingTop: 12 }}>
+        <div className="col gap-1">
+          <div className="upper">Active rate</div>
+          <div className="row gap-2">
+            <span className={dotClass} />
+            <span className="num mono" style={{ fontSize: 13, color: 'var(--fg-1)' }}>
+              {agent.metrics.active}
+            </span>
+          </div>
+        </div>
+        <div className="col gap-1">
+          <div className="upper">Max active contracts</div>
+          <span className="num mono" style={{ fontSize: 13, color: 'var(--fg-1)' }}>
+            {agent.metrics.max}
+          </span>
+        </div>
+        <div className="col gap-1">
+          <div className="upper">Observed</div>
+          <span className="mono muted" style={{ fontSize: 12 }}>
+            {agent.metrics.observed}
+          </span>
+        </div>
       </div>
     </div>
-    </AutoRefresh>
   );
 }

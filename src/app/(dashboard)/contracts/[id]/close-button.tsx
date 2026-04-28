@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { closeContract } from './actions';
+import { AlertTriangle, X } from 'lucide-react';
 
 export default function CloseContractButton({ contractId }: { contractId: string }) {
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function handleClose() {
+  const handleClose = async () => {
     setLoading(true);
     try {
       await closeContract(contractId);
@@ -19,70 +20,59 @@ export default function CloseContractButton({ contractId }: { contractId: string
     }
     setLoading(false);
     setConfirming(false);
-  }
+  };
 
   return (
     <>
-      <button
-        onClick={() => setConfirming(true)}
-        className="px-4 py-2 bg-red-500/[0.06] hover:bg-red-500/[0.12] border border-red-500/15 hover:border-red-500/25 text-red-400 text-[12px] font-semibold rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(239,68,68,0.08)] hover:scale-[1.02] active:scale-[0.98]"
-      >
-        Close Contract
+      <button onClick={() => setConfirming(true)} className="btn btn--danger">
+        <X size={13} />Close Contract
       </button>
 
-      {/* Modal Overlay */}
       {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in" style={{ animationDuration: '0.2s' }}>
-          {/* Backdrop */}
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            style={{ position: 'absolute', inset: 0, background: 'oklch(0.10 0.012 250 / 0.7)', backdropFilter: 'blur(6px)' }}
             onClick={() => !loading && setConfirming(false)}
           />
-
-          {/* Modal */}
-          <div className="relative w-full max-w-md mx-4 rounded-2xl bg-[#0e0e15]/95 backdrop-blur-2xl border border-white/[0.06] shadow-2xl shadow-black/60 overflow-hidden">
-            {/* Red accent line */}
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
-
-            <div className="p-7">
-              {/* Icon */}
-              <div className="relative w-14 h-14 rounded-2xl bg-red-500/[0.08] border border-red-500/15 flex items-center justify-center mx-auto mb-5">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                {/* Glow */}
-                <div className="absolute inset-0 rounded-2xl bg-red-500/5 blur-xl" />
+          <div style={{
+            position: 'relative', width: '100%', maxWidth: 420, margin: '0 16px',
+            background: 'var(--bg-1)', border: '1px solid var(--line-2)',
+            borderRadius: 10, overflow: 'hidden',
+            boxShadow: '0 24px 80px oklch(0 0 0 / 0.5)',
+          }}>
+            <div style={{ padding: 28 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: 'var(--rose-bg)', border: '1px solid oklch(0.55 0.10 25 / 0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}>
+                <AlertTriangle size={24} style={{ color: 'var(--rose)' }} />
               </div>
-
-              <h3 className="text-lg font-bold text-white text-center mb-2 tracking-tight">Close Contract</h3>
-              <p className="text-[13px] text-gray-500 text-center leading-relaxed">
+              <div className="h2" style={{ textAlign: 'center', marginBottom: 8 }}>Close Contract</div>
+              <div className="muted" style={{ fontSize: 13, textAlign: 'center', lineHeight: 1.5 }}>
                 This will permanently close the contract. No more messages can be exchanged. This action cannot be undone.
-              </p>
+              </div>
             </div>
-
-            <div className="px-7 pb-7 flex gap-3">
+            <div className="row gap-3" style={{ padding: '0 28px 28px' }}>
               <button
                 onClick={() => setConfirming(false)}
                 disabled={loading}
-                className="flex-1 px-4 py-3 text-[12px] font-semibold rounded-xl border border-white/[0.06] text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] hover:border-white/[0.1] transition-all duration-200 disabled:opacity-50"
+                className="btn"
+                style={{ flex: 1, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleClose}
                 disabled={loading}
-                className="flex-1 px-4 py-3 text-[12px] font-bold rounded-xl bg-red-500/[0.1] border border-red-500/20 text-red-400 hover:bg-red-500/[0.2] hover:border-red-500/30 transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_25px_rgba(239,68,68,0.12)]"
+                className="btn btn--danger"
+                style={{ flex: 1, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}
               >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                    Closing…
-                  </span>
-                ) : (
-                  'Confirm Close'
-                )}
+                {loading ? 'Closing…' : 'Confirm Close'}
               </button>
             </div>
           </div>

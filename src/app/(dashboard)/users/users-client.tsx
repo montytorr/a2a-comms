@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toggleSuperAdmin, linkAgentToUser, unlinkAgent, createUser } from './actions';
 import { formatDate } from '@/lib/format-date';
+import { Plus, X, Shield, User, Bot, Link2, Unlink } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -114,37 +115,30 @@ export default function UsersClient({
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10">
+    <div style={{ padding: '28px 32px 60px' }}>
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
-        <div className="flex items-center justify-between">
+      <div className="animate-fade-in" style={{ marginBottom: 28 }}>
+        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <p className="text-[10px] font-semibold text-amber-500/60 uppercase tracking-[0.25em] mb-2">
-              Administration
-            </p>
-            <h1 className="text-[32px] font-bold text-white tracking-tight">Users</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="upper" style={{ color: 'var(--amber)', marginBottom: 6 }}>Administration</p>
+            <h1 className="h1" style={{ marginBottom: 4 }}>Users</h1>
+            <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 4 }}>
               Manage user profiles and agent ownership
             </p>
-            <p className="text-[11px] text-gray-500 mt-2">
+            <p className="mono dim" style={{ fontSize: 11 }}>
               Acting agent scope: {activeAgentId ? 'selected agent' : fallbackMode === 'least-privilege' ? 'least-privilege aggregate' : 'selected agent'}.
               Admin controls remain global.
             </p>
           </div>
           <button
+            className="btn btn--sm"
             onClick={() => setShowAddUser(!showAddUser)}
-            className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/15 hover:bg-cyan-500/[0.15] hover:border-cyan-500/25 transition-all duration-200 flex items-center gap-2"
+            style={{ gap: 6 }}
           >
             {showAddUser ? (
-              <>
-                <span className="text-[14px]">✕</span>
-                Cancel
-              </>
+              <><X size={13} /> Cancel</>
             ) : (
-              <>
-                <span className="text-[14px]">+</span>
-                Add User
-              </>
+              <><Plus size={13} /> Add User</>
             )}
           </button>
         </div>
@@ -152,21 +146,28 @@ export default function UsersClient({
 
       {/* Add User Form */}
       {showAddUser && (
-        <div className="mb-6 rounded-2xl glass-card overflow-hidden animate-fade-in">
-          <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-          <form onSubmit={handleCreateUser} className="p-6">
-            <h3 className="text-[14px] font-bold text-white tracking-tight mb-4">Create New User</h3>
+        <div className="card animate-fade-in" style={{ marginBottom: 20, padding: 24 }}>
+          <h3 className="h3" style={{ marginBottom: 16 }}>Create New User</h3>
 
-            {addUserError && (
-              <div className="mb-4 rounded-xl bg-red-500/[0.08] border border-red-500/20 px-4 py-3 text-[13px] text-red-400">
-                {addUserError}
-              </div>
-            )}
+          {addUserError && (
+            <div style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              background: 'var(--rose-bg)',
+              border: '1px solid oklch(0.50 0.10 25 / 0.4)',
+              borderRadius: 6,
+              fontSize: 13,
+              color: 'var(--rose)',
+            }}>
+              {addUserError}
+            </div>
+          )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleCreateUser}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-1.5">
-                  Email <span className="text-red-400">*</span>
+                <label className="upper" style={{ display: 'block', marginBottom: 6 }}>
+                  Email <span style={{ color: 'var(--rose)' }}>*</span>
                 </label>
                 <input
                   type="email"
@@ -174,12 +175,12 @@ export default function UsersClient({
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder="user@example.com"
-                  className="w-full bg-[#0a0a10] border border-white/[0.06] rounded-lg px-3 py-2.5 text-[12px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 transition-colors"
+                  className="cp-input"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-1.5">
-                  Display Name <span className="text-red-400">*</span>
+                <label className="upper" style={{ display: 'block', marginBottom: 6 }}>
+                  Display Name <span style={{ color: 'var(--rose)' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -187,12 +188,12 @@ export default function UsersClient({
                   value={newDisplayName}
                   onChange={(e) => setNewDisplayName(e.target.value)}
                   placeholder="John Doe"
-                  className="w-full bg-[#0a0a10] border border-white/[0.06] rounded-lg px-3 py-2.5 text-[12px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 transition-colors"
+                  className="cp-input"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-1.5">
-                  Password <span className="text-red-400">*</span>
+                <label className="upper" style={{ display: 'block', marginBottom: 6 }}>
+                  Password <span style={{ color: 'var(--rose)' }}>*</span>
                 </label>
                 <input
                   type="password"
@@ -201,48 +202,60 @@ export default function UsersClient({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
-                  className="w-full bg-[#0a0a10] border border-white/[0.06] rounded-lg px-3 py-2.5 text-[12px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 transition-colors"
+                  className="cp-input"
                 />
               </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-3 cursor-pointer py-2.5">
-                  <div className="relative">
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', paddingBottom: 4 }}>
+                  <div style={{ position: 'relative' }}>
                     <input
                       type="checkbox"
                       checked={newIsSuperAdmin}
                       onChange={(e) => setNewIsSuperAdmin(e.target.checked)}
-                      className="sr-only peer"
+                      style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
                     />
-                    <div className="w-9 h-5 rounded-full bg-white/[0.06] border border-white/[0.06] peer-checked:bg-amber-500/20 peer-checked:border-amber-500/30 transition-all" />
-                    <div className="absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-gray-600 peer-checked:bg-amber-400 peer-checked:translate-x-4 transition-all" />
+                    <div style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 10,
+                      background: newIsSuperAdmin ? 'var(--amber-bg)' : 'var(--bg-2)',
+                      border: `1px solid ${newIsSuperAdmin ? 'oklch(0.55 0.12 60 / 0.55)' : 'var(--line-1)'}`,
+                      transition: 'all 0.15s',
+                      position: 'relative',
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: 2,
+                        left: newIsSuperAdmin ? 18 : 2,
+                        width: 14,
+                        height: 14,
+                        borderRadius: '50%',
+                        background: newIsSuperAdmin ? 'var(--amber)' : 'var(--fg-4)',
+                        transition: 'all 0.15s',
+                      }} />
+                    </div>
                   </div>
-                  <span className="text-[12px] font-medium text-gray-400">Super Admin</span>
+                  <span style={{ fontSize: 12, color: 'var(--fg-2)' }}>Super Admin</span>
                 </label>
               </div>
             </div>
 
-            <div className="mt-5 flex items-center gap-3">
+            <div className="row gap-3" style={{ marginTop: 20 }}>
               <button
                 type="submit"
                 disabled={addUserLoading}
-                className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-white bg-cyan-500/20 border border-cyan-500/25 hover:bg-cyan-500/30 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                className="btn btn--primary btn--sm"
+                style={{ opacity: addUserLoading ? 0.5 : 1 }}
               >
-                {addUserLoading ? (
-                  <>
-                    <span className="w-3 h-3 border-2 rounded-full border-gray-600 border-t-cyan-400 animate-spin" />
-                    Creating…
-                  </>
-                ) : (
-                  'Create User'
-                )}
+                {addUserLoading ? 'Creating…' : 'Create User'}
               </button>
               <button
                 type="button"
+                className="btn btn--ghost btn--sm"
                 onClick={() => {
                   setShowAddUser(false);
                   setAddUserError(null);
                 }}
-                className="px-4 py-2.5 rounded-xl text-[12px] font-semibold text-gray-500 hover:text-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -252,13 +265,21 @@ export default function UsersClient({
       )}
 
       {error && (
-        <div className="mb-6 rounded-xl bg-red-500/[0.08] border border-red-500/20 px-4 py-3 text-[13px] text-red-400 animate-fade-in">
+        <div className="animate-fade-in" style={{
+          marginBottom: 20,
+          padding: '10px 14px',
+          background: 'var(--rose-bg)',
+          border: '1px solid oklch(0.50 0.10 25 / 0.4)',
+          borderRadius: 6,
+          fontSize: 13,
+          color: 'var(--rose)',
+        }}>
           {error}
         </div>
       )}
 
       {/* User Cards */}
-      <div className="space-y-6">
+      <div className="col gap-3">
         {profiles.map((profile, idx) => {
           const userAgents = agentsByOwner[profile.id] || [];
           const isSelf = profile.id === currentUserId;
@@ -266,53 +287,53 @@ export default function UsersClient({
           return (
             <div
               key={profile.id}
-              className="rounded-2xl glass-card overflow-hidden animate-fade-in"
+              className="card animate-fade-in"
               style={{ animationDelay: `${idx * 0.08}s` }}
             >
-              {/* Top accent */}
-              <div
-                className={`h-px bg-gradient-to-r from-transparent ${
-                  profile.is_super_admin
-                    ? 'via-amber-500/30'
-                    : 'via-cyan-500/20'
-                } to-transparent`}
-              />
-
-              <div className="p-6">
+              <div style={{ padding: 24 }}>
                 {/* User header */}
-                <div className="flex items-start justify-between mb-5">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
-                        profile.is_super_admin
-                          ? 'from-amber-500 to-orange-600'
-                          : 'from-gray-600 to-gray-700'
-                      } flex items-center justify-center shadow-lg shrink-0`}
-                    >
-                      <span className="text-sm font-bold text-white">
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                  <div className="row gap-3">
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: profile.is_super_admin
+                        ? 'linear-gradient(135deg, var(--amber-bg), oklch(0.35 0.08 55 / 0.5))'
+                        : 'var(--bg-3)',
+                      border: `1px solid ${profile.is_super_admin ? 'oklch(0.55 0.12 60 / 0.4)' : 'var(--line-1)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <span style={{
+                        fontFamily: 'var(--mono)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: profile.is_super_admin ? 'var(--amber)' : 'var(--fg-2)',
+                      }}>
                         {(profile.display_name || '?')[0].toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-[16px] font-bold text-white tracking-tight">
-                          {profile.display_name}
-                        </h2>
+                      <div className="row gap-2" style={{ marginBottom: 3 }}>
+                        <h2 className="h3">{profile.display_name}</h2>
                         {profile.is_super_admin && (
-                          <span className="text-[9px] font-bold text-amber-400 bg-amber-500/[0.1] px-2 py-0.5 rounded-full border border-amber-500/15 uppercase tracking-wider">
+                          <span className="pill pill--amber">
+                            <Shield size={9} />
                             Super Admin
                           </span>
                         )}
                         {isSelf && (
-                          <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/[0.1] px-2 py-0.5 rounded-full border border-cyan-500/15 uppercase tracking-wider">
+                          <span className="pill pill--peri">
+                            <User size={9} />
                             You
                           </span>
                         )}
                       </div>
-                      <p className="text-[12px] text-gray-500 font-mono mt-0.5">
-                        {profile.email}
-                      </p>
-                      <p className="text-[10px] text-gray-700 font-mono mt-0.5">
+                      <p className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }}>{profile.email}</p>
+                      <p className="mono dim" style={{ fontSize: 11, marginTop: 2 }}>
                         ID: {profile.id.slice(0, 8)}…
                       </p>
                     </div>
@@ -320,27 +341,17 @@ export default function UsersClient({
 
                   {/* Toggle admin button */}
                   <button
-                    onClick={() =>
-                      handleToggleAdmin(profile.id, profile.is_super_admin)
-                    }
-                    disabled={
-                      loading === profile.id || (isSelf && profile.is_super_admin)
-                    }
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 border ${
-                      profile.is_super_admin
-                        ? 'text-gray-500 bg-white/[0.02] border-white/[0.04] hover:text-red-400 hover:bg-red-500/[0.04] hover:border-red-500/15'
-                        : 'text-amber-500 bg-amber-500/[0.04] border-amber-500/15 hover:bg-amber-500/[0.1]'
-                    } disabled:opacity-30 disabled:cursor-not-allowed`}
-                    title={
-                      isSelf && profile.is_super_admin
-                        ? 'Cannot remove your own admin'
-                        : undefined
-                    }
+                    onClick={() => handleToggleAdmin(profile.id, profile.is_super_admin)}
+                    disabled={loading === profile.id || (isSelf && profile.is_super_admin)}
+                    className={profile.is_super_admin ? 'btn btn--sm btn--danger' : 'btn btn--sm'}
+                    style={{
+                      opacity: (loading === profile.id || (isSelf && profile.is_super_admin)) ? 0.35 : 1,
+                      ...(profile.is_super_admin ? {} : { color: 'var(--amber)', borderColor: 'oklch(0.55 0.12 60 / 0.4)' }),
+                    }}
+                    title={isSelf && profile.is_super_admin ? 'Cannot remove your own admin' : undefined}
                   >
                     {loading === profile.id ? (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 border-2 rounded-full border-gray-600 border-t-gray-400 animate-spin" />
-                      </span>
+                      <span style={{ fontSize: 11 }}>…</span>
                     ) : profile.is_super_admin ? (
                       'Remove Admin'
                     ) : (
@@ -351,17 +362,12 @@ export default function UsersClient({
 
                 {/* Linked Agents */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em]">
-                      Linked Agents ({userAgents.length})
-                    </p>
+                  <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+                    <p className="upper dim">Linked Agents ({userAgents.length})</p>
                     <button
-                      onClick={() =>
-                        setLinkingUser(
-                          linkingUser === profile.id ? null : profile.id
-                        )
-                      }
-                      className="text-[10px] font-semibold text-cyan-400/70 hover:text-cyan-400 transition-colors"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => setLinkingUser(linkingUser === profile.id ? null : profile.id)}
+                      style={{ height: 'auto', padding: '2px 8px', fontSize: 11 }}
                     >
                       {linkingUser === profile.id ? 'Cancel' : '+ Link Agent'}
                     </button>
@@ -369,11 +375,12 @@ export default function UsersClient({
 
                   {/* Link agent form */}
                   {linkingUser === profile.id && (
-                    <div className="mb-3 flex items-center gap-2 animate-fade-in">
+                    <div className="row gap-2 animate-fade-in" style={{ marginBottom: 10 }}>
                       <select
                         value={selectedAgent}
                         onChange={(e) => setSelectedAgent(e.target.value)}
-                        className="flex-1 bg-[#0a0a10] border border-white/[0.06] rounded-lg px-3 py-2 text-[12px] text-gray-200 focus:outline-none focus:border-cyan-500/30"
+                        className="cp-select"
+                        style={{ flex: 1 }}
                       >
                         <option value="">Select unlinked agent…</option>
                         {initialUnlinked.map((a) => (
@@ -384,58 +391,69 @@ export default function UsersClient({
                       </select>
                       <button
                         onClick={() => handleLinkAgent(profile.id)}
-                        disabled={
-                          !selectedAgent || loading === `link-${profile.id}`
-                        }
-                        className="px-3 py-2 rounded-lg text-[11px] font-semibold text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/15 hover:bg-cyan-500/[0.12] transition-all disabled:opacity-30"
+                        disabled={!selectedAgent || loading === `link-${profile.id}`}
+                        className="btn btn--sm"
+                        style={{
+                          opacity: (!selectedAgent || loading === `link-${profile.id}`) ? 0.35 : 1,
+                          gap: 5,
+                          color: 'var(--peri)',
+                          borderColor: 'oklch(0.50 0.08 265 / 0.4)',
+                        }}
                       >
+                        <Link2 size={12} />
                         Link
                       </button>
                     </div>
                   )}
 
                   {userAgents.length === 0 ? (
-                    <p className="text-[11px] text-gray-700 italic">
+                    <p className="dim" style={{ fontSize: 12, fontStyle: 'italic' }}>
                       No agents linked
                     </p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="col gap-2">
                       {userAgents.map((agent) => (
                         <div
                           key={agent.id}
-                          className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.04] rounded-xl px-4 py-2.5 hover:bg-white/[0.03] transition-all duration-200"
+                          className="row gap-3"
+                          style={{
+                            background: 'var(--bg-2)',
+                            border: '1px solid var(--line-1)',
+                            borderRadius: 6,
+                            padding: '8px 12px',
+                          }}
                         >
-                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-md shrink-0">
-                            <span className="text-[9px] font-bold text-white">
-                              {(agent.display_name || agent.name)
-                                .split(/[\s-_]+/)
-                                .map((w: string) => w[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </span>
+                          <div style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            background: 'var(--peri-bg)',
+                            border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                            <Bot size={12} style={{ color: 'var(--peri)' }} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[13px] font-medium text-gray-200">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 13, color: 'var(--fg-1)' }}>
                               {agent.display_name}
                             </span>
-                            <span className="text-[10px] text-gray-600 font-mono ml-2">
+                            <span className="mono dim" style={{ fontSize: 10, marginLeft: 8 }}>
                               {agent.name}
                             </span>
                           </div>
                           {/* Capabilities */}
                           {agent.capabilities && agent.capabilities.length > 0 && (
-                            <div className="flex gap-1">
+                            <div className="row gap-1">
                               {agent.capabilities.slice(0, 3).map((cap: string) => (
-                                <span
-                                  key={cap}
-                                  className="text-[9px] font-medium text-cyan-400 bg-cyan-500/[0.08] px-1.5 py-0.5 rounded-full"
-                                >
+                                <span key={cap} className="pill pill--peri" style={{ fontSize: 9 }}>
                                   {cap}
                                 </span>
                               ))}
                               {agent.capabilities.length > 3 && (
-                                <span className="text-[9px] text-gray-600">
+                                <span className="dim" style={{ fontSize: 10 }}>
                                   +{agent.capabilities.length - 3}
                                 </span>
                               )}
@@ -444,10 +462,15 @@ export default function UsersClient({
                           <button
                             onClick={() => handleUnlinkAgent(agent.id)}
                             disabled={loading === agent.id}
-                            className="text-[10px] font-semibold text-gray-600 hover:text-red-400 transition-colors disabled:opacity-30"
+                            className="btn btn--ghost btn--icon btn--sm"
+                            style={{
+                              opacity: loading === agent.id ? 0.3 : 1,
+                              width: 26,
+                              height: 26,
+                            }}
                             title="Unlink agent"
                           >
-                            ✕
+                            <Unlink size={11} style={{ color: 'var(--fg-3)' }} />
                           </button>
                         </div>
                       ))}
@@ -456,10 +479,13 @@ export default function UsersClient({
                 </div>
 
                 {/* Meta */}
-                <div className="mt-4 pt-4 border-t border-white/[0.04] flex items-center gap-4">
-                  <span className="text-[10px] text-gray-700 font-mono tabular-nums">
-                    Joined{' '}
-                    {formatDate(profile.created_at)}
+                <div style={{
+                  marginTop: 16,
+                  paddingTop: 16,
+                  borderTop: '1px solid var(--line-1)',
+                }}>
+                  <span className="mono dim num" style={{ fontSize: 11 }}>
+                    Joined {formatDate(profile.created_at)}
                   </span>
                 </div>
               </div>

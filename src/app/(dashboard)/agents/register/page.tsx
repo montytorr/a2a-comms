@@ -34,76 +34,68 @@ export default function RegisterAgentPage() {
 
   if (result) {
     return (
-      <div className="p-4 sm:p-6 lg:p-10">
-        {/* Back link */}
+      <div style={{ padding: '1.5rem' }}>
         <Link
           href="/agents"
-          className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
           Back to Agents
         </Link>
 
-        <div className="max-w-lg mx-auto animate-fade-in">
-          <div className="rounded-2xl glass-card overflow-hidden">
-            {/* Green accent */}
-            <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-            <div className="p-7">
-              {/* Success icon */}
-              <div className="relative w-14 h-14 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/15 flex items-center justify-center mx-auto mb-5">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
+        <div style={{ maxWidth: '32rem', margin: '0 auto' }}>
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '1.75rem' }}>
+              <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: '0.75rem', background: 'var(--mint-bg)', border: '1px solid var(--mint)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--mint)' }}>
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
 
-              <h2 className="text-lg font-bold text-white text-center mb-2 tracking-tight">Agent Registered</h2>
-              <p className="text-[13px] text-gray-500 text-center mb-6">
-                Save these credentials now. The signing secret will <span className="text-amber-400 font-semibold">not be shown again</span>.
+              <h2 className="h2" style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Agent Registered</h2>
+              <p className="muted" style={{ fontSize: '13px', textAlign: 'center', marginBottom: '1.5rem' }}>
+                Save these credentials now. The signing secret will <span style={{ color: 'var(--amber)', fontWeight: 600 }}>not be shown again</span>.
               </p>
 
-              {/* Credentials card */}
-              <div className="rounded-xl bg-amber-500/[0.04] border border-amber-500/15 p-5 space-y-4">
-                {/* Warning */}
-                <div className="flex items-start gap-2.5 mb-4">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400 shrink-0 mt-0.5">
+              <div style={{ borderRadius: '0.75rem', background: 'var(--amber-bg)', border: '1px solid var(--amber)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', marginBottom: '0.25rem' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--amber)', flexShrink: 0, marginTop: '0.125rem' }}>
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                     <line x1="12" y1="9" x2="12" y2="13" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
-                  <p className="text-[11px] text-amber-400/80 leading-relaxed">
+                  <p style={{ fontSize: '11px', color: 'var(--amber)', lineHeight: 1.6 }}>
                     Copy both values below. The signing secret is displayed only once and cannot be recovered.
                   </p>
                 </div>
 
-                {/* Key ID */}
                 <div>
-                  <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-1.5">Key ID</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-[13px] font-mono text-cyan-400 bg-black/30 border border-white/[0.04] rounded-lg px-3 py-2 truncate">
+                  <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Key ID</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <code className="mono" style={{ flex: 1, fontSize: '13px', color: 'var(--peri)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {result.keyId}
                     </code>
                     <button
                       onClick={() => copyToClipboard(result.keyId!, 'keyId')}
-                      className="shrink-0 px-3 py-2 text-[11px] font-medium rounded-lg border border-white/[0.06] text-gray-400 hover:text-white hover:bg-white/[0.04] transition-all duration-200"
+                      className="btn btn--ghost btn--sm"
                     >
                       {copied === 'keyId' ? '✓ Copied' : 'Copy'}
                     </button>
                   </div>
                 </div>
 
-                {/* Signing Secret */}
                 <div>
-                  <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-1.5">Signing Secret</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-[13px] font-mono text-emerald-400 bg-black/30 border border-white/[0.04] rounded-lg px-3 py-2 truncate select-all">
+                  <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Signing Secret</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <code className="mono" style={{ flex: 1, fontSize: '13px', color: 'var(--mint)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', userSelect: 'all' }}>
                       {result.signingSecret}
                     </code>
                     <button
                       onClick={() => copyToClipboard(result.signingSecret!, 'secret')}
-                      className="shrink-0 px-3 py-2 text-[11px] font-medium rounded-lg border border-white/[0.06] text-gray-400 hover:text-white hover:bg-white/[0.04] transition-all duration-200"
+                      className="btn btn--ghost btn--sm"
                     >
                       {copied === 'secret' ? '✓ Copied' : 'Copy'}
                     </button>
@@ -113,7 +105,8 @@ export default function RegisterAgentPage() {
 
               <Link
                 href="/agents"
-                className="mt-6 block w-full text-center px-4 py-3 text-[12px] font-semibold rounded-xl bg-cyan-500/[0.08] border border-cyan-500/15 text-cyan-400 hover:bg-cyan-500/[0.15] hover:border-cyan-500/25 transition-all duration-300"
+                className="btn btn--ghost"
+                style={{ marginTop: '1.5rem', display: 'block', width: '100%', textAlign: 'center', textDecoration: 'none', color: 'var(--peri)', borderColor: 'var(--peri-bg)' }}
               >
                 Back to Agents
               </Link>
@@ -125,118 +118,115 @@ export default function RegisterAgentPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Back link */}
+    <div style={{ padding: '1.5rem' }}>
       <Link
         href="/agents"
-        className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
         </svg>
         Back to Agents
       </Link>
 
-      <div className="mb-8 animate-fade-in">
-        <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Registry</p>
-        <h1 className="text-[32px] font-bold text-white tracking-tight">Register Agent</h1>
-        <p className="text-sm text-gray-600 mt-1">Create a new agent identity and service key</p>
+      <div style={{ marginBottom: '2rem' }}>
+        <p className="upper" style={{ fontSize: '10px', color: 'var(--peri)', fontWeight: 600, marginBottom: '0.5rem' }}>Registry</p>
+        <h1 className="h1">Register Agent</h1>
+        <p className="muted" style={{ fontSize: '14px', marginTop: '0.25rem' }}>Create a new agent identity and service key</p>
       </div>
 
-      <div className="max-w-lg animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <div className="rounded-2xl glass-card overflow-hidden">
-          <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
-          <form onSubmit={handleSubmit} className="p-7 space-y-5">
+      <div style={{ maxWidth: '32rem' }}>
+        <div className="card" style={{ overflow: 'hidden' }}>
+          <form onSubmit={handleSubmit} style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {error && (
-              <div className="rounded-xl bg-red-500/[0.06] border border-red-500/15 px-4 py-3 text-[12px] text-red-400">
+              <div style={{ borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', fontSize: '12px', color: 'var(--rose)' }}>
                 {error}
               </div>
             )}
 
-            {/* Name (slug) */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
-                Name <span className="text-red-400">*</span>
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+                Name <span style={{ color: 'var(--rose)' }}>*</span>
               </label>
               <input
                 name="name"
                 required
                 pattern="^[a-z0-9][a-z0-9_-]*$"
                 placeholder="my-agent"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 font-mono focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-input mono"
+                style={{ width: '100%' }}
               />
-              <p className="text-[10px] text-gray-700 mt-1.5">Slug format: lowercase, numbers, hyphens, underscores</p>
+              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>Slug format: lowercase, numbers, hyphens, underscores</p>
             </div>
 
-            {/* Display Name */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
-                Display Name <span className="text-red-400">*</span>
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+                Display Name <span style={{ color: 'var(--rose)' }}>*</span>
               </label>
               <input
                 name="display_name"
                 required
                 placeholder="My Agent"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-input"
+                style={{ width: '100%' }}
               />
             </div>
 
-            {/* Owner */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
-                Owner <span className="text-red-400">*</span>
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+                Owner <span style={{ color: 'var(--rose)' }}>*</span>
               </label>
               <input
                 name="owner"
                 required
                 placeholder="your-name"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-input"
+                style={{ width: '100%' }}
               />
             </div>
 
-            {/* Description */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
                 Description
               </label>
               <textarea
                 name="description"
                 rows={3}
                 placeholder="What does this agent do?"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200 resize-none"
+                className="cp-input"
+                style={{ width: '100%', resize: 'none' }}
               />
             </div>
 
-            {/* Capabilities */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
                 Capabilities
               </label>
               <input
                 name="capabilities"
                 placeholder="trading, research, messaging"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-input"
+                style={{ width: '100%' }}
               />
-              <p className="text-[10px] text-gray-700 mt-1.5">Comma-separated list</p>
+              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>Comma-separated list</p>
             </div>
 
-            {/* Protocols */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
                 Protocols
               </label>
               <input
                 name="protocols"
                 placeholder="a2a-comms/v1, webhooks"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-input"
+                style={{ width: '100%' }}
               />
-              <p className="text-[10px] text-gray-700 mt-1.5">Comma-separated list</p>
+              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>Comma-separated list</p>
             </div>
 
-            {/* Max Concurrent Contracts */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
                 Max Active Contracts
               </label>
               <input
@@ -245,47 +235,50 @@ export default function RegisterAgentPage() {
                 defaultValue={5}
                 min={1}
                 max={100}
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 font-mono focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-input mono"
+                style={{ width: '100%' }}
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
                 Trust Tier
               </label>
               <select
                 name="trust_tier"
                 defaultValue="external"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200"
+                className="cp-select"
+                style={{ width: '100%' }}
               >
                 <option value="internal">Internal — full project + handoff access</option>
                 <option value="partner">Partner — can observe and broker, but not take handoffs</option>
                 <option value="external">External — registry only until explicitly trusted</option>
               </select>
-              <p className="text-[10px] text-gray-700 mt-1.5">This is the base trust rail. Fine-grained trust-policy thresholds can be adjusted later from the agent detail page.</p>
+              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>This is the base trust rail. Fine-grained trust-policy thresholds can be adjusted later from the agent detail page.</p>
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-2">
+              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
                 Trust Notes
               </label>
               <textarea
                 name="trust_notes"
                 rows={2}
                 placeholder="Why this agent has this tier, who vetted it, or what restrictions apply"
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all duration-200 resize-none"
+                className="cp-input"
+                style={{ width: '100%', resize: 'none' }}
               />
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-3.5 text-[13px] font-bold rounded-xl bg-gradient-to-r from-cyan-500/[0.12] to-blue-500/[0.12] border border-cyan-500/20 text-cyan-400 hover:from-cyan-500/[0.2] hover:to-blue-500/[0.2] hover:border-cyan-500/30 transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] hover:scale-[1.01] active:scale-[0.99]"
+              className="btn btn--primary"
+              style={{ width: '100%' }}
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                  <span style={{ width: '1rem', height: '1rem', border: '2px solid var(--peri)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
                   Registering…
                 </span>
               ) : (

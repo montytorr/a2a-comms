@@ -60,51 +60,89 @@ export default function RegisterWebhookPage() {
 
   if (success) {
     return (
-      <div className="p-4 sm:p-6 lg:p-10 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/[0.1] border border-emerald-500/20 mb-4">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400" strokeLinecap="round" strokeLinejoin="round">
+      <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div className="animate-fade-in" style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '4rem',
+              height: '4rem',
+              borderRadius: '1rem',
+              background: 'var(--mint-bg)',
+              border: '1px solid var(--mint)',
+              marginBottom: '1rem',
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--mint)' }} strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Webhook Registered</h2>
-          <p className="text-sm text-gray-500">Redirecting to webhooks…</p>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--fg-0)', marginBottom: '0.5rem' }}>Webhook Registered</h2>
+          <p style={{ fontSize: '0.875rem', color: 'var(--fg-3)' }}>Redirecting to webhooks…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-2xl">
+    <div style={{ padding: '1rem', maxWidth: '42rem' }} className="sm:p-6 lg:p-10">
       {/* Back */}
-      <a href="/webhooks" className="inline-flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-cyan-400 transition-colors duration-200 mb-6 group">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform duration-200">
+      <a
+        href="/webhooks"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.375rem',
+          fontSize: '12px',
+          color: 'var(--fg-3)',
+          textDecoration: 'none',
+          marginBottom: '1.5rem',
+          transition: 'color 0.15s',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
         </svg>
         Back to Webhooks
       </a>
 
-      <div className="mb-8 animate-fade-in">
-        <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Register</p>
-        <h1 className="text-[32px] font-bold text-white tracking-tight">New Webhook</h1>
-        <p className="text-sm text-gray-600 mt-1">Register a push notification endpoint for an agent</p>
+      <div className="animate-fade-in" style={{ marginBottom: '2rem' }}>
+        <p className="upper" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--peri)', marginBottom: '0.5rem' }}>Register</p>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>New Webhook</h1>
+        <p style={{ fontSize: '0.875rem', color: 'var(--fg-3)', marginTop: '0.25rem' }}>Register a push notification endpoint for an agent</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+      <form
+        onSubmit={handleSubmit}
+        className="animate-fade-in"
+        style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animationDelay: '0.05s' }}
+      >
         {error && (
-          <div className="rounded-xl bg-red-500/[0.08] border border-red-500/20 px-4 py-3 text-[13px] text-red-400">
+          <div
+            style={{
+              borderRadius: '0.75rem',
+              background: 'var(--rose-bg)',
+              border: '1px solid var(--rose)',
+              padding: '0.75rem 1rem',
+              fontSize: '13px',
+              color: 'var(--rose)',
+            }}
+          >
             {error}
           </div>
         )}
 
         {/* Agent */}
-        <div className="rounded-2xl glass-card p-6">
-          <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2">Agent</label>
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Agent</label>
           <select
             value={agentId}
             onChange={(e) => setAgentId(e.target.value)}
-            className="w-full bg-[#0a0a10] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/20 transition-all"
+            className="cp-select"
+            style={{ width: '100%' }}
           >
             <option value="">Select an agent…</option>
             {agents.map(a => (
@@ -114,53 +152,62 @@ export default function RegisterWebhookPage() {
         </div>
 
         {/* URL */}
-        <div className="rounded-2xl glass-card p-6">
-          <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2">Webhook URL</label>
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Webhook URL</label>
           <input
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://your-server.com/a2a-webhook"
-            className="w-full bg-[#0a0a10] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
+            className="cp-input mono"
+            style={{ width: '100%' }}
           />
         </div>
 
         {/* Secret */}
-        <div className="rounded-2xl glass-card p-6">
-          <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-2">Signing Secret</label>
-          <div className="flex gap-2">
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Signing Secret</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="text"
               value={secret}
               onChange={(e) => setSecret(e.target.value)}
               placeholder="whsec_..."
-              className="flex-1 bg-[#0a0a10] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-200 placeholder-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
+              className="cp-input mono"
+              style={{ flex: 1 }}
             />
             <button
               type="button"
               onClick={generateSecret}
-              className="px-4 py-3 rounded-xl text-[11px] font-semibold text-cyan-400 bg-cyan-500/[0.08] border border-cyan-500/15 hover:bg-cyan-500/[0.12] transition-all shrink-0"
+              className="btn btn--peri"
+              style={{ padding: '0.75rem 1rem', fontSize: '11px', fontWeight: 600, flexShrink: 0 }}
             >
               Generate
             </button>
           </div>
-          <p className="text-[10px] text-gray-700 mt-2">Used to sign webhook payloads (HMAC-SHA256). Store securely — shown here once.</p>
+          <p style={{ fontSize: '10px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Used to sign webhook payloads (HMAC-SHA256). Store securely — shown here once.</p>
         </div>
 
         {/* Events */}
-        <div className="rounded-2xl glass-card p-6">
-          <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] mb-3">Events</label>
-          <div className="flex flex-wrap gap-2">
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.75rem' }}>Events</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {ALL_EVENTS.map(ev => (
               <button
                 key={ev}
                 type="button"
                 onClick={() => toggleEvent(ev)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 border ${
-                  events.includes(ev)
-                    ? 'text-cyan-400 bg-cyan-500/[0.1] border-cyan-500/20'
-                    : 'text-gray-600 bg-white/[0.02] border-white/[0.04] hover:text-gray-400'
-                }`}
+                style={{
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  border: `1px solid ${events.includes(ev) ? 'var(--peri)' : 'var(--line-1)'}`,
+                  background: events.includes(ev) ? 'var(--peri-bg)' : 'var(--bg-1)',
+                  color: events.includes(ev) ? 'var(--peri)' : 'var(--fg-3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
               >
                 {events.includes(ev) && '✓ '}{ev}
               </button>
@@ -172,11 +219,29 @@ export default function RegisterWebhookPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-6 py-3.5 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-300 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn--peri"
+          style={{
+            width: '100%',
+            padding: '0.875rem 1.5rem',
+            fontSize: '13px',
+            fontWeight: 700,
+            opacity: loading ? 0.5 : 1,
+            cursor: loading ? 'not-allowed' : 'pointer',
+          }}
         >
           {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 rounded-full border-white/30 border-t-white animate-spin" />
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <span
+                style={{
+                  width: '1rem',
+                  height: '1rem',
+                  borderRadius: '50%',
+                  border: '2px solid var(--peri)',
+                  borderTopColor: 'transparent',
+                  animation: 'spin 0.6s linear infinite',
+                  display: 'inline-block',
+                }}
+              />
               Registering…
             </span>
           ) : (

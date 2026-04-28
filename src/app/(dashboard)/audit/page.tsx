@@ -4,12 +4,36 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import { redirect } from 'next/navigation';
 import type { AuditLogEntry } from '@/lib/types';
+import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PageFrame, SectionHeader } from '@/components/atoms';
 import AuditTable from './audit-table';
 import AutoRefresh from '@/components/auto-refresh';
 import AuditFilters from './audit-filters';
+
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
+
+const SECURITY_EVENTS = [
+  'auth.success', 'auth.failure', 'authz.denied',
+  'webhook.delivery.success', 'webhook.delivery.failure', 'webhook.disabled',
+  'suspicious.replay_detected', 'suspicious.invalid_signature',
+  'policy.kill_switch.activated', 'policy.kill_switch.deactivated',
+];
+
+function buildPageUrl(
+  p: number,
+  actorFilter: string,
+  actionFilter: string,
+  rangeFilter: string,
+): string {
+  const parts: string[] = [];
+  if (p > 1) parts.push(`page=${p}`);
+  if (actorFilter) parts.push(`actor=${encodeURIComponent(actorFilter)}`);
+  if (actionFilter !== 'all') parts.push(`action=${encodeURIComponent(actionFilter)}`);
+  if (rangeFilter !== 'all') parts.push(`range=${encodeURIComponent(rangeFilter)}`);
+  return `/audit${parts.length ? `?${parts.join('&')}` : ''}`;
+}
 
 export default async function AuditPage({
   searchParams,
@@ -31,12 +55,12 @@ export default async function AuditPage({
   const scope = user.isSuperAdmin ? null : await buildDashboardVisibilityScope(auth);
   const scopedActorNames = user.isSuperAdmin ? null : scope?.contractActorNames || [];
 
-  // Build filtered query for count
+  // ── count query ──────────────────────────────────────────────────────────────
+
   let countQuery = supabase
     .from('audit_log')
     .select('id', { count: 'exact', head: true });
 
-  // Scope for non-admin
   if (scopedActorNames !== null && scopedActorNames.length > 0) {
     countQuery = countQuery.in('actor', scopedActorNames);
   } else if (scopedActorNames !== null) {
@@ -46,19 +70,13 @@ export default async function AuditPage({
   if (actorFilter) {
     countQuery = countQuery.ilike('actor', `%${actorFilter}%`);
   }
-  // Security event types for grouped filter
-  const SECURITY_EVENTS = [
-    'auth.success', 'auth.failure', 'authz.denied',
-    'webhook.delivery.success', 'webhook.delivery.failure', 'webhook.disabled',
-    'suspicious.replay_detected', 'suspicious.invalid_signature',
-    'policy.kill_switch.activated', 'policy.kill_switch.deactivated',
-  ];
 
   if (actionFilter === 'security') {
     countQuery = countQuery.in('action', SECURITY_EVENTS);
   } else if (actionFilter !== 'all') {
     countQuery = countQuery.eq('action', actionFilter);
   }
+
   if (rangeFilter !== 'all') {
     const now = new Date();
     let since: Date;
@@ -76,13 +94,13 @@ export default async function AuditPage({
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  // Build filtered query for data
+  // ── data query ───────────────────────────────────────────────────────────────
+
   let dataQuery = supabase
     .from('audit_log')
     .select('*')
     .order('created_at', { ascending: false });
 
-  // Scope for non-admin
   if (scopedActorNames !== null && scopedActorNames.length > 0) {
     dataQuery = dataQuery.in('actor', scopedActorNames);
   } else if (scopedActorNames !== null) {
@@ -92,11 +110,13 @@ export default async function AuditPage({
   if (actorFilter) {
     dataQuery = dataQuery.ilike('actor', `%${actorFilter}%`);
   }
+
   if (actionFilter === 'security') {
     dataQuery = dataQuery.in('action', SECURITY_EVENTS);
   } else if (actionFilter !== 'all') {
     dataQuery = dataQuery.eq('action', actionFilter);
   }
+
   if (rangeFilter !== 'all') {
     const now = new Date();
     let since: Date;
@@ -115,61 +135,64 @@ export default async function AuditPage({
   const { data: entries } = await dataQuery;
   const rows = (entries || []) as AuditLogEntry[];
 
-  // Build pagination links preserving filters
-  function buildPageUrl(p: number): string {
-    const parts: string[] = [];
-    if (p > 1) parts.push(`page=${p}`);
-    if (actorFilter) parts.push(`actor=${encodeURIComponent(actorFilter)}`);
-    if (actionFilter !== 'all') parts.push(`action=${encodeURIComponent(actionFilter)}`);
-    if (rangeFilter !== 'all') parts.push(`range=${encodeURIComponent(rangeFilter)}`);
-    return `/audit${parts.length ? `?${parts.join('&')}` : ''}`;
-  }
+  const formattedTotal = totalCount.toLocaleString();
 
   return (
     <AutoRefresh intervalMs={15000}>
-    <div className="p-4 sm:p-6 lg:p-10">
-      {/* Header */}
-      <div className="mb-8 animate-fade-in">
-        <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Monitoring</p>
-        <h1 className="text-[32px] font-bold text-white tracking-tight">Audit Log</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          <span className="text-gray-400 font-medium tabular-nums">{totalCount}</span> total entries
-          <span className="text-gray-700 mx-1.5">·</span>
-          Page <span className="text-gray-400 font-medium tabular-nums">{page}</span> of {totalPages}
-        </p>
-      </div>
+      <PageFrame maxW={1400}>
+        <SectionHeader
+          eyebrow="Monitoring"
+          title="Audit Log"
+          sub={`${formattedTotal} total entries · Page ${page} of ${totalPages}`}
+          right={
+            <button className="btn btn--sm row gap-2">
+              <Download size={13} />
+              Export CSV
+            </button>
+          }
+        />
 
-      {/* Filters */}
-      <AuditFilters />
+        <AuditFilters />
 
-      {/* Table */}
-      <AuditTable entries={rows} />
+        <AuditTable entries={rows} />
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 mt-8">
-          {page > 1 && (
+        {/* Pagination */}
+        <div className="row gap-2" style={{ justifyContent: 'center', marginTop: 8 }}>
+          {page > 1 ? (
             <a
-              href={buildPageUrl(page - 1)}
-              className="px-4 py-2 text-[11px] font-semibold text-gray-500 border border-white/[0.04] hover:border-white/[0.08] hover:text-gray-300 hover:bg-white/[0.02] rounded-xl transition-all duration-300"
+              href={buildPageUrl(page - 1, actorFilter, actionFilter, rangeFilter)}
+              className="btn btn--sm row gap-1"
             >
-              ← Previous
+              <ChevronLeft size={13} />
+              Prev
             </a>
+          ) : (
+            <button className="btn btn--sm row gap-1" disabled style={{ opacity: 0.35, cursor: 'not-allowed' }}>
+              <ChevronLeft size={13} />
+              Prev
+            </button>
           )}
-          <span className="text-[11px] text-gray-700 px-3 font-mono tabular-nums">
+
+          <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)', padding: '0 8px' }}>
             {page} / {totalPages}
           </span>
-          {page < totalPages && (
+
+          {page < totalPages ? (
             <a
-              href={buildPageUrl(page + 1)}
-              className="px-4 py-2 text-[11px] font-semibold text-gray-500 border border-white/[0.04] hover:border-white/[0.08] hover:text-gray-300 hover:bg-white/[0.02] rounded-xl transition-all duration-300"
+              href={buildPageUrl(page + 1, actorFilter, actionFilter, rangeFilter)}
+              className="btn btn--sm row gap-1"
             >
-              Next →
+              Next
+              <ChevronRight size={13} />
             </a>
+          ) : (
+            <button className="btn btn--sm row gap-1" disabled style={{ opacity: 0.35, cursor: 'not-allowed' }}>
+              Next
+              <ChevronRight size={13} />
+            </button>
           )}
         </div>
-      )}
-    </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

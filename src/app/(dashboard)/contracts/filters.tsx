@@ -5,28 +5,11 @@ import { useCallback } from 'react';
 import type { ContractStatus } from '@/lib/types';
 
 const statuses: Array<ContractStatus | 'all'> = ['all', 'proposed', 'active', 'closed', 'rejected', 'expired', 'cancelled'];
-
-const statusColors: Record<string, { active: string; inactive: string }> = {
-  all: { active: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]', inactive: '' },
-  proposed: { active: 'bg-amber-500/15 text-amber-400 border-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.1)]', inactive: '' },
-  active: { active: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]', inactive: '' },
-  closed: { active: 'bg-gray-500/15 text-gray-400 border-gray-500/25', inactive: '' },
-  rejected: { active: 'bg-red-500/15 text-red-400 border-red-500/25 shadow-[0_0_12px_rgba(239,68,68,0.1)]', inactive: '' },
-  expired: { active: 'bg-orange-500/15 text-orange-400 border-orange-500/25', inactive: '' },
-  cancelled: { active: 'bg-gray-500/15 text-gray-500 border-gray-500/25', inactive: '' },
-};
-
 const sortOptions = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
   { value: 'most-turns', label: 'Most Turns' },
 ];
-
-const selectClasses =
-  'bg-[#0a0a14] border border-white/[0.06] rounded-xl px-3 py-1.5 text-[11px] text-gray-300 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 appearance-none cursor-pointer hover:border-white/[0.1]';
-
-const inputClasses =
-  'bg-[#0a0a14] border border-white/[0.06] rounded-xl px-3 py-1.5 text-[11px] text-gray-300 placeholder:text-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 hover:border-white/[0.1]';
 
 export default function ContractFilters({ current }: { current: string }) {
   const router = useRouter();
@@ -51,46 +34,35 @@ export default function ContractFilters({ current }: { current: string }) {
   );
 
   return (
-    <div className="space-y-4 mb-6">
-      {/* Status filter pills */}
-      <div className="flex gap-2 flex-wrap">
-        {statuses.map((status) => {
-          const isActive = current === status;
-          const colors = statusColors[status] || statusColors.all;
-          return (
-            <button
-              key={status}
-              onClick={() => updateParams({ status })}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-300 border ${
-                isActive
-                  ? colors.active
-                  : 'text-gray-600 border-white/[0.04] hover:text-gray-400 hover:border-white/[0.08] hover:bg-white/[0.02]'
-              }`}
-            >
-              {status}
-            </button>
-          );
-        })}
+    <div className="col gap-3" style={{ marginBottom: 16 }}>
+      <div className="seg">
+        {statuses.map((status) => (
+          <button
+            key={status}
+            className={current === status ? 'active' : ''}
+            onClick={() => updateParams({ status })}
+          >
+            {status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
+          </button>
+        ))}
       </div>
-
-      {/* Search + sort row */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="row gap-2">
         <input
           type="text"
           placeholder="Search by title..."
           defaultValue={currentSearch}
           onChange={(e) => updateParams({ search: e.target.value })}
-          className={`${inputClasses} w-52`}
+          className="cp-input"
+          style={{ width: 240 }}
         />
         <select
           value={currentSort}
           onChange={(e) => updateParams({ sort: e.target.value })}
-          className={selectClasses}
+          className="cp-select"
+          style={{ width: 160 }}
         >
           {sortOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
+            <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
       </div>

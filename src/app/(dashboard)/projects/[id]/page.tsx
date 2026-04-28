@@ -333,19 +333,27 @@ export default async function ProjectDetailPage({
         />
 
         {blockedTaskCards.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-red-500/15 bg-gradient-to-br from-red-500/[0.08] via-amber-500/[0.04] to-transparent p-5 animate-fade-in">
-            <div className="flex items-center justify-between gap-3 mb-4">
+          <div
+            className="mb-6 animate-fade-in"
+            style={{
+              borderRadius: '1rem',
+              border: '1px solid var(--rose)',
+              background: 'var(--rose-bg)',
+              padding: '1.25rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem' }}>
               <div>
-                <p className="text-[10px] font-semibold text-red-300 uppercase tracking-[0.2em]">Blocker radar</p>
-                <h2 className="text-lg font-semibold text-white mt-1">Blocked tasks with concrete unblock plans</h2>
-                <p className="text-[12px] text-gray-400 mt-1">Pulled from task dependencies so blocker owner, next action, and timing stay visible at project level before work fossilizes.</p>
+                <p className="upper" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--rose)' }}>Blocker radar</p>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--fg-0)', marginTop: '0.25rem' }}>Blocked tasks with concrete unblock plans</h2>
+                <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.25rem' }}>Pulled from task dependencies so blocker owner, next action, and timing stay visible at project level before work fossilizes.</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-white">{blockedTaskCards.length}</p>
-                <p className="text-[11px] text-gray-500">active blockers</p>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--fg-0)' }}>{blockedTaskCards.length}</p>
+                <p style={{ fontSize: '11px', color: 'var(--fg-3)' }}>active blockers</p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {blockedTaskCards.slice(0, 6).map((task) => {
                 const state = getBlockedTaskNotificationState({
                   updatedAt: task.updated_at,
@@ -360,49 +368,70 @@ export default async function ProjectDetailPage({
                   blockedByCount: task.blockers.length,
                   blockingTaskTitles: task.blockers.map((blocker) => blocker.title),
                 });
-                const toneClass = state.tone === 'stale'
-                  ? 'border-red-500/20 bg-red-500/[0.10]'
+                const cardBorder = state.tone === 'stale'
+                  ? 'var(--rose)'
                   : state.tone === 'follow-through'
-                    ? 'border-amber-500/20 bg-amber-500/[0.08]'
-                    : 'border-white/[0.06] bg-white/[0.03]';
+                    ? 'var(--amber)'
+                    : 'var(--line-2)';
+                const cardBg = state.tone === 'stale'
+                  ? 'var(--rose-bg)'
+                  : state.tone === 'follow-through'
+                    ? 'var(--amber-bg)'
+                    : 'var(--bg-2)';
                 return (
                   <Link
                     key={task.id}
                     href={`/projects/${id}/tasks/${task.id}`}
-                    className={`block rounded-xl border px-4 py-3 transition-colors hover:bg-white/[0.05] ${toneClass}`}
+                    style={{
+                      display: 'block',
+                      borderRadius: '0.75rem',
+                      border: `1px solid ${cardBorder}`,
+                      background: cardBg,
+                      padding: '0.75rem 1rem',
+                      textDecoration: 'none',
+                      transition: 'background 0.15s',
+                    }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                          <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/[0.08] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300">
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.375rem' }}>
+                          <span
+                            className="pill pill--rose"
+                            style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}
+                          >
                             {state.tone === 'stale' ? 'stale blocker' : state.tone === 'follow-through' ? 'follow-through due' : 'blocked'}
                           </span>
-                          <span className="text-[11px] text-gray-500">{state.meta}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--fg-3)' }}>{state.meta}</span>
                         </div>
-                        <p className="text-sm font-semibold text-white">{task.title}</p>
-                        <p className="text-[12px] text-gray-400 mt-1">Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}</p>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          <div className="rounded-lg border border-white/[0.06] bg-black/15 px-2.5 py-2">
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500">Owner</p>
-                            <p className="mt-1 text-[12px] text-gray-200">{state.blockerResolutionOwner || 'Unassigned'}</p>
+                        <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--fg-0)' }}>{task.title}</p>
+                        <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.25rem' }}>Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}</p>
+                        <div style={{ marginTop: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                          <div className="card--inset" style={{ padding: '0.5rem 0.625rem' }}>
+                            <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Owner</p>
+                            <p style={{ marginTop: '0.25rem', fontSize: '12px', color: 'var(--fg-1)' }}>{state.blockerResolutionOwner || 'Unassigned'}</p>
                           </div>
-                          <div className="rounded-lg border border-white/[0.06] bg-black/15 px-2.5 py-2">
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500">Expected follow-up</p>
-                            <p className="mt-1 text-[12px] text-gray-200">{state.blockerResolutionDueAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(state.blockerResolutionDueAt)) + ' UTC' : 'Not scheduled'}</p>
+                          <div className="card--inset" style={{ padding: '0.5rem 0.625rem' }}>
+                            <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Expected follow-up</p>
+                            <p style={{ marginTop: '0.25rem', fontSize: '12px', color: 'var(--fg-1)' }}>{state.blockerResolutionDueAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(state.blockerResolutionDueAt)) + ' UTC' : 'Not scheduled'}</p>
                           </div>
                         </div>
-                        <p className="mt-2 text-[12px] text-gray-300 line-clamp-2">{state.blockerResolutionAction || 'No unblock plan logged yet'}</p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-gray-300">{state.statusLabel}</span>
+                        <p style={{ marginTop: '0.5rem', fontSize: '12px', color: 'var(--fg-1)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>{state.blockerResolutionAction || 'No unblock plan logged yet'}</p>
+                        <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="pill" style={{ fontSize: '10px', fontWeight: 500 }}>{state.statusLabel}</span>
                           {state.dueStateLabel && (
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${state.dueState === 'overdue' ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : state.dueState === 'due-soon' ? 'border-amber-500/20 bg-amber-500/[0.12] text-amber-200' : 'border-cyan-500/20 bg-cyan-500/[0.1] text-cyan-200'}`}>{state.dueStateLabel}</span>
+                            <span
+                              className={`pill pill--${state.dueState === 'overdue' ? 'rose' : state.dueState === 'due-soon' ? 'amber' : 'mint'}`}
+                              style={{ fontSize: '10px', fontWeight: 500 }}
+                            >
+                              {state.dueStateLabel}
+                            </span>
                           )}
                           {state.escalationLabel && (
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${state.blockerEscalatedAt ? 'border-red-500/20 bg-red-500/[0.12] text-red-200' : 'border-red-500/20 bg-red-500/[0.08] text-red-300'}`}>{state.escalationLabel}</span>
+                            <span className="pill pill--rose" style={{ fontSize: '10px', fontWeight: 500 }}>{state.escalationLabel}</span>
                           )}
                         </div>
                       </div>
-                      <span className="text-[11px] text-cyan-400 shrink-0">Open →</span>
+                      <span style={{ fontSize: '11px', color: 'var(--peri)', flexShrink: 0 }}>Open →</span>
                     </div>
                   </Link>
                 );

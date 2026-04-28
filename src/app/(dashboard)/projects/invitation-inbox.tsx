@@ -3,7 +3,15 @@
 import Link from 'next/link';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import type { ProjectInvitationStatus } from '@/lib/types';
-import { getInvitationStatusLabel, getInvitationStatusTone, type InvitationLike } from './invitation-utils';
+import { getInvitationStatusLabel, type InvitationLike } from './invitation-utils';
+
+const statusPillTone: Record<string, string> = {
+  pending: 'pill--amber',
+  accepted: 'pill--mint',
+  rejected: 'pill--rose',
+  expired: 'pill--ghost',
+  revoked: 'pill--ghost',
+};
 
 export default function InvitationInbox({
   invitations,
@@ -15,40 +23,50 @@ export default function InvitationInbox({
   empty: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">{title}</p>
-        <span className="text-[10px] text-gray-600">{invitations.length}</span>
+    <div className="card" style={{ padding: 16 }}>
+      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+        <div className="upper" style={{ fontSize: 10 }}>{title}</div>
+        <span className="mono num dim" style={{ fontSize: 11 }}>{invitations.length}</span>
       </div>
 
       {invitations.length === 0 ? (
-        <p className="text-[11px] text-gray-600 italic">{empty}</p>
+        <div className="dim" style={{ fontSize: 11, fontStyle: 'italic' }}>{empty}</div>
       ) : (
-        <div className="space-y-2">
+        <div className="col gap-2">
           {invitations.map((invitation) => {
             const projectTitle = invitation.project?.title || 'Unknown Project';
             const agentName = invitation.agent?.display_name || invitation.agent?.name || 'Unknown Agent';
             const inviter = invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown';
             const statusLabel = getInvitationStatusLabel(invitation.status as ProjectInvitationStatus);
-            const statusTone = getInvitationStatusTone(invitation.status as ProjectInvitationStatus);
+            const tone = statusPillTone[invitation.status] || 'pill--ghost';
+
             return (
               <Link
                 key={invitation.id}
                 href={`/projects/${invitation.project_id || invitation.project?.id}`}
-                className="block rounded-xl border border-white/[0.04] bg-[#0a0a14] px-3 py-3 hover:border-cyan-500/20 hover:bg-cyan-500/[0.03] transition-all"
+                className="card card--inset"
+                style={{
+                  padding: '10px 12px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'block',
+                  transition: 'border-color 0.12s',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-2)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-1)'; }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-medium text-white truncate">{projectTitle}</p>
-                    <p className="text-[11px] text-gray-400 mt-1 truncate">
+                <div className="row" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-0)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{projectTitle}</div>
+                    <div className="dim" style={{ fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {agentName} · invited by {inviter}
-                    </p>
+                    </div>
                   </div>
-                  <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone}`}>
+                  <span className={`pill ${tone}`} style={{ height: 18, fontSize: 9.5, flexShrink: 0 }}>
                     {statusLabel}
                   </span>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-600">
+                <div className="row gap-3 dim mono" style={{ marginTop: 6, fontSize: 10, flexWrap: 'wrap' }}>
                   <span>Created {formatRelative(invitation.created_at)}</span>
                   {invitation.expires_at && invitation.status === 'pending' && (
                     <span title={formatDateTime(invitation.expires_at)}>Expires {formatRelative(invitation.expires_at)}</span>

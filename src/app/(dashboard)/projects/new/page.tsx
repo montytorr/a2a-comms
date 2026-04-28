@@ -12,6 +12,18 @@ interface AgentRow {
   display_name: string;
 }
 
+const avatarColors = [
+  '#06b6d4', '#7c3aed', '#10b981', '#f97316', '#ec4899', '#f59e0b',
+];
+
+function getAvatarIndex(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % avatarColors.length;
+}
+
 export default function NewProjectPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
@@ -55,15 +67,12 @@ export default function NewProjectPage() {
     try {
       const supabase = createBrowserClient();
 
-      // Create project via direct DB (dashboard uses anon key + RLS bypass via service role)
-      // For dashboard, we create directly via Supabase since we have auth context
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
         return;
       }
 
-      // Use service-role via API route or direct insert
       const res = await fetch('/api/internal/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,55 +97,39 @@ export default function NewProjectPage() {
     }
   };
 
-  const avatarGradients = [
-    'from-cyan-500 to-blue-600',
-    'from-violet-500 to-purple-600',
-    'from-emerald-500 to-teal-600',
-    'from-orange-500 to-red-600',
-    'from-pink-500 to-rose-600',
-    'from-amber-500 to-yellow-600',
-  ];
-
-  function getAvatarIndex(name: string): number {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash) % avatarGradients.length;
-  }
-
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-2xl">
+    <div style={{ padding: '1rem', maxWidth: '42rem' }} className="sm:p-6 lg:p-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-6 animate-fade-in">
-        <Link href="/projects" className="text-[11px] text-gray-600 hover:text-cyan-400 transition-colors">Projects</Link>
-        <span className="text-gray-700 text-[10px]">›</span>
-        <span className="text-[11px] text-gray-400">New Project</span>
+      <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <Link href="/projects" style={{ fontSize: '11px', color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
+        <span style={{ color: 'var(--fg-3)', fontSize: '10px' }}>›</span>
+        <span style={{ fontSize: '11px', color: 'var(--fg-2)' }}>New Project</span>
       </div>
 
-      <div className="animate-fade-in">
-        <p className="text-[10px] font-semibold text-cyan-500/60 uppercase tracking-[0.25em] mb-2">Create</p>
-        <h1 className="text-[28px] font-bold text-white tracking-tight mb-8">New Project</h1>
+      <div className="animate-fade-in" style={{ marginBottom: '2rem' }}>
+        <p className="upper" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--peri)', marginBottom: '0.5rem' }}>Create</p>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>New Project</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Title */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <label className="block text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">
-            Title <span className="text-red-400">*</span>
+        <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.05s' }}>
+          <label style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
+            Title <span style={{ color: 'var(--rose)' }}>*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Project title..."
-            className="w-full bg-[#0a0a14] border border-white/[0.06] rounded-xl px-4 py-3 text-[14px] text-gray-200 placeholder:text-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200"
+            className="cp-input"
+            style={{ width: '100%', fontSize: '14px' }}
           />
         </div>
 
         {/* Description */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <label className="block text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">
+        <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.1s' }}>
+          <label style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
             Description
           </label>
           <textarea
@@ -144,52 +137,83 @@ export default function NewProjectPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe your project (markdown supported)..."
             rows={5}
-            className="w-full bg-[#0a0a14] border border-white/[0.06] rounded-xl px-4 py-3 text-[13px] text-gray-300 placeholder:text-gray-700 focus:outline-none focus:border-cyan-500/30 focus:ring-1 focus:ring-cyan-500/10 transition-all duration-200 resize-y min-h-[100px]"
+            className="cp-input"
+            style={{ width: '100%', fontSize: '13px', resize: 'vertical', minHeight: '100px' }}
           />
           {description.trim() && (
-            <div className="mt-3 pt-3 border-t border-white/[0.04]">
-              <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-2">Preview</p>
-              <MarkdownPreview content={description} className="text-[13px] text-gray-400" />
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line-1)' }}>
+              <p style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Preview</p>
+              <MarkdownPreview content={description} className="muted" />
             </div>
           )}
         </div>
 
         {/* Members */}
-        <div className="rounded-2xl glass-card p-6 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <label className="block text-[9px] font-semibold text-gray-600 uppercase tracking-[0.15em] mb-3">
+        <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.15s' }}>
+          <label style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
             Initial Members
           </label>
-          <p className="text-[11px] text-gray-600 mb-4">Select agents to invite to this project. You will be added as owner automatically; others join after accepting.</p>
+          <p style={{ fontSize: '11px', color: 'var(--fg-3)', marginBottom: '1rem' }}>Select agents to invite to this project. You will be added as owner automatically; others join after accepting.</p>
 
           {agents.length === 0 ? (
-            <p className="text-[12px] text-gray-600 italic py-4">No agents registered yet</p>
+            <p style={{ fontSize: '12px', color: 'var(--fg-3)', fontStyle: 'italic', padding: '1rem 0' }}>No agents registered yet</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               {agents.map((agent) => {
                 const isSelected = selectedAgents.has(agent.id);
-                const idx = getAvatarIndex(agent.display_name || agent.name);
+                const color = avatarColors[getAvatarIndex(agent.display_name || agent.name)];
                 return (
                   <button
                     key={agent.id}
                     type="button"
                     onClick={() => toggleAgent(agent.id)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all duration-200 text-left ${
-                      isSelected
-                        ? 'border-cyan-500/30 bg-cyan-500/[0.06]'
-                        : 'border-white/[0.04] hover:border-white/[0.08] hover:bg-white/[0.02]'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.625rem 0.75rem',
+                      borderRadius: '0.75rem',
+                      border: `1px solid ${isSelected ? 'var(--peri)' : 'var(--line-1)'}`,
+                      background: isSelected ? 'var(--peri-bg)' : 'var(--bg-1)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'border-color 0.15s, background 0.15s',
+                    }}
                   >
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${avatarGradients[idx]} flex items-center justify-center text-[10px] font-bold text-white shrink-0`}>
+                    <div
+                      style={{
+                        width: '2rem',
+                        height: '2rem',
+                        borderRadius: '0.5rem',
+                        background: color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: '#fff',
+                        flexShrink: 0,
+                      }}
+                    >
                       {(agent.display_name || agent.name)[0]?.toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] font-medium truncate ${isSelected ? 'text-cyan-400' : 'text-gray-300'}`}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          color: isSelected ? 'var(--peri)' : 'var(--fg-1)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {agent.display_name}
                       </p>
-                      <p className="text-[10px] text-gray-600 font-mono truncate">{agent.name}</p>
+                      <p className="mono" style={{ fontSize: '10px', color: 'var(--fg-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.name}</p>
                     </div>
                     {isSelected && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400 shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--peri)', flexShrink: 0 }}>
                         <path d="M9 11l3 3L22 4" />
                       </svg>
                     )}
@@ -202,23 +226,40 @@ export default function NewProjectPage() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-xl bg-red-500/[0.08] border border-red-500/20 px-4 py-3">
-            <p className="text-[12px] text-red-400">{error}</p>
+          <div
+            style={{
+              borderRadius: '0.75rem',
+              background: 'var(--rose-bg)',
+              border: '1px solid var(--rose)',
+              padding: '0.75rem 1rem',
+            }}
+          >
+            <p style={{ fontSize: '12px', color: 'var(--rose)' }}>{error}</p>
           </div>
         )}
 
         {/* Submit */}
-        <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', animationDelay: '0.2s' }}>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 text-[12px] font-semibold rounded-xl bg-gradient-to-r from-cyan-500/[0.15] to-blue-500/[0.15] border border-cyan-500/25 text-cyan-400 hover:from-cyan-500/[0.25] hover:to-blue-500/[0.25] hover:border-cyan-500/40 transition-all duration-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.12)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn--peri"
+            style={{ padding: '0.75rem 1.5rem', fontSize: '12px', fontWeight: 600, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
             {loading ? 'Creating...' : 'Create Project'}
           </button>
           <Link
             href="/projects"
-            className="px-6 py-3 text-[12px] font-medium rounded-xl border border-white/[0.06] text-gray-500 hover:text-gray-300 hover:border-white/[0.1] transition-all duration-200"
+            style={{
+              padding: '0.75rem 1.5rem',
+              fontSize: '12px',
+              fontWeight: 500,
+              borderRadius: '0.75rem',
+              border: '1px solid var(--line-1)',
+              color: 'var(--fg-2)',
+              textDecoration: 'none',
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
           >
             Cancel
           </Link>

@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
-
+import { Avatar } from '@/components/atoms';
+import {
+  LayoutGrid, Activity, BarChart3, Bell, Settings,
+  FileText, MessageSquare, Bot, FolderKanban, Radio,
+  Webhook, Heart, Power, CheckCircle, ScrollText,
+  BookOpen, Shield, Tag, Users, Mail, Code, LogOut,
+} from 'lucide-react';
 import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
 
 interface SidebarProps {
@@ -14,428 +20,221 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-interface NavItem {
+interface NavItemDef {
   href: string;
   label: string;
-  icon: React.ReactNode;
+  iconName: string;
   adminOnly?: boolean;
+  danger?: boolean;
+  badge?: 'live' | 'admin';
   badgeKey?: keyof DashboardNotificationCounts;
 }
 
-interface NavGroup {
+interface NavGroupDef {
   label: string;
-  items: NavItem[];
+  items: NavItemDef[];
 }
 
-const navGroups: NavGroup[] = [
+const iconMap: Record<string, React.ReactNode> = {
+  grid: <LayoutGrid size={15} />,
+  activity: <Activity size={15} />,
+  chart: <BarChart3 size={15} />,
+  bell: <Bell size={15} />,
+  gear: <Settings size={15} />,
+  doc: <FileText size={15} />,
+  msg: <MessageSquare size={15} />,
+  agent: <Bot size={15} />,
+  folder: <FolderKanban size={15} />,
+  wave: <Radio size={15} />,
+  plug: <Webhook size={15} />,
+  pulse: <Heart size={15} />,
+  power: <Power size={15} />,
+  check: <CheckCircle size={15} />,
+  list: <ScrollText size={15} />,
+  code: <Code size={15} />,
+  shield: <Shield size={15} />,
+  book: <BookOpen size={15} />,
+  tag: <Tag size={15} />,
+  users: <Users size={15} />,
+  mail: <Mail size={15} />,
+};
+
+const navGroups: NavGroupDef[] = [
   {
     label: 'Overview',
     items: [
-      {
-        href: '/',
-        label: 'Dashboard',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-        ),
-      },
-      {
-        href: '/feed',
-        label: 'Live Feed',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-        ),
-      },
-      {
-        href: '/analytics',
-        label: 'Analytics',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10" />
-            <line x1="12" y1="20" x2="12" y2="4" />
-            <line x1="6" y1="20" x2="6" y2="14" />
-          </svg>
-        ),
-      },
-      {
-        href: '/notifications',
-        label: 'Notifications',
-        badgeKey: 'total',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-        ),
-      },
-      {
-        href: '/settings',
-        label: 'Settings',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-        ),
-      },
+      { href: '/', label: 'Dashboard', iconName: 'grid' },
+      { href: '/feed', label: 'Live Feed', iconName: 'activity', badge: 'live' },
+      { href: '/analytics', label: 'Analytics', iconName: 'chart' },
+      { href: '/notifications', label: 'Notifications', iconName: 'bell', badgeKey: 'total' },
+      { href: '/settings', label: 'Settings', iconName: 'gear' },
     ],
   },
   {
     label: 'Communication',
     items: [
-      {
-        href: '/contracts',
-        label: 'Contracts',
-        badgeKey: 'contracts',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <path d="M14 2v6h6" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-          </svg>
-        ),
-      },
-      {
-        href: '/messages',
-        label: 'Messages',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-        ),
-      },
-      {
-        href: '/agents',
-        label: 'Agents',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-          </svg>
-        ),
-      },
-      {
-        href: '/projects',
-        label: 'Projects',
-        badgeKey: 'projects',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <path d="M3 9h18" />
-            <path d="M9 21V9" />
-          </svg>
-        ),
-      },
-      {
-        href: '/protocol-inspector',
-        label: 'Protocol Inspector',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 3h6" />
-            <path d="M12 3v6" />
-            <path d="M5 21h14" />
-            <path d="M7 21V10l5-4 5 4v11" />
-            <path d="M10 14h4" />
-          </svg>
-        ),
-      },
+      { href: '/contracts', label: 'Contracts', iconName: 'doc', badgeKey: 'contracts' },
+      { href: '/messages', label: 'Messages', iconName: 'msg' },
+      { href: '/agents', label: 'Agents', iconName: 'agent' },
+      { href: '/projects', label: 'Projects', iconName: 'folder', badgeKey: 'projects' },
+      { href: '/protocol-inspector', label: 'Protocol Inspector', iconName: 'wave' },
     ],
   },
   {
     label: 'Infrastructure',
     items: [
-      {
-        href: '/webhooks',
-        label: 'Webhooks',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-        ),
-      },
-      {
-        href: '/webhooks/health',
-        label: 'Health',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-        ),
-      },
-      {
-        href: '/kill-switch',
-        label: 'Kill Switch',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-          </svg>
-        ),
-      },
-      {
-        href: '/approvals',
-        label: 'Approvals',
-        badgeKey: 'approvals',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 12l2 2 4-4" />
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-        ),
-      },
-      {
-        href: '/audit',
-        label: 'Audit Log',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-          </svg>
-        ),
-      },
+      { href: '/webhooks', label: 'Webhooks', iconName: 'plug' },
+      { href: '/webhooks/health', label: 'Health', iconName: 'pulse' },
+      { href: '/kill-switch', label: 'Kill Switch', iconName: 'power', danger: true },
+      { href: '/approvals', label: 'Approvals', iconName: 'check', badgeKey: 'approvals' },
+      { href: '/audit', label: 'Audit Log', iconName: 'list' },
     ],
   },
   {
     label: 'Documentation',
     items: [
-      {
-        href: '/api-docs',
-        label: 'API Reference',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            <path d="M8 7h8M8 11h6" />
-          </svg>
-        ),
-      },
-      {
-        href: '/security',
-        label: 'Security',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-        ),
-      },
-      {
-        href: '/onboarding/human',
-        label: 'Human Guide',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        ),
-      },
-      {
-        href: '/onboarding/agent',
-        label: 'Agent Guide',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="4" y="4" width="16" height="16" rx="2" />
-            <rect x="9" y="9" width="6" height="6" />
-            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
-          </svg>
-        ),
-      },
-      {
-        href: '/changelog',
-        label: 'Changelog',
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <path d="M14 2v6h6" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <line x1="10" y1="9" x2="8" y2="9" />
-          </svg>
-        ),
-      },
+      { href: '/api-docs', label: 'API Reference', iconName: 'code' },
+      { href: '/security', label: 'Security', iconName: 'shield' },
+      { href: '/onboarding/human', label: 'Human Guide', iconName: 'book' },
+      { href: '/onboarding/agent', label: 'Agent Guide', iconName: 'book' },
+      { href: '/changelog', label: 'Changelog', iconName: 'tag' },
     ],
   },
 ];
 
-const adminItems: NavItem[] = [
-  {
-    href: '/users',
-    label: 'Users',
-    adminOnly: true,
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/emails',
-    label: 'Email Templates',
-    adminOnly: true,
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-        <polyline points="22,6 12,13 2,6" />
-      </svg>
-    ),
-  },
+const adminItems: NavItemDef[] = [
+  { href: '/users', label: 'Users', iconName: 'users', adminOnly: true, badge: 'admin' },
+  { href: '/admin/emails', label: 'Email Templates', iconName: 'mail', adminOnly: true, badge: 'admin' },
 ];
+
+const Logo = () => (
+  <div className="row gap-2" style={{ alignItems: 'center' }}>
+    <div style={{
+      width: 26,
+      height: 26,
+      borderRadius: 6,
+      background: 'linear-gradient(135deg, oklch(0.32 0.02 250), oklch(0.20 0.01 250))',
+      border: '1px solid var(--line-2)',
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: 'inset 0 0 0 1px oklch(1 0 0 / 0.05)',
+    }}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 3 L7 11 L12 3 Z" stroke="var(--amber)" strokeWidth="1.4" strokeLinejoin="round" />
+        <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
+      </svg>
+    </div>
+    <div className="col" style={{ lineHeight: 1.1, gap: 2 }}>
+      <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--fg-0)', letterSpacing: '-0.01em' }}>A2A Comms</div>
+      <div className="upper" style={{ fontSize: 9.5 }}>Control Plane</div>
+    </div>
+  </div>
+);
 
 export default function Sidebar({ isSuperAdmin, displayName, notificationCounts, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
-  async function handleLogout() {
+  const handleLogout = async () => {
     const supabase = createBrowserClient();
     await supabase.auth.signOut();
     window.location.href = '/login';
-  }
+  };
 
-  function renderItem(item: NavItem) {
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  const renderNavItem = (item: NavItemDef) => {
+    const active = isActive(item.href);
     const badgeCount = item.badgeKey ? (notificationCounts?.[item.badgeKey] ?? 0) : 0;
-    // Exact match, or prefix match only if no other nav item is a better (more specific) match
-    const allItems = [...navGroups.flatMap(g => g.items), ...adminItems];
-    const isActive = item.href === '/'
-      ? pathname === '/'
-      : pathname === item.href || (pathname.startsWith(item.href + '/') && !allItems.some(i => i.href !== item.href && pathname.startsWith(i.href) && i.href.length > item.href.length));
-
-    const isAdmin = item.adminOnly;
 
     return (
       <Link
         key={item.href}
         href={item.href}
         onClick={onClose}
-        className={`group flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-200 relative ${
-          isActive
-            ? isAdmin
-              ? 'text-amber-400 bg-amber-500/[0.08]'
-              : 'text-cyan-400 bg-cyan-500/[0.08]'
-            : isAdmin
-              ? 'text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/[0.04]'
-              : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-        }`}
+        className={`nav-item ${active ? 'nav-item--active' : ''}`}
       >
-        {isActive && (
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-full ${
-            isAdmin
-              ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]'
-              : 'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]'
-          }`} />
+        <span style={{ color: 'inherit', display: 'flex' }}>{iconMap[item.iconName]}</span>
+        <span style={{ flex: 1, color: item.danger ? 'var(--rose)' : 'inherit' }}>{item.label}</span>
+        {item.badge === 'live' && <span className="dot dot--mint pulse" style={{ marginRight: 2 }} />}
+        {item.badge === 'admin' && (
+          <span className="pill pill--amber" style={{ height: 16, fontSize: 9, padding: '0 5px' }}>admin</span>
         )}
-        <span className={`transition-colors duration-200 ${
-          isActive
-            ? isAdmin ? 'text-amber-400' : 'text-cyan-400'
-            : isAdmin ? 'text-amber-600 group-hover:text-amber-400' : 'text-gray-600 group-hover:text-gray-400'
-        }`}>
-          {item.icon}
-        </span>
-        <span className="flex-1">{item.label}</span>
         {badgeCount > 0 && (
-          <span className={`min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums ${
-            isAdmin
-              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
-              : isActive
-                ? 'bg-cyan-400/15 text-cyan-300 border border-cyan-400/25'
-                : 'bg-white/[0.06] text-gray-300 border border-white/[0.06]'
-          }`}>
+          <span className="pill pill--amber" style={{ height: 16, fontSize: 9, padding: '0 5px' }}>
             {badgeCount > 99 ? '99+' : badgeCount}
-          </span>
-        )}
-        {isAdmin && (
-          <span className="text-[8px] font-bold text-amber-500/50 bg-amber-500/[0.06] px-1 py-0.5 rounded uppercase tracking-wider">
-            Admin
           </span>
         )}
       </Link>
     );
-  }
+  };
 
   return (
-    <aside className={`fixed left-0 top-0 h-screen w-[240px] bg-[#08080d]/95 backdrop-blur-2xl border-r border-white/[0.04] flex flex-col z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-      {/* Branding */}
-      <div className="px-5 py-5 border-b border-white/[0.04]">
-        <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/a2a-comms-favicon.svg" alt="A2A" width={32} height={32} className="rounded-lg shadow-lg shadow-cyan-500/20 animate-breathe" />
-          <div>
-            <h1 className="text-[14px] font-semibold text-white tracking-tight">A2A Comms</h1>
-            <p className="text-[9px] text-gray-600 uppercase tracking-[0.2em] font-medium">Control Panel</p>
-          </div>
-        </div>
+    <aside style={{
+      width: 'var(--sidebar-w)',
+      flexShrink: 0,
+      background: 'oklch(0.13 0.012 250)',
+      borderRight: '1px solid var(--line-1)',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      transition: 'width 0.2s',
+      position: 'relative',
+      zIndex: 50,
+    }}>
+      {/* Logo */}
+      <div style={{ padding: '14px 14px', borderBottom: '1px solid var(--line-1)' }}>
+        <Logo />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto">
-        {navGroups.map((group, groupIdx) => (
-          <div key={group.label} className={groupIdx > 0 ? 'mt-5' : ''}>
-            <p className="text-[9px] font-semibold text-gray-600 uppercase tracking-[0.2em] px-3 mb-1.5">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map(renderItem)}
+      <nav className="scroll" style={{ flex: 1, padding: '8px 0' }}>
+        {navGroups.map((group) => (
+          <div key={group.label} style={{ marginBottom: 12 }}>
+            <div className="upper" style={{ padding: '6px 14px 4px', fontSize: 9.5 }}>{group.label}</div>
+            <div>
+              {group.items.map(renderNavItem)}
             </div>
           </div>
         ))}
 
-        {/* Admin section */}
         {isSuperAdmin && (
-          <div className="mt-5">
-            <p className="text-[9px] font-semibold text-amber-500/50 uppercase tracking-[0.2em] px-3 mb-1.5">
-              Admin
-            </p>
-            <div className="space-y-0.5">
-              {adminItems.map(renderItem)}
+          <div style={{ marginBottom: 12 }}>
+            <div className="upper" style={{ padding: '6px 14px 4px', fontSize: 9.5 }}>Admin</div>
+            <div>
+              {adminItems.map(renderNavItem)}
             </div>
           </div>
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t border-white/[0.04] space-y-3">
-        {displayName && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-[9px] font-bold text-gray-300 shrink-0">
-              {displayName[0]?.toUpperCase() || '?'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[11px] text-gray-400 font-medium truncate block">{displayName}</span>
-              {isSuperAdmin && (
-                <span className="text-[8px] font-bold text-amber-500/70 uppercase tracking-wider">Super Admin</span>
-              )}
-            </div>
-          </div>
-        )}
-
+      {/* User footer */}
+      <div style={{
+        padding: 12,
+        borderTop: '1px solid var(--line-1)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}>
+        <Avatar name={displayName || '?'} tone="rose" size={28} />
+        <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <div style={{ fontSize: 12, color: 'var(--fg-1)', fontWeight: 500 }}>{displayName || 'User'}</div>
+          {isSuperAdmin && (
+            <div className="mono dim" style={{ fontSize: 10 }}>SUPER ADMIN</div>
+          )}
+        </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[12px] font-medium text-gray-600 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-200 group"
+          className="btn btn--ghost btn--sm btn--icon"
+          title="Sign out"
+          style={{ width: 26, height: 26 }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 group-hover:text-red-400 transition-colors">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Sign Out
+          <LogOut size={13} />
         </button>
-
-        <div className="flex items-center gap-2.5">
-          <div className="relative">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping opacity-30" />
-          </div>
-          <span className="text-[10px] text-gray-600 font-medium tracking-wide">Operational</span>
-          <span className="text-[9px] text-gray-700 ml-auto font-mono">v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
-        </div>
       </div>
     </aside>
   );

@@ -34,7 +34,6 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
   async function handleActivate() {
     setLoading(true);
     try {
-      // First try to execute if there's an approved request
       try {
         await executeKillSwitchActivation();
         setIsActive(true);
@@ -71,63 +70,104 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
   }
 
   return (
-    <div className="flex items-center justify-center h-[85vh] relative">
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '85vh',
+      position: 'relative',
+    }}>
       {/* Background radial glow */}
       <div
-        className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
         style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          transition: 'opacity 1s',
           background: isActive
-            ? 'radial-gradient(ellipse at center, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 35%, transparent 70%)'
-            : 'radial-gradient(ellipse at center, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.04) 35%, transparent 70%)',
+            ? 'radial-gradient(ellipse at center, var(--rose-bg) 0%, transparent 60%)'
+            : 'radial-gradient(ellipse at center, var(--mint-bg) 0%, transparent 60%)',
         }}
       />
 
-      <div className="text-center max-w-lg relative z-10">
+      <div style={{ textAlign: 'center', maxWidth: 460, position: 'relative', zIndex: 1 }}>
         {/* Status orb visualization */}
-        <div className="relative inline-flex items-center justify-center mb-12">
-          {isActive && (
-            <>
-              <div className="absolute w-56 h-56 rounded-full ring-pulse-red border border-red-500/10" />
-              <div className="absolute w-56 h-56 rounded-full ring-pulse-red border border-red-500/10" style={{ animationDelay: '0.5s' }} />
-              <div className="absolute w-56 h-56 rounded-full ring-pulse-red border border-red-500/10" style={{ animationDelay: '1s' }} />
-            </>
-          )}
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 48 }}>
+          {/* Outer glow layers */}
+          <div style={{
+            position: 'absolute',
+            width: 192,
+            height: 192,
+            borderRadius: '50%',
+            border: `1px solid ${isActive ? 'oklch(0.40 0.08 25 / 0.15)' : 'oklch(0.50 0.10 165 / 0.12)'}`,
+            animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
+          }} />
+          <div style={{
+            position: 'absolute',
+            width: 192,
+            height: 192,
+            borderRadius: '50%',
+            border: `1px solid ${isActive ? 'oklch(0.40 0.08 25 / 0.10)' : 'oklch(0.50 0.10 165 / 0.08)'}`,
+            animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
+            animationDelay: '0.5s',
+          }} />
 
-          <div className={`absolute w-48 h-48 rounded-full transition-all duration-1000 ${
-            isActive
-              ? 'bg-red-500/[0.06] shadow-[0_0_100px_40px_rgba(239,68,68,0.08)]'
-              : 'bg-emerald-500/[0.04] shadow-[0_0_80px_30px_rgba(16,185,129,0.05)]'
-          }`} />
+          <div style={{
+            position: 'absolute',
+            width: 160,
+            height: 160,
+            borderRadius: '50%',
+            transition: 'all 1s',
+            background: isActive
+              ? 'radial-gradient(circle, var(--rose-bg), transparent)'
+              : 'radial-gradient(circle, var(--mint-bg), transparent)',
+          }} />
 
-          <div className={`absolute w-40 h-40 rounded-full border transition-all duration-700 ${
-            isActive
-              ? 'border-red-500/20'
-              : 'border-emerald-500/10'
-          } ${isActive ? 'animate-pulse' : ''}`} />
+          <div style={{
+            position: 'absolute',
+            width: 128,
+            height: 128,
+            borderRadius: '50%',
+            border: `1px solid ${isActive ? 'oklch(0.40 0.08 25 / 0.25)' : 'oklch(0.50 0.10 165 / 0.18)'}`,
+            transition: 'all 0.7s',
+            animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
+          }} />
 
-          <div className={`absolute w-32 h-32 rounded-full border transition-all duration-700 ${
-            isActive
-              ? 'border-red-500/10'
-              : 'border-emerald-500/[0.06]'
-          }`} />
-
-          <div className={`relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-700 ${
-            isActive
-              ? 'bg-gradient-to-br from-red-500/20 to-red-700/20 border-2 border-red-500/25 orb-danger'
-              : 'bg-gradient-to-br from-emerald-500/15 to-green-600/15 border-2 border-emerald-500/15 orb-safe'
-          }`}>
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-700 ${
-              isActive
-                ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-[0_0_50px_15px_rgba(239,68,68,0.3)]'
-                : 'bg-gradient-to-br from-emerald-500 to-green-500 shadow-[0_0_40px_10px_rgba(16,185,129,0.2)]'
-            }`}>
+          {/* Core orb */}
+          <div style={{
+            position: 'relative',
+            width: 96,
+            height: 96,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.7s',
+            background: isActive
+              ? 'radial-gradient(135deg, var(--rose-bg), oklch(0.25 0.06 25))'
+              : 'radial-gradient(135deg, var(--mint-bg), oklch(0.25 0.06 165))',
+            border: `2px solid ${isActive ? 'oklch(0.45 0.10 25 / 0.4)' : 'oklch(0.50 0.10 165 / 0.3)'}`,
+          }}>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.7s',
+              background: isActive ? 'var(--rose)' : 'var(--mint)',
+              boxShadow: isActive
+                ? '0 0 40px 12px var(--rose-bg)'
+                : '0 0 32px 8px var(--mint-bg)',
+            }}>
               {isActive ? (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                 </svg>
               ) : (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
@@ -137,54 +177,77 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
         </div>
 
         {/* Status text */}
-        <h1 className={`text-3xl font-black tracking-tight mb-2 transition-colors duration-700 ${
-          isActive ? 'text-red-400 text-glow-red' : 'text-emerald-400 text-glow-emerald'
-        }`}>
+        <h1 style={{
+          fontSize: 28,
+          fontWeight: 800,
+          letterSpacing: '-0.02em',
+          marginBottom: 8,
+          transition: 'color 0.7s',
+          color: isActive ? 'var(--rose)' : 'var(--mint)',
+        }}>
           {isActive ? 'KILL SWITCH ACTIVE' : 'SYSTEM OPERATIONAL'}
         </h1>
-        <p className="text-[13px] text-gray-500 mb-2 max-w-sm mx-auto leading-relaxed">
+        <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 8, maxWidth: 360, margin: '0 auto 8px', lineHeight: 1.6 }}>
           {isActive
             ? 'All contracts are frozen. API write operations are blocked.'
             : 'System is accepting requests normally. All channels open.'}
         </p>
         {lastUpdated && (
-          <p className="text-[10px] text-gray-700 mb-10 font-mono tabular-nums">
+          <p className="mono num" style={{ fontSize: 11, color: 'var(--fg-4)', marginBottom: 40 }}>
             Last updated: {formatDateTime(lastUpdated)}
-            {updatedBy && <span className="text-gray-600"> · {updatedBy}</span>}
+            {updatedBy && <span style={{ color: 'var(--fg-4)' }}> · {updatedBy}</span>}
           </p>
         )}
 
         {/* Action — only for super admins */}
         {isSuperAdmin ? (
           confirming ? (
-            <div className="rounded-2xl glass-card p-7 max-w-sm mx-auto animate-fade-in" style={{ animationDuration: '0.2s' }}>
-              <p className={`text-[13px] font-semibold mb-6 ${isActive ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className="card animate-fade-in" style={{ padding: 28, maxWidth: 360, margin: '0 auto' }}>
+              <p style={{
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 24,
+                color: isActive ? 'var(--mint)' : 'var(--rose)',
+              }}>
                 {isActive
                   ? 'Resume normal system operations?'
-                  : '⚠️ This will freeze ALL contracts and block API writes.'}
+                  : 'This will freeze ALL contracts and block API writes.'}
               </p>
-              <div className="flex gap-3">
+              <div className="row gap-3">
                 <button
                   onClick={() => setConfirming(false)}
                   disabled={loading}
-                  className="flex-1 px-4 py-3 text-[12px] font-semibold rounded-xl border border-white/[0.06] text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] transition-all duration-200 disabled:opacity-50"
+                  className="btn btn--ghost"
+                  style={{ flex: 1, justifyContent: 'center', height: 40 }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={isActive ? handleDeactivate : handleActivate}
                   disabled={loading}
-                  className={`flex-1 px-4 py-3 text-[12px] font-bold rounded-xl transition-all duration-300 disabled:opacity-50 ${
-                    isActive
-                      ? 'bg-emerald-500/[0.1] border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/[0.2] hover:shadow-[0_0_25px_rgba(16,185,129,0.12)]'
-                      : 'bg-red-500/[0.1] border border-red-500/20 text-red-400 hover:bg-red-500/[0.2] hover:shadow-[0_0_25px_rgba(239,68,68,0.12)]'
-                  }`}
+                  className="btn"
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    height: 40,
+                    fontWeight: 700,
+                    background: isActive ? 'var(--mint-bg)' : 'var(--rose-bg)',
+                    borderColor: isActive ? 'oklch(0.50 0.10 165 / 0.4)' : 'oklch(0.40 0.08 25 / 0.4)',
+                    color: isActive ? 'var(--mint)' : 'var(--rose)',
+                    transition: 'all 0.3s',
+                  }}
                 >
                   {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className={`w-3.5 h-3.5 border-2 rounded-full animate-spin ${
-                        isActive ? 'border-emerald-400/30 border-t-emerald-400' : 'border-red-400/30 border-t-red-400'
-                      }`} />
+                    <span className="row gap-2">
+                      <span style={{
+                        width: 14,
+                        height: 14,
+                        border: '2px solid var(--line-2)',
+                        borderTopColor: isActive ? 'var(--mint)' : 'var(--rose)',
+                        borderRadius: '50%',
+                        animation: 'spin 0.6s linear infinite',
+                        display: 'inline-block',
+                      }} />
                       Processing…
                     </span>
                   ) : (
@@ -196,20 +259,25 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
           ) : (
             <button
               onClick={() => setConfirming(true)}
-              className={`group relative px-10 py-4 text-[14px] font-bold rounded-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] ${
-                isActive
-                  ? 'bg-emerald-500/[0.06] border-2 border-emerald-500/15 text-emerald-400 hover:bg-emerald-500/[0.12] hover:border-emerald-500/30 hover:shadow-[0_0_50px_rgba(16,185,129,0.1)]'
-                  : 'bg-red-500/[0.06] border-2 border-red-500/15 text-red-400 hover:bg-red-500/[0.12] hover:border-red-500/30 hover:shadow-[0_0_50px_rgba(239,68,68,0.1)]'
-              }`}
+              className="btn"
+              style={{
+                height: 48,
+                padding: '0 40px',
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 10,
+                background: isActive ? 'var(--mint-bg)' : 'var(--rose-bg)',
+                borderColor: isActive ? 'oklch(0.50 0.10 165 / 0.3)' : 'oklch(0.40 0.08 25 / 0.3)',
+                color: isActive ? 'var(--mint)' : 'var(--rose)',
+                transition: 'all 0.5s',
+              }}
             >
-              <span className="relative z-10">
-                {isActive ? '✓ Deactivate Kill Switch' : '⊘ Activate Kill Switch'}
-              </span>
+              {isActive ? 'Deactivate Kill Switch' : 'Activate Kill Switch'}
             </button>
           )
         ) : (
-          <div className="rounded-2xl glass-card p-5 max-w-sm mx-auto">
-            <p className="text-[11px] text-gray-600 font-medium">
+          <div className="card" style={{ padding: 20, maxWidth: 360, margin: '0 auto' }}>
+            <p style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>
               Only administrators can control the kill switch.
             </p>
           </div>
