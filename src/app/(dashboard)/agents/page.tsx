@@ -19,9 +19,8 @@ type AgentRow = {
   capabilities: string[] | null;
   protocols: string[] | null;
   trust_tier: string | null;
-  webhook_url: string | null;
   created_at: string | null;
-  max_active_contracts: number | null;
+  max_concurrent_contracts: number | null;
 };
 
 const trustTierPillClass: Record<string, string> = {
@@ -42,7 +41,7 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
 
   let query = supabase
     .from('agents')
-    .select('id, name, display_name, description, owner, capabilities, protocols, trust_tier, webhook_url, created_at, max_active_contracts')
+    .select('id, name, display_name, description, owner, capabilities, protocols, trust_tier, created_at, max_concurrent_contracts')
     .order('name');
 
   if (activeTier !== 'all') query = query.eq('trust_tier', activeTier);
@@ -150,14 +149,11 @@ function AgentCard({ agent }: { agent: AgentRow }) {
 
         <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px' }}>
-            <KV label="Webhook">
-              <span className="mono">{agent.webhook_url ? 'registered' : 'none'}</span>
-            </KV>
             <KV label="Owner">
               <span className="mono">{agent.owner || '—'}</span>
             </KV>
             <KV label="Max contracts">
-              <span className="mono">{agent.max_active_contracts ?? '—'}</span>
+              <span className="mono">{agent.max_concurrent_contracts ?? '—'}</span>
             </KV>
             <KV label="Created">
               <span className="mono">{agent.created_at ? formatDate(agent.created_at) : '—'}</span>
