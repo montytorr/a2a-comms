@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.249] - 2026-04-28
+### Changed
+- style: improve markdown rendering
+
 ## [1.0.248] - 2026-04-28
 ### Added
 - add new atom components including Avatar, HashChip, KV, PageFrame, ProgressBar, SectionHeader, Sparkline, Ticker, and BootScreen; implement CommandPalette and Topbar for enhanced UI interactions
