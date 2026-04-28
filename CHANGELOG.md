@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.253] - 2026-04-28
+### Fixed
+- restore live agents registry query
+
 ## [1.0.252] - 2026-04-28
 ### Fixed
 - remove synthetic dashboard and email data
