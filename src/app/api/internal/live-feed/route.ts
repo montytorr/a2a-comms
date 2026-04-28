@@ -5,9 +5,7 @@ import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 
 export const dynamic = 'force-dynamic';
 
-const EMPTY_UUID = '00000000-0000-0000-0000-000000000000';
-
-type TickerTone = 'mint' | 'peri' | 'amber' | 'rose';
+type TickerTone = 'mint' | 'amber' | 'rose';
 
 type TickerItem = {
   tone: TickerTone;
@@ -16,6 +14,15 @@ type TickerItem = {
   time: string;
   timestamp: string;
 };
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function validTimestamp(value: unknown): string | null {
+  const text = stringValue(value);
+  return text && !Number.isNaN(new Date(text).getTime()) ? text : null;
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -27,20 +34,14 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-function toneForAction(action: string): TickerTone {
-  if (/fail|denied|reject|error|invalid/i.test(action)) return 'rose';
-  if (/approval|propos|pending|request/i.test(action)) return 'amber';
-  if (/message|task|project/i.test(action)) return 'peri';
+function toneForEvent(event: string): TickerTone {
+  if (/fail|denied|reject|error|invalid/i.test(event)) return 'rose';
+  if (/approval|propos|pending|request/i.test(event)) return 'amber';
   return 'mint';
-}
-
-function label(value: unknown, fallback: string) {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : fallback;
 }
 
 function normalize(items: TickerItem[]) {
   return items
-    .filter((item) => !Number.isNaN(new Date(item.timestamp).getTime()))
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 12)
     .map(({ tone, actor, type, time }) => ({ tone, actor, type, time }));
@@ -55,7 +56,6 @@ export async function GET() {
   const scope = await buildDashboardVisibilityScope(auth);
 
   const noVisibleScope = !isAdmin
-    && scope.contractIds.length === 0
     && scope.webhookIds.length === 0
     && scope.contractActorNames.length === 0;
   if (noVisibleScope) return NextResponse.json({ items: [] });
@@ -64,90 +64,53 @@ export async function GET() {
     .from('audit_log')
     .select('actor, action, created_at')
     .order('created_at', { ascending: false })
-    .limit(8);
-  let messagesQuery = supabase
-    .from('messages')
-    .select('created_at, contract_id, sender:agents!messages_sender_id_fkey(name, display_name)')
-    .order('created_at', { ascending: false })
-    .limit(8);
-  let contractsQuery = supabase
-    .from('contracts')
-    .select('title, status, updated_at, proposer:agents!contracts_proposer_id_fkey(name, display_name)')
-    .order('updated_at', { ascending: false })
-    .limit(8);
+    .limit(10);
   let deliveriesQuery = supabase
     .from('webhook_deliveries')
     .select('event, status, created_at, delivered_at, webhook_id')
     .order('created_at', { ascending: false })
-    .limit(8);
+    .limit(10);
 
   if (!isAdmin) {
     auditQuery = scope.contractActorNames.length > 0
       ? auditQuery.in('actor', scope.contractActorNames)
       : auditQuery.eq('actor', '__none__');
-    messagesQuery = scope.contractIds.length > 0
-      ? messagesQuery.in('contract_id', scope.contractIds)
-      : messagesQuery.eq('contract_id', EMPTY_UUID);
-    contractsQuery = scope.contractIds.length > 0
-      ? contractsQuery.in('id', scope.contractIds)
-      : contractsQuery.eq('id', EMPTY_UUID);
     deliveriesQuery = scope.webhookIds.length > 0
       ? deliveriesQuery.in('webhook_id', scope.webhookIds)
-      : deliveriesQuery.eq('webhook_id', EMPTY_UUID);
+      : deliveriesQuery.eq('webhook_id', '__none__');
   }
 
-  const [auditRes, messagesRes, contractsRes, deliveriesRes] = await Promise.all([
+  const [auditRes, deliveriesRes] = await Promise.all([
     auditQuery,
-    messagesQuery,
-    contractsQuery,
     deliveriesQuery,
   ]);
 
   const items: TickerItem[] = [];
 
   for (const row of auditRes.data || []) {
-    const timestamp = label(row.created_at, new Date().toISOString());
-    const action = label(row.action, 'audit.event');
+    const timestamp = validTimestamp(row.created_at);
+    const action = stringValue(row.action);
+    if (!timestamp || !action) continue;
+
     items.push({
-      tone: toneForAction(action),
-      actor: label(row.actor, 'system'),
+      tone: toneForEvent(action),
+      actor: stringValue(row.actor) || 'audit',
       type: action,
       time: timeAgo(timestamp),
       timestamp,
     });
   }
 
-  for (const row of messagesRes.data || []) {
-    const timestamp = label(row.created_at, new Date().toISOString());
-    const sender = Array.isArray(row.sender) ? row.sender[0] : row.sender;
-    items.push({
-      tone: 'peri',
-      actor: label(sender?.display_name || sender?.name, 'agent'),
-      type: 'message.created',
-      time: timeAgo(timestamp),
-      timestamp,
-    });
-  }
-
-  for (const row of contractsRes.data || []) {
-    const timestamp = label(row.updated_at, new Date().toISOString());
-    const proposer = Array.isArray(row.proposer) ? row.proposer[0] : row.proposer;
-    items.push({
-      tone: toneForAction(label(row.status, 'contract.updated')),
-      actor: label(proposer?.display_name || proposer?.name, 'agent'),
-      type: `contract.${label(row.status, 'updated')}`,
-      time: timeAgo(timestamp),
-      timestamp,
-    });
-  }
-
   for (const row of deliveriesRes.data || []) {
-    const timestamp = label(row.delivered_at || row.created_at, new Date().toISOString());
-    const status = label(row.status, 'pending');
+    const timestamp = validTimestamp(row.delivered_at) || validTimestamp(row.created_at);
+    const event = stringValue(row.event);
+    if (!timestamp || !event) continue;
+
+    const status = stringValue(row.status);
     items.push({
-      tone: status === 'success' ? 'mint' : status === 'failed' ? 'rose' : 'amber',
+      tone: status === 'failed' ? 'rose' : status === 'pending' ? 'amber' : toneForEvent(event),
       actor: 'webhook',
-      type: `${label(row.event, 'delivery')}.${status}`,
+      type: event,
       time: timeAgo(timestamp),
       timestamp,
     });
