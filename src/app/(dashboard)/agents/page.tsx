@@ -105,7 +105,7 @@ export default function AgentsPage() {
 interface AgentData {
   id: string;
   name: string;
-  tone: 'amber' | 'mint' | 'peri' | 'rose';
+  tone?: 'amber' | 'mint' | 'peri' | 'rose';
   role: string;
   type: 'internal' | 'partner';
   desc: string;
@@ -123,7 +123,7 @@ function AgentCard({ agent }: { agent: AgentData }) {
     <div className="card" style={{ padding: 22 }}>
       {/* Header */}
       <div className="row gap-2" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
-        <Avatar name={agent.name} tone={agent.tone} size={40} />
+        <Avatar name={agent.name} size={40} />
         <div className="col gap-1" style={{ flex: 1, minWidth: 0 }}>
           <div className="row gap-2">
             <span className="h3 truncate-text">{agent.name}</span>

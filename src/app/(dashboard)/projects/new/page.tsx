@@ -5,23 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase/client';
 import MarkdownPreview from '@/components/markdown-preview';
+import { Avatar } from '@/components/atoms';
 
 interface AgentRow {
   id: string;
   name: string;
   display_name: string;
-}
-
-const avatarColors = [
-  '#06b6d4', '#7c3aed', '#10b981', '#f97316', '#ec4899', '#f59e0b',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarColors.length;
 }
 
 export default function NewProjectPage() {
@@ -161,7 +150,6 @@ export default function NewProjectPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               {agents.map((agent) => {
                 const isSelected = selectedAgents.has(agent.id);
-                const color = avatarColors[getAvatarIndex(agent.display_name || agent.name)];
                 return (
                   <button
                     key={agent.id}
@@ -180,23 +168,7 @@ export default function NewProjectPage() {
                       transition: 'border-color 0.15s, background 0.15s',
                     }}
                   >
-                    <div
-                      style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '0.5rem',
-                        background: color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        color: '#fff',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {(agent.display_name || agent.name)[0]?.toUpperCase()}
-                    </div>
+                    <Avatar name={agent.display_name || agent.name} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p
                         style={{

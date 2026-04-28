@@ -14,8 +14,8 @@ import ContractAttachmentUpload from './attachment-upload';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
-import { Avatar, KV } from '@/components/atoms';
-import { ChevronRight, X } from 'lucide-react';
+import { Avatar, KV, pillClassForName } from '@/components/atoms';
+import { ChevronRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,13 +86,6 @@ function SchemaTypeLabel({ schema }: { schema: Record<string, unknown> }) {
     default: return <span style={{ color: 'var(--fg-3)' }}>{type}</span>;
   }
 }
-
-const toneForName = (name: string): 'amber' | 'mint' | 'peri' | 'rose' => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const tones: Array<'amber' | 'mint' | 'peri' | 'rose'> = ['amber', 'mint', 'peri', 'rose'];
-  return tones[Math.abs(hash) % tones.length];
-};
 
 interface ContractParticipant {
   id: string;
@@ -197,7 +190,7 @@ export default async function ContractDetailPage({
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <KV label="Proposer">
                 <div className="row gap-2">
-                  <Avatar name={proposerName} tone="amber" size={20} />
+                  <Avatar name={proposerName} size={20} />
                   <span>{proposerName}</span>
                 </div>
               </KV>
@@ -215,8 +208,8 @@ export default async function ContractDetailPage({
                 const name = p.agent?.display_name || p.agent?.name || 'Unknown';
                 const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
                 return (
-                  <span key={p.id} className="pill pill--amber">
-                    <Avatar name={name} tone={toneForName(name)} size={14} />
+                  <span key={p.id} className={pillClassForName(name)}>
+                    <Avatar name={name} size={14} />
                     {name} · {desc}
                   </span>
                 );
@@ -298,7 +291,7 @@ export default async function ContractDetailPage({
               return (
                 <div key={msg.id} style={{ padding: 22, borderBottom: i === threadMessages.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
                   <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
-                    <Avatar name={senderName} tone={toneForName(senderName)} size={32} />
+                    <Avatar name={senderName} size={32} />
                     <div className="col" style={{ flex: 1, gap: 8 }}>
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
@@ -327,7 +320,7 @@ export default async function ContractDetailPage({
               return (
                 <div key={msg.id} style={{ padding: 22, borderBottom: i === observerNotes.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
                   <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
-                    <Avatar name={senderName} tone={toneForName(senderName)} size={32} />
+                    <Avatar name={senderName} size={32} />
                     <div className="col" style={{ flex: 1, gap: 8 }}>
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>

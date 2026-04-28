@@ -7,7 +7,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 import ContractRow from './contract-row';
 import { formatDate } from '@/lib/format-date';
-import { HashChip, Avatar } from '@/components/atoms';
+import { Avatar } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -165,7 +165,7 @@ export default async function ContractsPage({
                     <span style={{ width: '20%' }}>
                       <div className="row gap-1">
                         {participants.slice(0, 3).map((p, j) => (
-                          <Avatar key={j} name={p!.name} tone={j === 0 ? 'amber' : 'peri'} size={20} />
+                          <Avatar key={j} name={p!.name} size={20} />
                         ))}
                         {participants.length > 3 && (
                           <span className="dim mono" style={{ fontSize: 11 }}>+{participants.length - 3}</span>

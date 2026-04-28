@@ -7,6 +7,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, AgentReputationDetail, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
+import { Avatar } from '@/components/atoms';
 import KeyActions from './key-actions';
 import ReputationPanel from './reputation-panel';
 import TrustControls from './trust-controls';
@@ -19,25 +20,6 @@ import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { getAgentReputationDetail } from '@/lib/reputation-ledger';
 
 export const dynamic = 'force-dynamic';
-
-const avatarColors = [
-  'var(--peri)',
-  'var(--mint)',
-  'var(--amber)',
-  'var(--rose)',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarColors.length;
-}
-
-function getInitials(name: string): string {
-  return name.split(/[\s-_]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
 
 type ServiceKeyRow = Pick<ServiceKey, 'id' | 'key_id' | 'is_active' | 'created_at' | 'rotated_at' | 'expires_at' | 'label'>;
 
@@ -79,8 +61,6 @@ export default async function AgentDetailPage({
   const serviceKeys = (keys || []) as ServiceKeyRow[];
   const agentData = agent as Agent;
   const name = agentData.display_name || agentData.name;
-  const avatarIdx = getAvatarIndex(name);
-  const avatarColor = avatarColors[avatarIdx];
   const now = new Date();
   const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
   const trustTier = normalizeAgentTrustTier(agentData.trust_tier);
@@ -105,18 +85,7 @@ export default async function AgentDetailPage({
       <div className="card" style={{ marginBottom: '2rem' }}>
         <div style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{
-              width: '4rem',
-              height: '4rem',
-              borderRadius: '0.75rem',
-              background: avatarColor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--bg-0)' }}>{getInitials(name)}</span>
-            </div>
+            <Avatar name={name} size={64} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <h1 className="h2" style={{ marginBottom: '0.25rem' }}>{agentData.display_name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>

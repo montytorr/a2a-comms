@@ -303,12 +303,6 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
 const ActivityRow = ({ entry }: { entry: AuditEntry }) => {
   const { Icon, pill, label } = getActionMeta(entry.action);
   const link = getAuditLink(entry);
-  const tones: Record<PillVariant, string> = { mint: 'peri', amber: 'amber', peri: 'peri', rose: 'rose' };
-
-  // Pick avatar tone deterministically from actor string
-  const toneKeys = ['amber', 'mint', 'peri', 'rose'] as const;
-  const avatarTone = toneKeys[(entry.actor?.charCodeAt(0) ?? 0) % 4];
-
   const inner = (
     <div
       className="row gap-2"
@@ -320,7 +314,7 @@ const ActivityRow = ({ entry }: { entry: AuditEntry }) => {
       }}
     >
       {/* Avatar */}
-      <Avatar name={entry.actor} tone={avatarTone} size={26} />
+      <Avatar name={entry.actor} size={26} />
 
       {/* Icon */}
       <span style={{ color: 'var(--fg-3)', flexShrink: 0 }}>

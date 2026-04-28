@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react';
 import type { TaskPriority } from '@/lib/types';
 import MarkdownPreview from '@/components/markdown-preview';
+import { Avatar } from '@/components/atoms';
 import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
 
@@ -12,23 +13,6 @@ const priorityOptions: { id: TaskPriority; label: string; icon: string; varColor
   { id: 'medium', label: 'Medium', icon: '🔵', varColor: 'var(--peri)' },
   { id: 'low',    label: 'Low',    icon: '⚪', varColor: 'var(--fg-3)' },
 ];
-
-const avatarColors: string[] = [
-  'var(--mint)',
-  'var(--peri)',
-  'var(--mint-2)',
-  'var(--amber)',
-  'var(--rose)',
-  'var(--amber-2)',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarColors.length;
-}
 
 // ----- Inline Editable Title -----
 function EditableTitle({
@@ -287,22 +271,7 @@ function AssigneePicker({
       >
         {current ? (
           <>
-            <div style={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              background: 'var(--bg-3)',
-              border: `1px solid ${avatarColors[getAvatarIndex(current.display_name || current.name)]}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 9,
-              fontWeight: 700,
-              color: avatarColors[getAvatarIndex(current.display_name || current.name)],
-              flexShrink: 0,
-            }}>
-              {(current.display_name || current.name)[0]?.toUpperCase()}
-            </div>
+            <Avatar name={current.display_name || current.name} size={24} />
             <span style={{ fontSize: 13, color: 'var(--fg-1)', fontWeight: 500 }}>{current.display_name || current.name}</span>
           </>
         ) : (
@@ -358,7 +327,6 @@ function AssigneePicker({
             if (!m.agent) return null;
             const name = m.agent.display_name || m.agent.name;
             const isSelected = m.agent.id === currentId;
-            const avatarColor = avatarColors[getAvatarIndex(name)];
             return (
               <button
                 key={m.agent.id}
@@ -380,13 +348,7 @@ function AssigneePicker({
                 onMouseEnter={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
                 onMouseLeave={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
               >
-                <div style={{
-                  width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-3)',
-                  border: `1px solid ${avatarColor}`, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: 9, fontWeight: 700, color: avatarColor, flexShrink: 0,
-                }}>
-                  {name[0]?.toUpperCase()}
-                </div>
+                <Avatar name={name} size={24} />
                 {name}
                 {isSelected && (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>

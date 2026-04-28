@@ -2,26 +2,10 @@
 
 import { useState, useRef, useTransition } from 'react';
 import MarkdownPreview from '@/components/markdown-preview';
+import { Avatar } from '@/components/atoms';
 import { addComment } from './actions';
 import { formatRelative } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
-
-const avatarColors: string[] = [
-  'var(--mint)',
-  'var(--peri)',
-  'var(--mint-2)',
-  'var(--amber)',
-  'var(--rose)',
-  'var(--amber-2)',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarColors.length;
-}
 
 interface Comment {
   id: string;
@@ -128,26 +112,10 @@ function CommentItem({ comment }: { comment: Comment }) {
     );
   }
 
-  const avatarColor = avatarColors[getAvatarIndex(authorName)];
-
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0' }}>
-      <div style={{
-        width: 28,
-        height: 28,
-        borderRadius: '50%',
-        background: 'var(--bg-3)',
-        border: `1px solid ${avatarColor}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 10,
-        fontWeight: 700,
-        color: avatarColor,
-        flexShrink: 0,
-        marginTop: 2,
-      }}>
-        {authorName[0]?.toUpperCase()}
+      <div style={{ marginTop: 2 }}>
+        <Avatar name={authorName} size={28} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>

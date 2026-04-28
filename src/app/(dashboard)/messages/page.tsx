@@ -8,20 +8,8 @@ import AutoRefresh from '@/components/auto-refresh';
 import CompactMarkdownPreview from '@/components/compact-markdown-preview';
 import { extractMessagePreview } from '@/lib/message-preview';
 import MessageFilters from './message-filters';
+import { Avatar } from '@/components/atoms';
 export const dynamic = 'force-dynamic';
-
-const avatarPalette = [
-  { bg: 'var(--mint-bg)', color: 'var(--mint)' },
-  { bg: 'var(--peri-bg)', color: 'var(--peri)' },
-  { bg: 'var(--amber-bg)', color: 'var(--amber)' },
-  { bg: 'var(--rose-bg)', color: 'var(--rose)' },
-];
-
-function getAvatarTone(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return avatarPalette[Math.abs(hash) % avatarPalette.length];
-}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -174,9 +162,6 @@ export default async function MessagesPage({
                 const sender = agentMap.get(msg.sender_id);
                 const contract = contractMap.get(msg.contract_id);
                 const senderName = sender?.display_name || 'Unknown';
-                const initial = senderName[0]?.toUpperCase() || '?';
-                const tone = getAvatarTone(senderName);
-
                 const preview = extractMessagePreview(msg.content);
 
                 return (
@@ -193,22 +178,7 @@ export default async function MessagesPage({
                       textDecoration: 'none',
                     }}
                   >
-                    {/* Avatar */}
-                    <div
-                      style={{
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '50%',
-                        background: tone.bg,
-                        border: `1px solid ${tone.color}40`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span className="mono" style={{ fontSize: '12px', fontWeight: 700, color: tone.color }}>{initial}</span>
-                    </div>
+                    <Avatar name={senderName} size={34} />
 
                     {/* Content */}
                     <div style={{ flex: 1, minWidth: 0 }}>

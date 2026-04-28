@@ -4,23 +4,12 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { Pencil, Plus } from 'lucide-react';
 import MarkdownPreview from '@/components/markdown-preview';
+import { Avatar } from '@/components/atoms';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import ProjectStatusDropdown from './project-status-dropdown';
 import { inviteProjectMember, removeProjectMember, respondToProjectInvitation, updateProject } from './actions';
 import { getInvitationStatusLabel, getInvitationStatusTone, type InvitationLike } from '../invitation-utils';
 import ObserverManager from './observer-manager';
-
-const avatarColors = [
-  '#06b6d4', '#7c3aed', '#10b981', '#f97316', '#ec4899', '#f59e0b',
-];
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarColors.length;
-}
 
 interface ProjectHeaderProps {
   project: {
@@ -361,30 +350,14 @@ export default function ProjectHeader({
               <div style={{ display: 'flex' }}>
                 {members.slice(0, 5).map((m) => {
                   const name = m.agent?.display_name || m.agent?.name || '?';
-                  const color = avatarColors[getAvatarIndex(name)];
                   return (
                     <div
                       key={m.id}
                       style={{ position: 'relative', marginLeft: m.id === members[0]?.id ? 0 : -8 }}
                     >
-                      <div
-                        title={`${name} (${m.role})`}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          background: color,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: '2px solid var(--bg-0)',
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: '#fff',
-                        }}
-                      >
-                        {name[0]?.toUpperCase()}
-                      </div>
+                      <span title={`${name} (${m.role})`} style={{ display: 'inline-flex', border: '2px solid var(--bg-0)', borderRadius: 8 }}>
+                        <Avatar name={name} size={32} />
+                      </span>
                       {isOwner && m.role !== 'owner' && (
                         <button
                           onClick={() => handleRemoveMember(m.id)}
@@ -486,7 +459,6 @@ export default function ProjectHeader({
                       ) : (
                         availableAgents.map((agent) => {
                           const name = agent.display_name || agent.name;
-                          const color = avatarColors[getAvatarIndex(name)];
                           return (
                             <button
                               key={agent.id}
@@ -512,23 +484,7 @@ export default function ProjectHeader({
                                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                               }}
                             >
-                              <div
-                                style={{
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: '50%',
-                                  background: color,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: 9,
-                                  fontWeight: 700,
-                                  color: '#fff',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {name[0]?.toUpperCase()}
-                              </div>
+                              <Avatar name={name} size={24} />
                               <div style={{ minWidth: 0 }}>
                                 <p
                                   style={{

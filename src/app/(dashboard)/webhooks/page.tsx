@@ -7,6 +7,7 @@ import type { Webhook, Agent } from '@/lib/types';
 import WebhookCard from './webhook-card';
 import AutoRefresh from '@/components/auto-refresh';
 import { Activity, Plus } from 'lucide-react';
+import { Avatar } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,21 +117,7 @@ export default async function WebhooksPage() {
               <div key={agentId} className="animate-fade-in" style={{ animationDelay: `${groupIdx * 0.08}s` }}>
                 {/* Agent section header */}
                 <div className="row gap-3" style={{ marginBottom: 12 }}>
-                  <div style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 8,
-                    background: 'var(--peri-bg)',
-                    border: '1px solid var(--line-2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--peri)', fontFamily: 'var(--mono)' }}>
-                      {(group.agent.display_name || group.agent.name).split(/[\s-_]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                    </span>
-                  </div>
+                  <Avatar name={group.agent.display_name || group.agent.name} size={28} />
                   <div>
                     <h2 className="h3">{group.agent.display_name || group.agent.name}</h2>
                     <span className="mono dim" style={{ fontSize: 11 }}>{group.agent.name}</span>

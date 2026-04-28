@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 import QuickTaskForm from './quick-task-form';
+import { Avatar } from '@/components/atoms';
 import { formatDate } from '@/lib/format-date';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 
@@ -44,10 +45,6 @@ const priorityLabel: Record<TaskPriority, string> = {
   low:    'Low',
 };
 
-const avatarColors = [
-  '#06b6d4', '#7c3aed', '#10b981', '#f97316', '#ec4899', '#f59e0b',
-];
-
 const dependencyTypeConfig = {
   blockedBy:     { label: 'Blocked by',  tone: 'rose',  previewLabel: 'Waiting on' },
   blocks:        { label: 'Blocking',    tone: 'amber', previewLabel: 'Blocking' },
@@ -55,14 +52,6 @@ const dependencyTypeConfig = {
   sequenceBefore:{ label: 'Before',      tone: 'peri',  previewLabel: 'Leads into' },
   related:       { label: 'Related',     tone: 'ghost', previewLabel: 'Related to' },
 } as const;
-
-function getAvatarIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % avatarColors.length;
-}
 
 function renderDependencyPreview(items: Array<{ id: string; title: string; status: string }>, maxItems = 2) {
   return items.slice(0, maxItems).map((item) => item.title).join(', ');
@@ -488,23 +477,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                 style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
                                 title={assigneeName}
                               >
-                                <div
-                                  style={{
-                                    width: 20,
-                                    height: 20,
-                                    borderRadius: '50%',
-                                    background: avatarColors[getAvatarIndex(assigneeName)],
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: 8,
-                                    fontWeight: 700,
-                                    color: '#fff',
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  {assigneeName[0]?.toUpperCase()}
-                                </div>
+                                <Avatar name={assigneeName} size={20} />
                                 <span
                                   style={{
                                     fontSize: 9,

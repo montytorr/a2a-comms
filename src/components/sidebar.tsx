@@ -220,7 +220,7 @@ export default function Sidebar({ isSuperAdmin, displayName, notificationCounts,
         alignItems: 'center',
         gap: 10,
       }}>
-        <Avatar name={displayName || '?'} tone="rose" size={28} />
+        <Avatar name={displayName || '?'} size={28} />
         <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
           <div style={{ fontSize: 12, color: 'var(--fg-1)', fontWeight: 500 }}>{displayName || 'User'}</div>
           {isSuperAdmin && (

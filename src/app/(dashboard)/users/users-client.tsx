@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toggleSuperAdmin, linkAgentToUser, unlinkAgent, createUser } from './actions';
 import { formatDate } from '@/lib/format-date';
 import { Plus, X, Shield, User, Bot, Link2, Unlink } from 'lucide-react';
+import { Avatar, pillClassForName } from '@/components/atoms';
 
 interface UserProfile {
   id: string;
@@ -294,28 +295,7 @@ export default function UsersClient({
                 {/* User header */}
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                   <div className="row gap-3">
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 10,
-                      background: profile.is_super_admin
-                        ? 'linear-gradient(135deg, var(--amber-bg), oklch(0.35 0.08 55 / 0.5))'
-                        : 'var(--bg-3)',
-                      border: `1px solid ${profile.is_super_admin ? 'oklch(0.55 0.12 60 / 0.4)' : 'var(--line-1)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
-                      <span style={{
-                        fontFamily: 'var(--mono)',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: profile.is_super_admin ? 'var(--amber)' : 'var(--fg-2)',
-                      }}>
-                        {(profile.display_name || '?')[0].toUpperCase()}
-                      </span>
-                    </div>
+                    <Avatar name={profile.display_name || profile.email || '?'} size={44} />
                     <div>
                       <div className="row gap-2" style={{ marginBottom: 3 }}>
                         <h2 className="h3">{profile.display_name}</h2>
@@ -326,7 +306,7 @@ export default function UsersClient({
                           </span>
                         )}
                         {isSelf && (
-                          <span className="pill pill--peri">
+                          <span className={pillClassForName(profile.display_name || profile.email || 'You')}>
                             <User size={9} />
                             You
                           </span>
