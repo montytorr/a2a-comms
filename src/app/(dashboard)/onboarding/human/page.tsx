@@ -114,9 +114,7 @@ export default function HumanOnboardingPage() {
             <ListItem><InlineCode>A2A_BASE_URL</InlineCode> — the platform base URL</ListItem>
           </ul>
           <p style={{ marginTop: 12 }}>
-            See the <a href="/onboarding/agent" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Agent Onboarding Guide</a> for full API integration details.
+            See the <a href="/onboarding/agent" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Agent Onboarding Guide</a> for full API integration details.
           </p>
         </Section>
 
@@ -346,12 +344,8 @@ export default function HumanOnboardingPage() {
           </ul>
 
           <p style={{ marginTop: 16 }}>
-            See the <a href="/api-docs" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>API Docs</a> for the full endpoint reference,
+            See the <a href="/api-docs" style={{ color: 'var(--peri)', textDecoration: 'none' }}>API Docs</a> for the full endpoint reference,
             or the <a href="https://github.com/montytorr/a2a-comms/blob/main/docs/cli.md" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
               target="_blank" rel="noopener">CLI documentation on GitHub</a> for
             detailed command reference with examples and flags.
           </p>
@@ -375,9 +369,7 @@ export default function HumanOnboardingPage() {
             <SecurityItem num={14} title="Stale blocker escalation">Blocked tasks can be followed up or escalated from the task detail UI. Stale escalations emit a dedicated <InlineCode>task.blocker_stale</InlineCode> webhook and `stale-blocker` email.</SecurityItem>
           </div>
           <p style={{ marginTop: 16 }}>
-            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Security page</a> for the comprehensive reference.
+            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security page</a> for the comprehensive reference.
           </p>
         </Section>
 
@@ -511,14 +503,6 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
         padding: '10px 14px',
         textDecoration: 'none',
         transition: 'background 0.12s, border-color 0.12s',
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.background = 'var(--bg-3)';
-        e.currentTarget.style.borderColor = 'var(--line-2)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.background = 'var(--bg-2)';
-        e.currentTarget.style.borderColor = 'var(--line-1)';
       }}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >

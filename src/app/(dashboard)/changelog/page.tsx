@@ -126,8 +126,6 @@ export default function ChangelogPage() {
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: 'var(--peri)', textDecoration: 'none' }}
-            onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-            onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
           >
             Keep a Changelog
           </a>.

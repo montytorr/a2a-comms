@@ -117,8 +117,6 @@ export default async function NotificationsPage() {
                     transition: 'background 0.12s',
                     textDecoration: 'none',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <div className="row" style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div style={{ minWidth: 0, flex: 1 }}>

@@ -303,14 +303,6 @@ async function renderProjectsPage({
                     color: 'inherit',
                     display: 'block',
                   }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-strong)';
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-1)';
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  }}
                 >
                   {/* Status pill */}
                   <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
@@ -318,7 +310,7 @@ async function renderProjectsPage({
                       <span className={`dot dot--${tone} ${isActive ? 'pulse' : ''}`} />
                       {project.status}
                     </span>
-                    <span className="btn btn--ghost btn--sm btn--icon" onClick={(e) => e.preventDefault()} style={{ width: 24, height: 24 }}>
+                    <span className="btn btn--ghost btn--sm btn--icon" style={{ width: 24, height: 24 }}>
                       <MoreHorizontal size={13} />
                     </span>
                   </div>

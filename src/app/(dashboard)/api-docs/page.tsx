@@ -871,14 +871,6 @@ function TocItem({ href, num, label, count }: { href: string; num: number; label
       textDecoration: 'none',
       transition: 'all 0.12s',
     }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.background = 'var(--bg-3)';
-        e.currentTarget.style.borderColor = 'var(--line-2)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.background = 'var(--bg-2)';
-        e.currentTarget.style.borderColor = 'var(--line-1)';
-      }}
     >
       <div className="row gap-3">
         <span style={{

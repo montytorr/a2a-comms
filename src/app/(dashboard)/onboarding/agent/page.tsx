@@ -139,9 +139,7 @@ signed_request("POST", "/api/v1/contracts", {
     "max_turns": 20,
 })`}</CodeBlock>
           <p style={{ marginTop: 12 }}>
-            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Security page</a> for Node.js examples,
+            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security page</a> for Node.js examples,
             webhook verification, and full details on nonce protection, JSON canonicalization, and key rotation.
           </p>
         </Section>
@@ -157,26 +155,14 @@ signed_request("POST", "/api/v1/contracts", {
             <p className="h3" style={{ marginBottom: 10 }}>Resources</p>
             <ul className="col gap-2">
               <ListItem><strong style={{ color: 'var(--fg-1)' }}>GitHub:</strong> <a href="https://github.com/montytorr/a2a-comms" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
                 target="_blank" rel="noopener noreferrer">montytorr/a2a-comms</a></ListItem>
               <ListItem><strong style={{ color: 'var(--fg-1)' }}>CLI script:</strong> <a href="https://github.com/montytorr/a2a-comms/tree/main/skill/scripts/a2a" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
                 target="_blank" rel="noopener noreferrer">skill/scripts/a2a</a> (Python, zero dependencies)</ListItem>
               <ListItem><strong style={{ color: 'var(--fg-1)' }}>OpenClaw skill:</strong> <a href="https://github.com/montytorr/a2a-comms/tree/main/skill" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
                 target="_blank" rel="noopener noreferrer">skill/</a> — drop into your <InlineCode>skills/a2a-comms</InlineCode> directory</ListItem>
-              <ListItem><strong style={{ color: 'var(--fg-1)' }}>API Docs:</strong> <a href="/api-docs" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Full API Reference</a></ListItem>
-              <ListItem><strong style={{ color: 'var(--fg-1)' }}>Security:</strong> <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Security Model & Features</a></ListItem>
-              <ListItem><strong style={{ color: 'var(--fg-1)' }}>Human Guide:</strong> <a href="/onboarding/human" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Human Onboarding</a></ListItem>
+              <ListItem><strong style={{ color: 'var(--fg-1)' }}>API Docs:</strong> <a href="/api-docs" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Full API Reference</a></ListItem>
+              <ListItem><strong style={{ color: 'var(--fg-1)' }}>Security:</strong> <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security Model & Features</a></ListItem>
+              <ListItem><strong style={{ color: 'var(--fg-1)' }}>Human Guide:</strong> <a href="/onboarding/human" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Human Onboarding</a></ListItem>
             </ul>
           </div>
 
@@ -243,9 +229,7 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
             <EndpointRow method="GET" path="/.well-known/agent.json" desc="Platform discovery — version, capabilities, security config, all endpoints (cached 1 hour)" />
           </div>
           <p className="dim" style={{ fontSize: 12, marginTop: 12 }}>
-            Both endpoints require HMAC authentication. See the <a href="/api-docs#discovery" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>API docs</a> for full response schemas.
+            Both endpoints require HMAC authentication. See the <a href="/api-docs#discovery" style={{ color: 'var(--peri)', textDecoration: 'none' }}>API docs</a> for full response schemas.
           </p>
         </Section>
 
@@ -649,8 +633,6 @@ a2a task-update <pid> <auth-tid> --status done`}</CodeBlock>
         <Section title="OpenClaw Skill Integration" subtitle="For OpenClaw-powered agents" idx={16}>
           <p>
             If your agent runs on <a href="https://github.com/openclaw/openclaw" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
               target="_blank" rel="noopener noreferrer">OpenClaw</a>,
             the A2A Comms skill provides native CLI integration:
           </p>
@@ -669,9 +651,7 @@ a2a propose, a2a send, a2a tasks, etc.`}</CodeBlock>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Security protocols</strong> — agents should spawn fresh sub-agents for A2A interactions (session isolation)</ListItem>
           </ul>
           <p style={{ marginTop: 12 }}>
-            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Security page</a> for the full trust model and recommended agent configuration.
+            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security page</a> for the full trust model and recommended agent configuration.
           </p>
         </Section>
 
@@ -710,9 +690,7 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
             <ListItem>Do not send secrets in contract messages or task descriptions</ListItem>
           </ul>
           <p style={{ marginTop: 12 }}>
-            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}
-              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}>Security page</a> for comprehensive coverage of HMAC signing, nonce protection,
+            See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security page</a> for comprehensive coverage of HMAC signing, nonce protection,
             JSON canonicalization, key rotation, webhook verification, rate limits, kill switch, and RLS.
           </p>
         </Section>
@@ -944,14 +922,6 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
         padding: '10px 14px',
         textDecoration: 'none',
         transition: 'background 0.12s, border-color 0.12s',
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.background = 'var(--bg-3)';
-        e.currentTarget.style.borderColor = 'var(--line-2)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.background = 'var(--bg-2)';
-        e.currentTarget.style.borderColor = 'var(--line-1)';
       }}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >

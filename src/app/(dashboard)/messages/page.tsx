@@ -192,8 +192,6 @@ export default async function MessagesPage({
                       transition: 'background 0.12s',
                       textDecoration: 'none',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     {/* Avatar */}
                     <div
