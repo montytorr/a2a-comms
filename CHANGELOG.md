@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.256] - 2026-04-28
+### Fixed
+- keep header ticker event-sourced
+
 ## [1.0.255] - 2026-04-28
 ### Fixed
 - restore live header ticker
