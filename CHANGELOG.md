@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.250] - 2026-04-28
+### Fixed
+- remove server component event handlers
+
 ## [1.0.249] - 2026-04-28
 ### Changed
 - style: improve markdown rendering
