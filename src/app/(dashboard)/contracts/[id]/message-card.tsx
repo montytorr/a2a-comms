@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { markdownComponents } from '@/components/markdown-renderers';
 
 // ── Types ──
 
@@ -56,13 +57,10 @@ function SyntaxJson({ data }: { data: unknown }) {
 function RichText({ text, className }: { text: string; className?: string }) {
   return (
     <div
-      className={`prose prose-invert prose-sm max-w-none
-        prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5
-        prose-headings:text-sm prose-headings:font-semibold prose-headings:mt-2 prose-headings:mb-1
-        ${className || ''}`}
+      className={`markdown-preview ${className || ''}`}
       style={{ fontSize: '13px', color: 'var(--fg-1)', lineHeight: 1.6 }}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{text}</ReactMarkdown>
     </div>
   );
 }
