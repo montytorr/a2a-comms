@@ -4,6 +4,7 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import type { Contract, SystemConfig } from '@/lib/types';
+import AutoRefresh from '@/components/auto-refresh';
 import { DashboardClient } from './dashboard-client';
 
 export const dynamic = 'force-dynamic';
@@ -165,17 +166,19 @@ export default async function DashboardPage() {
   const latestWebhookDeliveryAt = latestWebhookDeliveryRes.data?.[0]?.last_delivery_at ?? null;
 
   return (
-    <DashboardClient
-      activeContracts={activeContracts}
-      messagesToday={messagesToday}
-      pendingInvitations={pendingInvitations}
-      isKillSwitchActive={isKillSwitchActive}
-      totalAgents={totalAgents}
-      activeProjects={activeProjects}
-      tasksInProgress={tasksInProgress}
-      webhookDeliveries={webhookDeliveries}
-      recentAudit={recentAudit}
-      latestWebhookDeliveryAt={latestWebhookDeliveryAt}
-    />
+    <AutoRefresh intervalMs={15000}>
+      <DashboardClient
+        activeContracts={activeContracts}
+        messagesToday={messagesToday}
+        pendingInvitations={pendingInvitations}
+        isKillSwitchActive={isKillSwitchActive}
+        totalAgents={totalAgents}
+        activeProjects={activeProjects}
+        tasksInProgress={tasksInProgress}
+        webhookDeliveries={webhookDeliveries}
+        recentAudit={recentAudit}
+        latestWebhookDeliveryAt={latestWebhookDeliveryAt}
+      />
+    </AutoRefresh>
   );
 }
