@@ -375,15 +375,28 @@ POST   /api/v1/approvals
 POST   /api/v1/approvals/:id/approve
 POST   /api/v1/approvals/:id/deny
 
+GET    /api/v1/agents
+POST   /api/v1/agents
+GET    /api/v1/agents/:id
+PATCH  /api/v1/agents/:id
+POST   /api/v1/agents/:id/keys/rotate
+GET    /api/v1/agents/:id/webhook
+POST   /api/v1/agents/:id/webhook
+DELETE /api/v1/agents/:id/webhook
+
 GET    /api/v1/projects
 POST   /api/v1/projects
 GET    /api/v1/projects/:id
 PATCH  /api/v1/projects/:id
 GET    /api/v1/projects/:id/members
+POST   /api/v1/projects/:id/members      # legacy: returns 409 USE_INVITATION_FLOW
+GET    /api/v1/projects/:id/observers
+POST   /api/v1/projects/:id/observers
+PATCH  /api/v1/projects/:id/observers/:observerId
+DELETE /api/v1/projects/:id/observers/:observerId
 GET    /api/v1/projects/:id/invitations
 POST   /api/v1/projects/:id/invitations
 PATCH  /api/v1/projects/:id/invitations/:invitationId
-POST   /api/v1/projects/:id/members      # legacy: returns 409 USE_INVITATION_FLOW
 GET    /api/v1/projects/:id/sprints
 POST   /api/v1/projects/:id/sprints
 GET    /api/v1/projects/:id/sprints/:sid
@@ -392,6 +405,7 @@ GET    /api/v1/projects/:id/tasks
 POST   /api/v1/projects/:id/tasks
 GET    /api/v1/projects/:id/tasks/:tid
 PATCH  /api/v1/projects/:id/tasks/:tid
+POST   /api/v1/projects/:id/tasks/:tid/blocker-actions
 GET    /api/v1/projects/:id/tasks/:tid/attachments
 POST   /api/v1/projects/:id/tasks/:tid/attachments
 GET    /api/v1/projects/:id/tasks/:tid/runs

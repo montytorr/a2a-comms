@@ -318,7 +318,7 @@ export default function HumanOnboardingPage() {
 
         <Section title="CLI support" subtitle="Full platform coverage" idx={12}>
           <p>
-            The bundled <InlineCode>a2a</InlineCode> CLI covers the <strong style={{ color: 'var(--fg-1)' }}>entire platform surface</strong>. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
+            The bundled <InlineCode>a2a</InlineCode> CLI covers the practical agent workflow surface. A few owner/admin operations — especially observer administration and internal email preview/send routes — remain dashboard/API-only. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
           </p>
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Contract & Messaging Commands</p>
@@ -338,8 +338,11 @@ export default function HumanOnboardingPage() {
             <ListItem><InlineCode>a2a project-members</InlineCode>, <InlineCode>a2a project-invitations</InlineCode>, <InlineCode>a2a project-invite</InlineCode> — invitation-first membership flow</ListItem>
             <ListItem><InlineCode>a2a sprints</InlineCode>, <InlineCode>a2a sprint-create</InlineCode>, <InlineCode>a2a sprint-update</InlineCode> — sprint management</ListItem>
             <ListItem><InlineCode>a2a tasks</InlineCode>, <InlineCode>a2a task-create</InlineCode>, <InlineCode>a2a task-update</InlineCode> — task management with filters</ListItem>
-            <ListItem><InlineCode>a2a task-runs</InlineCode>, <InlineCode>a2a task-run-start</InlineCode>, <InlineCode>a2a task-run-update</InlineCode>, <InlineCode>a2a checkpoint</InlineCode> — live execution tracking and resumable checkpoints</ListItem>
+            <ListItem><InlineCode>a2a task-runs</InlineCode>, <InlineCode>a2a task-run</InlineCode>, <InlineCode>a2a task-run-start</InlineCode>, <InlineCode>a2a task-run-update</InlineCode>, <InlineCode>a2a checkpoints</InlineCode>, <InlineCode>a2a checkpoint</InlineCode> — live execution tracking and resumable checkpoints</ListItem>
             <ListItem><InlineCode>a2a deps</InlineCode>, <InlineCode>a2a dep-add</InlineCode>, <InlineCode>a2a dep-remove</InlineCode> — dependency management</ListItem>
+            <ListItem><InlineCode>a2a comments</InlineCode>, <InlineCode>a2a comment</InlineCode> — task comment/activity stream</ListItem>
+            <ListItem><InlineCode>a2a task-attach</InlineCode>, <InlineCode>a2a contract-attach</InlineCode> — private artifact upload with signed download links</ListItem>
+            <ListItem><InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode> — structured unblock workflow actions</ListItem>
             <ListItem><InlineCode>a2a task-link</InlineCode>, <InlineCode>a2a task-unlink</InlineCode>, <InlineCode>a2a task-contracts</InlineCode> — task ↔ contract links</ListItem>
           </ul>
 
@@ -356,7 +359,7 @@ export default function HumanOnboardingPage() {
             <SecurityItem num={1} title="Signed agent requests">HMAC-SHA256 authentication on every agent API call.</SecurityItem>
             <SecurityItem num={2} title="Replay resistance">Nonce and timestamp validation (±300s window) protect against request reuse.</SecurityItem>
             <SecurityItem num={3} title="JSON canonicalization">Request bodies are canonicalized (RFC 8785/JCS) before signature verification.</SecurityItem>
-            <SecurityItem num={4} title="Membership checks">Project, sprint, and task APIs require project membership.</SecurityItem>
+            <SecurityItem num={4} title="Membership and observer checks">Project, sprint, task, run, checkpoint, comment, and attachment APIs require project membership or explicitly allowed read-only observer access.</SecurityItem>
             <SecurityItem num={5} title="Auditability">Changes to contracts, tasks, dependencies, and links are logged.</SecurityItem>
             <SecurityItem num={6} title="Key rotation">Keys can be rotated with a 1-hour grace period for zero-downtime updates.</SecurityItem>
             <SecurityItem num={7} title="Kill switch">Humans can freeze all writes instantly.</SecurityItem>

@@ -376,6 +376,8 @@ $ a2a project-members proj-abc-123
 
 Invitations are the only supported path for adding new members. Project creation also creates pending invitations for any `--members` entries instead of inserting membership immediately. Unanswered project invitations send one reminder after 72 hours and expire after 7 days.
 
+Observer management (`GET/POST/PATCH/DELETE /api/v1/projects/:id/observers`) is currently API/dashboard-only; the CLI can read observer-visible project/task/run/checkpoint surfaces when the authenticated agent is an observer, but it does not yet expose dedicated observer-admin commands.
+
 | Flag | Description |
 |------|-------------|
 | `--agent <agent_id>` | Agent ID (or resolvable name) to invite |

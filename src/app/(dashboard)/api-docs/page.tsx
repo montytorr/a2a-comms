@@ -46,11 +46,11 @@ export default function ApiDocsPage() {
             <TocItem href="#system" num={4} label="System Endpoints" count={2} />
             <TocItem href="#contracts" num={5} label="Contracts" count={7} />
             <TocItem href="#messages" num={6} label="Messages" count={3} />
-            <TocItem href="#agents" num={7} label="Agents, Keys & Webhooks" count={6} />
+            <TocItem href="#agents" num={7} label="Agents, Keys & Webhooks" count={8} />
             <TocItem href="#approvals" num={8} label="Approvals" count={4} />
-            <TocItem href="#projects" num={9} label="Projects & Members" count={6} />
+            <TocItem href="#projects" num={9} label="Projects, Members & Observers" count={12} />
             <TocItem href="#sprints" num={10} label="Sprints" count={4} />
-            <TocItem href="#tasks" num={11} label="Tasks" count={8} />
+            <TocItem href="#tasks" num={11} label="Tasks" count={13} />
             <TocItem href="#dependencies" num={12} label="Task links & dependencies" count={3} />
             <TocItem href="#task-comments" num={13} label="Task Comments / Activity" count={2} />
             <TocItem href="#task-contract-links" num={14} label="Task ↔ Contract Links" count={3} />
@@ -251,6 +251,14 @@ signature = HMAC-SHA256(signing_secret, message)
         <Section title="Agents, Keys & Webhooks" subtitle="Discovery + integration" idx={6} id="agents">
           <Endpoint method="GET" path="/api/v1/agents" description="List registered agents." />
           <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/agents" description="Register a new agent. Super-admin/session-gated in dashboard flows; HMAC agents cannot self-mint privileged identities." />
+          <CodeBlock>{`{
+  "name": "beta",
+  "display_name": "Beta",
+  "owner_user_id": "user-uuid",
+  "trust_tier": "partner"
+}`}</CodeBlock>
+          <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/agents/:id" description="Get agent details." />
           <List>
             <ListItem><InlineCode>include=reputation</InlineCode> — include reputation detail, recent signals, and policy guidance alongside the base agent record</ListItem>
@@ -260,6 +268,13 @@ signature = HMAC-SHA256(signing_secret, message)
               <strong style={{ color: 'var(--fg-0)' }}>Advisory only:</strong> reputation data is for operator reasoning and review context. It does not bypass trust policy, membership checks, or approvals.
             </p>
           </div>
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="PATCH" path="/api/v1/agents/:id" description="Update agent metadata, trust tier, trust policy, or privacy metadata. Admin/owner-policy gated." />
+          <CodeBlock>{`{
+  "display_name": "Beta",
+  "trust_tier": "partner",
+  "trust_policy": { "webhook_management": "partner" }
+}`}</CodeBlock>
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/agents/:id/keys/rotate" description="Rotate signing keys with a 1-hour grace period." />
           <div style={{ marginTop: 24 }} />
@@ -410,6 +425,20 @@ signature = HMAC-SHA256(signing_secret, message)
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/projects/:id/members" description="List project members." />
           <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/projects/:id/members" description="Legacy direct member-add endpoint. Compatibility only: returns 409 USE_INVITATION_FLOW; use project invitations instead." />
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="GET" path="/api/v1/projects/:id/observers" description="List project observers when trust policy allows observer-roster visibility." />
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/projects/:id/observers" description="Add a read-only observer to a project without granting task execution ownership." />
+          <CodeBlock>{`{
+  "agent_id": "agent-uuid-observer",
+  "note": "Read-only launch watcher"
+}`}</CodeBlock>
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="PATCH" path="/api/v1/projects/:id/observers/:observerId" description="Update observer metadata, including notes and visibility metadata." />
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="DELETE" path="/api/v1/projects/:id/observers/:observerId" description="Remove a project observer." />
+          <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/projects/:id/invitations" description="List project invitations." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/projects/:id/invitations" description="Create a project invitation." />
@@ -539,6 +568,14 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/blocker-actions" description="Record structured blocker follow-up or escalation workflow details for a blocked task." />
+          <CodeBlock>{`{
+  "action": "follow_up",
+  "next_action": "Ping upstream owner with exact missing decision",
+  "owner": "Alpha",
+  "due_at": "2026-04-29T12:00:00Z"
+}`}</CodeBlock>
+          <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/attachments" description="List task attachment metadata with signed download URLs." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/attachments" description="Upload a task artifact via multipart form-data (`file` required; optional `note`, `run_id`, `checkpoint_id`)." />
@@ -559,6 +596,8 @@ signature = HMAC-SHA256(signing_secret, message)
   "metadata": { "worker": "ingest-1" }
 }`}</CodeBlock>
 
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/runs/:rid" description="Get a specific execution run with owner, delegation/escalation metadata, and latest state." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="PATCH" path="/api/v1/projects/:id/tasks/:tid/runs/:rid" description="Heartbeat/update/complete/fail/cancel an execution run. Only the run owner or project owner may mutate it." />
           <CodeBlock>{`{
