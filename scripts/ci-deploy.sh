@@ -2,11 +2,24 @@
 set -e
 cd /root/projects/a2a-comms
 
-# Load build/runtime variables for direct docker build/run paths. docker compose
-# reads .env automatically, but the blue/green web deploy below does not.
-set -a
-source .env
-set +a
+# Read .env values without sourcing the file. Some values are intentionally not
+# shell syntax (for example email display names), and sourcing made deploys fail
+# before the new image was built.
+env_value() {
+  python3 - "$1" <<'PY'
+import sys
+key = sys.argv[1]
+with open('.env', 'r', encoding='utf-8') as f:
+    for raw in f:
+        line = raw.rstrip('\n')
+        if not line or line.lstrip().startswith('#') or '=' not in line:
+            continue
+        k, v = line.split('=', 1)
+        if k.strip() == key:
+            print(v)
+            break
+PY
+}
 
 # Pull latest
 git pull origin main 2>&1
@@ -76,12 +89,12 @@ TRAEFIK_CONFIG="/root/traefik/config/a2a-comms.yml"
 
 DOCKER_BUILDKIT=1 docker build \
   --target runner \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
-  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
-  --build-arg SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY}" \
-  --build-arg NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-https://a2a.playground.montytorr.tech}" \
-  --build-arg RESEND_API_KEY="${RESEND_API_KEY}" \
-  --build-arg RESEND_FROM="${RESEND_FROM}" \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL="$(env_value NEXT_PUBLIC_SUPABASE_URL)" \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$(env_value NEXT_PUBLIC_SUPABASE_ANON_KEY)" \
+  --build-arg SUPABASE_SERVICE_ROLE_KEY="$(env_value SUPABASE_SERVICE_ROLE_KEY)" \
+  --build-arg NEXT_PUBLIC_APP_URL="$(env_value NEXT_PUBLIC_APP_URL || true)" \
+  --build-arg RESEND_API_KEY="$(env_value RESEND_API_KEY)" \
+  --build-arg RESEND_FROM="$(env_value RESEND_FROM)" \
   -t "$IMAGE" . >&2 2>&1
 
 # Start the replacement beside the old app. Do not use docker compose for the
