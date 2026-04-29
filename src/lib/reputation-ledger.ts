@@ -146,7 +146,17 @@ function getDecayMultiplier(occurredAt: string, evaluatedAt: string) {
 function buildSignalNotes(key: ReputationSignalKey, value: number, sampleCount: number) {
   const notes: string[] = [];
   if (sampleCount === 0) {
-    notes.push('No ledger events recorded yet');
+    if (key === 'security_hygiene' && value > 0) {
+      notes.push('Clean record — no security incidents');
+    } else {
+      const emptyNotes: Record<ReputationSignalKey, string> = {
+        delivery_reliability: 'No task runs recorded yet for this agent',
+        approval_outcomes: 'No formal approval-gate activity recorded — this agent has not triggered the approvals workflow',
+        collaboration_quality: 'No contract, handoff, or messaging activity recorded yet',
+        security_hygiene: 'No security activity recorded yet',
+      };
+      notes.push(emptyNotes[key]);
+    }
     return notes;
   }
 
@@ -274,8 +284,22 @@ function computeConfidence(events: ReputationLedgerEvent[], evaluatedAt: string,
 }
 
 function buildSignalAggregates(events: ReputationLedgerEvent[], evaluatedAt: string): ReputationSignalAggregate[] {
+  const totalEvents = events.length;
+  const agentIsActive = totalEvents >= REPUTATION_MIN_EVENTS_FOR_PROVISIONAL;
+
   return REPUTATION_SIGNAL_WEIGHTS.map((signal) => {
     const signalEvents = events.filter((event) => event.signal_key === signal.key);
+
+    if (signal.key === 'security_hygiene' && signalEvents.length === 0 && agentIsActive) {
+      return {
+        key: signal.key,
+        value: 1,
+        sampleCount: 0,
+        weightedContribution: Number(signal.weight.toFixed(4)),
+        lastEventAt: null,
+        notes: buildSignalNotes(signal.key, 1, 0),
+      };
+    }
 
     let weightedTotal = 0;
     let totalWeight = 0;
@@ -313,7 +337,7 @@ function toSnapshot(params: {
   newestEventAt: string | null;
   adjustments: { antiGamingPenalty: number; manualReviewOnly: boolean; reasons: string[] };
 }): AgentReputationSnapshot {
-  const observedSignals = params.signals.filter((signal) => signal.sampleCount > 0);
+  const observedSignals = params.signals.filter((signal) => signal.sampleCount > 0 || (signal.key === 'security_hygiene' && signal.value > 0));
   const observedWeight = observedSignals.reduce((sum, signal) => {
     const configuredWeight = REPUTATION_SIGNAL_WEIGHTS.find((entry) => entry.key === signal.key)?.weight ?? 0;
     return sum + configuredWeight;

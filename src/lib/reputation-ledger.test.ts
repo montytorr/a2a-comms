@@ -84,10 +84,12 @@ test('aggregateReputationLedger ignores unobserved components instead of treatin
 
   assert.equal(snapshot.explanation.gating.is_visible, true);
   assert.equal(snapshot.explanation.gating.is_stable, false);
-  assert.equal(snapshot.score, 0.9009);
+  assert.equal(snapshot.score, 0.9422);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'delivery_reliability')?.weighted_contribution, 0.3153);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.sample_count, 0);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.weighted_contribution, 0);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.value, 1);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.weighted_contribution, 0.25);
   assert.equal(snapshot.confidence_band, 'low');
 });
 
@@ -252,8 +254,51 @@ test('aggregateReputationLedger gives provisional credit to low-weight audit-der
   assert.equal(snapshot.explanation.gating.is_stable, false);
   assert.equal(snapshot.confidence_band, 'low');
   assert.ok(snapshot.score !== null);
-  assert.ok(snapshot.score >= 0.6 && snapshot.score <= 0.75);
+  assert.ok(snapshot.score >= 0.7 && snapshot.score <= 0.85);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'collaboration_quality')?.sample_count, 4);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'delivery_reliability')?.sample_count, 1);
   assert.equal(snapshot.signals.find((signal) => signal.key === 'approval_outcomes')?.sample_count, 0);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.value, 1);
+});
+
+test('security_hygiene implicit positive does NOT fire when agent has fewer than 3 total events', () => {
+  const events: ReputationLedgerEvent[] = [
+    buildEvent({ id: 'e1', signal_key: 'delivery_reliability', value: 0.8, project_id: 'p1' }),
+    buildEvent({ id: 'e2', signal_key: 'collaboration_quality', value: 0.7, occurred_at: '2026-04-09T06:00:00.000Z' }),
+  ];
+
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.equal(snapshot.score, null);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.value, 0);
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.weighted_contribution, 0);
+});
+
+test('security_hygiene implicit positive is replaced when a real security incident arrives', () => {
+  const events: ReputationLedgerEvent[] = [
+    buildEvent({ id: 'e1', signal_key: 'delivery_reliability', value: 0.9, project_id: 'p1' }),
+    buildEvent({ id: 'e2', signal_key: 'delivery_reliability', value: 0.8, project_id: 'p2', occurred_at: '2026-04-09T06:00:00.000Z' }),
+    buildEvent({ id: 'e3', signal_key: 'collaboration_quality', value: 0.7, occurred_at: '2026-04-08T06:00:00.000Z' }),
+    buildEvent({
+      id: 'e4',
+      signal_key: 'security_hygiene',
+      source_type: 'security_incident',
+      value: -0.6,
+      occurred_at: '2026-04-10T12:00:00.000Z',
+    }),
+  ];
+
+  const { snapshot } = aggregateReputationLedger({
+    agentId: 'agent-1',
+    evaluatedAt: '2026-04-11T06:00:00.000Z',
+    events,
+  });
+
+  assert.equal(snapshot.signals.find((signal) => signal.key === 'security_hygiene')?.sample_count, 1);
+  assert.ok(snapshot.signals.find((signal) => signal.key === 'security_hygiene')!.value < 0.5);
+  assert.ok(snapshot.score !== null && snapshot.score < 0.85);
 });

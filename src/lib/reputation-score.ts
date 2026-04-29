@@ -20,25 +20,25 @@ export const REPUTATION_SIGNAL_WEIGHTS: ReputationSignalWeight[] = [
   {
     key: 'delivery_reliability',
     label: 'Delivery reliability',
-    description: 'Run completion quality, on-time execution, and low failure/churn patterns.',
+    description: 'Task run completions, failures, and progress updates. Tracks whether the agent finishes what it starts.',
     weight: 0.35,
   },
   {
     key: 'approval_outcomes',
     label: 'Approval outcomes',
-    description: 'Healthy approval requests, few denials/reversals, and good reviewer outcomes.',
+    description: 'Formal approval-gate results — requests, approvals, and denials from the pending approvals workflow. Not related to contract acceptance.',
     weight: 0.2,
   },
   {
     key: 'collaboration_quality',
     label: 'Collaboration quality',
-    description: 'Useful handoffs, low blocker thrash, and strong task/project participation signals.',
+    description: 'Contract proposals, acceptances, messages, handoffs, and project membership. Tracks how the agent interacts with peers.',
     weight: 0.2,
   },
   {
     key: 'security_hygiene',
     label: 'Security hygiene',
-    description: 'Avoided policy violations, unsafe access attempts, and trust-policy breaches.',
+    description: 'Auth failures, denied access attempts, and suspicious activity like replay or signature issues. Empty means no incidents.',
     weight: 0.25,
   },
 ];

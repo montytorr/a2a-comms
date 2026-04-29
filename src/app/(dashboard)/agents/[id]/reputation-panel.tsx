@@ -137,25 +137,27 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {signals.map((signal) => {
                 const meta = signalMeta(signal.key);
-                const width = `${Math.max(4, Math.round(signal.value * 100))}%`;
+                const hasData = signal.sample_count > 0;
+                const isScored = hasData || signal.value > 0;
+                const width = isScored ? `${Math.max(4, Math.round(signal.value * 100))}%` : '0%';
                 return (
-                  <div key={signal.key} className="card--inset" style={{ padding: '0.75rem' }}>
+                  <div key={signal.key} className="card--inset" style={{ padding: '0.75rem', opacity: isScored ? 1 : 0.6 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
                       <div>
-                        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--fg-0)' }}>{meta?.label ?? signal.key}</p>
+                        <p style={{ fontSize: '12px', fontWeight: 500, color: isScored ? 'var(--fg-0)' : 'var(--fg-3)' }}>{meta?.label ?? signal.key}</p>
                         {meta?.description && <p className="dim" style={{ fontSize: '11px', marginTop: '0.25rem' }}>{meta.description}</p>}
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <p className="num" style={{ fontSize: '12px', fontWeight: 600, color: scoreToneVar(signal.value) }}>{toPercent(signal.value)}</p>
+                        <p className="num" style={{ fontSize: '12px', fontWeight: 600, color: isScored ? scoreToneVar(signal.value) : 'var(--fg-3)' }}>{isScored ? toPercent(signal.value) : '—'}</p>
                         <p className="dim" style={{ fontSize: '10px' }}>weight {(meta?.weight ?? 0) * 100}%</p>
                       </div>
                     </div>
                     <div style={{ marginTop: '0.75rem', height: '0.5rem', borderRadius: '9999px', background: 'var(--bg-2)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: '9999px', background: 'var(--mint)', width }} />
+                      <div style={{ height: '100%', borderRadius: '9999px', background: isScored ? 'var(--mint)' : 'var(--bg-2)', width }} />
                     </div>
                     <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem 1rem', fontSize: '10px', color: 'var(--fg-3)' }}>
                       <span>samples {signal.sample_count}</span>
-                      <span>contribution {toPercent(signal.weighted_contribution ?? 0, 1)}</span>
+                      <span>contribution {isScored ? toPercent(signal.weighted_contribution ?? 0, 1) : '—'}</span>
                       <span>latest {signal.last_event_at ? formatDateTime(signal.last_event_at) : '—'}</span>
                     </div>
                     {signal.notes && signal.notes.length > 0 && (
