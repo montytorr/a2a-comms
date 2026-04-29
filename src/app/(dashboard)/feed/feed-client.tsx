@@ -120,10 +120,11 @@ const messageToEvent = (row: Record<string, unknown>): FeedEvent => {
 const contractToEvent = (row: Record<string, unknown>, eventType: string): FeedEvent => {
   const proposer = row.proposer as Record<string, unknown> | null;
   const id = toId(row.id);
+  const timestamp = (row.updated_at || row.created_at) as string;
   return {
-    id: `contract-${row.id}-${Date.now()}`,
+    id: `contract-${row.id}-${timestamp}`,
     type: 'contract',
-    timestamp: (row.updated_at || row.created_at) as string,
+    timestamp,
     actor: (proposer?.display_name as string) || (proposer?.name as string) || 'system',
     summary: `Contract "${row.title}" ${eventType === 'INSERT' ? 'created' : 'updated'} — ${row.status}`,
     link: id ? `/contracts/${id}` : undefined,
@@ -227,9 +228,36 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     });
   }, []);
 
+  const mergeHistory = useCallback((history: FeedEvent[]) => {
+    if (pausedRef.current || history.length === 0) return;
+    setEvents(prev => {
+      const existingIds = new Set(prev.map(e => e.id));
+      const unseen = history.filter(e => !existingIds.has(e.id));
+      if (unseen.length === 0) return prev;
+      const merged = [
+        ...unseen.map(e => ({ ...e, isNew: true })),
+        ...prev,
+      ];
+      merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return merged.slice(0, PAGE_SIZE * 3);
+    });
+  }, []);
+
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
+
+  useEffect(() => {
+    if (!hasAccess) return;
+
+    const interval = window.setInterval(async () => {
+      if (pausedRef.current) return;
+      const latest = await loadHistory(0);
+      mergeHistory(latest);
+    }, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [hasAccess, loadHistory, mergeHistory]);
 
   useEffect(() => {
     const supabase = getSupabase();

@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.259] - 2026-04-29
+### Fixed
+- keep live feed fresh with a polling fallback when realtime subscriptions miss events
+
 ## [1.0.258] - 2026-04-29
 ### Docs
 - align A2A API and guide coverage
