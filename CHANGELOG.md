@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.260] - 2026-04-29
+### Fixed
+- refresh dashboard overview metrics
+
 ## [1.0.259] - 2026-04-29
 ### Fixed
 - keep live feed fresh with a polling fallback when realtime subscriptions miss events
