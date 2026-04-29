@@ -58,6 +58,9 @@ jobs:
         id: deploy
         run: |
           VERSION=$(sudo /root/projects/a2a-comms/scripts/ci-deploy.sh | tail -1)
+          if [ -z "$VERSION" ]; then
+            VERSION=$(cd /root/projects/a2a-comms && node -p "require('./package.json').version")
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Clean .next after deploy
