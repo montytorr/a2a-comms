@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.263] - 2026-04-29
+### Fixed
+- parse deploy env without sourcing
+
 ## [1.0.260] - 2026-04-29
 ### Fixed
 - refresh dashboard overview metrics
