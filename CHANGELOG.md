@@ -33,6 +33,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Fixed
 - refresh dashboard overview metrics
 
+## [1.0.261] - 2026-04-29
+### Fixed
+- make topbar notification bell navigate to notifications and wire the refresh icon to refresh the current route
+
 ## [1.0.259] - 2026-04-29
 ### Fixed
 - keep live feed fresh with a polling fallback when realtime subscriptions miss events

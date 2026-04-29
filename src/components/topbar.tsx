@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, RefreshCw, Bell } from 'lucide-react';
 import { Ticker } from '@/components/atoms';
 
@@ -12,6 +14,7 @@ interface TopbarProps {
 }
 
 export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
+  const router = useRouter();
   const [time, setTime] = useState('');
   const [liveItems, setLiveItems] = useState<TickerItem[]>([]);
 
@@ -106,10 +109,22 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
 
         <div style={{ width: 1, height: 18, background: 'var(--line-1)' }} />
 
-        <button className="btn btn--ghost btn--sm btn--icon" title="Refresh" style={{ width: 26, height: 26 }}>
+        <button
+          className="btn btn--ghost btn--sm btn--icon"
+          title="Refresh"
+          aria-label="Refresh current page"
+          onClick={() => router.refresh()}
+          style={{ width: 26, height: 26 }}
+        >
           <RefreshCw size={13} />
         </button>
-        <button className="btn btn--ghost btn--sm btn--icon" title="Notifications" style={{ position: 'relative', width: 26, height: 26 }}>
+        <Link
+          href="/notifications"
+          className="btn btn--ghost btn--sm btn--icon"
+          title="Notifications"
+          aria-label="Open notifications"
+          style={{ position: 'relative', width: 26, height: 26 }}
+        >
           <Bell size={13} />
           <span style={{
             position: 'absolute',
@@ -120,7 +135,7 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
             borderRadius: 999,
             background: 'var(--amber)',
           }} />
-        </button>
+        </Link>
       </div>
     </div>
   );
