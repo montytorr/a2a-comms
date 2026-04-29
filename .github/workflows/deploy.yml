@@ -57,9 +57,11 @@ jobs:
       - name: Deploy
         id: deploy
         run: |
+          set -o pipefail
           VERSION=$(sudo /root/projects/a2a-comms/scripts/ci-deploy.sh | tail -1)
           if [ -z "$VERSION" ]; then
-            VERSION=$(cd /root/projects/a2a-comms && node -p "require('./package.json').version")
+            echo "ci-deploy.sh completed but did not emit a version" >&2
+            exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
