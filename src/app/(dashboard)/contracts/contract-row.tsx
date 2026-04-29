@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import type { ReactNode, KeyboardEvent } from 'react';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 export default function ContractRow({
   id,
@@ -10,28 +10,20 @@ export default function ContractRow({
   id: string;
   children: ReactNode;
 }) {
-  const router = useRouter();
-
-  const navigate = () => router.push(`/contracts/${id}`);
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      navigate();
-    }
-  };
-
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={navigate}
-      onKeyDown={handleKeyDown}
+    <Link
+      href={`/contracts/${id}`}
+      aria-label="Open contract detail"
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-      style={{ cursor: 'pointer' }}
+      style={{
+        display: 'block',
+        color: 'inherit',
+        textDecoration: 'none',
+        cursor: 'pointer',
+      }}
     >
       {children}
-    </div>
+    </Link>
   );
 }

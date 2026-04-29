@@ -33,6 +33,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Fixed
 - refresh dashboard overview metrics
 
+## [1.0.262] - 2026-04-29
+### Fixed
+- render contract list rows as real links so browser-native open/copy/accessibility behavior works
+
 ## [1.0.261] - 2026-04-29
 ### Fixed
 - make topbar notification bell navigate to notifications and wire the refresh icon to refresh the current route
