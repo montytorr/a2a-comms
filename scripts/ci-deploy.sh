@@ -2,6 +2,12 @@
 set -e
 cd /root/projects/a2a-comms
 
+# Load build/runtime variables for direct docker build/run paths. docker compose
+# reads .env automatically, but the blue/green web deploy below does not.
+set -a
+source .env
+set +a
+
 # Pull latest
 git pull origin main 2>&1
 
@@ -62,22 +68,86 @@ git diff --cached --quiet || {
   git push origin main
 }
 
-# Stop and remove existing containers to avoid name conflicts
-docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans 2>&1 || true
-# Fallback: force-remove if compose down missed it (project name mismatch edge case)
-docker rm -f a2a-comms 2>/dev/null || true
-docker rm -f a2a-webhook-worker 2>/dev/null || true
-docker rm -f a2a-invitation-sweep-worker 2>/dev/null || true
-docker rm -f a2a-stale-blocker-sweep-worker 2>/dev/null || true
-docker rm -f a2a-webhook-receiver 2>/dev/null || true
+# Build web image before touching the live container. This keeps the current
+# production app serving while the replacement image is compiled.
+IMAGE="a2a-comms-a2a-comms:v$NEW_VERSION"
+NEW_CONTAINER="a2a-comms-v${NEW_VERSION//./-}"
+TRAEFIK_CONFIG="/root/traefik/config/a2a-comms.yml"
 
-# Build and deploy with prod overlay (output to stderr so it doesn't pollute version capture)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache >&2 2>&1
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d >&2 2>&1
+DOCKER_BUILDKIT=1 docker build \
+  --target runner \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+  --build-arg SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY}" \
+  --build-arg NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-https://a2a.playground.montytorr.tech}" \
+  --build-arg RESEND_API_KEY="${RESEND_API_KEY}" \
+  --build-arg RESEND_FROM="${RESEND_FROM}" \
+  -t "$IMAGE" . >&2 2>&1
 
-# Health check
-sleep 8
-curl -sf http://localhost:3700/api/v1/health > /dev/null 2>&1 && echo "OK: v$NEW_VERSION" >&2 || (echo "FAIL" >&2 && exit 1)
+# Start the replacement beside the old app. Do not use docker compose for the
+# web container here: compose recreates the fixed container_name and causes 502s.
+docker rm -f "$NEW_CONTAINER" >/dev/null 2>&1 || true
+docker run -d \
+  --name "$NEW_CONTAINER" \
+  --restart unless-stopped \
+  --env-file .env \
+  --network trading-v2-network \
+  --network-alias a2a-comms-next \
+  "$IMAGE" >/dev/null
+
+# Wait for the replacement container itself to be healthy before switching Traefik.
+for i in {1..40}; do
+  if docker exec "$NEW_CONTAINER" wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1; then
+    break
+  fi
+  if [[ "$i" == "40" ]]; then
+    docker logs --tail=120 "$NEW_CONTAINER" >&2 || true
+    docker rm -f "$NEW_CONTAINER" >/dev/null 2>&1 || true
+    echo "FAIL: replacement container did not become healthy" >&2
+    exit 1
+  fi
+  sleep 2
+done
+
+# Atomically point Traefik at the healthy replacement. Traefik's file provider
+# reloads this dynamic config without restarting the proxy.
+python3 - "$TRAEFIK_CONFIG" "$NEW_CONTAINER" <<'PY'
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+container = sys.argv[2]
+text = path.read_text()
+new = re.sub(r'url: "http://a2a-comms(?:-v[0-9-]+)?:3000"', f'url: "http://{container}:3000"', text)
+if new == text:
+    raise SystemExit('Traefik a2a-comms service URL not found')
+tmp = path.with_suffix(path.suffix + '.tmp')
+tmp.write_text(new)
+tmp.replace(path)
+PY
+
+# Verify through the public/proxy path before removing the old app.
+for i in {1..20}; do
+  if curl -sf https://a2a.playground.montytorr.tech/api/v1/health >/dev/null 2>&1; then
+    echo "OK: v$NEW_VERSION" >&2
+    break
+  fi
+  if [[ "$i" == "20" ]]; then
+    echo "FAIL: public health check did not recover after Traefik switch" >&2
+    exit 1
+  fi
+  sleep 2
+done
+
+# Remove prior web app containers only after the new one is live. Leave workers
+# and webhook receiver running; update worker images separately without dropping
+# the public web route.
+for old in $(docker ps -a --format '{{.Names}}' | grep -E '^a2a-comms($|-v[0-9-]+)' | grep -v "^${NEW_CONTAINER}$" || true); do
+  docker rm -f "$old" >/dev/null 2>&1 || true
+done
+
+# Rebuild/recreate background workers. This can restart worker processes, but it
+# no longer removes the public web container or webhook receiver.
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker >&2 2>&1
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps webhook-worker invitation-sweep-worker stale-blocker-sweep-worker a2a-webhook-receiver >&2 2>&1
 
 # Export version for CI (MUST be the only stdout line — workflow captures this via tail -1)
 echo "$NEW_VERSION"
