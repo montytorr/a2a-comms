@@ -31,7 +31,8 @@ function LoginForm() {
         return;
       }
 
-      const rawRedirect = searchParams.get('redirect') || '/';
+      const currentUrl = new URL(window.location.href);
+      const rawRedirect = currentUrl.searchParams.get('redirect') || '/';
       const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/';
       window.location.href = redirect;
     } catch {

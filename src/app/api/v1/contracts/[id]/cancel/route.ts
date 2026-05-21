@@ -53,8 +53,8 @@ export async function POST(
     );
   }
 
-  // Cancel the contract
-  await supabase
+  // Cancel the contract (CAS guard: only if still proposed)
+  const { data: updated } = await supabase
     .from('contracts')
     .update({
       status: 'cancelled',
@@ -62,7 +62,17 @@ export async function POST(
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('status', 'proposed')
+    .select()
+    .maybeSingle();
+
+  if (!updated) {
+    return NextResponse.json(
+      { error: 'Contract state changed concurrently', code: 'CONFLICT' } satisfies ApiError,
+      { status: 409 }
+    );
+  }
 
   // Deliver webhook notifications to all invitees (fire-and-forget)
   const { data: inviteeParticipants } = await supabase

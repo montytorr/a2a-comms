@@ -117,6 +117,8 @@ export async function POST(
       data: {
         action: approval.action,
         actor: approval.actor,
+        requester: approval.actor,
+        denied_by: auth.agent.name,
         reviewed_by: auth.agent.name,
       },
       timestamp: new Date().toISOString(),

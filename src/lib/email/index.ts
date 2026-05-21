@@ -113,9 +113,9 @@ export async function shouldSendEmail(userId: string, template: string): Promise
     if (!data) return true;
 
     return (data as unknown as Record<string, boolean>)[column] !== false;
-  } catch {
-    // On any error, default to sending
-    return true;
+  } catch (err) {
+    console.error('[email] Notification preference lookup failed, suppressing send:', err instanceof Error ? err.message : err);
+    return false;
   }
 }
 
@@ -238,13 +238,13 @@ export async function sendStaleBlockerEmail(
   props: {
     taskTitle: string;
     projectName: string;
-    blockerSummary?: string;
-    escalationReason?: string;
-    actedBy?: string;
+    blockerSummary: string;
+    escalationReason: string;
+    actedBy: string;
     blockerOwner?: string;
     nextAction?: string;
     followUpAt?: string;
-    taskUrl?: string;
+    taskUrl: string;
   },
   userId?: string
 ): Promise<SendEmailResult> {

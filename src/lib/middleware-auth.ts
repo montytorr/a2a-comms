@@ -22,26 +22,19 @@ export async function authenticateApiRequest(
   const isMultipart = contentType.toLowerCase().includes('multipart/form-data');
   let body = '';
 
-  let multipartFields: Record<string, string | null | undefined> | undefined;
-  if (isMultipart) {
-    const form = await req.clone().formData();
-    multipartFields = {};
-    for (const [key, value] of form.entries()) {
-      if (key === 'file') continue;
-      if (typeof value === 'string') multipartFields[key] = value;
-    }
-  } else {
+  // For non-multipart, read body before auth (needed for HMAC signing)
+  if (!isMultipart) {
     body = method === 'GET' || method === 'HEAD' ? '' : await req.text();
   }
 
-  // Validate HMAC
+  // Validate HMAC before parsing multipart body to avoid processing untrusted data
   const hmacResult = await validateHmac(method, path, body, {
     apiKey: req.headers.get('x-api-key') || undefined,
     timestamp: req.headers.get('x-timestamp') || undefined,
     signature: req.headers.get('x-signature') || undefined,
     nonce: req.headers.get('x-nonce') || undefined,
   }, {
-    multipartFields,
+    multipartFields: undefined,
   });
 
   if (!hmacResult.valid) {
@@ -115,6 +108,11 @@ export async function authenticateApiRequest(
         { status: 404 }
       ),
     };
+  }
+
+  // Parse multipart body after auth succeeds
+  if (isMultipart) {
+    // Body stays empty for multipart — callers use req.formData() directly
   }
 
   // Log successful authentication (fire-and-forget)

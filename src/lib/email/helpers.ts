@@ -5,14 +5,13 @@ import { createServerClient } from '@/lib/supabase/server';
  * Uses Supabase auth.admin (requires service role key).
  */
 export async function getUserEmail(userId: string): Promise<string | null> {
-  try {
-    const supabase = createServerClient();
-    const { data, error } = await supabase.auth.admin.getUserById(userId);
-    if (error || !data?.user?.email) return null;
-    return data.user.email;
-  } catch {
-    return null;
+  const supabase = createServerClient();
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  if (error) {
+    throw new Error(`Failed to look up user email for ${userId}: ${error.message}`);
   }
+  if (!data?.user?.email) return null;
+  return data.user.email;
 }
 
 /**
@@ -20,26 +19,26 @@ export async function getUserEmail(userId: string): Promise<string | null> {
  * Returns array of { email, userId } for notification targeting.
  */
 export async function getSuperAdminEmails(): Promise<Array<{ email: string; userId: string }>> {
-  try {
-    const supabase = createServerClient();
-    const { data: admins } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('is_super_admin', true);
+  const supabase = createServerClient();
+  const { data: admins, error } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('is_super_admin', true);
 
-    if (!admins || admins.length === 0) return [];
-
-    const results: Array<{ email: string; userId: string }> = [];
-    for (const admin of admins) {
-      const email = await getUserEmail(admin.id);
-      if (email) {
-        results.push({ email, userId: admin.id });
-      }
-    }
-    return results;
-  } catch {
-    return [];
+  if (error) {
+    throw new Error(`Failed to fetch super admin profiles: ${error.message}`);
   }
+
+  if (!admins || admins.length === 0) return [];
+
+  const results: Array<{ email: string; userId: string }> = [];
+  for (const admin of admins) {
+    const email = await getUserEmail(admin.id);
+    if (email) {
+      results.push({ email, userId: admin.id });
+    }
+  }
+  return results;
 }
 
 /**
@@ -47,23 +46,23 @@ export async function getSuperAdminEmails(): Promise<Array<{ email: string; user
  * Returns { email, userId } or null if agent has no owner or owner has no email.
  */
 export async function getAgentOwnerEmail(agentName: string): Promise<{ email: string; userId: string } | null> {
-  try {
-    const supabase = createServerClient();
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('owner_user_id')
-      .eq('name', agentName)
-      .single();
+  const supabase = createServerClient();
+  const { data: agent, error } = await supabase
+    .from('agents')
+    .select('owner_user_id')
+    .eq('name', agentName)
+    .single();
 
-    if (!agent?.owner_user_id) return null;
-
-    const email = await getUserEmail(agent.owner_user_id);
-    if (!email) return null;
-
-    return { email, userId: agent.owner_user_id };
-  } catch {
-    return null;
+  if (error) {
+    throw new Error(`Failed to look up agent owner for ${agentName}: ${error.message}`);
   }
+
+  if (!agent?.owner_user_id) return null;
+
+  const email = await getUserEmail(agent.owner_user_id);
+  if (!email) return null;
+
+  return { email, userId: agent.owner_user_id };
 }
 
 /**

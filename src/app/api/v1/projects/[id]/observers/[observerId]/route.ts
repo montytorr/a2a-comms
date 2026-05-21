@@ -40,6 +40,21 @@ export async function PATCH(
     );
   }
 
+  if (parsed.note !== undefined && parsed.note !== null) {
+    if (typeof parsed.note !== 'string') {
+      return NextResponse.json(
+        { error: 'note must be a string', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 },
+      );
+    }
+    if (parsed.note.length > 2000) {
+      return NextResponse.json(
+        { error: 'note must be 2000 characters or fewer', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 },
+      );
+    }
+  }
+
   const supabase = createServerClient();
   const { data: observer, error } = await supabase
     .from('project_observers')

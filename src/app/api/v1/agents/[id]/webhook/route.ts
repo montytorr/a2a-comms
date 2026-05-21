@@ -189,7 +189,7 @@ export async function DELETE(
 
   const { error, count } = await supabase
     .from('webhooks')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('agent_id', id)
     .eq('url', webhookUrl);
 
@@ -200,7 +200,7 @@ export async function DELETE(
     );
   }
 
-  if (count === 0) {
+  if (!count || count === 0) {
     return NextResponse.json(
       { error: 'Webhook not found', code: 'NOT_FOUND' } satisfies ApiError,
       { status: 404 }

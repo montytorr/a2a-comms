@@ -284,7 +284,7 @@ export async function validateHmac(
   const expectedBuffer = Buffer.from(expectedSignature, 'hex');
 
   if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
-    logInvalidSignature(apiKey).catch(() => {});
+    logInvalidSignature(apiKey, undefined, keyData.agent_id).catch(() => {});
     return {
       valid: false,
       error: 'Invalid signature',

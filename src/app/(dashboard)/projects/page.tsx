@@ -130,6 +130,7 @@ async function renderProjectsPage({
   historyMine,
   projectAccessById,
   user,
+  auth,
 }: {
   userIsSuperAdmin: boolean;
   supabase: ReturnType<typeof createServerClient>;
@@ -220,8 +221,8 @@ async function renderProjectsPage({
     for (const projectId of projectIds) {
       const access = projectAccessById[projectId];
       const visibility = applyProjectInvitationVisibility(invitationBuckets.get(projectId) || [], {
-        trust_tier: activeUser.trustTier || 'external',
-        trust_policy: activeUser.trustPolicy || null,
+        trust_tier: auth?.trustTier || (activeUser.trustTier as 'internal' | 'partner' | 'external') || 'external',
+        trust_policy: auth?.trustPolicy || activeUser.trustPolicy || null,
       }, {
         treatAsObserver: access?.treatInvitationsAsObserverSummary ?? false,
         includeObserverSummary: true,

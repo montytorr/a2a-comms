@@ -11,20 +11,35 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [linkInvalid, setLinkInvalid] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const supabase = createBrowserClient();
+    let settled = false;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true);
+      if (event === 'PASSWORD_RECOVERY') {
+        settled = true;
+        setReady(true);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
+      if (session) {
+        settled = true;
+        setReady(true);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    const timeout = setTimeout(() => {
+      if (!settled) setLinkInvalid(true);
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +82,13 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="card" style={{ padding: 28 }}>
-          {!ready ? (
+          {linkInvalid ? (
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <div className="pill pill--rose" style={{ height: 'auto', padding: '10px 14px', fontSize: 13 }}>
+                This password reset link is invalid or has expired. Please request a new one.
+              </div>
+            </div>
+          ) : !ready ? (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <span className="dot dot--amber pulse" />
               <div className="dim" style={{ fontSize: 12, marginTop: 12 }}>Verifying reset link…</div>

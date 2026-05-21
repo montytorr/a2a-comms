@@ -810,7 +810,7 @@ async function getDerivedReputationLedgerEvents(agentId: string) {
     supabase
       .from('audit_log')
       .select('id, actor, action, resource_type, resource_id, details, created_at')
-      .or(agentName ? `actor.eq.${agentName},details->>original_actor.eq.${agentName}` : `actor.eq.__never__`)
+      .or(agentName ? `actor.eq.${agentName},details->>original_actor.eq.${agentName},details->>agent_id.eq.${agentId}` : `details->>agent_id.eq.${agentId}`)
       .in('action', [
         'approval.requested',
         'approval.approved',

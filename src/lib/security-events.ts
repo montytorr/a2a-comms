@@ -80,7 +80,7 @@ export async function logSecurityEvent(params: SecurityEventParams): Promise<voi
   const severity = getSeverity(params.event);
   const supabase = createServerClient();
 
-  await supabase.from('audit_log').insert({
+  const { error } = await supabase.from('audit_log').insert({
     actor: params.actor,
     action: params.event,
     resource_type: params.resourceType || null,
@@ -92,6 +92,10 @@ export async function logSecurityEvent(params: SecurityEventParams): Promise<voi
     },
     ip_address: params.ipAddress || null,
   });
+
+  if (error) {
+    console.error(`[security-events] Failed to persist ${params.event}: ${error.message}`);
+  }
 }
 
 // ── Convenience functions ──
@@ -107,11 +111,11 @@ export async function logAuthSuccess(keyId: string, agentName: string, ip?: stri
   });
 }
 
-export async function logAuthFailure(keyId: string | undefined, reason: string, code: string, ip?: string): Promise<void> {
+export async function logAuthFailure(keyId: string | undefined, reason: string, code: string, ip?: string, agentName?: string, agentId?: string): Promise<void> {
   await logSecurityEvent({
     event: 'auth.failure',
-    actor: keyId || 'unknown',
-    details: { reason, code, key_id: keyId },
+    actor: agentName || keyId || 'unknown',
+    details: { reason, code, key_id: keyId, original_actor: agentName || null, agent_id: agentId || null },
     ipAddress: ip,
   });
 }
@@ -153,20 +157,20 @@ export async function logWebhookDisabled(webhookId: string, agentId: string, url
   });
 }
 
-export async function logReplayDetected(nonce: string, keyId: string | undefined, ip?: string): Promise<void> {
+export async function logReplayDetected(nonce: string, keyId: string | undefined, ip?: string, agentId?: string): Promise<void> {
   await logSecurityEvent({
     event: 'suspicious.replay_detected',
     actor: keyId || 'unknown',
-    details: { nonce, key_id: keyId },
+    details: { nonce, key_id: keyId, agent_id: agentId || null },
     ipAddress: ip,
   });
 }
 
-export async function logInvalidSignature(keyId: string | undefined, ip?: string): Promise<void> {
+export async function logInvalidSignature(keyId: string | undefined, ip?: string, agentId?: string): Promise<void> {
   await logSecurityEvent({
     event: 'suspicious.invalid_signature',
     actor: keyId || 'unknown',
-    details: { key_id: keyId },
+    details: { key_id: keyId, agent_id: agentId || null },
     ipAddress: ip,
   });
 }

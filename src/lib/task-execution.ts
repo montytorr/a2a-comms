@@ -381,10 +381,12 @@ export async function appendTaskCheckpoint(input: {
       summary: input.summary ?? null,
     })
     .eq('id', input.runId)
+    .eq('checkpoint_count', existingRun.checkpoint_count)
     .select()
-    .single();
+    .maybeSingle();
 
-  if (updateError || !updatedRun) throw updateError;
+  if (updateError) throw updateError;
+  if (!updatedRun) throw new Error('Concurrent checkpoint write conflict — retry');
 
   await syncTaskExecutionSnapshot({
     taskId: input.taskId,

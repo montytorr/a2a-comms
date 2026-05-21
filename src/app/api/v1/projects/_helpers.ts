@@ -39,7 +39,8 @@ export async function getProjectPendingInvitation(projectId: string, agentId: st
     .select('id, status, role, invited_by_agent_id, responded_at, reminder_sent_at, expires_at, created_at, updated_at')
     .eq('project_id', projectId)
     .eq('agent_id', agentId)
-    .single();
+    .eq('status', 'pending')
+    .maybeSingle();
 
   if (!data) return data;
   return normalizeProjectInvitation(data);

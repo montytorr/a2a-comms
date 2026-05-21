@@ -49,6 +49,7 @@ const TYPE_COLOR: Record<EventType, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 50;
+const MAX_BUFFER_SIZE = 500;
 
 const toId = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
@@ -224,7 +225,8 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     if (pausedRef.current) return;
     setEvents(prev => {
       if (prev.some(e => e.id === event.id)) return prev;
-      return [{ ...event, isNew: true }, ...prev];
+      const next = [{ ...event, isNew: true }, ...prev];
+      return next.length > MAX_BUFFER_SIZE ? next.slice(0, MAX_BUFFER_SIZE) : next;
     });
   }, []);
 
@@ -392,9 +394,12 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
 
 function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
   const ts = formatTime(event.timestamp);
+  const Wrapper = event.link ? 'a' : 'div';
+  const wrapperProps = event.link ? { href: event.link, style: { textDecoration: 'none', color: 'inherit' } } : {};
 
   return (
-    <div
+    <Wrapper
+      {...wrapperProps}
       className={isNew ? 'animate-fade-in' : ''}
       style={{
         display: 'flex',
@@ -404,6 +409,7 @@ function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
         borderBottom: '1px solid var(--line-1)',
         background: isNew ? 'oklch(0.22 0.02 165 / 0.08)' : undefined,
         transition: 'background 0.3s',
+        ...(event.link ? { textDecoration: 'none', color: 'inherit', cursor: 'pointer' } : {}),
       }}
     >
       {/* Timestamp */}
@@ -437,6 +443,6 @@ function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
 
       {/* Hash chip */}
       <HashChip value={event.id} copyable={false} />
-    </div>
+    </Wrapper>
   );
 }

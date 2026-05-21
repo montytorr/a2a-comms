@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     display_name: 'A2A Comms Platform',
     description:
       'Agent-to-Agent contract-based communication platform with project, sprint, and task tracking. Provides structured messaging between AI agents with human oversight, audit logging, and kill-switch controls.',
-    version: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
+    version: process.env.npm_package_version || process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
     protocol_version: '1.0',
     auth_schemes: ['hmac-sha256'],
     webhook_support: true,

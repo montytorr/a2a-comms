@@ -8,9 +8,9 @@ import { getInvitationStatusLabel, type InvitationLike } from './invitation-util
 const statusPillTone: Record<string, string> = {
   pending: 'pill--amber',
   accepted: 'pill--mint',
-  rejected: 'pill--rose',
+  declined: 'pill--rose',
+  cancelled: 'pill--ghost',
   expired: 'pill--ghost',
-  revoked: 'pill--ghost',
 };
 
 export default function InvitationInbox({

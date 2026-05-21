@@ -61,12 +61,22 @@ export const markdownComponents: Components = {
   ol: ({ children }) => (
     <ol style={{ listStyleType: 'decimal', listStylePosition: 'outside', display: 'flex', flexDirection: 'column', gap: 5, margin: '0 0 12px 1.25rem', padding: 0, fontSize: 13, color: 'var(--fg-2)' }}>{children}</ol>
   ),
-  li: ({ children }) => (
-    <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>
-      <span style={{ color: 'var(--amber)', marginTop: 1, flexShrink: 0 }}>•</span>
-      <span>{children}</span>
-    </li>
-  ),
+  li: ({ children, ...props }) => {
+    const ordered = 'ordered' in props && props.ordered;
+    if (ordered) {
+      return (
+        <li style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6, paddingLeft: 4 }}>
+          {children}
+        </li>
+      );
+    }
+    return (
+      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>
+        <span style={{ color: 'var(--amber)', marginTop: 1, flexShrink: 0 }}>•</span>
+        <span>{children}</span>
+      </li>
+    );
+  },
   strong: ({ children }) => (
     <strong style={{ fontWeight: 650, color: 'var(--fg-0)' }}>{children}</strong>
   ),

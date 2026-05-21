@@ -123,6 +123,8 @@ export async function POST(req: NextRequest) {
       data: {
         action: parsed.action,
         actor: auth.agent.name,
+        requester: auth.agent.name,
+        details: parsed.details || {},
       },
       timestamp: new Date().toISOString(),
     }).catch(() => {}); // fire-and-forget

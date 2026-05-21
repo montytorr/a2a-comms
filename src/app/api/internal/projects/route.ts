@@ -102,7 +102,11 @@ export async function POST(req: NextRequest) {
 
     if (memErr) {
       console.error('Failed to add members:', memErr);
-      // Project created but members failed — don't fail the whole request
+      await supabase.from('projects').delete().eq('id', project.id);
+      return NextResponse.json(
+        { error: 'Project created but failed to add owner member. The project has been rolled back.' },
+        { status: 500 }
+      );
     }
   }
 
@@ -124,6 +128,10 @@ export async function POST(req: NextRequest) {
 
     if (invitationError) {
       console.error('Failed to create invitations:', invitationError);
+      return NextResponse.json(
+        { error: 'Project created but failed to send invitations. The project exists without pending invitations.', project },
+        { status: 207 }
+      );
     }
   }
 

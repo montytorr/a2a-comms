@@ -1,10 +1,11 @@
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
-import { isAuthorizedReviewer } from '@/lib/approvals';
+import { isAuthorizedReviewer, consumeApproval } from '@/lib/approvals';
 import type { ApiError } from '@/lib/types';
 
 export async function POST(
@@ -117,10 +118,67 @@ export async function POST(
       data: {
         action: approval.action,
         actor: approval.actor,
+        requester: approval.actor,
+        approved_by: auth.agent.name,
         reviewed_by: auth.agent.name,
       },
       timestamp: new Date().toISOString(),
     }).catch(() => {}); // fire-and-forget
+  }
+
+  // Execute side effects for known action types
+  if (approval.action === 'key.rotate') {
+    const details = (approval.details as Record<string, unknown>) || {};
+    const agentId = details.agent_id as string | undefined;
+    const requestedByAgentName = details.requested_by ?? approval.actor;
+    if (agentId && requestedByAgentName === approval.actor) {
+      const consumed = await consumeApproval(id, auth.agent.name);
+      if (consumed) {
+        const { data: currentKeys } = await supabase
+          .from('service_keys')
+          .select('id, key_id, human_owner, label')
+          .eq('agent_id', agentId)
+          .eq('is_active', true);
+
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        for (const key of currentKeys || []) {
+          await supabase
+            .from('service_keys')
+            .update({ expires_at: expiresAt, rotated_at: new Date().toISOString() })
+            .eq('id', key.id);
+        }
+
+        const agentName = (details.agent_name as string) || 'unknown';
+        const keyId = `${agentName}-${Date.now().toString(36)}`;
+        const signingSecret = crypto.randomBytes(32).toString('hex');
+        const keyHash = crypto.createHash('sha256').update(signingSecret).digest('hex');
+        const firstKey = (currentKeys || [])[0];
+
+        await supabase.from('service_keys').insert({
+          key_id: keyId,
+          key_hash: keyHash,
+          signing_secret: signingSecret,
+          agent_id: agentId,
+          human_owner: firstKey?.human_owner ?? null,
+          label: firstKey?.label ? `${firstKey.label} (rotated)` : 'rotated',
+          is_active: true,
+        }).select('id, key_id, label, is_active').single();
+
+        await auditLog({
+          actor: auth.agent.name,
+          action: 'key.rotate.executed',
+          resourceType: 'agent',
+          resourceId: agentId,
+          details: {
+            agent_name: agentName,
+            new_key_id: keyId,
+            old_keys_expiring: (currentKeys || []).map((k) => k.key_id),
+            approval_id: id,
+          },
+          ipAddress: getClientIp(req),
+        });
+      }
+    }
   }
 
   return NextResponse.json(updated);

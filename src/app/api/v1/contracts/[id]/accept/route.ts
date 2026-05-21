@@ -56,15 +56,25 @@ export async function POST(
     );
   }
 
-  // Update participant status
-  await supabase
+  // Update participant status (CAS guard: only if still pending)
+  const { data: updatedParticipant } = await supabase
     .from('contract_participants')
     .update({
       status: 'accepted',
       responded_at: new Date().toISOString(),
     })
     .eq('contract_id', id)
-    .eq('agent_id', auth.agent.id);
+    .eq('agent_id', auth.agent.id)
+    .eq('status', 'pending')
+    .select()
+    .maybeSingle();
+
+  if (!updatedParticipant) {
+    return NextResponse.json(
+      { error: 'Already responded to this contract', code: 'ALREADY_RESPONDED' } satisfies ApiError,
+      { status: 409 }
+    );
+  }
 
   // Check if all participants accepted → activate
   const activated = await activateIfAllAccepted(id);

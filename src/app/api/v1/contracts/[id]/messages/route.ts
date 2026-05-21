@@ -41,7 +41,7 @@ export async function GET(
 
   const url = new URL(req.url);
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-  const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') || '20', 10)));
+  const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || url.searchParams.get('per_page') || '20', 10)));
 
   const supabase = createServerClient();
 
@@ -93,6 +93,7 @@ export async function GET(
     total: count || 0,
     page,
     per_page: perPage,
+    limit: perPage,
   } satisfies PaginatedResponse<MessageResponse>);
 }
 
@@ -213,7 +214,7 @@ export async function POST(
     const validation = validateContent(checked.message_schema, parsed.content);
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error, code: 'SCHEMA_VALIDATION_ERROR', details: 'Message content does not match the contract schema' } satisfies ApiError,
+        { error: validation.error, code: 'SCHEMA_VALIDATION_ERROR', details: validation.issues } satisfies ApiError,
         { status: 400 }
       );
     }

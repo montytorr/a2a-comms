@@ -6,7 +6,7 @@ interface ProgressBarProps {
 }
 
 export const ProgressBar = ({ value, max = 100, color = 'var(--mint)', height = 4 }: ProgressBarProps) => {
-  const pct = Math.min(100, (value / max) * 100);
+  const pct = Math.max(0, Math.min(100, max > 0 ? (value / max) * 100 : 0));
 
   return (
     <div style={{

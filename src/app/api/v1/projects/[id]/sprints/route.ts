@@ -90,17 +90,13 @@ export async function POST(
 
   const supabase = createServerClient();
 
-  // Get next position
-  const { data: existingSprints } = await supabase
+  // Get next position via count (more robust than max+1 under concurrent inserts)
+  const { count } = await supabase
     .from('sprints')
-    .select('position')
-    .eq('project_id', id)
-    .order('position', { ascending: false })
-    .limit(1);
+    .select('id', { count: 'exact', head: true })
+    .eq('project_id', id);
 
-  const nextPosition = existingSprints && existingSprints.length > 0
-    ? existingSprints[0].position + 1
-    : 0;
+  const nextPosition = count ?? 0;
 
   const { data: sprint, error } = await supabase
     .from('sprints')

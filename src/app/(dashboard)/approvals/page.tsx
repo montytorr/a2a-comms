@@ -46,7 +46,20 @@ export default async function ApprovalsPage({
     query = query.eq('status', filter);
   }
 
-  const { data: approvals } = await query;
+  const { data: approvals, error: queryError } = await query;
+  if (queryError) {
+    return (
+      <div style={{ padding: '28px 32px 60px', maxWidth: 800, margin: '0 auto' }}>
+        <div style={{ marginBottom: 32 }}>
+          <h1 className="h1">Approvals</h1>
+        </div>
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load approvals</div>
+          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>A database error occurred. Please try again later.</div>
+        </div>
+      </div>
+    );
+  }
   const rows = (approvals || []) as Array<{
     id: string;
     action: string;

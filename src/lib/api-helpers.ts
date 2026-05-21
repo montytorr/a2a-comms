@@ -129,17 +129,16 @@ export async function auditLog(params: {
 }
 
 /**
- * Parse the request body, handling the case where it was already consumed by auth.
+ * Parse a pre-read body string into JSON.
+ * Use this instead of re-reading req.text() which fails on consumed streams.
  */
-export async function parseBody<T>(req: NextRequest): Promise<T | null> {
+export const parseBody = <T>(body: string): T | null => {
   try {
-    // Clone the request since body may have been consumed
-    const text = await req.text();
-    return text ? JSON.parse(text) : null;
+    return body ? JSON.parse(body) as T : null;
   } catch {
     return null;
   }
-}
+};
 
 /**
  * Get client IP from request.

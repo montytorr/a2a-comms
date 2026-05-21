@@ -62,17 +62,23 @@ async function run() {
       continue;
     }
 
-    const { error: updateError } = await supabase
+    const { data: updateData, error: updateError } = await supabase
       .from('tasks')
       .update({
         blocker_escalated_at: now,
         updated_at: now,
       })
       .eq('id', row.id)
-      .is('blocker_escalated_at', null);
+      .is('blocker_escalated_at', null)
+      .select('id');
 
     if (updateError) {
       log('failed to persist escalation timestamp', { taskId: row.id, error: updateError.message });
+      continue;
+    }
+
+    if (!updateData || updateData.length === 0) {
+      log('skipped already-escalated task', { taskId: row.id });
       continue;
     }
 

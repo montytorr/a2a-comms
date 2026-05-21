@@ -30,10 +30,10 @@ export default function RegisterWebhookPage() {
   }
 
   function generateSecret() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let s = 'whsec_';
-    for (let i = 0; i < 32; i++) s += chars[Math.floor(Math.random() * chars.length)];
-    setSecret(s);
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    setSecret(`whsec_${hex}`);
   }
 
   async function handleSubmit(e: React.FormEvent) {

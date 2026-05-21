@@ -150,7 +150,14 @@ export default async function ContractDetailPage({
   const messageList = ((messages || []) as ContractMessage[]).slice().reverse();
   const { threadMessages, observerNotes } = splitContractMessagesByVisibility(messageList);
   const participants = (contract.contract_participants || []) as ContractParticipant[];
-  const attachments = ((contract as Record<string, unknown>).attachments || []) as Array<Record<string, unknown>>;
+
+  let attachments: Array<Record<string, unknown>> = [];
+  const { data: contractAttachments } = await supabase
+    .from('task_attachments')
+    .select('*')
+    .eq('contract_id', id)
+    .order('created_at', { ascending: false });
+  attachments = (contractAttachments || []) as Array<Record<string, unknown>>;
   const isObserverParticipant = participants.some((p) => auth.agentScope.includes(p.agent?.id || '') && p.role === 'observer');
 
   const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';

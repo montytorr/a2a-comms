@@ -15,6 +15,17 @@ export const Sparkline = ({ data, color = 'currentColor', height = 24, width = 8
   const gradId = `spark-${instanceId.replace(/:/g, '')}`;
 
   if (!data || !data.length) return null;
+
+  if (data.length === 1) {
+    const cy = height / 2;
+    return (
+      <svg width={width} height={height} style={{ display: 'block', overflow: 'visible' }}>
+        <line x1={0} y1={cy} x2={width} y2={cy} stroke={color} strokeWidth="1.4" strokeOpacity="0.3" />
+        <circle cx={width / 2} cy={cy} r="2.2" fill={color} />
+      </svg>
+    );
+  }
+
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;

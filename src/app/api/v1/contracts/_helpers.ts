@@ -120,16 +120,18 @@ export async function activateIfAllAccepted(contractId: string): Promise<boolean
   const allAccepted = participants.every((p) => p.status === 'accepted');
 
   if (allAccepted) {
-    await supabase
+    const { data: activated } = await supabase
       .from('contracts')
       .update({
         status: 'active',
         updated_at: new Date().toISOString(),
       })
       .eq('id', contractId)
-      .eq('status', 'proposed');
+      .eq('status', 'proposed')
+      .select('id')
+      .maybeSingle();
 
-    return true;
+    return !!activated;
   }
 
   return false;

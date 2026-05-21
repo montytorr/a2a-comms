@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
 import { deliverWebhooks } from './webhooks';
 
@@ -321,7 +322,81 @@ export async function approveRequest(
     }).catch(() => {}); // fire-and-forget
   }
 
+  // Auto-execute side effects for known action types
+  if (approval.action === 'key.rotate') {
+    await executeKeyRotationSideEffect(approvalId, reviewerName, approval, supabase);
+  }
+
   return { success: true };
+}
+
+async function executeKeyRotationSideEffect(
+  approvalId: string,
+  reviewerName: string,
+  approval: { details: Record<string, unknown>; actor: string },
+  supabase: ReturnType<typeof createServerClient>,
+) {
+  const agentId = approval.details?.agent_id as string | undefined;
+  if (!agentId) return;
+
+  const { data: targetAgent } = await supabase
+    .from('agents')
+    .select('owner_user_id')
+    .eq('id', agentId)
+    .single();
+  const { data: actorAgent } = await supabase
+    .from('agents')
+    .select('owner_user_id')
+    .eq('name', approval.actor)
+    .single();
+  if (!targetAgent || !actorAgent || targetAgent.owner_user_id !== actorAgent.owner_user_id) return;
+
+  const consumed = await consumeApproval(approvalId, reviewerName);
+  if (!consumed) return;
+
+  const { data: currentKeys } = await supabase
+    .from('service_keys')
+    .select('id, key_id, human_owner, label')
+    .eq('agent_id', agentId)
+    .eq('is_active', true);
+
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  for (const key of currentKeys || []) {
+    await supabase
+      .from('service_keys')
+      .update({ expires_at: expiresAt, rotated_at: new Date().toISOString() })
+      .eq('id', key.id);
+  }
+
+  const agentName = (approval.details?.agent_name as string) || 'unknown';
+  const keyId = `${agentName}-${Date.now().toString(36)}`;
+  const signingSecret = crypto.randomBytes(32).toString('hex');
+  const keyHash = crypto.createHash('sha256').update(signingSecret).digest('hex');
+  const firstKey = (currentKeys || [])[0];
+
+  const { data: newKey } = await supabase.from('service_keys').insert({
+    key_id: keyId,
+    key_hash: keyHash,
+    signing_secret: signingSecret,
+    agent_id: agentId,
+    human_owner: firstKey?.human_owner ?? null,
+    label: firstKey?.label ? `${firstKey.label} (rotated)` : 'rotated',
+    is_active: true,
+  }).select('id, key_id, label, is_active').single();
+  void newKey;
+
+  await supabase.from('audit_log').insert({
+    actor: reviewerName,
+    action: 'key.rotate.executed',
+    resource_type: 'agent',
+    resource_id: agentId,
+    details: {
+      agent_name: agentName,
+      new_key_id: keyId,
+      old_keys_expiring: (currentKeys || []).map((k) => k.key_id),
+      approval_id: approvalId,
+    },
+  });
 }
 
 /**
@@ -572,6 +647,11 @@ export async function approveDashboardRequest(
       },
       timestamp: new Date().toISOString(),
     }).catch(() => {});
+  }
+
+  // Auto-execute side effects for known action types
+  if (approval.action === 'key.rotate') {
+    await executeKeyRotationSideEffect(approvalId, displayName, approval, supabase);
   }
 
   return { success: true };

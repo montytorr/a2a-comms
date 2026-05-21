@@ -91,7 +91,7 @@ export async function deliverWebhooks(
     // Insert delivery record with stored payload for retry worker recovery
     // NOTE: We intentionally do NOT store wh.secret here — the retry worker
     // looks up the secret from the webhooks table via webhook_id at retry time.
-    await supabase.from('webhook_deliveries').insert({
+    const { error: insertError } = await supabase.from('webhook_deliveries').insert({
       id: deliveryId,
       webhook_id: wh.id,
       event: event.event,
@@ -101,31 +101,33 @@ export async function deliverWebhooks(
       retry_delay_ms: RETRY_DELAY_MS,
       payload: {
         event,
-        // NOTE: URL intentionally omitted — retry worker reads the live URL
-        // from the webhooks table via webhook_id at retry time.
-        // NOTE: signature intentionally omitted — retry worker re-computes
-        // HMAC from the webhooks table secret at retry time.
       },
     });
+
+    if (insertError) {
+      console.error(`[webhooks] Failed to persist delivery record ${deliveryId} for webhook ${wh.id}:`, insertError.message);
+      return;
+    }
 
     // DNS validation — queue for retry on transient failures instead of hard-failing
     const dnsCheck = await resolveAndValidateHost(wh.url);
     if (!dnsCheck.valid) {
-      await supabase.from('webhook_deliveries').update({
+      const { error: dnsRetryErr } = await supabase.from('webhook_deliveries').update({
         status: 'pending_retry',
         attempts: 1,
         response_status: null,
         last_retry_at: null,
       }).eq('id', deliveryId);
+      if (dnsRetryErr) console.error(`[webhooks] Failed to update delivery ${deliveryId} after DNS failure:`, dnsRetryErr.message);
       logWebhookDelivery('failure', wh.id, wh.agent_id, wh.url, { reason: 'DNS validation failed — queued for retry' }).catch(() => {});
       return;
     }
 
-    // One synchronous attempt inside the request lifecycle
-    await supabase.from('webhook_deliveries').update({
+    const { error: attemptErr } = await supabase.from('webhook_deliveries').update({
       status: 'pending',
       attempts: 1,
     }).eq('id', deliveryId);
+    if (attemptErr) console.error(`[webhooks] Failed to update delivery ${deliveryId} attempt count:`, attemptErr.message);
 
     const result = await sendWebhookRequest({
       deliveryId,
@@ -143,12 +145,12 @@ export async function deliverWebhooks(
       return;
     }
 
-    // First attempt failed — mark for background retry worker
-    await supabase.from('webhook_deliveries').update({
+    const { error: retryErr } = await supabase.from('webhook_deliveries').update({
       status: 'pending_retry',
       response_status: result.responseStatus || null,
       last_retry_at: null,
     }).eq('id', deliveryId);
+    if (retryErr) console.error(`[webhooks] Failed to mark delivery ${deliveryId} for retry:`, retryErr.message);
 
     logWebhookDelivery('failure', wh.id, wh.agent_id, wh.url, {
       reason: result.reason,

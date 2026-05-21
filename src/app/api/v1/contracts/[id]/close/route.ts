@@ -63,7 +63,7 @@ export async function POST(
     }
   }
 
-  await supabase
+  const { data: updated } = await supabase
     .from('contracts')
     .update({
       status: 'closed',
@@ -71,7 +71,17 @@ export async function POST(
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('status', 'active')
+    .select()
+    .maybeSingle();
+
+  if (!updated) {
+    return NextResponse.json(
+      { error: 'Contract state changed concurrently', code: 'CONFLICT' } satisfies ApiError,
+      { status: 409 }
+    );
+  }
 
   // Deliver webhook notifications to all participants (fire-and-forget)
   const { data: allParticipants } = await supabase

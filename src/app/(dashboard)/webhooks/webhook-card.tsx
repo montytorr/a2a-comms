@@ -410,8 +410,8 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Last {deliveries.length} deliveries:</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--mint)' }}>{successCount} OK</span>
                   {failedCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--rose)' }}>{failedCount} failed</span>}
-                  {deliveries.filter(d => d.status === 'retrying').length > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'retrying').length} retrying</span>
+                  {deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length} retrying</span>
                   )}
                   {deliveries.filter(d => d.status === 'pending').length > 0 && (
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'pending').length} pending</span>
@@ -431,14 +431,16 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 </div>
                 {deliveries.map((d) => {
                   const maxRetries = d.max_retries ?? 1;
-                  const rowBg = d.status === 'failed'
+                  const isFailed = d.status === 'failed';
+                  const isSuccess = d.status === 'success';
+                  const rowBg = isFailed
                     ? 'var(--rose-bg)'
-                    : d.status === 'success'
+                    : isSuccess
                       ? 'var(--bg-2)'
                       : 'var(--amber-bg)';
-                  const rowBorder = d.status === 'failed'
+                  const rowBorder = isFailed
                     ? 'oklch(0.40 0.08 25 / 0.3)'
-                    : d.status === 'success'
+                    : isSuccess
                       ? 'var(--line-1)'
                       : 'oklch(0.55 0.12 60 / 0.3)';
                   return (
@@ -455,12 +457,12 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                       }}
                     >
                       <span className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.event}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: d.status === 'success' ? 'var(--mint)' : d.status === 'failed' ? 'var(--rose)' : 'var(--amber)' }}>
-                        {d.status === 'success'
+                      <span style={{ fontSize: 12, fontWeight: 600, color: isSuccess ? 'var(--mint)' : isFailed ? 'var(--rose)' : 'var(--amber)' }}>
+                        {isSuccess
                           ? d.attempts > 1 ? `Attempt ${d.attempts}` : 'OK'
-                          : d.status === 'failed'
+                          : isFailed
                             ? d.attempts > 1 ? `${d.attempts} tries` : 'Failed'
-                            : d.status === 'retrying'
+                            : d.status === 'retrying' || d.status === 'pending_retry'
                               ? `Retry ${d.attempts}/${maxRetries}`
                               : 'Pending'}
                       </span>

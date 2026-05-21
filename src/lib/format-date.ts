@@ -21,6 +21,18 @@ export function formatTime(date: string | Date): string {
 export function formatRelative(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const diff = Date.now() - d.getTime();
+
+  if (diff < 0) {
+    const futureMins = Math.floor(-diff / 60000);
+    if (futureMins < 1) return 'just now';
+    if (futureMins < 60) return `in ${futureMins}m`;
+    const futureHours = Math.floor(futureMins / 60);
+    if (futureHours < 24) return `in ${futureHours}h`;
+    const futureDays = Math.floor(futureHours / 24);
+    if (futureDays < 7) return `in ${futureDays}d`;
+    return formatDate(d);
+  }
+
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;

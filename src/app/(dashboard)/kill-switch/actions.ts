@@ -82,17 +82,24 @@ export async function executeKillSwitchActivation() {
   if (!user) throw new Error('Not authenticated');
   if (!user.isSuperAdmin) throw new Error('Admin access required');
 
-  // Atomically consume the most recent approved kill switch request (one-time use)
-  const approved = await consumeApprovalByAction('killswitch.activate', user.displayName);
-  if (!approved) {
+  const supabase = createServerClient();
+
+  const { data: pendingApproval } = await supabase
+    .from('pending_approvals')
+    .select('id')
+    .eq('action', 'killswitch.activate')
+    .eq('status', 'approved')
+    .order('reviewed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!pendingApproval) {
     throw new Error('No approved kill switch activation request found.');
   }
 
-  const supabase = createServerClient();
   const now = new Date().toISOString();
 
-  // Update kill switch
-  await supabase
+  const { error: ksError } = await supabase
     .from('system_config')
     .upsert({
       key: 'kill_switch',
@@ -101,8 +108,14 @@ export async function executeKillSwitchActivation() {
       updated_by: user.displayName,
     });
 
-  // Close all active contracts
-  await supabase
+  if (ksError) throw new Error(`Failed to activate kill switch: ${ksError.message}`);
+
+  const approved = await consumeApprovalByAction('killswitch.activate', user.displayName);
+  if (!approved) {
+    throw new Error('Failed to consume approval after state change.');
+  }
+
+  const { error: closeError } = await supabase
     .from('contracts')
     .update({
       status: 'closed',
@@ -112,8 +125,9 @@ export async function executeKillSwitchActivation() {
     })
     .eq('status', 'active');
 
-  // Cancel all proposed contracts
-  await supabase
+  if (closeError) throw new Error(`Failed to close active contracts: ${closeError.message}`);
+
+  const { error: cancelError } = await supabase
     .from('contracts')
     .update({
       status: 'cancelled',
@@ -122,6 +136,8 @@ export async function executeKillSwitchActivation() {
       updated_at: now,
     })
     .eq('status', 'proposed');
+
+  if (cancelError) throw new Error(`Failed to cancel proposed contracts: ${cancelError.message}`);
 
   // Audit log
   await supabase.from('audit_log').insert({
@@ -144,15 +160,28 @@ export async function deactivateKillSwitch() {
   const supabase = createServerClient();
   const now = new Date().toISOString();
 
-  // Deactivate kill switch — no approval needed for deactivation
-  await supabase
+  const { data: current } = await supabase
     .from('system_config')
-    .upsert({
-      key: 'kill_switch',
+    .select('value')
+    .eq('key', 'kill_switch')
+    .single();
+
+  if (!current?.value?.active) {
+    throw new Error('Kill switch is already inactive');
+  }
+
+  const { error: updateError } = await supabase
+    .from('system_config')
+    .update({
       value: { active: false, deactivated_at: now },
       updated_at: now,
       updated_by: user.displayName,
-    });
+    })
+    .eq('key', 'kill_switch');
+
+  if (updateError) {
+    throw new Error('Failed to deactivate kill switch — please try again');
+  }
 
   // Audit log
   await supabase.from('audit_log').insert({

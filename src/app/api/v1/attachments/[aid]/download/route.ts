@@ -11,7 +11,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aid:
   const { auth } = result;
   const { aid } = await params;
 
-  const attachment = await getAttachmentById(aid).catch(() => null);
+  let attachment;
+  try {
+    attachment = await getAttachmentById(aid);
+  } catch {
+    return NextResponse.json({ error: 'Failed to look up attachment', code: 'INTERNAL_ERROR' } satisfies ApiError, { status: 500 });
+  }
   if (!attachment) {
     return NextResponse.json({ error: 'Attachment not found', code: 'NOT_FOUND' } satisfies ApiError, { status: 404 });
   }
@@ -26,7 +31,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aid:
 
   let allowed = projectPolicy.allowed;
   if (!allowed && attachment.contract_id) {
-    allowed = !!(await verifyContractParticipation(attachment.contract_id, auth.agent.id));
+    const participation = await verifyContractParticipation(attachment.contract_id, auth.agent.id);
+    if (participation) {
+      const contractAttachmentPolicy = evaluateAttachmentDownloadAccess(auth.agent, projectAccess, {
+        contract_id: attachment.contract_id,
+      });
+      allowed = contractAttachmentPolicy.allowed || (projectAccess?.accessKind !== 'observer');
+    }
   }
 
   if (!allowed) {

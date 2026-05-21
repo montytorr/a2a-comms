@@ -8,6 +8,8 @@ export async function proxy(request: NextRequest) {
   // Public routes — no auth check
   if (
     pathname.startsWith('/login') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
     pathname.startsWith('/security') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||

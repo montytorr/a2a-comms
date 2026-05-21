@@ -19,14 +19,15 @@ export async function toggleSuperAdmin(
 
   const supabase = createServerClient();
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('user_profiles')
     .update({ is_super_admin: newValue })
-    .eq('id', userId);
+    .eq('id', userId)
+    .select('id');
 
   if (error) return { error: error.message };
+  if (!updated || updated.length === 0) return { error: 'User not found' };
 
-  // Audit
   await supabase.from('audit_log').insert({
     actor: user.displayName,
     action: newValue ? 'user.promote_admin' : 'user.demote_admin',
@@ -48,14 +49,15 @@ export async function linkAgentToUser(
 
   const supabase = createServerClient();
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('agents')
     .update({ owner_user_id: userId })
-    .eq('id', agentId);
+    .eq('id', agentId)
+    .select('id');
 
   if (error) return { error: error.message };
+  if (!updated || updated.length === 0) return { error: 'Agent not found' };
 
-  // Audit
   await supabase.from('audit_log').insert({
     actor: user.displayName,
     action: 'user.link_agent',
@@ -76,14 +78,15 @@ export async function unlinkAgent(
 
   const supabase = createServerClient();
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('agents')
     .update({ owner_user_id: null })
-    .eq('id', agentId);
+    .eq('id', agentId)
+    .select('id');
 
   if (error) return { error: error.message };
+  if (!updated || updated.length === 0) return { error: 'Agent not found' };
 
-  // Audit
   await supabase.from('audit_log').insert({
     actor: user.displayName,
     action: 'user.unlink_agent',
@@ -134,8 +137,10 @@ export async function createUser(
     });
 
   if (profileError) {
-    // Clean up auth user if profile creation fails
-    await supabase.auth.admin.deleteUser(authData.user.id);
+    const { error: cleanupError } = await supabase.auth.admin.deleteUser(authData.user.id);
+    if (cleanupError) {
+      console.error(`[users] Failed to clean up orphaned auth account ${authData.user.id}:`, cleanupError.message);
+    }
     return { error: profileError.message };
   }
 

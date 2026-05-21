@@ -72,7 +72,7 @@ export async function GET(
       .select('*, agent:agents(id, name, display_name)')
       .eq('project_id', id),
     member.accessKind === 'observer'
-      ? Promise.resolve({ data: [] as Array<Record<string, unknown>> })
+      ? Promise.resolve({ data: [] as Array<Record<string, unknown>>, error: null })
       : supabase
           .from('project_observers')
           .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
@@ -98,6 +98,14 @@ export async function GET(
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
   ]);
+
+  const enrichmentError = membersRes.error || tasksRes.error || sprintsRes.error || invitationsRes.error || executionRunsRes.error;
+  if (enrichmentError) {
+    return NextResponse.json(
+      { error: 'Failed to load project details', code: 'DB_ERROR' } satisfies ApiError,
+      { status: 500 }
+    );
+  }
 
   const tasks = tasksRes.data || [];
   const totalTasks = tasks.length;
@@ -197,6 +205,13 @@ export async function PATCH(
     .eq('id', id)
     .select()
     .single();
+
+  if (!project && !error) {
+    return NextResponse.json(
+      { error: 'Project not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
+    );
+  }
 
   if (error || !project) {
     return NextResponse.json(

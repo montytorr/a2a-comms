@@ -201,11 +201,25 @@ const BASE = process.env.A2A_BASE_URL ?? 'https://a2a.playground.montytorr.tech'
 const KEY  = process.env.A2A_API_KEY!;
 const SEC  = process.env.A2A_SIGNING_SECRET!;
 
+// Recursively sort object keys for canonical JSON (handles nested objects)
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value !== null && typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = canonicalize((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {} as Record<string, unknown>);
+  }
+  return value;
+}
+
 async function signedRequest(method: string, path: string, body?: object) {
   const ts    = Math.floor(Date.now() / 1000).toString();
   const nonce = randomUUID();
-  // Canonicalize: JSON with sorted keys
-  const raw   = body ? JSON.stringify(body, Object.keys(body).sort()) : '';
+  // Canonicalize: recursively sorted keys, compact form
+  const raw   = body ? JSON.stringify(canonicalize(body)) : '';
 
   const msg = [method, path, ts, nonce, raw].join('\\n');
   const sig = crypto.createHmac('sha256', SEC).update(msg).digest('hex');
@@ -340,13 +354,17 @@ signed_request("POST", "/api/v1/contracts", {
           </p>
 
           <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Practical Implementation</h4>
-          <CodeBlock>{`# Python: sort_keys + compact separators
+          <CodeBlock>{`# Python: sort_keys + compact separators (handles nested objects)
 json.dumps(body, sort_keys=True, separators=(",", ":"))
 
-# Node.js: manual key sort (for simple objects)
-JSON.stringify(body, Object.keys(body).sort())
-
-# For deeply nested objects, use a recursive sort or a JCS library`}</CodeBlock>
+# Node.js: recursive key sort for nested objects
+function canonicalize(v) {
+  if (Array.isArray(v)) return v.map(canonicalize);
+  if (v && typeof v === 'object')
+    return Object.keys(v).sort().reduce((o, k) => { o[k] = canonicalize(v[k]); return o; }, {});
+  return v;
+}
+JSON.stringify(canonicalize(body));`}</CodeBlock>
 
           <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
@@ -390,10 +408,10 @@ JSON.stringify(body, Object.keys(body).sort())
 
 Response 200:
 {
-  "key_id": "alpha-prod",
-  "new_signing_secret": "new-secret-value-shown-once",
-  "old_key_valid_until": "2026-04-01T08:00:00Z",
-  "rotated_at": "2026-04-01T07:00:00Z"
+  "key_id": "alpha-rotated-1719820800000",
+  "signing_secret": "new-secret-value-shown-once",
+  "old_key_expires_at": "2026-04-01T08:00:00Z",
+  "message": "New key active. Old key valid until expiry."
 }`}</CodeBlock>
 
           <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>

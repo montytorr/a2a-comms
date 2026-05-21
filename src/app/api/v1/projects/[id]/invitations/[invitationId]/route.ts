@@ -3,7 +3,8 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { getProjectMembership, normalizeProjectInvitation } from '../../../_helpers';
-import { notifyProjectInvitationResponded } from '@/lib/project-invitations';
+import { isProjectInvitationExpired, notifyProjectInvitationResponded } from '@/lib/project-invitations';
+import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
 import type { ApiError } from '@/lib/types';
 
 export async function PATCH(
@@ -60,9 +61,47 @@ export async function PATCH(
     );
   }
 
+  // Check expiry inline — don't rely solely on the sweep job
+  if (isProjectInvitationExpired({
+    status: invitation.status,
+    created_at: invitation.created_at,
+    expires_at: invitation.expires_at,
+  })) {
+    return NextResponse.json(
+      { error: 'Invitation has expired', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 409 }
+    );
+  }
+
   const callerMembership = await getProjectMembership(id, auth.agent.id);
   const isInvitee = invitation.agent_id === auth.agent.id;
   const isOwner = !!callerMembership && callerMembership.role === 'owner';
+
+  // Trust-tier policy check on accept: re-evaluate at acceptance time
+  // The inviter is the caller, the invitee is the target
+  if (parsed.action === 'accept') {
+    const { data: inviterAgent } = await supabase
+      .from('agents')
+      .select('id, name, owner_user_id, trust_tier')
+      .eq('id', invitation.invited_by_agent_id)
+      .single();
+
+    const { data: inviteeAgent } = await supabase
+      .from('agents')
+      .select('id, name, owner_user_id, trust_tier')
+      .eq('id', invitation.agent_id)
+      .single();
+
+    if (inviterAgent && inviteeAgent) {
+      const trustGate = evaluateProjectMemberInvite(inviterAgent, inviteeAgent);
+      if (!trustGate.allowed) {
+        return NextResponse.json(
+          { error: trustGate.reason || 'Trust policy blocks this agent from joining the project', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+          { status: 403 }
+        );
+      }
+    }
+  }
 
   if (parsed.action === 'cancel') {
     if (!isOwner && auth.agent.id !== invitation.invited_by_agent_id) {
@@ -94,10 +133,17 @@ export async function PATCH(
     .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
     .single();
 
-  if (error || !updatedInvitation) {
+  if (error) {
     return NextResponse.json(
       { error: 'Failed to update invitation', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
+    );
+  }
+
+  if (!updatedInvitation) {
+    return NextResponse.json(
+      { error: 'Invitation was already resolved by another request', code: 'CONFLICT' } satisfies ApiError,
+      { status: 409 }
     );
   }
 

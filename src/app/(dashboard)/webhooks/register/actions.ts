@@ -50,6 +50,12 @@ export async function registerWebhook(params: {
     return { error: 'You can only register webhooks for your own agents' };
   }
 
+  const { getAuthActorContext } = await import('@/lib/auth-actor-context');
+  const authContext = await getAuthActorContext();
+  if (authContext && !user.isSuperAdmin && authContext.actingAgentId && authContext.actingAgentId !== agent.id) {
+    return { error: 'Cannot register webhooks for an agent outside the current acting-agent scope' };
+  }
+
   const trustGate = evaluateWebhookManagementAccess('register', agent);
   if (!trustGate.allowed) {
     return { error: trustGate.body.error };

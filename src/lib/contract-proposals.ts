@@ -168,6 +168,28 @@ export async function createContractProposal(params: {
     });
   }
 
+  // Re-check max-concurrent after insert (CAS guard against race conditions).
+  // Another proposal may have been inserted between the count check and our insert.
+  const { data: postInsertParticipantRows } = await supabase
+    .from('contract_participants')
+    .select('contract_id')
+    .eq('agent_id', actor.id);
+
+  const { data: postInsertActiveContracts } = await supabase
+    .from('contracts')
+    .select('id')
+    .in('status', ['active', 'proposed'])
+    .in('id', (postInsertParticipantRows || []).map((row) => row.contract_id));
+
+  const postInsertCount = postInsertActiveContracts?.length || 0;
+  if (actor.max_concurrent_contracts && postInsertCount > actor.max_concurrent_contracts) {
+    await supabase.from('contracts').delete().eq('id', contract.id);
+    throw new ContractProposalError(409, {
+      error: `Proposer ${actor.name} has reached max concurrent active contracts (${actor.max_concurrent_contracts})`,
+      code: 'MAX_CONTRACTS_REACHED',
+    });
+  }
+
   const participants = [
     {
       contract_id: contract.id,
@@ -216,8 +238,20 @@ export async function createContractProposal(params: {
     ipAddress,
   });
 
+  let enriched: ContractResponse;
+  try {
+    enriched = await enrichContract(contract);
+  } catch (enrichErr) {
+    await supabase.from('contract_participants').delete().eq('contract_id', contract.id);
+    await supabase.from('contracts').delete().eq('id', contract.id);
+    throw new ContractProposalError(500, {
+      error: 'Failed to enrich contract after creation',
+      code: 'DB_ERROR',
+    });
+  }
+
   return {
-    contract: await enrichContract(contract),
+    contract: enriched,
     inviteeOwnerIds: inviteeAgents.map((agent) => agent.owner_user_id).filter((value): value is string => !!value),
     contractId: contract.id,
   };

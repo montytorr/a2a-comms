@@ -112,9 +112,15 @@ export function validateWebhookUrl(urlString: string): { valid: boolean; error?:
     if (a >= 240) return { valid: false, error: 'Webhook URL cannot target reserved addresses' };
   }
 
-  // Block IPv6 private ranges (basic check)
+  // Block IPv6 private/loopback ranges
   if (hostname.startsWith('[')) {
     const inner = hostname.slice(1, -1).toLowerCase();
+    if (inner === '::1' || inner === '0:0:0:0:0:0:0:1') {
+      return { valid: false, error: 'Webhook URL cannot target loopback addresses' };
+    }
+    if (inner === '::' || inner === '0:0:0:0:0:0:0:0') {
+      return { valid: false, error: 'Webhook URL cannot target reserved addresses' };
+    }
     if (inner.startsWith('fc') || inner.startsWith('fd') || inner.startsWith('fe80')) {
       return { valid: false, error: 'Webhook URL cannot target private IPv6 ranges' };
     }

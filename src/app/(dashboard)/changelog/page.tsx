@@ -18,7 +18,12 @@ interface ChangelogEntry {
 }
 
 function parseChangelog(): ChangelogEntry[] {
-  const content = readFileSync(join(process.cwd(), 'CHANGELOG.md'), 'utf-8');
+  let content: string;
+  try {
+    content = readFileSync(join(process.cwd(), 'CHANGELOG.md'), 'utf-8');
+  } catch {
+    return [];
+  }
   const entries: ChangelogEntry[] = [];
   let current: ChangelogEntry | null = null;
   let currentSection: { type: string; items: string[] } | null = null;

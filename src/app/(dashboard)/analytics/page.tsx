@@ -16,7 +16,8 @@ export default async function AnalyticsPage({
   if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
-  const days = Math.min(90, Math.max(7, parseInt(params.days || '14', 10)));
+  const parsedDays = parseInt(params.days || '14', 10);
+  const days = Math.min(90, Math.max(7, Number.isFinite(parsedDays) ? parsedDays : 14));
   const supabase = createServerClient();
   noStore();
 
@@ -189,23 +190,12 @@ export default async function AnalyticsPage({
     .ilike('action', '%webhook%')
     .gte('created_at', cutoffISO);
   if (!user.isSuperAdmin) {
-    // Include counterparty agent names from shared contracts (not just owned agents)
-    const allWebhookAgentIds = new Set(auth.agentScope);
-    if (scopedContractIds && scopedContractIds.length > 0) {
-      const { data: allContractParticipants } = await supabase
-        .from('contract_participants')
-        .select('agent_id')
-        .in('contract_id', scopedContractIds);
-      for (const p of allContractParticipants || []) {
-        allWebhookAgentIds.add(p.agent_id);
-      }
-    }
-
-    const safeWebhookAgentIds = allWebhookAgentIds.size > 0 ? [...allWebhookAgentIds] : ['00000000-0000-0000-0000-000000000000'];
+    const ownAgentIds = auth.agentScope;
+    const safeOwnAgentIds = ownAgentIds.length > 0 ? ownAgentIds : ['00000000-0000-0000-0000-000000000000'];
     const { data: agentNamesData } = await supabase
       .from('agents')
       .select('name')
-      .in('id', safeWebhookAgentIds);
+      .in('id', safeOwnAgentIds);
     const agentNames = (agentNamesData || []).map(a => a.name);
     if (agentNames.length > 0) {
       webhooksFiredQuery = webhooksFiredQuery.in('actor', agentNames);

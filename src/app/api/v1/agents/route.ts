@@ -6,10 +6,22 @@ import type { RegisterAgentRequest, ApiError } from '@/lib/types';
 import { AgentLifecycleError, createAgentWithServiceKey } from '@/lib/agent-lifecycle';
 import { createServerClient } from '@/lib/supabase/server';
 
+const SENSITIVE_AGENT_FIELDS = ['trust_notes', 'trust_policy', 'privacy_metadata'] as const;
+
+const redactSensitiveFields = (agent: Record<string, unknown>) => {
+  const redacted = { ...agent };
+  for (const field of SENSITIVE_AGENT_FIELDS) {
+    delete redacted[field];
+  }
+  return redacted;
+};
+
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
   if (result.error) return result.error;
 
+  const { auth } = result;
+  const isAdmin = isAdminAgent(auth.agent.id, auth.agent.name);
   const supabase = createServerClient();
   const { data: agents, error } = await supabase
     .from('agents')
@@ -23,7 +35,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ data: agents });
+  const sanitized = isAdmin
+    ? agents
+    : (agents || []).map(a => a.id === auth.agent.id ? a : redactSensitiveFields(a));
+
+  return NextResponse.json({ data: sanitized, agents: sanitized });
 }
 
 export async function POST(req: NextRequest) {

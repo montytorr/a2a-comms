@@ -77,7 +77,7 @@ export async function requeueWebhookDelivery(input: {
   }
 
   const now = new Date().toISOString();
-  const { error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await supabase
     .from('webhook_deliveries')
     .update({
       status: 'pending_retry',
@@ -86,9 +86,13 @@ export async function requeueWebhookDelivery(input: {
     })
     .eq('id', delivery.id)
     .eq('webhook_id', input.webhookId)
-    .in('status', ['failed', 'pending_retry']);
+    .in('status', ['failed', 'pending_retry'])
+    .select('id');
 
   if (updateError) throw new Error(`Failed to requeue delivery: ${updateError.message}`);
+  if (!updatedRows || updatedRows.length === 0) {
+    throw new Error('Delivery state changed since inspection — refresh and try again');
+  }
 
   await supabase.from('audit_log').insert({
     actor: user.email || user.displayName,

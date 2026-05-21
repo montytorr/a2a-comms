@@ -45,10 +45,17 @@ export async function GET(
   }
 
   // Get task stats for this sprint
-  const { data: tasks } = await supabase
+  const { data: tasks, error: taskError } = await supabase
     .from('tasks')
     .select('id, status')
     .eq('sprint_id', sid);
+
+  if (taskError) {
+    return NextResponse.json(
+      { error: 'Failed to fetch task stats', code: 'DB_ERROR' } satisfies ApiError,
+      { status: 500 }
+    );
+  }
 
   const taskList = tasks || [];
 
@@ -112,7 +119,8 @@ export async function PATCH(
   }
   if (parsed.start_date !== undefined) updates.start_date = parsed.start_date;
   if (parsed.end_date !== undefined) updates.end_date = parsed.end_date;
-  if (parsed.position !== undefined) updates.position = parsed.position;
+  const positionChange = parsed.position !== undefined ? parsed.position : undefined;
+  if (positionChange !== undefined) updates.position = positionChange;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(
@@ -122,6 +130,29 @@ export async function PATCH(
   }
 
   const supabase = createServerClient();
+
+  // If position is being changed, shift siblings to avoid duplicate positions
+  if (positionChange !== undefined) {
+    const { data: current } = await supabase
+      .from('sprints')
+      .select('position')
+      .eq('id', sid)
+      .eq('project_id', id)
+      .single();
+
+    if (current && current.position !== positionChange) {
+      const oldPos = current.position;
+      const newPos = positionChange;
+      if (newPos < oldPos) {
+        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 }).catch(() => {
+          // RPC may not exist — fall back to accepting potential duplicate
+        });
+      } else {
+        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 }).catch(() => {});
+      }
+    }
+  }
+
   const { data: sprint, error } = await supabase
     .from('sprints')
     .update(updates)

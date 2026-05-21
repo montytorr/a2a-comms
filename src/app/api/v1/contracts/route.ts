@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get('status');
   const role = url.searchParams.get('role');
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-  const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') || '20', 10)));
+  const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || url.searchParams.get('per_page') || '20', 10)));
 
   const supabase = createServerClient();
 
@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
       total: 0,
       page,
       per_page: perPage,
+      limit: perPage,
     } satisfies PaginatedResponse<ContractResponse>);
   }
 
@@ -94,6 +95,7 @@ export async function GET(req: NextRequest) {
     total: count || 0,
     page,
     per_page: perPage,
+    limit: perPage,
   } satisfies PaginatedResponse<ContractResponse>);
 }
 

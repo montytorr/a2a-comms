@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ContractStatus } from '@/lib/types';
 
 const statuses: Array<ContractStatus | 'all'> = ['all', 'proposed', 'active', 'closed', 'rejected', 'expired', 'cancelled'];
@@ -16,6 +16,8 @@ export default function ContractFilters({ current }: { current: string }) {
   const searchParams = useSearchParams();
   const currentSearch = searchParams.get('search') || '';
   const currentSort = searchParams.get('sort') || 'newest';
+  const [localSearch, setLocalSearch] = useState(currentSearch);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
@@ -31,6 +33,14 @@ export default function ContractFilters({ current }: { current: string }) {
       router.push(`/contracts${qs ? `?${qs}` : ''}`);
     },
     [router, searchParams],
+  );
+
+  const debouncedSearch = useCallback(
+    (value: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => updateParams({ search: value }), 300);
+    },
+    [updateParams],
   );
 
   return (
@@ -50,8 +60,11 @@ export default function ContractFilters({ current }: { current: string }) {
         <input
           type="text"
           placeholder="Search by title..."
-          defaultValue={currentSearch}
-          onChange={(e) => updateParams({ search: e.target.value })}
+          value={localSearch}
+          onChange={(e) => {
+            setLocalSearch(e.target.value);
+            debouncedSearch(e.target.value);
+          }}
           className="cp-input"
           style={{ width: 240 }}
         />

@@ -54,18 +54,28 @@ export async function POST(
     );
   }
 
-  // Update participant status
-  await supabase
+  // Update participant status (CAS guard: only if still pending)
+  const { data: updatedParticipant } = await supabase
     .from('contract_participants')
     .update({
       status: 'rejected',
       responded_at: new Date().toISOString(),
     })
     .eq('contract_id', id)
-    .eq('agent_id', auth.agent.id);
+    .eq('agent_id', auth.agent.id)
+    .eq('status', 'pending')
+    .select()
+    .maybeSingle();
 
-  // Reject the entire contract
-  await supabase
+  if (!updatedParticipant) {
+    return NextResponse.json(
+      { error: 'Already responded to this contract', code: 'ALREADY_RESPONDED' } satisfies ApiError,
+      { status: 409 }
+    );
+  }
+
+  // Reject the entire contract (CAS guard: only if still proposed)
+  const { data: updatedContract } = await supabase
     .from('contracts')
     .update({
       status: 'rejected',
@@ -73,7 +83,10 @@ export async function POST(
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('status', 'proposed')
+    .select()
+    .maybeSingle();
 
   // Deliver webhook notification to proposer (fire-and-forget)
   const { data: contractData } = await supabase
@@ -100,13 +113,13 @@ export async function POST(
   });
 
   // Fetch updated contract
-  const { data: updatedContract } = await supabase
+  const { data: finalContract } = await supabase
     .from('contracts')
     .select('*')
     .eq('id', id)
     .single();
 
-  const enriched = await enrichContract(updatedContract as Contract);
+  const enriched = await enrichContract(finalContract as Contract);
 
   return NextResponse.json(enriched);
 }

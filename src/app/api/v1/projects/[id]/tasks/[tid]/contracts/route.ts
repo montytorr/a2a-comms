@@ -245,6 +245,20 @@ export async function DELETE(
 
   const supabase = createServerClient();
 
+  const { data: callerParticipation } = await supabase
+    .from('contract_participants')
+    .select('id')
+    .eq('contract_id', parsed.contract_id)
+    .eq('agent_id', auth.agent.id)
+    .maybeSingle();
+
+  if (!callerParticipation) {
+    return NextResponse.json(
+      { error: 'You must be a participant in the contract to unlink it', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   const { error } = await supabase
     .from('task_contracts')
     .delete()

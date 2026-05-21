@@ -17,7 +17,6 @@ export async function updateNotificationPreferences(
   prefs: NotificationPreferences
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Auth check
     const cookieStore = await cookies();
     const supabaseAuth = createSSRClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +24,11 @@ export async function updateNotificationPreferences(
       {
         cookies: {
           getAll() { return cookieStore.getAll(); },
-          setAll() {},
+          setAll(cookiesToSet) {
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
+          },
         },
       }
     );
@@ -34,21 +37,47 @@ export async function updateNotificationPreferences(
     if (!user) return { success: false, error: 'Not authenticated' };
 
     const supabase = createServerClient();
+    const now = new Date().toISOString();
 
-    const { error } = await supabase
+    const { data: existing } = await supabase
       .from('notification_preferences')
-      .upsert({
-        user_id: user.id,
-        welcome: prefs.welcome,
-        contract_invitation: prefs.contract_invitation,
-        task_assigned: prefs.task_assigned,
-        approval_request: prefs.approval_request,
-        project_member_invitation: prefs.project_member_invitation,
-        stale_blocker: prefs.stale_blocker,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
+      .select('updated_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (error) return { success: false, error: error.message };
+    if (existing) {
+      const { error, count } = await supabase
+        .from('notification_preferences')
+        .update({
+          welcome: prefs.welcome,
+          contract_invitation: prefs.contract_invitation,
+          task_assigned: prefs.task_assigned,
+          approval_request: prefs.approval_request,
+          project_member_invitation: prefs.project_member_invitation,
+          stale_blocker: prefs.stale_blocker,
+          updated_at: now,
+        })
+        .eq('user_id', user.id)
+        .eq('updated_at', existing.updated_at);
+
+      if (error) return { success: false, error: error.message };
+      if (count === 0) return { success: false, error: 'Preferences were modified by another session. Please reload and try again.' };
+    } else {
+      const { error } = await supabase
+        .from('notification_preferences')
+        .insert({
+          user_id: user.id,
+          welcome: prefs.welcome,
+          contract_invitation: prefs.contract_invitation,
+          task_assigned: prefs.task_assigned,
+          approval_request: prefs.approval_request,
+          project_member_invitation: prefs.project_member_invitation,
+          stale_blocker: prefs.stale_blocker,
+          updated_at: now,
+        });
+      if (error) return { success: false, error: error.message };
+    }
+
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };

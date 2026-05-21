@@ -39,19 +39,38 @@ export async function checkIdempotency(
 
   const supabase = createServerClient();
 
-  // Look up existing key scoped to agent + endpoint
-  const { data: existing } = await supabase
+  // Atomic upsert: try to claim the key with a sentinel response.
+  // If another request already claimed it, the upsert returns the existing row.
+  const { data: upserted, error: upsertError } = await supabase
     .from('idempotency_keys')
+    .upsert(
+      {
+        key,
+        endpoint,
+        agent_id: auth.agent.id,
+        status_code: 0,
+        response: null,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+      { onConflict: 'key,agent_id,endpoint', ignoreDuplicates: true },
+    )
     .select('status_code, response, expires_at')
-    .eq('key', key)
-    .eq('agent_id', auth.agent.id)
-    .eq('endpoint', endpoint)
     .single();
 
-  if (existing) {
-    // Check if expired
+  // If upsert returned no rows, the key already exists — fetch it
+  const existing = upsertError
+    ? (await supabase
+        .from('idempotency_keys')
+        .select('status_code, response, expires_at')
+        .eq('key', key)
+        .eq('agent_id', auth.agent.id)
+        .eq('endpoint', endpoint)
+        .single()).data
+    : upserted;
+
+  if (existing && existing.status_code !== 0) {
     if (new Date(existing.expires_at) < new Date()) {
-      // Expired — delete and proceed as new
       await supabase
         .from('idempotency_keys')
         .delete()
@@ -61,10 +80,19 @@ export async function checkIdempotency(
       return { key };
     }
 
-    // Return cached response with idempotency header
     const resp = NextResponse.json(existing.response, { status: existing.status_code });
     resp.headers.set('X-Idempotency-Replay', 'true');
     return { cachedResponse: resp, key };
+  }
+
+  if (existing && existing.status_code === 0 && upsertError) {
+    return {
+      key: null,
+      cachedResponse: NextResponse.json(
+        { error: 'Concurrent request in progress for this idempotency key', code: 'CONFLICT' },
+        { status: 409 },
+      ),
+    };
   }
 
   return { key };

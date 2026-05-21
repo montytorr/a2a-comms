@@ -259,11 +259,26 @@ export async function deleteTask(projectId: string, taskId: string) {
 
   const supabase = createServerClient();
 
-  // Delete dependencies first
-  await supabase
-    .from('task_dependencies')
-    .delete()
-    .or(`blocked_task_id.eq.${taskId},blocking_task_id.eq.${taskId}`);
+  // Get all task IDs in this project to scope dependency deletion
+  const { data: projectTasks } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('project_id', projectId);
+  const projectTaskIds = (projectTasks || []).map((t: { id: string }) => t.id);
+
+  // Delete dependencies only where both tasks belong to this project
+  if (projectTaskIds.length > 0) {
+    await supabase
+      .from('task_dependencies')
+      .delete()
+      .eq('blocked_task_id', taskId)
+      .in('blocking_task_id', projectTaskIds);
+    await supabase
+      .from('task_dependencies')
+      .delete()
+      .eq('blocking_task_id', taskId)
+      .in('blocked_task_id', projectTaskIds);
+  }
 
   // Delete task-contract links
   await supabase

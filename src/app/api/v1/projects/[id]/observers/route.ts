@@ -94,6 +94,21 @@ export async function POST(
     );
   }
 
+  if (parsed.note !== undefined && parsed.note !== null) {
+    if (typeof parsed.note !== 'string') {
+      return NextResponse.json(
+        { error: 'note must be a string', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 },
+      );
+    }
+    if (parsed.note.length > 2000) {
+      return NextResponse.json(
+        { error: 'note must be 2000 characters or fewer', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 },
+      );
+    }
+  }
+
   const supabase = createServerClient();
   const [{ data: project }, { data: agent }, { data: existingMember }, { data: existingObserver }] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', id).single(),
@@ -156,7 +171,20 @@ export async function POST(
     .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
     .single();
 
-  if (error || !observer) {
+  if (error) {
+    if (error.code === '23505') {
+      return NextResponse.json(
+        { error: 'Agent is already an observer on this project', code: 'DUPLICATE' } satisfies ApiError,
+        { status: 409 },
+      );
+    }
+    return NextResponse.json(
+      { error: 'Failed to add observer', code: 'DB_ERROR' } satisfies ApiError,
+      { status: 500 },
+    );
+  }
+
+  if (!observer) {
     return NextResponse.json(
       { error: 'Failed to add observer', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 },

@@ -16,11 +16,23 @@ export default function ActingAgentSelector() {
 
   const updateSelection = (value: string) => {
     startTransition(async () => {
-      await fetch('/api/dashboard/acting-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId: value === '__least_privilege__' ? null : value }),
-      });
+      try {
+        const res = await fetch('/api/dashboard/acting-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId: value === '__least_privilege__' ? null : value }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error('[acting-agent] Selection failed:', body.error || res.statusText);
+          alert(`Failed to switch acting agent: ${body.error || res.statusText}`);
+          return;
+        }
+      } catch (err) {
+        console.error('[acting-agent] Selection error:', err);
+        alert('Failed to switch acting agent. Please try again.');
+        return;
+      }
       router.refresh();
     });
   };

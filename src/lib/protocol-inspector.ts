@@ -161,6 +161,27 @@ export async function loadProtocolInspector(args: {
       .eq('id', taskId)
       .maybeSingle();
     taskRow = (data as InspectorTaskRow | null) || null;
+
+    // Scope check: verify the user has access to this task's project (member or observer)
+    if (taskRow && !isSuperAdmin) {
+      const [{ data: memberRows }, { data: observerRows }] = await Promise.all([
+        supabase
+          .from('project_members')
+          .select('agent_id')
+          .eq('project_id', taskRow.project_id)
+          .in('agent_id', agentIds),
+        supabase
+          .from('project_observers')
+          .select('agent_id')
+          .eq('project_id', taskRow.project_id)
+          .in('agent_id', agentIds),
+      ]);
+      const hasMember = memberRows && memberRows.length > 0;
+      const hasObserver = observerRows && observerRows.length > 0;
+      if (!hasMember && !hasObserver) {
+        taskRow = null;
+      }
+    }
   }
 
   interface InspectorContractRow extends Contract {
@@ -246,7 +267,30 @@ export async function loadProtocolInspector(args: {
       .in('id', linkedTaskIds);
 
     const linkMap = new Map(taskContracts.map((link) => [link.task_id, link.contract_id]));
-    linkedTasks = sortTasks(((data || []) as Array<Record<string, unknown>>).map((row) => ({
+    // Scope-check: filter out tasks from projects the user doesn't have access to
+    let filteredTaskData = (data || []) as Array<Record<string, unknown>>;
+    if (!isSuperAdmin && filteredTaskData.length > 0) {
+      const projectIds = Array.from(new Set(filteredTaskData.map((row) => row.project_id as string)));
+      const [{ data: accessibleMembers }, { data: accessibleObservers }] = await Promise.all([
+        supabase
+          .from('project_members')
+          .select('project_id')
+          .in('project_id', projectIds)
+          .in('agent_id', agentIds),
+        supabase
+          .from('project_observers')
+          .select('project_id')
+          .in('project_id', projectIds)
+          .in('agent_id', agentIds),
+      ]);
+      const accessibleProjectIds = new Set([
+        ...(accessibleMembers || []).map((m) => m.project_id),
+        ...(accessibleObservers || []).map((o) => o.project_id),
+      ]);
+      filteredTaskData = filteredTaskData.filter((row) => accessibleProjectIds.has(row.project_id as string));
+    }
+
+    linkedTasks = sortTasks((filteredTaskData).map((row) => ({
       id: row.id as string,
       title: row.title as string,
       status: row.status as string,
@@ -328,7 +372,18 @@ export async function loadProtocolInspector(args: {
   }
 
   let webhookDeliveries: InspectorWebhookDelivery[] = [];
-  const deliveryQuery = supabase
+
+  // Scope webhook deliveries to the user's agents (unless super admin)
+  let scopedWebhookIds: string[] | null = null;
+  if (!isSuperAdmin && agentIds.length > 0) {
+    const { data: userWebhooks } = await supabase
+      .from('webhooks')
+      .select('id')
+      .in('agent_id', agentIds);
+    scopedWebhookIds = (userWebhooks || []).map((w) => w.id);
+  }
+
+  let deliveryQuery = supabase
     .from('webhook_deliveries')
     .select(`
       id,
@@ -348,13 +403,26 @@ export async function loadProtocolInspector(args: {
     .order('created_at', { ascending: false })
     .limit(100);
 
+  if (scopedWebhookIds !== null) {
+    if (scopedWebhookIds.length === 0) {
+      deliveryQuery = deliveryQuery.in('webhook_id', ['__none__']);
+    } else {
+      deliveryQuery = deliveryQuery.in('webhook_id', scopedWebhookIds);
+    }
+  }
+
   const { data: deliveryRows } = await deliveryQuery;
   webhookDeliveries = ((deliveryRows || []) as Array<Record<string, unknown>>)
     .map((row) => {
       const payload = (row.payload as Record<string, unknown> | null) || null;
       const eventPayload = (payload?.event as Record<string, unknown> | null) || null;
-      const relatedContractId = (eventPayload?.contract_id as string | undefined) || null;
-      const relatedTaskId = (eventPayload?.task_id as string | undefined) || null;
+      const eventData = (eventPayload?.data as Record<string, unknown> | null) || null;
+      const relatedContractId = (eventPayload?.contract_id as string | undefined)
+        || (eventData?.contract_id as string | undefined)
+        || null;
+      const relatedTaskId = (eventPayload?.task_id as string | undefined)
+        || (eventData?.task_id as string | undefined)
+        || null;
       const maxRetries = (row.max_retries as number | null) || null;
       const attempts = row.attempts as number;
       const status = row.status as string;

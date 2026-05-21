@@ -63,6 +63,7 @@ export default async function ProjectDetailPage({
         .select('id')
         .eq('project_id', id)
         .in('agent_id', inviteeScopedQuery)
+        .in('status', ['pending', 'accepted'])
         .limit(1),
     ]);
 
@@ -130,10 +131,19 @@ export default async function ProjectDetailPage({
 
       return q.order('position', { ascending: true });
     })(),
-    supabase
-      .from('task_dependencies')
-      .select('id, blocking_task_id, blocked_task_id, dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status)')
-      .limit(500),
+    (async () => {
+      const taskIdsRes = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('project_id', id);
+      const projectTaskIds = (taskIdsRes.data || []).map((t: { id: string }) => t.id);
+      if (projectTaskIds.length === 0) return { data: [], error: null };
+      return supabase
+        .from('task_dependencies')
+        .select('id, blocking_task_id, blocked_task_id, dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status)')
+        .or(`blocked_task_id.in.(${projectTaskIds.join(',')}),blocking_task_id.in.(${projectTaskIds.join(',')})`)
+        .limit(500);
+    })(),
     supabase.from('agents').select('id, name, display_name').order('name'),
   ]);
 

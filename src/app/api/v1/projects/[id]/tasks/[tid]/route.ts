@@ -497,6 +497,63 @@ export async function PATCH(
     }
   }
 
+  // Pre-validate handoff/escalation contract inputs before committing task update
+  if (parsed.handoff_contract) {
+    const preNormalizedInvitees = [...new Set(parsed.handoff_contract.invitees.map((invitee) => invitee.trim()).filter(Boolean))];
+    if (preNormalizedInvitees.includes(auth.agent.name)) {
+      return NextResponse.json(
+        { error: 'Cannot invite yourself to a handoff contract', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+    const { data: preInviteeAgents, error: preInviteeError } = await supabase
+      .from('agents')
+      .select('id, name')
+      .in('name', preNormalizedInvitees);
+    if (preInviteeError) {
+      return NextResponse.json(
+        { error: 'Failed to validate handoff invitees', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+    const preFoundNames = new Set((preInviteeAgents || []).map((a) => a.name));
+    const preMissing = preNormalizedInvitees.filter((name) => !preFoundNames.has(name));
+    if (preMissing.length > 0) {
+      return NextResponse.json(
+        { error: `Unknown handoff invitee(s): ${preMissing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+  }
+
+  if (parsed.escalation_contract) {
+    const preNormalizedBrokers = [...new Set(parsed.escalation_contract.brokers.map((b) => b.trim()).filter(Boolean))];
+    if (preNormalizedBrokers.includes(auth.agent.name)) {
+      return NextResponse.json(
+        { error: 'Cannot broker-escalate to yourself', code: 'VALIDATION_ERROR' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+    const { data: preBrokerAgents, error: preBrokerError } = await supabase
+      .from('agents')
+      .select('id, name')
+      .in('name', preNormalizedBrokers);
+    if (preBrokerError) {
+      return NextResponse.json(
+        { error: 'Failed to validate escalation brokers', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+    const preFoundNames = new Set((preBrokerAgents || []).map((a) => a.name));
+    const preMissing = preNormalizedBrokers.filter((name) => !preFoundNames.has(name));
+    if (preMissing.length > 0) {
+      return NextResponse.json(
+        { error: `Unknown escalation broker(s): ${preMissing.join(', ')}`, code: 'INVALID_INVITEES' } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+  }
+
   // Fetch existing task for change detection (activity feed)
   const { data: oldTask } = await supabase
     .from('tasks')
@@ -538,6 +595,13 @@ export async function PATCH(
         .single();
 
   const { data: task, error } = taskResult;
+
+  if (!task && !error) {
+    return NextResponse.json(
+      { error: 'Task not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
+    );
+  }
 
   if (error || !task) {
     return NextResponse.json(

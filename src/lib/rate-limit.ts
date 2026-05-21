@@ -12,20 +12,24 @@ interface RateLimitEntry {
 
 // ── In-memory fallback ──
 const fallbackBuckets = new Map<string, RateLimitEntry>();
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
-// Clean up stale entries every 5 minutes (fallback + Supabase cleanup)
-setInterval(async () => {
-  const now = Date.now();
-  for (const [key, entry] of fallbackBuckets) {
-    if (entry.resetAt < now) fallbackBuckets.delete(key);
-  }
-  try {
-    const supabase = createServerClient();
-    await supabase.rpc('cleanup_expired_buckets');
-  } catch {
-    // Supabase cleanup failed — fallback cache handles it locally
-  }
-}, 5 * 60 * 1000);
+const ensureCleanupTimer = () => {
+  if (cleanupTimer) return;
+  cleanupTimer = setInterval(async () => {
+    const now = Date.now();
+    for (const [key, entry] of fallbackBuckets) {
+      if (entry.resetAt < now) fallbackBuckets.delete(key);
+    }
+    try {
+      const supabase = createServerClient();
+      await supabase.rpc('cleanup_expired_buckets');
+    } catch {
+      // Supabase cleanup failed — fallback cache handles it locally
+    }
+  }, 5 * 60 * 1000);
+  cleanupTimer.unref();
+};
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -46,6 +50,7 @@ export async function checkRateLimit(
   key: string,
   config: RateLimitConfig
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  ensureCleanupTimer();
   try {
     const supabase = createServerClient();
 

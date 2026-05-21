@@ -17,11 +17,17 @@ interface TickerProps {
 export const Ticker = ({ items, paused = false }: TickerProps) => {
   const [offset, setOffset] = useState(0);
   const rafRef = useRef<number>(0);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (paused) return;
     const tick = () => {
-      setOffset(o => o + 0.4);
+      setOffset(o => {
+        const contentWidth = contentRef.current?.scrollWidth ?? 0;
+        const halfWidth = contentWidth / 2;
+        const next = o + 0.4;
+        return halfWidth > 0 && next >= halfWidth ? next - halfWidth : next;
+      });
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -38,7 +44,7 @@ export const Ticker = ({ items, paused = false }: TickerProps) => {
       height: 22,
       maskImage: 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)',
     }}>
-      <div style={{
+      <div ref={contentRef} style={{
         display: 'flex',
         gap: 28,
         transform: `translateX(${-offset}px)`,

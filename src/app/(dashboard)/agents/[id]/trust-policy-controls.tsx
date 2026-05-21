@@ -35,13 +35,15 @@ export default function TrustPolicyControls({
   const [isPending, startTransition] = useTransition();
 
   const policy = useMemo(() => normalizeAgentTrustPolicy({
+    ...normalizedInitialPolicy,
     version: 1,
-    webhooks: { management: webhookManagement },
+    webhooks: { ...normalizedInitialPolicy.webhooks, management: webhookManagement },
     observer_project_access: {
+      ...normalizedInitialPolicy.observer_project_access,
       read: observerRead,
       download_project_attachments: observerAttachmentDownloads,
     },
-  }), [webhookManagement, observerRead, observerAttachmentDownloads]);
+  }), [normalizedInitialPolicy, webhookManagement, observerRead, observerAttachmentDownloads]);
 
   const dirty = policyToComparableString(policy) !== policyToComparableString(normalizedInitialPolicy);
 

@@ -46,7 +46,20 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
 
   if (activeTier !== 'all') query = query.eq('trust_tier', activeTier);
 
-  const { data } = await query;
+  const { data, error: queryError } = await query;
+  if (queryError) {
+    return (
+      <PageFrame>
+        <SectionHeader eyebrow="Registry" title="Agents" sub="Failed to load agents" />
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load agents</div>
+          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>
+            A database error occurred. Please try again later.
+          </div>
+        </div>
+      </PageFrame>
+    );
+  }
   const agents = (data || []) as AgentRow[];
 
   return (

@@ -142,12 +142,25 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
   const nextAttempt = delivery.attempts + 1;
   const now = new Date().toISOString();
 
-  // Mark as retrying
-  await supabase.from('webhook_deliveries').update({
-    status: 'retrying',
-    attempts: nextAttempt,
-    last_retry_at: now,
-  }).eq('id', delivery.id);
+  // CAS guard: atomically claim this delivery for retry.
+  // Only succeeds if status is still 'pending_retry' and attempts haven't changed.
+  const { data: claimed, error: claimError } = await supabase
+    .from('webhook_deliveries')
+    .update({
+      status: 'retrying',
+      attempts: nextAttempt,
+      last_retry_at: now,
+    })
+    .eq('id', delivery.id)
+    .eq('status', 'pending_retry')
+    .eq('attempts', delivery.attempts)
+    .select('id')
+    .maybeSingle();
+
+  if (claimError || !claimed) {
+    log('Skipping — already claimed by another worker', { id: delivery.id });
+    return;
+  }
 
   log('Retrying', { id: delivery.id, attempt: nextAttempt, max: delivery.max_retries });
 

@@ -89,6 +89,8 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
         'Content-Type': 'application/json',
         'X-Webhook-Signature': signature,
         'X-Webhook-Event': 'test',
+        'X-Webhook-ID': `test-${crypto.randomUUID()}`,
+        'X-Webhook-Timestamp': Math.floor(Date.now() / 1000).toString(),
       },
       body: payload,
       signal: AbortSignal.timeout(10000),
@@ -193,7 +195,7 @@ export async function updateWebhook(
 export interface WebhookDelivery {
   id: string;
   event: string;
-  status: 'pending' | 'success' | 'failed' | 'retrying';
+  status: 'pending' | 'pending_retry' | 'success' | 'failed' | 'retrying';
   attempts: number;
   max_retries: number | null;
   retry_delay_ms: number | null;
@@ -268,11 +270,9 @@ export async function deleteWebhook(webhookId: string): Promise<{ error?: string
     return { error: trustGate.body.error };
   }
 
-  await supabase.from('webhook_deliveries').delete().eq('webhook_id', webhookId);
-
   const { error: delError } = await supabase
     .from('webhooks')
-    .delete()
+    .update({ is_active: false, url: '', updated_at: new Date().toISOString() })
     .eq('id', webhookId);
 
   if (delError) return { error: delError.message };

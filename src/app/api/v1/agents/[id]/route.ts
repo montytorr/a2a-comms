@@ -32,13 +32,20 @@ export async function GET(
     );
   }
 
+  const isSelfOrAdmin = auth.agent.id === id || isAdminAgent(auth.agent.id, auth.agent.name);
+
+  const sanitized = isSelfOrAdmin ? agent : (() => {
+    const { trust_notes, trust_policy, privacy_metadata, ...rest } = agent as Record<string, unknown>;
+    return rest;
+  })();
+
   if (!includeReputation) {
-    return NextResponse.json(agent);
+    return NextResponse.json(sanitized);
   }
 
   const reputation = (await getAgentReputationDetail(id)) as AgentReputationDetail;
   return NextResponse.json({
-    ...agent,
+    ...sanitized,
     reputation,
   });
 }

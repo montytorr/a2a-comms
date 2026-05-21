@@ -112,6 +112,7 @@ export default async function WebhookHealthPage({
   const userWebhookIds: string[] = !isSuperAdmin ? scope.webhookIds : [];
 
   const hasWebhooks = isSuperAdmin || userWebhookIds.length > 0;
+  const needsScope = !isSuperAdmin && hasWebhooks;
 
   // Fetch recent deliveries (last 50), optionally filtered by webhook + failures only
   let deliveriesQuery = supabase
@@ -132,8 +133,7 @@ export default async function WebhookHealthPage({
     .order('created_at', { ascending: false })
     .limit(50);
 
-  // Scope to user's webhooks unless super admin
-  if (!isSuperAdmin && hasWebhooks) {
+  if (needsScope) {
     deliveriesQuery = deliveriesQuery.in('webhook_id', userWebhookIds);
   }
 
@@ -159,7 +159,7 @@ export default async function WebhookHealthPage({
     `)
     .gte('created_at', twentyFourHoursAgo);
 
-  if (!isSuperAdmin && hasWebhooks) {
+  if (needsScope) {
     stats24hQuery = stats24hQuery.in('webhook_id', userWebhookIds);
   }
 

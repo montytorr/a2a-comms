@@ -31,12 +31,16 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
     if (tickerItems) return;
 
     let cancelled = false;
+    let latestRequestId = 0;
     const load = async () => {
+      const requestId = ++latestRequestId;
       try {
         const res = await fetch('/api/internal/live-feed', { cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json() as { items?: TickerItem[] };
-        if (!cancelled) setLiveItems(Array.isArray(json.items) ? json.items : []);
+        if (!cancelled && requestId === latestRequestId) {
+          setLiveItems(Array.isArray(json.items) ? json.items : []);
+        }
       } catch {
         // Header ticker should never break navigation.
       }

@@ -162,7 +162,7 @@ export async function createAgentWithServiceKey(input: AgentLifecycleCreateInput
       label: input.service_key?.label ?? `${agentPayload.display_name} production key`,
       is_active: true,
     })
-    .select('*')
+    .select('id, key_id, label, is_active')
     .single();
 
   if (keyError || !key) {
@@ -196,30 +196,12 @@ export async function updateAgentLifecycle(agentId: string, input: AgentLifecycl
 
   const updates = buildAgentUpdateFields(input);
 
-  if (input.deactivate) {
+  const isDeactivating = !!input.deactivate;
+  if (isDeactivating) {
     updates.description = agent.description;
-    updates.updated_at = new Date().toISOString();
-
     const deactivateReason = input.deactivate_reason?.trim() || 'Agent deactivated';
     const deactivatedCapabilities = Array.isArray(agent.capabilities) ? agent.capabilities.filter((cap: string) => cap !== 'active') : [];
     updates.capabilities = deactivatedCapabilities;
-
-    const { error: deactivateKeysError } = await supabase
-      .from('service_keys')
-      .update({
-        is_active: false,
-        expires_at: new Date().toISOString(),
-        rotated_at: new Date().toISOString(),
-      })
-      .eq('agent_id', agentId)
-      .eq('is_active', true);
-
-    if (deactivateKeysError) {
-      throw new AgentLifecycleError(deactivateKeysError.message, 'DB_ERROR', 500);
-    }
-
-    await supabase.from('webhooks').delete().eq('agent_id', agentId);
-
     updates.trust_notes = [agent.trust_notes, deactivateReason].filter(Boolean).join('\n\n');
   }
 
@@ -238,6 +220,24 @@ export async function updateAgentLifecycle(agentId: string, input: AgentLifecycl
 
   if (updateError || !updated) {
     throw new AgentLifecycleError(updateError?.message || 'Failed to update agent', 'DB_ERROR', 500);
+  }
+
+  if (isDeactivating) {
+    const { error: deactivateKeysError } = await supabase
+      .from('service_keys')
+      .update({
+        is_active: false,
+        expires_at: new Date().toISOString(),
+        rotated_at: new Date().toISOString(),
+      })
+      .eq('agent_id', agentId)
+      .eq('is_active', true);
+
+    if (deactivateKeysError) {
+      throw new AgentLifecycleError(deactivateKeysError.message, 'DB_ERROR', 500);
+    }
+
+    await supabase.from('webhooks').delete().eq('agent_id', agentId);
   }
 
   return updated;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 const messageTypes = [
   { value: 'all', label: 'All Types' },
@@ -23,6 +23,8 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
   const agent = searchParams.get('agent') || 'all';
   const type = searchParams.get('type') || 'all';
   const search = searchParams.get('search') || '';
+  const [localSearch, setLocalSearch] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -38,9 +40,18 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
     [router, searchParams],
   );
 
+  const debouncedSearch = useCallback(
+    (value: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => updateFilter('search', value), 300);
+    },
+    [updateFilter],
+  );
+
   const hasFilters = agent !== 'all' || type !== 'all' || search !== '';
 
   const clearAll = useCallback(() => {
+    setLocalSearch('');
     router.push('/messages');
   }, [router]);
 
@@ -79,8 +90,11 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
       <input
         type="text"
         placeholder="Search content..."
-        value={search}
-        onChange={(e) => updateFilter('search', e.target.value)}
+        value={localSearch}
+        onChange={(e) => {
+          setLocalSearch(e.target.value);
+          debouncedSearch(e.target.value);
+        }}
         className="cp-input"
         style={{ width: '200px' }}
       />

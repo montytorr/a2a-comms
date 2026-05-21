@@ -43,7 +43,7 @@ export default function DashboardShell({ isSuperAdmin, displayName, notification
           </div>
         </div>
       </main>
-      <CommandPalette open={paletteOpen} onClose={setPaletteOpen} />
+      <CommandPalette open={paletteOpen} onClose={setPaletteOpen} isAdmin={isSuperAdmin} />
     </DashboardProvider>
   );
 }

@@ -34,7 +34,7 @@ test('attachment list renders preview action for markdown attachments', () => {
   const html = renderToStaticMarkup(<AttachmentListClient attachments={[makeAttachment()]} />);
 
   assert.match(html, /Open text/i);
-  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /Open in new tab/i);
   assert.match(html, /sample-preview\.md/i);
   assert.match(html, /sample\.md/i);
 });
@@ -56,7 +56,7 @@ test('attachment list renders image preview affordance for image attachments', (
   );
 
   assert.match(html, /Preview image/i);
-  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /Open in new tab/i);
   assert.match(html, /photo-preview\.png/i);
   assert.match(html, /img/i);
 });
@@ -78,18 +78,18 @@ test('attachment preview modal keeps fullscreen actions available', () => {
   );
 
   assert.match(html, /Open video/i);
-  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /Open in new tab/i);
 });
 
-test('attachment preview modal uses a body portal host and viewport-level overlay classes', async () => {
+test('attachment preview modal uses a body portal host and viewport-level overlay styles', async () => {
   const file = await import('node:fs/promises');
   const source = await file.readFile(new URL('../components/attachment-list-client.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /createPortal\(/);
   assert.match(source, /document\.body/);
-  assert.match(source, /data-attachment-preview-portal="true"/);
-  assert.match(source, /z-\[2147483647\]/);
-  assert.match(source, /h-dvh min-h-screen w-screen max-w-none/);
+  assert.match(source, /zIndex:\s*2147483647/);
+  assert.match(source, /100dvh/);
+  assert.match(source, /100vw/);
 });
 
 test('attachment list falls back to download url when preview url is unavailable', () => {
@@ -104,6 +104,6 @@ test('attachment list falls back to download url when preview url is unavailable
     />,
   );
 
-  assert.match(html, /Open preview in new tab/i);
+  assert.match(html, /Open in new tab/i);
   assert.match(html, /fallback\.md/i);
 });

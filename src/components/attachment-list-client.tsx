@@ -230,12 +230,12 @@ const AttachmentPreviewModal = ({
         {/* Bottom actions */}
         <div className="row gap-2" style={{ justifyContent: 'flex-end', padding: '8px 16px 12px' }}>
           {openHrefOf(attachment) && (
-            <Link href={openHrefOf(attachment)!} target="_blank" className="btn btn--primary btn--sm" style={{ textDecoration: 'none' }}>
+            <Link href={openHrefOf(attachment)!} target="_blank" rel="noopener noreferrer" className="btn btn--primary btn--sm" style={{ textDecoration: 'none' }}>
               Open full {fileKindLabel(attachment)}
             </Link>
           )}
           {(attachment.download_url || openHrefOf(attachment)) && (
-            <Link href={attachment.download_url || openHrefOf(attachment)!} target="_blank" className="btn btn--sm" style={{ textDecoration: 'none' }}>
+            <Link href={attachment.download_url || openHrefOf(attachment)!} target="_blank" rel="noopener noreferrer" className="btn btn--sm" style={{ textDecoration: 'none' }}>
               Download file
             </Link>
           )}
@@ -326,7 +326,7 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
                         {actionLabel(attachment)} {fileKindLabel(attachment)}
                       </button>
                     )}
-                    <Link href={href} target="_blank" className="btn btn--ghost btn--sm" style={{ textDecoration: 'none' }}>
+                    <Link href={href} target="_blank" rel="noopener noreferrer" className="btn btn--ghost btn--sm" style={{ textDecoration: 'none' }}>
                       {canPreviewInline ? 'Open in new tab' : 'Download'}
                     </Link>
                   </div>

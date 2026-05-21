@@ -14,19 +14,27 @@ function isMissingAttachmentIdsColumn(error: PostgrestError | null | undefined) 
   return !!error && /attachment_ids/i.test(error.message || '');
 }
 
-async function verifyTask(projectId: string, taskId: string) {
+async function verifyTask(projectId: string, taskId: string): Promise<{ data: { id: string; project_id: string } | null; error: string | null }> {
   const supabase = createServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('tasks')
     .select('id, project_id')
     .eq('id', taskId)
     .eq('project_id', projectId)
     .single();
-  return data || null;
+  if (error && error.code !== 'PGRST116') {
+    return { data: null, error: error.message };
+  }
+  return { data: data || null, error: null };
 }
 
-async function verifyMembership(projectId: string, agentId: string) {
-  return getProjectAccess(projectId, agentId);
+async function verifyMembership(projectId: string, agentId: string): Promise<{ data: Awaited<ReturnType<typeof getProjectAccess>>; error: string | null }> {
+  try {
+    const result = await getProjectAccess(projectId, agentId);
+    return { data: result, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err.message : 'Failed to verify membership' };
+  }
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string; tid: string }> }) {
@@ -35,12 +43,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { auth } = result;
   const { id: projectId, tid: taskId } = await params;
 
-  const member = await verifyMembership(projectId, auth.agent.id);
+  const { data: member, error: memberError } = await verifyMembership(projectId, auth.agent.id);
+  if (memberError) {
+    return NextResponse.json({ error: 'Failed to verify project access', code: 'INTERNAL_ERROR' } satisfies ApiError, { status: 500 });
+  }
   if (!member) {
     return NextResponse.json({ error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
 
-  const task = await verifyTask(projectId, taskId);
+  const { data: task, error: taskError } = await verifyTask(projectId, taskId);
+  if (taskError) {
+    return NextResponse.json({ error: 'Failed to verify task', code: 'INTERNAL_ERROR' } satisfies ApiError, { status: 500 });
+  }
   if (!task) {
     return NextResponse.json({ error: 'Task not found', code: 'NOT_FOUND' } satisfies ApiError, { status: 404 });
   }
@@ -63,7 +77,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { auth } = result;
   const { id: projectId, tid: taskId } = await params;
 
-  const member = await verifyMembership(projectId, auth.agent.id);
+  const { data: member, error: memberError } = await verifyMembership(projectId, auth.agent.id);
+  if (memberError) {
+    return NextResponse.json({ error: 'Failed to verify project access', code: 'INTERNAL_ERROR' } satisfies ApiError, { status: 500 });
+  }
   if (!member) {
     return NextResponse.json({ error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
@@ -72,7 +89,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Observers may inspect attachments but cannot upload new artifacts', code: 'FORBIDDEN' } satisfies ApiError, { status: 403 });
   }
 
-  const task = await verifyTask(projectId, taskId);
+  const { data: task, error: taskError } = await verifyTask(projectId, taskId);
+  if (taskError) {
+    return NextResponse.json({ error: 'Failed to verify task', code: 'INTERNAL_ERROR' } satisfies ApiError, { status: 500 });
+  }
   if (!task) {
     return NextResponse.json({ error: 'Task not found', code: 'NOT_FOUND' } satisfies ApiError, { status: 404 });
   }
@@ -163,6 +183,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(attachment, { status: 201 });
   } catch (error) {
+    await supabase.from('task_attachments').delete().eq('storage_path', storagePath).catch(() => {});
     await removeAttachmentBinary(storagePath).catch(() => {});
     throw error;
   }

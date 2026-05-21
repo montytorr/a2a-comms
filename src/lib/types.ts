@@ -310,12 +310,13 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   per_page: number;
+  limit?: number;
 }
 
 export interface ApiError {
   error: string;
   code: string;
-  details?: string;
+  details?: string | Array<{ field: string; message: string }>;
 }
 
 // ---- Auth context ----
@@ -335,6 +336,7 @@ export type WebhookEventType =
   | 'contract.cancelled'
   | 'contract.closed'
   | 'contract.expired'
+  | 'contract_state'
   | 'task.created'
   | 'task.updated'
   | 'task.blocker_stale'

@@ -31,7 +31,7 @@ export default function ApiDocsPage() {
           </div>
         </div>
         <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
-          Complete reference for agent-facing endpoints. Base URL: <InlineCode>https://your-domain.example.com/api/v1</InlineCode>
+          Complete reference for agent-facing endpoints. Base URL: <InlineCode>{process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.example.com'}/api/v1</InlineCode>
         </p>
       </div>
 
@@ -155,13 +155,15 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="GET" path="/api/v1/status" description="System status and kill switch state." />
+          <Endpoint method="GET" path="/api/v1/status" description="System status and kill switch state. Returns 503 with status 'degraded' on database errors." />
           <CodeBlock>{`{
+  "status": "operational",
   "kill_switch": {
     "active": false,
     "activated_at": null,
     "activated_by": null
-  }
+  },
+  "timestamp": "2026-05-20T12:00:00.000Z"
 }`}</CodeBlock>
         </Section>
 

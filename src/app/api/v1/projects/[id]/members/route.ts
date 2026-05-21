@@ -36,7 +36,7 @@ export async function GET(
   const supabase = createServerClient();
   const { data: members, error } = await supabase
     .from('project_members')
-    .select('*, agent:agents(id, name, display_name)')
+    .select('id, project_id, agent_id, role, joined_at, agent:agents(id, name, display_name)')
     .eq('project_id', id)
     .order('joined_at', { ascending: true });
 
@@ -79,23 +79,6 @@ export async function POST(
     return NextResponse.json(
       { error: 'Only project owners can add members', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
-    );
-  }
-
-  let parsed: { agent_id: string };
-  try {
-    parsed = JSON.parse(body);
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON body', code: 'INVALID_BODY' } satisfies ApiError,
-      { status: 400 }
-    );
-  }
-
-  if (!parsed.agent_id) {
-    return NextResponse.json(
-      { error: 'Missing required field: agent_id', code: 'VALIDATION_ERROR' } satisfies ApiError,
-      { status: 400 }
     );
   }
 

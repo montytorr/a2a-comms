@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
 import { getProjectAccess } from '@/lib/project-access';
+import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { buildHandoffContractDescription, buildHandoffContractTitle } from '@/lib/handoff-contracts';
@@ -86,12 +87,24 @@ export async function GET(
     );
   }
 
+  if (member.accessKind === 'observer') {
+    const observerReadDecision = evaluateObserverProjectReadPolicyAccess(auth.agent);
+    if (!observerReadDecision.allowed) {
+      return NextResponse.json(
+        observerReadDecision.body || { error: 'Observer task visibility blocked by trust policy', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+        { status: observerReadDecision.status || 403 }
+      );
+    }
+  }
+
   const status = url.searchParams.get('status');
   const sprint_id = url.searchParams.get('sprint_id');
   const assignee = url.searchParams.get('assignee') || url.searchParams.get('assignee_agent_id');
   const priority = url.searchParams.get('priority');
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-  const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') || '50', 10)));
+  const rawPage = parseInt(url.searchParams.get('page') || '1', 10);
+  const rawPerPage = parseInt(url.searchParams.get('per_page') || '50', 10);
+  const page = Math.max(1, Number.isFinite(rawPage) ? rawPage : 1);
+  const perPage = Math.min(100, Math.max(1, Number.isFinite(rawPerPage) ? rawPerPage : 50));
 
   const supabase = createServerClient();
 

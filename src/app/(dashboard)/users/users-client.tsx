@@ -45,7 +45,7 @@ export default function UsersClient({
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [linkingUser, setLinkingUser] = useState<string | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState('');
+  const [selectedAgentByUser, setSelectedAgentByUser] = useState<Record<string, string>>({});
 
   // Add User form state
   const [showAddUser, setShowAddUser] = useState(false);
@@ -81,6 +81,7 @@ export default function UsersClient({
   }
 
   async function handleLinkAgent(userId: string) {
+    const selectedAgent = selectedAgentByUser[userId] || '';
     if (!selectedAgent) return;
     setLoading(`link-${userId}`);
     setError(null);
@@ -89,7 +90,7 @@ export default function UsersClient({
       setError(result.error);
     } else {
       setLinkingUser(null);
-      setSelectedAgent('');
+      setSelectedAgentByUser((prev) => { const next = { ...prev }; delete next[userId]; return next; });
       router.refresh();
     }
     setLoading(null);
@@ -357,8 +358,8 @@ export default function UsersClient({
                   {linkingUser === profile.id && (
                     <div className="row gap-2 animate-fade-in" style={{ marginBottom: 10 }}>
                       <select
-                        value={selectedAgent}
-                        onChange={(e) => setSelectedAgent(e.target.value)}
+                        value={selectedAgentByUser[profile.id] || ''}
+                        onChange={(e) => setSelectedAgentByUser((prev) => ({ ...prev, [profile.id]: e.target.value }))}
                         className="cp-select"
                         style={{ flex: 1 }}
                       >
@@ -371,10 +372,10 @@ export default function UsersClient({
                       </select>
                       <button
                         onClick={() => handleLinkAgent(profile.id)}
-                        disabled={!selectedAgent || loading === `link-${profile.id}`}
+                        disabled={!(selectedAgentByUser[profile.id]) || loading === `link-${profile.id}`}
                         className="btn btn--sm"
                         style={{
-                          opacity: (!selectedAgent || loading === `link-${profile.id}`) ? 0.35 : 1,
+                          opacity: (!(selectedAgentByUser[profile.id]) || loading === `link-${profile.id}`) ? 0.35 : 1,
                           gap: 5,
                           color: 'var(--peri)',
                           borderColor: 'oklch(0.50 0.08 265 / 0.4)',

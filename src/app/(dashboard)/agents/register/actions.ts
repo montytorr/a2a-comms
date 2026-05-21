@@ -20,6 +20,10 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
     return { success: false, error: 'Not authenticated' };
   }
 
+  if (!user.isSuperAdmin) {
+    return { success: false, error: 'Only administrators can register new agents from the dashboard' };
+  }
+
   const name = (formData.get('name') as string)?.trim();
   const displayName = (formData.get('display_name') as string)?.trim();
   const owner = (formData.get('owner') as string)?.trim();

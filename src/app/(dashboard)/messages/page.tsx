@@ -87,10 +87,24 @@ export default async function MessagesPage({
     query = query.eq('message_type', typeFilter);
   }
   if (searchFilter) {
-    query = query.ilike('content::text', `%${searchFilter}%`);
+    query = query.or(`content->>summary.ilike.%${searchFilter}%,content->>message.ilike.%${searchFilter}%,content->>text.ilike.%${searchFilter}%`);
   }
 
-  const { data: messages } = await query;
+  const { data: messages, error: messagesError } = await query;
+  if (messagesError) {
+    return (
+      <div style={{ padding: '28px 32px 60px', maxWidth: '1100px' }}>
+        <div style={{ marginBottom: '28px' }}>
+          <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
+          <h1 className="h1">Messages</h1>
+        </div>
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load messages</div>
+          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>A database error occurred. Please try again later.</div>
+        </div>
+      </div>
+    );
+  }
 
   const contractIds = [...new Set((messages || []).map(m => m.contract_id))];
   const { data: contracts } = contractIds.length > 0

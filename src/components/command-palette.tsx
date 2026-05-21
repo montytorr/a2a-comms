@@ -45,9 +45,10 @@ const items: PaletteItem[] = [
 interface CommandPaletteProps {
   open: boolean;
   onClose: (open: boolean) => void;
+  isAdmin?: boolean;
 }
 
-export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
+export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPaletteProps) => {
   const [q, setQ] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +78,10 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
 
   if (!open) return null;
 
-  const filtered = items.filter(i => !q || i.label.toLowerCase().includes(q.toLowerCase()));
+  const filtered = items.filter(i => {
+    if (i.kind === 'Admin' && !isAdmin) return false;
+    return !q || i.label.toLowerCase().includes(q.toLowerCase());
+  });
 
   const navigate = (href: string) => {
     router.push(href);

@@ -45,7 +45,8 @@ export default async function AuditPage({
   if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
-  const page = Math.max(1, parseInt(params.page || '1', 10));
+  const rawPage = parseInt(params.page || '1', 10);
+  const page = Math.max(1, Number.isFinite(rawPage) ? rawPage : 1);
   const actorFilter = params.actor || '';
   const actionFilter = params.action || 'all';
   const rangeFilter = params.range || 'all';
@@ -132,7 +133,18 @@ export default async function AuditPage({
 
   dataQuery = dataQuery.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-  const { data: entries } = await dataQuery;
+  const { data: entries, error: dataError } = await dataQuery;
+  if (dataError) {
+    return (
+      <PageFrame maxW={1400}>
+        <SectionHeader eyebrow="Monitoring" title="Audit Log" sub="Failed to load audit entries" />
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load audit log</div>
+          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>A database error occurred. Please try again later.</div>
+        </div>
+      </PageFrame>
+    );
+  }
   const rows = (entries || []) as AuditLogEntry[];
 
   const formattedTotal = totalCount.toLocaleString();

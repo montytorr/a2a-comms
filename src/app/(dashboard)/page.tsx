@@ -71,9 +71,17 @@ export default async function DashboardPage() {
       messagesQuery = supabase.from('messages').select('id', { count: 'exact', head: true }).eq('contract_id', none);
     }
 
-    const names = scope.contractActorNames;
-    if (names.length > 0) {
-      auditQuery = auditQuery.in('actor', names);
+    const { data: ownAgentsForAudit } = await supabase
+      .from('agents')
+      .select('name')
+      .in('id', agentIds);
+    const ownNames = [...new Set([
+      ...(ownAgentsForAudit || []).map((a: { name: string }) => a.name),
+      user.displayName,
+      'dashboard',
+    ])];
+    if (ownNames.length > 0) {
+      auditQuery = auditQuery.in('actor', ownNames);
     }
   } else if (!isAdmin && agentIds.length === 0) {
     scopedProjectIds = [];
@@ -129,6 +137,16 @@ export default async function DashboardPage() {
     latestWebhookDeliveryQuery = latestWebhookDeliveryQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
   }
 
+  let pendingProjectInvitationsQuery = supabase
+    .from('project_member_invitations')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  if (!isAdmin && agentIds.length > 0) {
+    pendingProjectInvitationsQuery = pendingProjectInvitationsQuery.in('agent_id', agentIds);
+  } else if (!isAdmin) {
+    pendingProjectInvitationsQuery = pendingProjectInvitationsQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
+  }
+
   const [
     contractsRes,
     messagesRes,
@@ -140,6 +158,7 @@ export default async function DashboardPage() {
     tasksInProgressRes,
     webhookDeliveriesRes,
     latestWebhookDeliveryRes,
+    pendingProjectInvitationsRes,
   ] = await Promise.all([
     contractsQuery,
     messagesQuery,
@@ -151,11 +170,12 @@ export default async function DashboardPage() {
     tasksInProgressQuery,
     webhookDeliveriesQuery,
     latestWebhookDeliveryQuery,
+    pendingProjectInvitationsQuery,
   ]);
 
   const activeContracts = ((contractsRes.data as Contract[] | null) || []).length;
   const messagesToday = messagesRes.count || 0;
-  const pendingInvitations = pendingRes.count || 0;
+  const pendingInvitations = (pendingRes.count || 0) + (pendingProjectInvitationsRes.count || 0);
   const killSwitch = configRes.data as SystemConfig | null;
   const isKillSwitchActive = (killSwitch?.value as Record<string, unknown>)?.active === true;
   const recentAudit = auditRes.data || [];

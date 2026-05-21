@@ -85,12 +85,12 @@ export function buildZodSchema(descriptor: SchemaDescriptor): z.ZodType {
 export function validateContent(
   schemaJson: unknown,
   content: unknown,
-): { success: true } | { success: false; error: string } {
+): { success: true } | { success: false; error: string; issues: Array<{ field: string; message: string }> } {
   try {
     const descriptor = schemaJson as SchemaDescriptor;
 
     if (!descriptor || typeof descriptor !== 'object' || !descriptor.type) {
-      return { success: false, error: 'Invalid schema descriptor: missing "type" field' };
+      return { success: false, error: 'Invalid schema descriptor: missing "type" field', issues: [{ field: 'schema', message: 'missing "type" field' }] };
     }
 
     const zodSchema = buildZodSchema(descriptor);
@@ -100,17 +100,19 @@ export function validateContent(
       return { success: true };
     }
 
-    // Format Zod error issues into a human-readable string
-    const issues = result.error.issues.map((issue) => {
-      const path = issue.path.length > 0 ? `at "${issue.path.join('.')}"` : 'at root';
-      return `${path}: ${issue.message}`;
-    });
+    const issues = result.error.issues.map((issue) => ({
+      field: issue.path.length > 0 ? issue.path.join('.') : 'root',
+      message: issue.message,
+    }));
 
-    return { success: false, error: `Schema validation failed: ${issues.join('; ')}` };
+    const errorStr = issues.map(i => `at "${i.field}": ${i.message}`).join('; ');
+
+    return { success: false, error: `Schema validation failed: ${errorStr}`, issues };
   } catch (err) {
     return {
       success: false,
       error: `Schema error: ${err instanceof Error ? err.message : String(err)}`,
+      issues: [{ field: 'schema', message: err instanceof Error ? err.message : String(err) }],
     };
   }
 }
