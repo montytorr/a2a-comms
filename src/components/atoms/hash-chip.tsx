@@ -21,7 +21,6 @@ export const HashChip = ({ value, full = false, copyable = true }: HashChipProps
 
   const onCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!copyable) return;
     navigator.clipboard?.writeText(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
@@ -29,7 +28,7 @@ export const HashChip = ({ value, full = false, copyable = true }: HashChipProps
   };
 
   return (
-    <span className="hash-chip" onClick={onCopy} title={value}>
+    <span className="hash-chip" onClick={copyable ? onCopy : undefined} title={value}>
       <span>{display}</span>
       {copyable && (copied ? <Check size={11} /> : <Copy size={11} />)}
     </span>

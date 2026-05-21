@@ -177,7 +177,7 @@ export async function POST(
     );
   }
 
-  if (!parsed.content || typeof parsed.content !== 'object') {
+  if (!parsed.content || typeof parsed.content !== 'object' || Array.isArray(parsed.content)) {
     return NextResponse.json(
       { error: 'Missing required field: content (must be an object)', code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }

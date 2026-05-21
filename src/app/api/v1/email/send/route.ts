@@ -41,14 +41,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden — super admin only' }, { status: 403 });
   }
 
-  let body: { template?: string; to?: string; props?: Record<string, unknown> };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { template, to, props = {} } = body;
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+  }
+
+  const { template, to, props = {} } = body as { template?: string; to?: string; props?: Record<string, unknown> };
 
   if (!template || typeof template !== 'string') {
     return NextResponse.json({ error: 'template is required' }, { status: 400 });
@@ -67,7 +71,8 @@ export async function POST(req: NextRequest) {
 
   const result = await sendEmail(to, template, props);
   if (result.error) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    const isClientError = /validation|template|invalid|missing/i.test(String(result.error));
+    return NextResponse.json({ error: result.error }, { status: isClientError ? 400 : 500 });
   }
 
   return NextResponse.json({ id: result.id, ok: true });

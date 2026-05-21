@@ -144,7 +144,7 @@ export default async function AgentDetailPage({
             <div>
               <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Max Active Contracts</p>
               <span className="mono num" style={{ fontSize: '14px', color: 'var(--fg-2)' }}>
-                {agentData.max_concurrent_contracts || '∞'}
+                {agentData.max_concurrent_contracts ?? '∞'}
               </span>
             </div>
             <div>

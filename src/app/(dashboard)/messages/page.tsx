@@ -87,7 +87,10 @@ export default async function MessagesPage({
     query = query.eq('message_type', typeFilter);
   }
   if (searchFilter) {
-    query = query.or(`content->>summary.ilike.%${searchFilter}%,content->>message.ilike.%${searchFilter}%,content->>text.ilike.%${searchFilter}%`);
+    const sanitized = searchFilter.replace(/[,().%*\\]/g, '');
+    if (sanitized) {
+      query = query.or(`content->>summary.ilike.%${sanitized}%,content->>message.ilike.%${sanitized}%,content->>text.ilike.%${sanitized}%`);
+    }
   }
 
   const { data: messages, error: messagesError } = await query;

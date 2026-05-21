@@ -70,6 +70,7 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
     }}>
       {/* Command palette trigger */}
       <button
+        type="button"
         onClick={onOpenPalette}
         style={{
           display: 'flex',
@@ -114,6 +115,7 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
         <div style={{ width: 1, height: 18, background: 'var(--line-1)' }} />
 
         <button
+          type="button"
           className="btn btn--ghost btn--sm btn--icon"
           title="Refresh"
           aria-label="Refresh current page"

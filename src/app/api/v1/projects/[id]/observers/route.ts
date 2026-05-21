@@ -79,7 +79,14 @@ export async function POST(
 
   let parsed: { agent_id?: string; note?: string | null };
   try {
-    parsed = JSON.parse(body);
+    const raw = JSON.parse(body);
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return NextResponse.json(
+        { error: 'Request body must be a JSON object', code: 'INVALID_BODY' } satisfies ApiError,
+        { status: 400 },
+      );
+    }
+    parsed = raw;
   } catch {
     return NextResponse.json(
       { error: 'Invalid JSON body', code: 'INVALID_BODY' } satisfies ApiError,

@@ -35,7 +35,7 @@ export function pillClassForName(name: string) {
 export const Avatar = ({ name, tone, size = 28 }: AvatarProps) => {
   const resolvedTone = tone || toneForName(name);
   const [bg, fg] = toneColors[resolvedTone] || toneColors.amber;
-  const initial = (name || '?').slice(0, 1).toUpperCase();
+  const initial = ((name || '?').trim() || '?').slice(0, 1).toUpperCase();
 
   return (
     <span style={{

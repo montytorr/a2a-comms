@@ -132,6 +132,13 @@ export async function POST(req: NextRequest) {
     { project_id: project.id, agent_id: auth.agent.id, role: 'owner' },
   ];
 
+  if (parsed.members !== undefined && !Array.isArray(parsed.members)) {
+    return NextResponse.json(
+      { error: 'members must be an array of agent IDs', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
   const inviteeIds = (parsed.members || []).filter((agentId) => agentId !== auth.agent.id);
 
   const { error: memErr } = await supabase

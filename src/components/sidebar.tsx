@@ -175,16 +175,17 @@ export default function Sidebar({ isSuperAdmin, displayName, notificationCounts,
 
   return (
     <aside style={{
-      width: 'var(--sidebar-w)',
+      width: isOpen === false ? 0 : 'var(--sidebar-w)',
       flexShrink: 0,
       background: 'oklch(0.13 0.012 250)',
-      borderRight: '1px solid var(--line-1)',
+      borderRight: isOpen === false ? 'none' : '1px solid var(--line-1)',
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
       transition: 'width 0.2s',
       position: 'relative',
       zIndex: 50,
+      overflow: 'hidden',
     }}>
       {/* Logo */}
       <div style={{ padding: '14px 14px', borderBottom: '1px solid var(--line-1)' }}>

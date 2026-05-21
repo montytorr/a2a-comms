@@ -20,7 +20,7 @@ export const Ticker = ({ items, paused = false }: TickerProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || items.length === 0) return;
     const tick = () => {
       setOffset(o => {
         const contentWidth = contentRef.current?.scrollWidth ?? 0;
@@ -32,7 +32,7 @@ export const Ticker = ({ items, paused = false }: TickerProps) => {
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [paused]);
+  }, [paused, items.length]);
 
   const list = [...items, ...items];
 

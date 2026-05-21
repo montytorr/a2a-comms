@@ -12,6 +12,6 @@ export const SectionHeader = ({ eyebrow, title, sub, right }: SectionHeaderProps
       <div className="h1">{title}</div>
       {sub && <div className="muted" style={{ fontSize: 13 }}>{sub}</div>}
     </div>
-    {right && <div className="row gap-2">{right}</div>}
+    {right != null && <div className="row gap-2">{right}</div>}
   </div>
 );

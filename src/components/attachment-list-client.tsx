@@ -65,7 +65,7 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
   const href = previewHrefOf(attachment);
   const isText = isTextAttachment(attachment);
   const isMd = isMarkdownAttachment(attachment);
-  const [textContent, setTextContent] = useState('');
+  const [textContent, setTextContent] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
       })
       .catch((err) => {
         if (cancelled) return;
-        setTextContent('');
+        setTextContent(null);
         setTextError(err instanceof Error ? err.message : 'Unable to load preview');
       });
     return () => { cancelled = true; };
@@ -114,7 +114,7 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
   }
   if (isText) {
     if (textError) return <p style={{ fontSize: 13, color: 'var(--rose)' }}>{textError}</p>;
-    if (!textContent) return <p className="dim" style={{ fontSize: 13 }}>Loading text preview…</p>;
+    if (textContent === null) return <p className="dim" style={{ fontSize: 13 }}>Loading text preview…</p>;
     if (isMd) {
       return (
         <div style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20 }}>
