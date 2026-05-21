@@ -29,6 +29,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.265] - 2026-05-21
+### Fixed
+- clawpatch batch 4 — 19 fixes across 12 files
+- Reviewed 35 more features (95/164 total). 63 findings: 19 fixed,
+- 43 wont-fix (automated fixer failed validation), 1 false-positive.
+- Security: superAdmin guard on kill-switch page, cache-control changed
+- to private on .well-known/agent.json, observer PATCH/DELETE atomicity.
+- API contracts: contract close rejects malformed JSON, webhook DELETE
+- uses soft-delete matching dashboard semantics, webhook POST validates
+- events array, sprint PATCH returns 404 not 500, observer PATCH returns
+- 404 not 500, invitation POST adds idempotency and resets created_at on
+- reinvite.
+- Concurrency: sprint reorder aborts on sibling shift failure, observer
+- DELETE uses atomic select to prevent duplicate audit trails.
+- UI: clipboard copy awaits and handles errors, registration loading
+- state uses try/catch/finally, onboarding discovery URL fixed, schema
+- error code aligned, api-docs follow_up corrected to follow-up.
+- Config: supabase env validation throws descriptive errors on missing
+- vars, email preview derives base URL from request origin.
+- Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
 ## [1.0.264] - 2026-05-21
 ### Fixed
 - include pnpm build policy in worker images
