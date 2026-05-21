@@ -29,6 +29,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.266] - 2026-05-21
+### Fixed
+- clawpatch batch 6 — 14 manual fixes across UI and API routes
+- Final batch: reviewed remaining 34 features (164/164 complete).
+- 67 findings: 14 fixed manually, 28 wont-fix (test/perf/build scope),
+- 25 wont-fix (complex multi-file refactors).
+- UI: avatar initial uses trimmed name, hash-chip stopPropagation only
+- when copyable, section-header renders falsy right values, topbar
+- buttons have type=button, ticker skips animation on empty items,
+- attachment preview distinguishes empty from loading, sidebar respects
+- isOpen prop, max-concurrent-contracts uses ?? not ||.
+- Security: messages page sanitizes search input before PostgREST .or()
+- interpolation to prevent filter injection.
+- API validation: email/send validates body is object and returns 400
+- for template errors, observers POST validates parsed body, projects
+- POST validates members is array, messages POST rejects array content.
+- Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
 ## [1.0.265] - 2026-05-21
 ### Fixed
 - clawpatch batch 4 — 19 fixes across 12 files
