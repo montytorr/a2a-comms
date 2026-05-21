@@ -144,11 +144,10 @@ export async function PATCH(
       const oldPos = current.position;
       const newPos = positionChange;
       if (newPos < oldPos) {
-        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 }).catch(() => {
-          // RPC may not exist — fall back to accepting potential duplicate
-        });
+        // RPC may not exist — fall back to accepting potential duplicate.
+        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 });
       } else {
-        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 }).catch(() => {});
+        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 });
       }
     }
   }

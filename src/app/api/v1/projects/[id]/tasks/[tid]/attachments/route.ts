@@ -183,7 +183,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(attachment, { status: 201 });
   } catch (error) {
-    await supabase.from('task_attachments').delete().eq('storage_path', storagePath).catch(() => {});
+    await supabase.from('task_attachments').delete().eq('storage_path', storagePath);
     await removeAttachmentBinary(storagePath).catch(() => {});
     throw error;
   }

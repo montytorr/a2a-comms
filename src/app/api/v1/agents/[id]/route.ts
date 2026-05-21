@@ -15,6 +15,7 @@ export async function GET(
   const result = await authenticateApiRequest(req);
   if (result.error) return result.error;
 
+  const { auth } = result;
   const { id } = await params;
   const includeReputation = new URL(req.url).searchParams.get('include') === 'reputation';
   const supabase = createServerClient();
