@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.264] - 2026-05-21
+### Fixed
+- include pnpm build policy in worker images
+
 ## [1.0.263] - 2026-04-29
 ### Fixed
 - parse deploy env without sourcing
