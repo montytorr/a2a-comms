@@ -143,11 +143,15 @@ export async function PATCH(
     if (current && current.position !== positionChange) {
       const oldPos = current.position;
       const newPos = positionChange;
-      if (newPos < oldPos) {
-        // RPC may not exist — fall back to accepting potential duplicate.
-        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 });
-      } else {
-        await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 });
+      const shiftResult = newPos < oldPos
+        ? await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 })
+        : await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 });
+
+      if (shiftResult.error) {
+        return NextResponse.json(
+          { error: 'Failed to reorder sprint positions', code: 'REORDER_ERROR' } satisfies ApiError,
+          { status: 500 }
+        );
       }
     }
   }
@@ -160,10 +164,17 @@ export async function PATCH(
     .select()
     .single();
 
-  if (error || !sprint) {
+  if (error) {
     return NextResponse.json(
       { error: 'Failed to update sprint', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
+    );
+  }
+
+  if (!sprint) {
+    return NextResponse.json(
+      { error: 'Sprint not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
     );
   }
 

@@ -15,11 +15,18 @@ import type { TemplateName } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+function getAppUrl(req: NextRequest): string {
+  const origin = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  const proto = req.headers.get('x-forwarded-proto') || 'https';
+  if (origin) return `${proto}://${origin}`;
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!envUrl) throw new Error('NEXT_PUBLIC_APP_URL is not set and request origin could not be derived');
+  return envUrl;
+}
 
 type PreviewTemplate = TemplateName;
 
-const previewPayloads: Record<PreviewTemplate, Record<string, string>> = {
+function getPreviewPayloads(APP_URL: string): Record<PreviewTemplate, Record<string, string>> { return {
   welcome: {
     name: 'Preview operator',
     dashboardUrl: APP_URL,
@@ -61,7 +68,7 @@ const previewPayloads: Record<PreviewTemplate, Record<string, string>> = {
     followUpAt: '2026-04-28T16:00:00.000Z',
     taskUrl: `${APP_URL}/projects/preview-project/tasks/preview-task`,
   },
-};
+}; }
 
 const templateComponents: Record<PreviewTemplate, ComponentType<Record<string, unknown>>> = {
   welcome: WelcomeEmail as unknown as ComponentType<Record<string, unknown>>,
@@ -96,7 +103,7 @@ export async function GET(req: NextRequest) {
   );
 
   const { data: { user } } = await supabaseAuth.auth.getUser();
-  if (!user) return new NextResponse('Unauthorized', { status: 401 });
+  if (!user) return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
   const supabase = createServerClient();
   const { data: profile } = await supabase
@@ -104,13 +111,15 @@ export async function GET(req: NextRequest) {
     .select('is_super_admin')
     .eq('id', user.id)
     .single();
-  if (!profile?.is_super_admin) return new NextResponse('Forbidden', { status: 403 });
+  if (!profile?.is_super_admin) return NextResponse.json({ error: 'Forbidden', code: 'FORBIDDEN' }, { status: 403 });
 
   const template = new URL(req.url).searchParams.get('template');
   if (!isPreviewTemplate(template)) {
-    return new NextResponse('Unknown template', { status: 400 });
+    return NextResponse.json({ error: 'Unknown template', code: 'VALIDATION_ERROR' }, { status: 400 });
   }
 
+  const APP_URL = getAppUrl(req);
+  const previewPayloads = getPreviewPayloads(APP_URL);
   const Component = templateComponents[template];
   const html = await render(createElement(Component, previewPayloads[template]));
 

@@ -61,6 +61,13 @@ export async function POST(
     );
   }
 
+  if (parsed.events !== undefined && !Array.isArray(parsed.events)) {
+    return NextResponse.json(
+      { error: 'Field "events" must be an array of strings', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
   const validEvents = [...ACCEPTED_WEBHOOK_EVENTS];
   const defaultEvents = [...CANONICAL_WEBHOOK_EVENTS];
   const events = parsed.events || defaultEvents;
@@ -187,23 +194,38 @@ export async function DELETE(
 
   const supabase = createServerClient();
 
-  const { error, count } = await supabase
+  // Soft-delete: deactivate instead of hard-delete to preserve retry recovery and audit history
+  const { data: existing, error: lookupError } = await supabase
     .from('webhooks')
-    .delete({ count: 'exact' })
+    .select('id')
     .eq('agent_id', id)
-    .eq('url', webhookUrl);
+    .eq('url', webhookUrl)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (lookupError) {
+    return NextResponse.json(
+      { error: 'Failed to look up webhook', code: 'DB_ERROR' } satisfies ApiError,
+      { status: 500 }
+    );
+  }
+
+  if (!existing) {
+    return NextResponse.json(
+      { error: 'Webhook not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 }
+    );
+  }
+
+  const { error } = await supabase
+    .from('webhooks')
+    .update({ is_active: false, url: '', updated_at: new Date().toISOString() })
+    .eq('id', existing.id);
 
   if (error) {
     return NextResponse.json(
       { error: 'Failed to delete webhook', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
-    );
-  }
-
-  if (!count || count === 0) {
-    return NextResponse.json(
-      { error: 'Webhook not found', code: 'NOT_FOUND' } satisfies ApiError,
-      { status: 404 }
     );
   }
 

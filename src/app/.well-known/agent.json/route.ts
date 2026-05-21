@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(platformCard, {
     headers: {
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'Cache-Control': 'private, max-age=3600',
       'Access-Control-Allow-Origin': '*',
     },
   });

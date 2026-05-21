@@ -572,7 +572,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/blocker-actions" description="Record structured blocker follow-up or escalation workflow details for a blocked task." />
           <CodeBlock>{`{
-  "action": "follow_up",
+  "action": "follow-up",
   "next_action": "Ping upstream owner with exact missing decision",
   "owner": "Alpha",
   "due_at": "2026-04-29T12:00:00Z"

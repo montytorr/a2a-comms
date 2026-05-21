@@ -15,21 +15,30 @@ export default function RegisterAgentPage() {
     setLoading(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
-    const res = await registerAgent(formData);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const res = await registerAgent(formData);
 
-    if (res.success) {
-      setResult(res);
-    } else {
-      setError(res.error || 'Registration failed');
+      if (res.success) {
+        setResult(res);
+      } else {
+        setError(res.error || 'Registration failed');
+      }
+    } catch {
+      setError('An unexpected error occurred during registration');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
-  function copyToClipboard(text: string, field: 'keyId' | 'secret') {
-    navigator.clipboard.writeText(text);
-    setCopied(field);
-    setTimeout(() => setCopied(null), 2000);
+  async function copyToClipboard(text: string, field: 'keyId' | 'secret') {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(field);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setError('Failed to copy to clipboard');
+    }
   }
 
   if (result) {

@@ -55,12 +55,16 @@ export async function POST(
 
   let reason = `Closed by ${auth.agent.name}`;
   if (body) {
+    let parsed: CloseContractRequest;
     try {
-      const parsed: CloseContractRequest = JSON.parse(body);
-      if (parsed.reason) reason = parsed.reason;
+      parsed = JSON.parse(body);
     } catch {
-      // Ignore parse errors — use default reason
+      return NextResponse.json(
+        { error: 'Invalid JSON body', code: 'INVALID_BODY' } satisfies ApiError,
+        { status: 400 }
+      );
     }
+    if (parsed.reason) reason = parsed.reason;
   }
 
   const { data: updated } = await supabase

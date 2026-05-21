@@ -64,10 +64,17 @@ export async function PATCH(
     .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
     .single();
 
-  if (error || !observer) {
+  if (error) {
     return NextResponse.json(
-      { error: 'Observer not found or update failed', code: 'DB_ERROR', details: error?.message } satisfies ApiError,
-      { status: error ? 500 : 404 },
+      { error: 'Failed to update observer', code: 'DB_ERROR', details: error.message } satisfies ApiError,
+      { status: 500 },
+    );
+  }
+
+  if (!observer) {
+    return NextResponse.json(
+      { error: 'Observer not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 },
     );
   }
 
@@ -109,25 +116,15 @@ export async function DELETE(
   }
 
   const supabase = createServerClient();
-  const { data: observer } = await supabase
-    .from('project_observers')
-    .select('id, agent_id')
-    .eq('id', observerId)
-    .eq('project_id', id)
-    .single();
 
-  if (!observer) {
-    return NextResponse.json(
-      { error: 'Observer not found', code: 'NOT_FOUND' } satisfies ApiError,
-      { status: 404 },
-    );
-  }
-
-  const { error } = await supabase
+  // Atomic delete with select to avoid TOCTOU race
+  const { data: deleted, error } = await supabase
     .from('project_observers')
     .delete()
     .eq('id', observerId)
-    .eq('project_id', id);
+    .eq('project_id', id)
+    .select('id, agent_id')
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json(
@@ -136,12 +133,19 @@ export async function DELETE(
     );
   }
 
+  if (!deleted) {
+    return NextResponse.json(
+      { error: 'Observer not found', code: 'NOT_FOUND' } satisfies ApiError,
+      { status: 404 },
+    );
+  }
+
   await auditLog({
     actor: auth.agent.name,
     action: 'project.observer_remove',
     resourceType: 'project',
     resourceId: id,
-    details: { observer_id: observerId, agent_id: observer.agent_id },
+    details: { observer_id: observerId, agent_id: deleted.agent_id },
     ipAddress: getClientIp(req),
   });
 

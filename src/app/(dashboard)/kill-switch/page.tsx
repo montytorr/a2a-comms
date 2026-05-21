@@ -6,7 +6,7 @@ import { getKillSwitchStatus } from './actions';
 export default async function KillSwitchPage() {
   const user = await getAuthUser();
   if (!user) redirect('/login');
-
+  if (!user.isSuperAdmin) redirect('/?error=admin_required');
   const initialStatus = await getKillSwitchStatus();
 
   return <KillSwitchClient isSuperAdmin={user.isSuperAdmin} initialStatus={initialStatus} />;

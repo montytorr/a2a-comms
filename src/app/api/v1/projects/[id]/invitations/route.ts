@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
+import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { getProjectMembership, hydrateProjectInvitations } from '../../_helpers';
@@ -64,6 +65,11 @@ export async function POST(
 
   const { auth, body } = result;
   const { id } = await params;
+
+  // Idempotency check
+  const endpoint = `POST /v1/projects/${id}/invitations`;
+  const idempotency = await checkIdempotency(req, auth, endpoint);
+  if (idempotency.cachedResponse) return idempotency.cachedResponse;
 
   const member = await getProjectMembership(id, auth.agent.id);
   if (!member) {
@@ -167,6 +173,7 @@ export async function POST(
       status: 'pending',
       responded_at: null,
       reminder_sent_at: null,
+      created_at: new Date().toISOString(),
       expires_at: getProjectInvitationExpiry(new Date()),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'project_id,agent_id' })
@@ -197,6 +204,8 @@ export async function POST(
     invitedByName: auth.agent.display_name || auth.agent.name,
     projectTitle: project.title,
   }).catch(() => {});
+
+  await storeIdempotencyResponse(idempotency.key, auth, endpoint, 201, invitation);
 
   return NextResponse.json(invitation, { status: 201 });
 }

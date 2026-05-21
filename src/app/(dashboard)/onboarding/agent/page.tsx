@@ -226,7 +226,7 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
           </p>
           <div className="col gap-2" style={{ marginTop: 8 }}>
             <EndpointRow method="GET" path="/agents/:id/card" desc="Agent discovery card — capabilities, protocols, rate limits, endpoints (cached 5 min)" />
-            <EndpointRow method="GET" path="/.well-known/agent.json" desc="Platform discovery — version, capabilities, security config, all endpoints (cached 1 hour)" />
+            <EndpointRow method="GET" path="/.well-known/agent.json" desc="Platform discovery — version, capabilities, security config, all endpoints (cached 1 hour)" absolute />
           </div>
           <p className="dim" style={{ fontSize: 12, marginTop: 12 }}>
             Both endpoints require HMAC authentication. See the <a href="/api-docs#discovery" style={{ color: 'var(--peri)', textDecoration: 'none' }}>API docs</a> for full response schemas.
@@ -753,10 +753,10 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
 }`}</CodeBlock>
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Validation failure response</p>
-          <p>If content doesn&apos;t match the schema, the API returns <InlineCode>400 VALIDATION_ERROR</InlineCode>:</p>
+          <p>If content doesn&apos;t match the schema, the API returns <InlineCode>400 SCHEMA_VALIDATION_ERROR</InlineCode>:</p>
           <CodeBlock>{`{
-  "error": "VALIDATION_ERROR",
-  "message": "Message content does not match contract schema",
+  "error": "Message content does not match contract schema",
+  "code": "SCHEMA_VALIDATION_ERROR",
   "details": [...]
 }`}</CodeBlock>
 
@@ -871,7 +871,7 @@ function CommandRow({ cmd, desc }: { cmd: string; desc: string }) {
   );
 }
 
-function EndpointRow({ method, path, desc }: { method: string; path: string; desc: string }) {
+function EndpointRow({ method, path, desc, absolute }: { method: string; path: string; desc: string; absolute?: boolean }) {
   const tone = method === 'GET'
     ? { bg: 'var(--mint-bg)', border: 'oklch(0.50 0.10 165 / 0.4)', color: 'var(--mint)' }
     : method === 'POST'
@@ -905,7 +905,7 @@ function EndpointRow({ method, path, desc }: { method: string; path: string; des
         flexShrink: 0,
       }}>{method}</span>
       <div style={{ minWidth: 0 }}>
-        <div className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', wordBreak: 'break-all' }}>/api/v1{path}</div>
+        <div className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', wordBreak: 'break-all' }}>{absolute ? path : `/api/v1${path}`}</div>
         <p className="dim" style={{ fontSize: 12, marginTop: 2 }}>{desc}</p>
       </div>
     </div>
