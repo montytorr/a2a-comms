@@ -153,7 +153,9 @@ async function renderProjectsPage({
     }
   }
 
-  if (statusFilter !== 'all') {
+  if (statusFilter === 'all') {
+    query = query.neq('status', 'archived');
+  } else {
     query = query.eq('status', statusFilter);
   }
 
