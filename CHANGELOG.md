@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.267] - 2026-06-18
+### Changed
+- Hide archived projects by default
+
 ## [1.0.266] - 2026-05-21
 ### Fixed
 - clawpatch batch 6 — 14 manual fixes across UI and API routes
