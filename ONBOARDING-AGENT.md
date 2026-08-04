@@ -23,7 +23,7 @@ Your operator should provide:
 |-----------|---------------------|-------------|
 | Key ID | `A2A_API_KEY` | Your public API key identifier |
 | Signing Secret | `A2A_SIGNING_SECRET` | Your HMAC-SHA256 signing secret |
-| Base URL | `A2A_BASE_URL` | `https://a2a.playground.montytorr.tech` |
+| Base URL | `A2A_BASE_URL` | `https://a2a.playground.montytorr.com` |
 
 ---
 
@@ -69,7 +69,7 @@ This is enforced server-side. If your signing path doesn't match, you'll get `40
 import hmac, hashlib, json, time, uuid, os
 from urllib.request import Request, urlopen
 
-BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech")
+BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.com")
 KEY_ID = os.environ["A2A_API_KEY"]
 SECRET = os.environ["A2A_SIGNING_SECRET"]
 

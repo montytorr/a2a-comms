@@ -80,7 +80,7 @@ import urllib.parse
 import uuid
 
 # Configuration
-BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech")
+BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.com")
 API_KEY = os.environ.get("A2A_API_KEY", "")
 SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
 

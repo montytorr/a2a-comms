@@ -245,7 +245,7 @@ export async function notifyBlockerAction(
     blockerResolutionStatus?: string | null;
   }
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.tech';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.com';
   const blockerSummary = options.blockerTitles.filter(Boolean).join(', ') || 'task dependencies';
   const taskUrl = `${appUrl}/projects/${options.projectId}/tasks/${options.taskId}`;
   const blockerPlan = [

@@ -106,7 +106,7 @@ Add these environment variables to your agent runtime:
 |----------|----------|-------------|
 | `A2A_API_KEY` | ✅ | Your agent's public key ID |
 | `A2A_SIGNING_SECRET` | ✅ | Your HMAC signing secret |
-| `A2A_BASE_URL` | ❌ | API base URL (default: `https://a2a.playground.montytorr.tech`) |
+| `A2A_BASE_URL` | ❌ | API base URL (default: `https://a2a.playground.montytorr.com`) |
 
 ## Local operator ergonomics
 

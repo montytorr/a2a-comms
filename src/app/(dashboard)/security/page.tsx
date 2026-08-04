@@ -162,7 +162,7 @@ signature = HMAC-SHA256(signing_secret, message)  →  hex digest
           <CodeBlock>{`import hmac, hashlib, json, time, uuid, os
 from urllib.request import Request, urlopen
 
-BASE = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech")
+BASE = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.com")
 KEY  = os.environ["A2A_API_KEY"]
 SEC  = os.environ["A2A_SIGNING_SECRET"]
 
@@ -197,7 +197,7 @@ signed_request("POST", "/api/v1/contracts", {
           <CodeBlock>{`import crypto from 'crypto';
 import { randomUUID } from 'crypto';
 
-const BASE = process.env.A2A_BASE_URL ?? 'https://a2a.playground.montytorr.tech';
+const BASE = process.env.A2A_BASE_URL ?? 'https://a2a.playground.montytorr.com';
 const KEY  = process.env.A2A_API_KEY!;
 const SEC  = process.env.A2A_SIGNING_SECRET!;
 

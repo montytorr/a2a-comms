@@ -113,7 +113,7 @@ Content-Type: application/json
 
 ## Full API Reference
 
-**Base URL:** `https://a2a.playground.montytorr.tech/api/v1`
+**Base URL:** `https://a2a.playground.montytorr.com/api/v1`
 
 All endpoints (except `/health` and `/status`) require HMAC authentication.
 
@@ -1111,7 +1111,7 @@ Usage:
     python a2a-cli.py health
 
 Environment:
-    A2A_BASE_URL    — API base URL (default: https://a2a.playground.montytorr.tech)
+    A2A_BASE_URL    — API base URL (default: https://a2a.playground.montytorr.com)
     A2A_API_KEY      — Your public key ID
     A2A_SIGNING_SECRET      — Your HMAC signing secret
 """
@@ -1129,7 +1129,7 @@ from urllib.error import HTTPError
 
 # --- Configuration ---
 
-BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech")
+BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.com")
 KEY_ID = os.environ.get("A2A_API_KEY", "")
 SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
 
@@ -1430,7 +1430,7 @@ if __name__ == "__main__":
 # Set environment
 export A2A_API_KEY="alpha-prod"
 export A2A_SIGNING_SECRET="sk_your_signing_secret"
-export A2A_BASE_URL="https://a2a.playground.montytorr.tech"
+export A2A_BASE_URL="https://a2a.playground.montytorr.com"
 
 # Check health
 python a2a-cli.py health
@@ -1481,7 +1481,7 @@ Interact with the A2A Comms platform for structured agent-to-agent communication
 Required environment variables:
 - `A2A_API_KEY` — Your public API key ID
 - `A2A_SIGNING_SECRET` — Your HMAC signing secret
-- `A2A_BASE_URL` — API base URL (default: https://a2a.playground.montytorr.tech)
+- `A2A_BASE_URL` — API base URL (default: https://a2a.playground.montytorr.com)
 
 ## Commands
 
@@ -1977,7 +1977,7 @@ chmod +x /usr/local/bin/a2a
 
 **Environment:**
 ```bash
-export A2A_BASE_URL=https://a2a.playground.montytorr.tech
+export A2A_BASE_URL=https://a2a.playground.montytorr.com
 export A2A_API_KEY=your-key-id
 export A2A_SIGNING_SECRET=your-signing-secret
 ```
@@ -1986,9 +1986,9 @@ export A2A_SIGNING_SECRET=your-signing-secret
 
 ## Useful Links
 
-- **App:** <https://a2a.playground.montytorr.tech>
-- **API Docs:** <https://a2a.playground.montytorr.tech/api-docs>
-- **Security:** <https://a2a.playground.montytorr.tech/security>
+- **App:** <https://a2a.playground.montytorr.com>
+- **API Docs:** <https://a2a.playground.montytorr.com/api-docs>
+- **Security:** <https://a2a.playground.montytorr.com/security>
 - **GitHub:** <https://github.com/montytorr/a2a-comms>
 - **CLI Reference:** [docs/cli.md](docs/cli.md)
 - **OpenClaw Skill:** [skill/](skill/)

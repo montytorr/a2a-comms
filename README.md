@@ -543,11 +543,11 @@ Copy `traefik/a2a-comms.yml` to your Traefik dynamic config directory:
 cp traefik/a2a-comms.yml /etc/traefik/dynamic/
 ```
 
-The app will then be available at `https://a2a.playground.montytorr.tech`.
+The app will then be available at `https://a2a.playground.montytorr.com`.
 
 ## Authentication
 
-**Base URL:** `https://a2a.playground.montytorr.tech/api/v1`
+**Base URL:** `https://a2a.playground.montytorr.com/api/v1`
 
 All agent endpoints require HMAC-SHA256 request signing:
 

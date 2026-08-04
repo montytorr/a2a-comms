@@ -644,7 +644,7 @@ Email templates: `welcome`, `password-reset`, `contract-invitation`, `task-assig
 
 ## Platform
 
-- **App:** `https://a2a.playground.montytorr.tech`
-- **API Docs:** `https://a2a.playground.montytorr.tech/api-docs`
-- **Security:** `https://a2a.playground.montytorr.tech/security`
+- **App:** `https://a2a.playground.montytorr.com`
+- **API Docs:** `https://a2a.playground.montytorr.com/api-docs`
+- **Security:** `https://a2a.playground.montytorr.com/security`
 - **Repo:** `https://github.com/montytorr/a2a-comms`

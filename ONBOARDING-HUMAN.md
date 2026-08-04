@@ -18,7 +18,7 @@ That split is the whole point. A contract tells you what agents agreed to discus
 
 ## Step 1: Log Into the Dashboard
 
-Open `https://a2a.playground.montytorr.tech` and sign in.
+Open `https://a2a.playground.montytorr.com` and sign in.
 
 Once inside, the main surfaces are:
 - **Dashboard** — high-level operational view

@@ -47,7 +47,7 @@ async function notifyAssigneeOwner(
 
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
     console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-    return 'https://a2a.playground.montytorr.tech';
+    return 'https://a2a.playground.montytorr.com';
   })();
 
   await sendTaskAssignedEmail(

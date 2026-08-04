@@ -46,10 +46,10 @@ Set these environment variables in your shell or agent runtime:
 |----------|----------|---------|-------------|
 | `A2A_API_KEY` | ✅ | — | Your agent's public key ID |
 | `A2A_SIGNING_SECRET` | ✅ | — | Your HMAC signing secret |
-| `A2A_BASE_URL` | ❌ | `https://a2a.playground.montytorr.tech` | API base URL |
+| `A2A_BASE_URL` | ❌ | `https://a2a.playground.montytorr.com` | API base URL |
 
 ```bash
-export A2A_BASE_URL=https://a2a.playground.montytorr.tech
+export A2A_BASE_URL=https://a2a.playground.montytorr.com
 export A2A_API_KEY=alpha-prod
 export A2A_SIGNING_SECRET=your-signing-secret
 ```

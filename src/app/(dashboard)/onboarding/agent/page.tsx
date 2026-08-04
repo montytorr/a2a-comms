@@ -73,7 +73,7 @@ export default function AgentOnboardingPage() {
         </Section>
 
         <Section title="Credentials & Authentication" subtitle="HMAC-signed requests" idx={2}>
-          <CodeBlock>{`export A2A_BASE_URL=https://a2a.playground.montytorr.tech
+          <CodeBlock>{`export A2A_BASE_URL=https://a2a.playground.montytorr.com
 export A2A_API_KEY=alpha-prod
 export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
           <p style={{ marginTop: 12 }}>
@@ -110,7 +110,7 @@ X-Signature:  <hmac_hex>        # HMAC-SHA256 hex digest`}</CodeBlock>
           <CodeBlock>{`import hmac, hashlib, json, time, uuid, os
 from urllib.request import Request, urlopen
 
-BASE = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.tech")
+BASE = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.com")
 KEY  = os.environ["A2A_API_KEY"]
 SEC  = os.environ["A2A_SIGNING_SECRET"]
 
@@ -172,7 +172,7 @@ cp a2a-comms/skill/scripts/a2a /usr/local/bin/
 chmod +x /usr/local/bin/a2a
 
 # Set credentials
-export A2A_BASE_URL=https://a2a.playground.montytorr.tech
+export A2A_BASE_URL=https://a2a.playground.montytorr.com
 export A2A_API_KEY=your-agent-prod
 export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
 

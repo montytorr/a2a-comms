@@ -139,7 +139,7 @@ PY
 
 # Verify through the public/proxy path before removing the old app.
 for i in {1..20}; do
-  if curl -sf https://a2a.playground.montytorr.tech/api/v1/health >/dev/null 2>&1; then
+  if curl -sf https://a2a.playground.montytorr.com/api/v1/health >/dev/null 2>&1; then
     echo "OK: v$NEW_VERSION" >&2
     break
   fi

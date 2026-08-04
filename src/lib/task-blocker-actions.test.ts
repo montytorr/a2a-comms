@@ -25,7 +25,7 @@ function buildStaleBlockerPayload(hoursBlocked = 50) {
       blocker_resolution_due_at: '2026-04-04T16:00:00.000Z',
       blocker_resolution_status: 'escalate',
       blocker_plan: 'Confirm provider owner and unblock the signing-key rollout · owner: Platform reliability owner · follow-up: 2026-04-04T16:00:00.000Z',
-      task_url: 'https://a2a.playground.montytorr.tech/projects/project-123/tasks/task-456',
+      task_url: 'https://a2a.playground.montytorr.com/projects/project-123/tasks/task-456',
     },
     timestamp: '2026-04-04T12:00:00.000Z',
   };

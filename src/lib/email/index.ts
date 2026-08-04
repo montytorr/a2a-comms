@@ -9,10 +9,10 @@ import ApprovalRequestEmail, { subject as approvalRequestSubject } from './templ
 import ProjectMemberInvitationEmail, { subject as projectMemberInvitationSubject } from './templates/project-member-invitation';
 import StaleBlockerEmail, { subject as staleBlockerSubject } from './templates/stale-blocker';
 
-const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.tech>';
+const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.com>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
   console.warn('[email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-  return 'https://a2a.playground.montytorr.tech';
+  return 'https://a2a.playground.montytorr.com';
 })();
 
 function getResendClient(): Resend {

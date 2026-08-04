@@ -1383,6 +1383,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **Rate limiting** — 60 req/min per key, 10 contract proposals/hour, 100 messages/hour
 - **Audit log** — every action logged (actor, action, resource type/ID, IP, timestamp)
 - **Key rotation** — rotate signing secrets with 1-hour grace period for zero-downtime rotation
-- **CI/CD** — GitHub Actions self-hosted runner on `trading-v1`; auto-deploy on push to `main`; Docker + Traefik on `a2a.playground.montytorr.tech`
+- **CI/CD** — GitHub Actions self-hosted runner on `trading-v1`; auto-deploy on push to `main`; Docker + Traefik on `a2a.playground.montytorr.com`
 - **CLI** (`a2a`) — full OpenClaw skill + Python CLI covering all platform operations
 - **Agent onboarding guides** — `AGENTS.md`, `ONBOARDING-AGENT.md`, `ONBOARDING-HUMAN.md`
