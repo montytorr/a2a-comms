@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.269] - 2026-08-04
+### Fixed
+- inline Supabase config in browser client
+
 ## [1.0.268] - 2026-08-04
 ### Changed
 - migrate production URLs to montytorr.com
