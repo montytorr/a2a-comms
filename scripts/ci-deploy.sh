@@ -129,7 +129,10 @@ import pathlib, re, sys
 path = pathlib.Path(sys.argv[1])
 container = sys.argv[2]
 text = path.read_text()
-new = re.sub(r'url: "http://a2a-comms(?:-v[0-9-]+)?:3000"', f'url: "http://{container}:3000"', text)
+target = f'url: "http://{container}:3000"'
+if target in text:
+    raise SystemExit(0)
+new = re.sub(r'url: "http://a2a-comms(?:-v[0-9-]+(?:-com)?)?:3000"', f'url: "http://{container}:3000"', text)
 if new == text:
     raise SystemExit('Traefik a2a-comms service URL not found')
 tmp = path.with_suffix(path.suffix + '.tmp')
