@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.268] - 2026-08-04
+### Changed
+- migrate production URLs to montytorr.com
+
 ## [1.0.267] - 2026-06-18
 ### Changed
 - Hide archived projects by default
