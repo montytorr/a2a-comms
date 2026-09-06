@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.271] - 2026-09-06
+### Changed
+- Derive browser security policy from the configured Supabase backend
+
 ## [1.0.270] - 2026-08-04
 ### Fixed
 - make Traefik deploy switch idempotent
