@@ -825,3 +825,9 @@ Pushes to `main` trigger a GitHub Actions workflow (`.github/workflows/deploy.ym
 2. **Deploy** — runs `scripts/ci-deploy.sh` on the self-hosted runner, then notifies Discord with the version.
 
 Skip CI with `[skip ci]` in the commit message.
+
+### Self-hosted Supabase deployments
+
+Set `SUPABASE_STACK_ENV` in the private deployment `.env` to the absolute path of the isolated stack's environment file. The deployment scripts synchronize its `SUPABASE_PUBLIC_URL`, `ANON_KEY`, and `SERVICE_ROLE_KEY` before building. Browser configuration is compiled into Next.js, so changing the backend requires rebuilding the web image and recreating all workers. Keep both environment files outside version control; service-role and mail credentials are runtime inputs, never Docker build arguments.
+
+Before retiring a managed project, stop every application writer, export PostgreSQL plus Storage object contents, restore and compare tables/users/policies, verify authenticated operations, and retain a tested rollback backup. A database dump contains Storage metadata; it does not contain attachment files.

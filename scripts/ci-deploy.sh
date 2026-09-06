@@ -24,6 +24,8 @@ PY
 # Pull latest
 git pull origin main 2>&1
 
+python3 scripts/sync-local-supabase-env.py
+
 # Bump patch version
 CURRENT=$(node -p "require('./package.json').version")
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
@@ -91,10 +93,7 @@ DOCKER_BUILDKIT=1 docker build \
   --target runner \
   --build-arg NEXT_PUBLIC_SUPABASE_URL="$(env_value NEXT_PUBLIC_SUPABASE_URL)" \
   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$(env_value NEXT_PUBLIC_SUPABASE_ANON_KEY)" \
-  --build-arg SUPABASE_SERVICE_ROLE_KEY="$(env_value SUPABASE_SERVICE_ROLE_KEY)" \
   --build-arg NEXT_PUBLIC_APP_URL="$(env_value NEXT_PUBLIC_APP_URL || true)" \
-  --build-arg RESEND_API_KEY="$(env_value RESEND_API_KEY)" \
-  --build-arg RESEND_FROM="$(env_value RESEND_FROM)" \
   -t "$IMAGE" . >&2 2>&1
 
 # Start the replacement beside the old app. Do not use docker compose for the

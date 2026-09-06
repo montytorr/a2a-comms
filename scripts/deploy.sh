@@ -12,6 +12,7 @@ echo "$(date -u +%H:%M:%S) Pulling latest..."
 git pull origin main
 
 echo "$(date -u +%H:%M:%S) Building..."
+python3 scripts/sync-local-supabase-env.py
 docker compose build --no-cache
 
 echo "$(date -u +%H:%M:%S) Deploying..."
