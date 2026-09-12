@@ -71,17 +71,9 @@ export default async function DashboardPage() {
       messagesQuery = supabase.from('messages').select('id', { count: 'exact', head: true }).eq('contract_id', none);
     }
 
-    const { data: ownAgentsForAudit } = await supabase
-      .from('agents')
-      .select('name')
-      .in('id', agentIds);
-    const ownNames = [...new Set([
-      ...(ownAgentsForAudit || []).map((a: { name: string }) => a.name),
-      user.displayName,
-      'dashboard',
-    ])];
-    if (ownNames.length > 0) {
-      auditQuery = auditQuery.in('actor', ownNames);
+    const names = scope.contractActorNames;
+    if (names.length > 0) {
+      auditQuery = auditQuery.in('actor', names);
     }
   } else if (!isAdmin && agentIds.length === 0) {
     scopedProjectIds = [];

@@ -1,10 +1,10 @@
 export function buildContentSecurityPolicy({
   frameAncestors = "'none'",
-  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL,
-}: { frameAncestors?: string; supabaseUrl?: string } = {}) {
-  const url = supabaseUrl ? new URL(supabaseUrl) : null;
+  backendUrl,
+}: { frameAncestors?: string; backendUrl?: string } = {}) {
+  const url = backendUrl ? new URL(backendUrl) : null;
   if (url && !['https:', 'http:'].includes(url.protocol)) {
-    throw new Error('Supabase must use HTTP or HTTPS');
+    throw new Error('Backend must use HTTP or HTTPS');
   }
   const origin = url ? ` ${url.origin}` : '';
   const websocket = url ? ` ${url.protocol === 'https:' ? 'wss:' : 'ws:'}//${url.host}` : '';

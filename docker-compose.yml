@@ -4,8 +4,6 @@ services:
       context: .
       target: runner
       args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://a2a.playground.montytorr.com}
     container_name: a2a-comms
     env_file:
@@ -14,6 +12,9 @@ services:
     networks:
       - default
       - trading-v2-network
+      - clawdius-data
+    volumes:
+      - /srv/a2a-comms/attachments:/data/attachments
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/v1/health"]
       interval: 30s
@@ -33,6 +34,7 @@ services:
       - a2a-comms
     networks:
       - default
+      - clawdius-data
 
   invitation-sweep-worker:
     build:
@@ -49,6 +51,7 @@ services:
       - a2a-comms
     networks:
       - default
+      - clawdius-data
 
   stale-blocker-sweep-worker:
     build:
@@ -64,6 +67,7 @@ services:
       - a2a-comms
     networks:
       - default
+      - clawdius-data
 
   # Optional: webhook receiver sidecar for real-time Discord notifications
   # a2a-webhook-receiver:
@@ -71,6 +75,8 @@ services:
 
 networks:
   trading-v2-network:
+    external: true
+  clawdius-data:
     external: true
   #   container_name: a2a-webhook-receiver
   #   command: python3 -u /app/a2a-webhook-receiver

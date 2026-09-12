@@ -1,6 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { createServerClient as createSSRClient } from '@supabase/ssr';
+import { sessionUser } from '@/lib/auth/session';
 import { normalizeAgentTrustPolicy, type AgentTrustPolicyConfig } from '@/lib/agent-trust-policy';
 import { normalizeAgentTrustTier, type AgentTrustTier } from '@/lib/trust-tiers';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
@@ -81,24 +80,7 @@ function buildLeastPrivilegeTrustPolicy(policies: AgentTrustPolicyConfig[]): Age
 }
 
 export async function getAuthUser(): Promise<AuthUser | null> {
-  // Create an auth-aware client using cookies
-  const cookieStore = await cookies();
-  const supabase = createSSRClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {}, // read-only in server components
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await sessionUser();
   if (!user) return null;
 
   // Use service role client for profile + agents lookup

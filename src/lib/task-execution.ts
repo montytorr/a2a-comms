@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
-import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
+import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 
 export const TASK_EXECUTION_STATUSES = [
   'idle',

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { createElement, type ComponentType } from 'react';
 import { render } from '@react-email/components';
 import { createServerClient } from '@/lib/supabase/server';
+import { sessionUser } from '@/lib/auth/session';
 import WelcomeEmail from '@/lib/email/templates/welcome';
 import PasswordResetEmail from '@/lib/email/templates/password-reset';
 import ContractInvitationEmail from '@/lib/email/templates/contract-invitation';
@@ -90,19 +89,7 @@ function isPreviewTemplate(value: string | null): value is PreviewTemplate {
  * these are not seeded app records, dashboard metrics, or backend state.
  */
 export async function GET(req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabaseAuth = createSSRClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
-    }
-  );
-
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const user = await sessionUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
   const supabase = createServerClient();

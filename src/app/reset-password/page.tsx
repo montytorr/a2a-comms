@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createBrowserClient } from '@/lib/supabase/client';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -12,49 +11,35 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [linkInvalid, setLinkInvalid] = useState(false);
+  const [token, setToken] = useState('');
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = createBrowserClient();
-    let settled = false;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        settled = true;
-        setReady(true);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        settled = true;
-        setReady(true);
-      }
-    });
-
-    const timeout = setTimeout(() => {
-      if (!settled) setLinkInvalid(true);
-    }, 5000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    const value = new URL(window.location.href).searchParams.get('token') || '';
+    const timer = window.setTimeout(() => {
+      setToken(value);
+      setReady(Boolean(value));
+      setLinkInvalid(!value);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (password.length < 12) { setError('Password must be at least 12 characters'); return; }
     if (password !== confirmPassword) { setError('Passwords do not match'); return; }
 
     setLoading(true);
     try {
-      const supabase = createBrowserClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) { setError(updateError.message); setLoading(false); return; }
-      await supabase.auth.signOut();
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) { setError(payload.error || 'Password update failed.'); setLoading(false); return; }
       router.push('/login?message=password-reset');
     } catch {
       setError('Connection error — please try again');
@@ -100,9 +85,9 @@ export default function ResetPasswordPage() {
                 <input
                   id="password" type="password" value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required minLength={8} autoComplete="new-password" autoFocus
+                  required minLength={12} autoComplete="new-password" autoFocus
                   className="cp-input" style={{ height: 40, fontSize: 14 }}
-                  placeholder="Minimum 8 characters"
+                  placeholder="Minimum 12 characters"
                 />
               </div>
 
@@ -111,7 +96,7 @@ export default function ResetPasswordPage() {
                 <input
                   id="confirmPassword" type="password" value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  required minLength={8} autoComplete="new-password"
+                  required minLength={12} autoComplete="new-password"
                   className="cp-input" style={{ height: 40, fontSize: 14 }}
                   placeholder="Re-enter your password"
                 />

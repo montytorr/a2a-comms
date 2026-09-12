@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 import { isMissingDependencyTypeColumn } from './task-dependency-schema';
 
 test('isMissingDependencyTypeColumn detects schema-cache misses for dependency_type', () => {

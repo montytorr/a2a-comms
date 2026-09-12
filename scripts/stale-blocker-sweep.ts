@@ -1,6 +1,9 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { notifyBlockerAction, staleBlockerNeedsEscalation } from '@/lib/task-blocker-actions';
 
+type BlockingTask = { id: string; title: string; status: string };
+type BlockingDependency = { blocking_task?: BlockingTask | BlockingTask[] | null };
+
 function log(message: string, details?: Record<string, unknown>) {
   const suffix = details ? ` ${JSON.stringify(details)}` : '';
   console.log(`[stale-blocker-sweep] ${message}${suffix}`);
@@ -40,10 +43,10 @@ async function run() {
   for (const row of rows || []) {
     const project = Array.isArray(row.project) ? row.project[0] ?? null : row.project;
     const blockers = (row.blocked_by || [])
-      .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
-      .filter((task): task is { id: string; title: string; status: string } => !!task && task.status !== 'done' && task.status !== 'cancelled');
+      .map((dep: BlockingDependency) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
+      .filter((task: BlockingTask | null | undefined): task is BlockingTask => !!task && task.status !== 'done' && task.status !== 'cancelled');
 
-    const blockerTitles = blockers.map((blocker) => blocker.title);
+    const blockerTitles = blockers.map((blocker: BlockingTask) => blocker.title);
     if (blockerTitles.length === 0) continue;
 
     if (!staleBlockerNeedsEscalation({

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { createServerClient } from '@/lib/supabase/server';
+import { sessionUser } from '@/lib/auth/session';
 import { getTemplateNames } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -11,19 +10,7 @@ export const dynamic = 'force-dynamic';
  * List available email templates — super admin only.
  */
 export async function GET(_req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabaseAuth = createSSRClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
-    }
-  );
-
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const user = await sessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

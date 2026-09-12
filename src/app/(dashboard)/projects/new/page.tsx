@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createBrowserClient } from '@/lib/supabase/client';
 import MarkdownPreview from '@/components/markdown-preview';
 import { Avatar } from '@/components/atoms';
 
@@ -24,12 +23,9 @@ export default function NewProjectPage() {
 
   useEffect(() => {
     const fetchAgents = async () => {
-      const supabase = createBrowserClient();
-      const { data } = await supabase
-        .from('agents')
-        .select('id, name, display_name')
-        .order('name', { ascending: true });
-      setAgents(data || []);
+      const response = await fetch('/api/internal/projects');
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok) setAgents(payload.agents || []);
     };
     fetchAgents();
   }, []);
@@ -54,14 +50,6 @@ export default function NewProjectPage() {
     setError(null);
 
     try {
-      const supabase = createBrowserClient();
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
       const res = await fetch('/api/internal/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

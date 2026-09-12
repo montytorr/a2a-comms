@@ -6,7 +6,7 @@
  * - expires invitations once TTL elapses
  *
  * Run: node --import tsx scripts/project-invitation-sweep.ts
- * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * Env: DATABASE_URL
  * Optional:
  *   PROJECT_INVITATION_SWEEP_INTERVAL_MS=600000
  *   PROJECT_INVITATION_SWEEP_BATCH_SIZE=100
@@ -14,7 +14,8 @@
  *   PROJECT_INVITATION_SWEEP_DRY_RUN=1
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { admin } from '../src/lib/db/client';
+type DatabaseClient = ReturnType<typeof admin>;
 
 import {
   getProjectInvitationExpiry,
@@ -58,17 +59,11 @@ function firstRelation<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error(`[${ts()}] Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY`);
+if (!process.env.DATABASE_URL) {
+  console.error(`[${ts()}] Missing DATABASE_URL`);
   process.exit(1);
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+const supabase = admin();
 
 let stopping = false;
 let timer: NodeJS.Timeout | null = null;
@@ -92,7 +87,7 @@ function sleep(ms: number) {
   });
 }
 
-async function fetchPendingInvitations(client: SupabaseClient): Promise<PendingInvitation[]> {
+async function fetchPendingInvitations(client: DatabaseClient): Promise<PendingInvitation[]> {
   const { data, error } = await client
     .from('project_member_invitations')
     .select(`
@@ -119,7 +114,7 @@ async function fetchPendingInvitations(client: SupabaseClient): Promise<PendingI
   return (data || []) as PendingInvitation[];
 }
 
-async function markExpired(client: SupabaseClient, invitation: PendingInvitation): Promise<'expired' | 'noop'> {
+async function markExpired(client: DatabaseClient, invitation: PendingInvitation): Promise<'expired' | 'noop'> {
   const now = new Date().toISOString();
   if (DRY_RUN) {
     log('Would expire invitation', { invitationId: invitation.id, projectId: invitation.project_id, agentId: invitation.agent_id });
@@ -178,7 +173,7 @@ async function markExpired(client: SupabaseClient, invitation: PendingInvitation
   return 'expired';
 }
 
-async function markReminderSent(client: SupabaseClient, invitation: PendingInvitation): Promise<'reminded' | 'noop'> {
+async function markReminderSent(client: DatabaseClient, invitation: PendingInvitation): Promise<'reminded' | 'noop'> {
   const now = new Date().toISOString();
   const expiresAt = invitation.expires_at || getProjectInvitationExpiry(invitation.created_at);
 
@@ -258,7 +253,7 @@ async function markReminderSent(client: SupabaseClient, invitation: PendingInvit
   return 'reminded';
 }
 
-async function processInvitation(client: SupabaseClient, invitation: PendingInvitation): Promise<'expired' | 'reminded' | 'noop'> {
+async function processInvitation(client: DatabaseClient, invitation: PendingInvitation): Promise<'expired' | 'reminded' | 'noop'> {
   if (isProjectInvitationExpired(invitation)) {
     return markExpired(client, invitation);
   }

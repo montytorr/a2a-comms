@@ -630,8 +630,8 @@ Email templates: `welcome`, `password-reset`, `contract-invitation`, `task-assig
 ## Security
 
 - HMAC-SHA256 signing on every request
-- Nonce replay protection (Supabase-backed, multi-instance safe)
-- Rate limiting (Supabase-backed, shared across instances)
+- Nonce replay protection (PostgreSQL-backed, multi-instance safe)
+- Rate limiting (PostgreSQL-backed, shared across instances)
 - Canonicalized JSON bodies (RFC 8785/JCS)
 - Membership checks on project resources
 - Attachment downloads require project membership or contract participation before a signed URL is issued

@@ -1,6 +1,6 @@
 // ── Nonce replay protection ──
-// Primary: Supabase `nonce_cache` table (shared across instances).
-// Fallback: in-memory Map (single-instance only, used when Supabase is unreachable).
+// Primary: PostgreSQL `nonce_cache` table (shared across instances).
+// Fallback: in-memory Map (single-instance only, used when PostgreSQL is unreachable).
 // Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
 import crypto from 'crypto';
 import { createServerClient } from './supabase/server';
@@ -20,12 +20,12 @@ async function runNonceCleanup(): Promise<void> {
     if (expiresAt < now) fallbackNonceCache.delete(nonce);
   }
 
-  // Also trigger Supabase cleanup
+  // Also trigger PostgreSQL cleanup
   try {
     const supabase = createServerClient();
     await supabase.rpc('cleanup_expired_nonces');
   } catch {
-    // Supabase cleanup failed — fallback cache handles it locally
+    // PostgreSQL cleanup failed — fallback cache handles it locally
   }
 }
 
@@ -42,7 +42,7 @@ function ensureNonceCleanupInterval(): void {
 
 /**
  * Check if a nonce has been seen before and record it.
- * Uses Supabase shared storage with in-memory fallback.
+ * Uses shared PostgreSQL storage with an in-memory fallback.
  */
 async function checkAndRecordNonce(nonce: string, expiresAtMs: number): Promise<boolean> {
   try {
@@ -71,8 +71,8 @@ async function checkAndRecordNonce(nonce: string, expiresAtMs: number): Promise<
 
     return false; // new nonce, recorded
   } catch (err) {
-    // Supabase unreachable — fall back to in-memory
-    console.warn('[hmac] Supabase nonce check failed, using in-memory fallback:', err);
+    // PostgreSQL unreachable — fall back to in-memory
+    console.warn('[hmac] PostgreSQL nonce check failed, using in-memory fallback:', err);
 
     if (fallbackNonceCache.has(nonce)) return true;
     fallbackNonceCache.set(nonce, expiresAtMs);
@@ -151,7 +151,7 @@ export function deriveSigningBody(
  */
 /**
  * Validate HMAC-signed API request.
- * Nonce replay protection uses Supabase shared storage (falls back to in-memory).
+ * Nonce replay protection uses shared PostgreSQL storage (falls back to in-memory).
  */
 export async function validateHmac(
   method: string,
@@ -191,7 +191,7 @@ export async function validateHmac(
     };
   }
 
-  // Nonce replay protection (shared via Supabase, in-memory fallback)
+  // Nonce replay protection (shared via PostgreSQL, in-memory fallback)
   if (nonce) {
     const nonceExpiresAt = Date.now() + TIMESTAMP_TOLERANCE_SECONDS * 1000;
     const isDuplicate = await checkAndRecordNonce(nonce, nonceExpiresAt);

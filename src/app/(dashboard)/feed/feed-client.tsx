@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Pause, Play } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase/client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import { formatDateTime } from '@/lib/format-date';
 import { HashChip, SectionHeader, PageFrame } from '@/components/atoms';
 
@@ -20,7 +18,6 @@ interface FeedEvent {
   link?: string;
   isNew?: boolean;
 }
-
 interface FeedClientProps {
   isSuperAdmin: boolean;
   agentIds: string[];
@@ -49,7 +46,6 @@ const TYPE_COLOR: Record<EventType, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 50;
-const MAX_BUFFER_SIZE = 500;
 
 const toId = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
@@ -134,79 +130,35 @@ const contractToEvent = (row: Record<string, unknown>, eventType: string): FeedE
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: FeedClientProps) {
+export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProps) {
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const pausedRef = useRef(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const supabaseRef = useRef<ReturnType<typeof createBrowserClient> | null>(null);
 
   const hasAccess = isSuperAdmin || contractIds.length > 0;
-
-  const getSupabase = useCallback(() => {
-    if (!supabaseRef.current) {
-      supabaseRef.current = createBrowserClient();
-    }
-    return supabaseRef.current;
-  }, []);
 
   const loadHistory = useCallback(async (pageNum: number) => {
     if (!hasAccess) return [];
 
-    const supabase = getSupabase();
-    const from = pageNum * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    let auditQuery = supabase
-      .from('audit_log')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    let messagesQuery = supabase
-      .from('messages')
-      .select('*, sender:agents!messages_sender_id_fkey(name, display_name)')
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    let contractsQuery = supabase
-      .from('contracts')
-      .select('*, proposer:agents!contracts_proposer_id_fkey(name, display_name)')
-      .order('updated_at', { ascending: false })
-      .range(from, to);
-
-    if (!isSuperAdmin) {
-      if (contractIds.length > 0) {
-        messagesQuery = messagesQuery.in('contract_id', contractIds);
-        contractsQuery = contractsQuery.in('id', contractIds);
-      } else {
-        messagesQuery = messagesQuery.eq('contract_id', '00000000-0000-0000-0000-000000000000');
-        contractsQuery = contractsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-      }
-      if (agentNames.length > 0) {
-        auditQuery = auditQuery.in('actor', agentNames);
-      } else {
-        auditQuery = auditQuery.eq('actor', '__none__');
-      }
+    const response = await fetch(`/api/internal/feed-history?page=${pageNum}`, { cache: 'no-store' });
+    if (!response.ok) {
+      setConnected(false);
+      return [];
     }
-
-    const [auditRes, messagesRes, contractsRes] = await Promise.all([
-      auditQuery,
-      messagesQuery,
-      contractsQuery,
-    ]);
+    const payload = await response.json();
+    setConnected(true);
 
     const newEvents: FeedEvent[] = [];
-    for (const row of auditRes.data || []) newEvents.push(auditToEvent(row));
-    for (const row of messagesRes.data || []) newEvents.push(messageToEvent(row));
-    for (const row of contractsRes.data || []) newEvents.push(contractToEvent(row, 'UPDATE'));
+    for (const row of payload.audit || []) newEvents.push(auditToEvent(row));
+    for (const row of payload.messages || []) newEvents.push(messageToEvent(row));
+    for (const row of payload.contracts || []) newEvents.push(contractToEvent(row, 'UPDATE'));
 
     newEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return newEvents;
-  }, [getSupabase, isSuperAdmin, contractIds, agentNames, hasAccess]);
+  }, [hasAccess]);
 
   useEffect(() => {
     let cancelled = false;
@@ -220,15 +172,6 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
     })();
     return () => { cancelled = true; };
   }, [loadHistory]);
-
-  const addEvent = useCallback((event: FeedEvent) => {
-    if (pausedRef.current) return;
-    setEvents(prev => {
-      if (prev.some(e => e.id === event.id)) return prev;
-      const next = [{ ...event, isNew: true }, ...prev];
-      return next.length > MAX_BUFFER_SIZE ? next.slice(0, MAX_BUFFER_SIZE) : next;
-    });
-  }, []);
 
   const mergeHistory = useCallback((history: FeedEvent[]) => {
     if (pausedRef.current || history.length === 0) return;
@@ -260,34 +203,6 @@ export default function FeedClient({ isSuperAdmin, agentNames, contractIds }: Fe
 
     return () => window.clearInterval(interval);
   }, [hasAccess, loadHistory, mergeHistory]);
-
-  useEffect(() => {
-    const supabase = getSupabase();
-
-    const channel = supabase
-      .channel('realtime-feed')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        const row = payload.new as Record<string, unknown>;
-        if (!isSuperAdmin && !contractIds.includes(row.contract_id as string)) return;
-        addEvent(messageToEvent(row));
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'contracts' }, (payload) => {
-        const row = payload.new as Record<string, unknown>;
-        if (!isSuperAdmin && !contractIds.includes(row.id as string)) return;
-        addEvent(contractToEvent(row, payload.eventType === 'INSERT' ? 'INSERT' : 'UPDATE'));
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log' }, (payload) => {
-        const row = payload.new as Record<string, unknown>;
-        if (!isSuperAdmin && !agentNames.includes(row.actor as string)) return;
-        addEvent(auditToEvent(row));
-      })
-      .subscribe((status) => {
-        setConnected(status === 'SUBSCRIBED');
-      });
-
-    channelRef.current = channel;
-    return () => { supabase.removeChannel(channel); };
-  }, [addEvent, getSupabase, isSuperAdmin, contractIds, agentNames]);
 
   const togglePause = useCallback(() => setPaused(p => !p), []);
 

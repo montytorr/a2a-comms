@@ -2,7 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 
 /**
  * Look up a user's email from their auth user ID.
- * Uses Supabase auth.admin (requires service role key).
+ * Uses the native application user store.
  */
 export async function getUserEmail(userId: string): Promise<string | null> {
   const supabase = createServerClient();

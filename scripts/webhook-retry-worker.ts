@@ -5,11 +5,11 @@
  * of the Next.js request lifecycle.
  *
  * Run: node --import tsx scripts/webhook-retry-worker.ts
- * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * Env: DATABASE_URL
  */
 
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { admin } from '../src/lib/db/client';
 
 // Direct imports from helpers — no Next.js dependencies
 import {
@@ -50,17 +50,11 @@ interface PendingDelivery {
 
 // --- Init ---
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error(`[${ts()}] Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY`);
+if (!process.env.DATABASE_URL) {
+  console.error(`[${ts()}] Missing DATABASE_URL`);
   process.exit(1);
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+const supabase = admin();
 
 let stopping = false;
 let timer: NodeJS.Timeout | null = null;
@@ -87,7 +81,7 @@ function shouldRetry(d: PendingDelivery): boolean {
 
 function resolveWebhook(d: PendingDelivery): WebhookRecord | null {
   if (!d.webhooks) return null;
-  // Supabase join returns array or object depending on cardinality
+  // The compatibility query adapter returns an array or object depending on cardinality.
   if (Array.isArray(d.webhooks)) return d.webhooks[0] ?? null;
   return d.webhooks;
 }

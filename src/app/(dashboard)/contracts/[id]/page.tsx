@@ -158,7 +158,7 @@ export default async function ContractDetailPage({
     .eq('contract_id', id)
     .order('created_at', { ascending: false });
   attachments = (contractAttachments || []) as Array<Record<string, unknown>>;
-  const isObserverParticipant = participants.some((p) => auth.agentScope.includes(p.agent?.id || '') && p.role === 'observer');
+  const isObserverParticipant = participants.some((participant) => auth.agentScope.includes(participant.agent?.id || '') && participant.role === 'observer');
 
   const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
   const contractIdShort = id.slice(0, 6) + '…' + id.slice(-4);

@@ -19,7 +19,7 @@ import type {
   ReputationSignalValue,
 } from '@/lib/types';
 import { buildReputationPolicyGuidance } from '@/lib/reputation-policy-guidance';
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 
 type AuditLogRow = {
   id: string;

@@ -49,7 +49,7 @@ interface SendWebhookResult {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupabaseClient = any;
+type DatabaseClient = any;
 
 export async function sendWebhookRequest(params: SendWebhookRequestParams): Promise<SendWebhookResult> {
   try {
@@ -82,7 +82,7 @@ export async function sendWebhookRequest(params: SendWebhookRequestParams): Prom
   }
 }
 
-export async function incrementFailure(supabase: SupabaseClient, wh: WebhookRecord) {
+export async function incrementFailure(supabase: DatabaseClient, wh: WebhookRecord) {
   const newCount = (wh.failure_count || 0) + 1;
   const willDisable = newCount >= 10;
   await supabase
@@ -99,7 +99,7 @@ export async function incrementFailure(supabase: SupabaseClient, wh: WebhookReco
   }
 }
 
-export async function resetWebhookFailureState(supabase: SupabaseClient, webhookId: string) {
+export async function resetWebhookFailureState(supabase: DatabaseClient, webhookId: string) {
   await supabase
     .from('webhooks')
     .update({
@@ -109,7 +109,7 @@ export async function resetWebhookFailureState(supabase: SupabaseClient, webhook
     .eq('id', webhookId);
 }
 
-export async function markDeliverySuccess(supabase: SupabaseClient, deliveryId: string, responseStatus: number) {
+export async function markDeliverySuccess(supabase: DatabaseClient, deliveryId: string, responseStatus: number) {
   await supabase
     .from('webhook_deliveries')
     .update({
@@ -120,7 +120,7 @@ export async function markDeliverySuccess(supabase: SupabaseClient, deliveryId: 
     .eq('id', deliveryId);
 }
 
-export async function markDeliveryFailed(supabase: SupabaseClient, deliveryId: string, responseStatus: number) {
+export async function markDeliveryFailed(supabase: DatabaseClient, deliveryId: string, responseStatus: number) {
   await supabase
     .from('webhook_deliveries')
     .update({

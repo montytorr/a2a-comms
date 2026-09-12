@@ -6,7 +6,7 @@ import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateAttachmentDownloadAccess } from '@/lib/attachment-trust-policy';
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 import type { ApiError } from '@/lib/types';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
 

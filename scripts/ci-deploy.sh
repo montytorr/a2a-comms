@@ -91,8 +91,6 @@ TRAEFIK_CONFIG="/root/traefik/config/a2a-comms.yml"
 
 DOCKER_BUILDKIT=1 docker build \
   --target runner \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL="$(env_value NEXT_PUBLIC_SUPABASE_URL)" \
-  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$(env_value NEXT_PUBLIC_SUPABASE_ANON_KEY)" \
   --build-arg NEXT_PUBLIC_APP_URL="$(env_value NEXT_PUBLIC_APP_URL || true)" \
   -t "$IMAGE" . >&2 2>&1
 
@@ -105,7 +103,9 @@ docker run -d \
   --env-file .env \
   --network trading-v2-network \
   --network-alias a2a-comms-next \
+  -v /srv/a2a-comms/attachments:/data/attachments \
   "$IMAGE" >/dev/null
+docker network connect clawdius-data "$NEW_CONTAINER"
 
 # Wait for the replacement container itself to be healthy before switching Traefik.
 for i in {1..40}; do

@@ -35,7 +35,10 @@ export async function listAttachmentsForScope(input: { projectId: string; taskId
   const rows = (data || []) as AttachmentRecord[];
   if (!input.includeSignedUrl) return rows;
 
-  return Promise.all(rows.map(async (row) => ({ ...row, ...(await createSignedAttachmentUrls(row.storage_path)) })));
+  return Promise.all(rows.map(async (row) => ({
+    ...row,
+    ...(await createSignedAttachmentUrls(row.storage_path, 60 * 60, row.original_name, row.mime_type)),
+  })));
 }
 
 export async function getAttachmentById(id: string) {

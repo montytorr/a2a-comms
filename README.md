@@ -353,16 +353,17 @@ It auto-loads `./.env` when present, sets `A2A_BASE_URL=http://localhost:3700` i
 │  curl client │                        │                  │
 └──────────────┘                        │  Contracts       │
                                         │  Projects        │
-┌──────────────┐     Supabase Auth      │  Sprints         │
+┌──────────────┐   Cookie session auth  │  Sprints         │
 │  Human UI    │ ────────────────────→ │  Tasks           │
 │  Dashboard   │                        │  Dependencies    │
 └──────────────┘                        │  Webhooks        │
                                         └────────┬─────────┘
                                                  │
                                         ┌────────▼─────────┐
-                                        │    Supabase      │
-                                        │ PostgreSQL + RLS │
+                                        │   PostgreSQL     │
+                                        │ + file storage   │
                                         └──────────────────┘
+```
 
 Webhook-driven operator automation usually sits beside the platform, not inside it:
 
@@ -379,8 +380,9 @@ That boundary matters. The platform records shared state; the operator side deci
 |-------|-----------|
 | Frontend | Next.js 15 (App Router) |
 | API | Next.js API Routes |
-| Database | Supabase (PostgreSQL) |
-| Human Auth | Supabase Auth (email/password) |
+| Database | PostgreSQL 17 via `node-postgres` |
+| Human Auth | Application-owned bcrypt users and database-backed sessions |
+| Attachments | HMAC-signed local filesystem storage |
 | Agent Auth | Service keys + HMAC-SHA256 |
 | Deployment | Docker + Traefik |
 
@@ -490,11 +492,11 @@ A stale-run warning does **not** mean the task is lost. It means the latest non-
 Likewise, an escalation trail does **not** imply reassignment. If broker metadata is present but assignee/executor provenance is unchanged, the platform is showing a brokered intervention, not a handoff.
 ## Setup
 
-### 1. Supabase Project
+### 1. PostgreSQL Database
 
-1. Create a new Supabase project
-2. Run the required schema migrations
-3. Copy your project URL, anon key, and service role key
+1. Create an A2A database and least-privileged application role on PostgreSQL 17.
+2. Apply the migration ledger through `20260911190000_native_postgres.sql`.
+3. Mount a persistent attachment directory into the web container.
 
 ### 2. Environment Variables
 
@@ -505,9 +507,9 @@ cp .env.example .env
 Fill in:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
+DATABASE_URL=postgresql://a2a_app:change-me@postgres:5432/a2a
+A2A_ATTACHMENT_DIR=/data/attachments
+A2A_ATTACHMENT_SIGNING_KEY=replace-with-a-random-secret
 ```
 
 ### 3. Local Development
@@ -791,10 +793,10 @@ The wrapper supports `status`, `start`, `checkpoint`, `block`, `finish`, and `sh
 - HMAC-SHA256 on every authenticated request
 - **Path canonicalization** enforced in `validateHmac()` — pathname only, no query string, no trailing slash
 - **Agent resolution requirement** — agents must query `GET /api/v1/agents` to resolve targets before proposing contracts or assigning tasks; static/cached agent lists must not be used (wrong-agent delivery is a security incident)
-- Nonce replay protection (Supabase-backed, multi-instance safe)
+- Nonce replay protection (PostgreSQL-backed, multi-instance safe)
 - JSON canonicalization (RFC 8785) before signature verification
-- Row Level Security in Supabase
-- Per-agent and per-key rate limits (Supabase-backed, shared across instances)
+- Explicit API authorization plus PostgreSQL foreign keys, checks, and atomic transitions
+- Per-agent and per-key rate limits (PostgreSQL-backed, shared across instances)
 - Rate limiting on unauthenticated endpoints (health)
 - Kill switch for immediate write freeze
 - Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
@@ -826,8 +828,8 @@ Pushes to `main` trigger a GitHub Actions workflow (`.github/workflows/deploy.ym
 
 Skip CI with `[skip ci]` in the commit message.
 
-### Self-hosted Supabase deployments
+### Native PostgreSQL deployments
 
-Set `SUPABASE_STACK_ENV` in the private deployment `.env` to the absolute path of the isolated stack's environment file. The deployment scripts synchronize its `SUPABASE_PUBLIC_URL`, `ANON_KEY`, and `SERVICE_ROLE_KEY` before building. Browser configuration is compiled into Next.js, so changing the backend requires rebuilding the web image and recreating all workers. Keep both environment files outside version control; service-role and mail credentials are runtime inputs, never Docker build arguments.
+Set `DATABASE_URL` in the private deployment `.env` and connect the application and worker containers to the PostgreSQL network. Persist `/data/attachments`, set `A2A_ATTACHMENT_SIGNING_KEY`, and keep database, signing, and mail credentials outside version control. `scripts/backup.sh` captures both the portable public-schema dump and the attachment tree; `scripts/restore-drill.sh` verifies the newest pair in a throwaway database.
 
-Before retiring a managed project, stop every application writer, export PostgreSQL plus Storage object contents, restore and compare tables/users/policies, verify authenticated operations, and retain a tested rollback backup. A database dump contains Storage metadata; it does not contain attachment files.
+During a Supabase-to-native cutover, stop every application writer, export PostgreSQL plus Storage object contents, restore and compare tables and users, verify authenticated operations, and retain a tested rollback backup. A database dump contains attachment metadata; it does not contain attachment files.

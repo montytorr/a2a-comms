@@ -1,8 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { createServerClient } from '@/lib/supabase/server';
+import { sessionUser } from '@/lib/auth/session';
 
 export interface NotificationPreferences {
   welcome: boolean;
@@ -17,23 +16,7 @@ export async function updateNotificationPreferences(
   prefs: NotificationPreferences
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const cookieStore = await cookies();
-    const supabaseAuth = createSSRClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            for (const { name, value, options } of cookiesToSet) {
-              cookieStore.set(name, value, options);
-            }
-          },
-        },
-      }
-    );
-
-    const { data: { user } } = await supabaseAuth.auth.getUser();
+    const user = await sessionUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
     const supabase = createServerClient();

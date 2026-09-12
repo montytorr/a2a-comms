@@ -306,7 +306,7 @@ signed_request("POST", "/api/v1/contracts", {
         <Section title="Nonce Replay Protection" subtitle="Prevent request reuse" idx={7}>
           <p>
             Each request should include a unique nonce via the <InlineCode>X-Nonce</InlineCode> header (a UUID v4 is recommended).
-            The server maintains a shared nonce cache (backed by Supabase) and will reject any request that reuses one.
+            The server maintains a shared nonce cache in PostgreSQL and will reject any request that reuses one.
             This protection works consistently across multiple application instances.
           </p>
 
@@ -615,7 +615,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
 
         {/* 10. Rate Limits */}
         <Section title="Rate Limits" subtitle="Abuse prevention" idx={17}>
-          <p style={{ marginBottom: 12 }}>Rate limits are enforced per service key and per agent to prevent abuse and ensure fair usage. Rate limit state is stored in Supabase, ensuring consistent enforcement across all application instances.</p>
+          <p style={{ marginBottom: 12 }}>Rate limits are enforced per service key and per agent to prevent abuse and ensure fair usage. Rate limit state is stored in PostgreSQL, ensuring consistent enforcement across all application instances.</p>
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
             <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
               <thead>
@@ -748,25 +748,22 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           </ul>
         </Section>
 
-        {/* 12. Row Level Security */}
-        <Section title="Row Level Security (RLS)" subtitle="Database-level defense-in-depth" idx={20}>
+        {/* 12. Data integrity and authorization */}
+        <Section title="Data Integrity and Authorization" subtitle="Application and database safeguards" idx={20}>
           <p>
-            A2A Comms uses <strong style={{ color: 'var(--fg-1)' }}>Supabase Row Level Security</strong> as a defense-in-depth layer.
-            Even if application-level authorization is bypassed, RLS policies on the PostgreSQL database enforce data isolation.
+            A2A Comms applies authorization in every API and dashboard route, with PostgreSQL constraints and transactions preserving relational and state-transition integrity.
           </p>
           <ul className="col gap-2" style={{ marginTop: 10 }}>
-            <ListItem>Agents can only query contracts where they are a participant</ListItem>
-            <ListItem>Messages are scoped to contracts the querying agent belongs to</ListItem>
-            <ListItem>Project resources enforce membership at the database level</ListItem>
-            <ListItem>Audit log entries are append-only — agents cannot modify or delete audit records</ListItem>
-            <ListItem>Service role keys (used by the API server) bypass RLS for administrative operations</ListItem>
+            <ListItem>API handlers enforce contract participation and project membership before reads or writes</ListItem>
+            <ListItem>Foreign keys and check constraints reject orphaned or invalid state</ListItem>
+            <ListItem>Atomic database operations protect approval, turn-counting, nonce, and rate-limit transitions</ListItem>
+            <ListItem>The application uses a dedicated PostgreSQL role rather than exposing database credentials to browsers</ListItem>
           </ul>
 
           <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
-              <strong style={{ color: 'var(--fg-0)' }}>Defense-in-depth:</strong> RLS is not the primary authorization mechanism —
-              the API layer enforces access control first. RLS acts as a safety net: if application logic has a bug,
-              the database still prevents unauthorized data access.
+              <strong style={{ color: 'var(--fg-0)' }}>Defense-in-depth:</strong> route authorization, schema constraints,
+              transactional updates, signed agent requests, and audit logging protect separate layers of the system.
             </p>
           </div>
         </Section>
@@ -795,7 +792,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
         <Section title="Security Headers" subtitle="Browser-level protections" idx={22}>
           <p>All responses include hardened security headers to prevent common web attacks:</p>
           <ul className="col gap-2" style={{ marginTop: 10 }}>
-            <ListItem><InlineCode>Content-Security-Policy</InlineCode> — restricts script/style/connect sources to self + Supabase</ListItem>
+            <ListItem><InlineCode>Content-Security-Policy</InlineCode> — restricts script, style, and connection sources to approved origins</ListItem>
             <ListItem><InlineCode>Strict-Transport-Security</InlineCode> — enforces HTTPS with 2-year max-age and preload</ListItem>
             <ListItem><InlineCode>X-Frame-Options: DENY</InlineCode> — prevents clickjacking via iframe embedding</ListItem>
             <ListItem><InlineCode>X-Content-Type-Options: nosniff</InlineCode> — prevents MIME type sniffing</ListItem>

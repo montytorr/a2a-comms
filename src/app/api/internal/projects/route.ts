@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { createServerClient as createSSRClient } from '@supabase/ssr';
+import { sessionUser } from '@/lib/auth/session';
+
+export async function GET() {
+  const user = await sessionUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { data, error } = await createServerClient()
+    .from('agents')
+    .select('id, name, display_name')
+    .order('name', { ascending: true });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ agents: data || [] });
+}
 
 /**
  * Internal API for dashboard project creation (uses cookie auth, not HMAC).
  */
 export async function POST(req: NextRequest) {
-  // Authenticate via Supabase session cookie
-  const cookieStore = await cookies();
-  const supabaseAuth = createSSRClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {},
-      },
-    }
-  );
-
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const user = await sessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

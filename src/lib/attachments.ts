@@ -1,8 +1,22 @@
-import { createHash, randomUUID } from 'crypto';
-import { createServerClient } from '@/lib/supabase/server';
+import { createHash, createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 
 export const ATTACHMENT_BUCKET = 'artifacts';
 export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+
+const attachmentRoot = () => resolve(process.env.A2A_ATTACHMENT_DIR || '/data/attachments');
+const signingKey = () => {
+  const key = process.env.A2A_ATTACHMENT_SIGNING_KEY;
+  if (!key) throw new Error('A2A_ATTACHMENT_SIGNING_KEY is required');
+  return key;
+};
+const absolutePath = (storagePath: string) => {
+  const root = attachmentRoot();
+  const target = resolve(root, storagePath);
+  if (target !== root && !target.startsWith(`${root}/`)) throw new Error('Invalid attachment path');
+  return target;
+};
 
 const ALLOWED_MIME_TYPES = new Set([
   'text/plain',
@@ -86,31 +100,25 @@ export function sha256Buffer(buffer: Buffer) {
 }
 
 export async function ensureAttachmentBucket() {
-  const supabase = createServerClient();
-  const { data: buckets } = await supabase.storage.listBuckets();
-  if ((buckets || []).some((bucket) => bucket.name === ATTACHMENT_BUCKET)) return;
-  await supabase.storage.createBucket(ATTACHMENT_BUCKET, {
-    public: false,
-    fileSizeLimit: MAX_ATTACHMENT_SIZE_BYTES,
-    allowedMimeTypes: Array.from(ALLOWED_MIME_TYPES),
-  });
+  await mkdir(attachmentRoot(), { recursive: true });
 }
 
 export type SignedAttachmentUrlMode = 'inline' | 'download';
 
-export async function createSignedAttachmentUrl(path: string, expiresIn = 60 * 60, mode: SignedAttachmentUrlMode = 'download') {
-  const supabase = createServerClient();
-  const { data, error } = await supabase.storage.from(ATTACHMENT_BUCKET).createSignedUrl(path, expiresIn, {
-    download: mode === 'download',
-  });
-  if (error) throw error;
-  return data.signedUrl;
+export async function createSignedAttachmentUrl(path: string, expiresIn = 60 * 60, mode: SignedAttachmentUrlMode = 'download', originalName = '', mimeType = 'application/octet-stream') {
+  const expires = Math.floor(Date.now() / 1000) + expiresIn;
+  const download = mode === 'download' ? originalName : '';
+  const value = `${path}\n${expires}\n${download}\n${mimeType}`;
+  const signature = createHmac('sha256', signingKey()).update(value).digest('base64url');
+  const query = new URLSearchParams({ path, expires: String(expires), mime: mimeType, signature });
+  if (download) query.set('download', download);
+  return `/api/files?${query}`;
 }
 
-export async function createSignedAttachmentUrls(path: string, expiresIn = 60 * 60) {
+export async function createSignedAttachmentUrls(path: string, expiresIn = 60 * 60, originalName = '', mimeType = 'application/octet-stream') {
   const [previewUrl, downloadUrl] = await Promise.all([
-    createSignedAttachmentUrl(path, expiresIn, 'inline'),
-    createSignedAttachmentUrl(path, expiresIn, 'download'),
+    createSignedAttachmentUrl(path, expiresIn, 'inline', originalName, mimeType),
+    createSignedAttachmentUrl(path, expiresIn, 'download', originalName, mimeType),
   ]);
 
   return {
@@ -120,15 +128,23 @@ export async function createSignedAttachmentUrls(path: string, expiresIn = 60 * 
 }
 
 export async function uploadAttachmentBinary(path: string, content: Buffer, mimeType: string) {
-  const supabase = createServerClient();
-  const { error } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, content, {
-    contentType: mimeType,
-    upsert: false,
-  });
-  if (error) throw error;
+  void mimeType;
+  const target = absolutePath(path);
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, content, { flag: 'wx', mode: 0o600 });
 }
 
 export async function removeAttachmentBinary(path: string) {
-  const supabase = createServerClient();
-  await supabase.storage.from(ATTACHMENT_BUCKET).remove([path]);
+  await unlink(absolutePath(path)).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'ENOENT') throw error;
+  });
 }
+
+export function verifyAttachmentToken(path: string, expires: number, download: string, mimeType: string, signature: string) {
+  if (!Number.isSafeInteger(expires) || expires < Math.floor(Date.now() / 1000)) return false;
+  const expected = createHmac('sha256', signingKey()).update(`${path}\n${expires}\n${download}\n${mimeType}`).digest();
+  const supplied = Buffer.from(signature, 'base64url');
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+}
+
+export const readAttachmentBinary = (path: string) => readFile(absolutePath(path));

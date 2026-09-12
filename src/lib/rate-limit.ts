@@ -1,6 +1,6 @@
 // ── Rate Limiting ──
-// Primary: Supabase `rate_limit_buckets` table (shared across instances).
-// Fallback: in-memory Map (single-instance only, used when Supabase is unreachable).
+// Primary: PostgreSQL `rate_limit_buckets` table (shared across instances).
+// Fallback: in-memory Map (single-instance only, used when PostgreSQL is unreachable).
 // Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
 
 import { createServerClient } from './supabase/server';
@@ -25,7 +25,7 @@ const ensureCleanupTimer = () => {
       const supabase = createServerClient();
       await supabase.rpc('cleanup_expired_buckets');
     } catch {
-      // Supabase cleanup failed — fallback cache handles it locally
+      // PostgreSQL cleanup failed — fallback cache handles it locally
     }
   }, 5 * 60 * 1000);
   cleanupTimer.unref();
@@ -43,8 +43,8 @@ export const RATE_LIMITS = {
 } as const;
 
 /**
- * Check rate limit using Supabase shared storage.
- * Falls back to in-memory if Supabase is unreachable.
+ * Check rate limit using shared PostgreSQL storage.
+ * Falls back to in-memory if PostgreSQL is unreachable.
  */
 export async function checkRateLimit(
   key: string,
@@ -78,8 +78,8 @@ export async function checkRateLimit(
       resetAt,
     };
   } catch (err) {
-    // Supabase unreachable — fall back to in-memory
-    console.warn('[rate-limit] Supabase rate limit check failed, using in-memory fallback:', err);
+    // PostgreSQL unreachable — fall back to in-memory
+    console.warn('[rate-limit] PostgreSQL rate limit check failed, using in-memory fallback:', err);
     return checkRateLimitFallback(key, config);
   }
 }

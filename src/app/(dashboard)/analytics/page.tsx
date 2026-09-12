@@ -190,7 +190,8 @@ export default async function AnalyticsPage({
     .ilike('action', '%webhook%')
     .gte('created_at', cutoffISO);
   if (!user.isSuperAdmin) {
-    const ownAgentIds = auth.agentScope;
+    const allWebhookAgentIds = new Set(auth.agentScope);
+    const ownAgentIds = [...allWebhookAgentIds];
     const safeOwnAgentIds = ownAgentIds.length > 0 ? ownAgentIds : ['00000000-0000-0000-0000-000000000000'];
     const { data: agentNamesData } = await supabase
       .from('agents')

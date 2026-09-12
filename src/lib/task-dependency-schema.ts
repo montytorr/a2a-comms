@@ -1,4 +1,4 @@
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 
 export function isMissingDependencyTypeColumn(error: PostgrestError | null | undefined) {
   if (!error) return false;
