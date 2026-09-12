@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.274] - 2026-09-12
+### Changed
+- Fix native A2A audit and maintenance jobs
+
 ## [1.0.273] - 2026-09-12
 ### Changed
 - Use native compose file in deployment
