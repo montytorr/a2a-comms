@@ -24,8 +24,6 @@ PY
 # Pull latest
 git pull origin main 2>&1
 
-python3 scripts/sync-local-supabase-env.py
-
 # Bump patch version
 CURRENT=$(node -p "require('./package.json').version")
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"

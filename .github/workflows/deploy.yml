@@ -26,6 +26,16 @@ jobs:
           sudo chown -R runner:runner .next 2>/dev/null || true
           rm -rf .next node_modules/.cache
 
+      - name: Install dependencies
+        run: |
+          cd /root/projects/a2a-comms
+          corepack pnpm install --frozen-lockfile
+
+      - name: Test
+        run: |
+          cd /root/projects/a2a-comms
+          corepack pnpm test
+
       - name: Lint
         run: |
           cd /root/projects/a2a-comms
@@ -39,7 +49,7 @@ jobs:
       - name: Build worker images
         run: |
           cd /root/projects/a2a-comms
-          docker compose -f docker-compose.yml -f docker-compose.prod.yml build webhook-worker invitation-sweep-worker
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker
 
   deploy:
     needs: lint-and-build
