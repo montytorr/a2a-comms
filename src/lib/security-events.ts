@@ -63,7 +63,7 @@ export function getSeverity(eventType: SecurityEventType): Severity {
 
 // ── Logging helper ──
 
-interface SecurityEventParams {
+export interface SecurityEventParams {
   event: SecurityEventType;
   actor: string;
   resourceType?: string;
@@ -100,15 +100,29 @@ export async function logSecurityEvent(params: SecurityEventParams): Promise<voi
 
 // ── Convenience functions ──
 
-export async function logAuthSuccess(keyId: string, agentName: string, ip?: string): Promise<void> {
-  await logSecurityEvent({
+export function buildAuthSuccessEvent(
+  keyRecordId: string,
+  keyId: string,
+  agentName: string,
+  ip?: string,
+): SecurityEventParams {
+  return {
     event: 'auth.success',
     actor: agentName,
     resourceType: 'service_key',
-    resourceId: keyId,
+    resourceId: keyRecordId,
     details: { key_id: keyId },
     ipAddress: ip,
-  });
+  };
+}
+
+export async function logAuthSuccess(
+  keyRecordId: string,
+  keyId: string,
+  agentName: string,
+  ip?: string,
+): Promise<void> {
+  await logSecurityEvent(buildAuthSuccessEvent(keyRecordId, keyId, agentName, ip));
 }
 
 export async function logAuthFailure(keyId: string | undefined, reason: string, code: string, ip?: string, agentName?: string, agentId?: string): Promise<void> {

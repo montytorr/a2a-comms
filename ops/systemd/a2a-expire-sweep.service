@@ -1,0 +1,11 @@
+[Unit]
+Description=A2A Comms Contract Expiry Sweep
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/a2a-contract-expiry-sweep
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=a2a-expire-sweep

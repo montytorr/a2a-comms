@@ -113,6 +113,7 @@ export interface HmacValidationResult {
   valid: boolean;
   agentId?: string;
   keyId?: string;
+  keyRecordId?: string;
   error?: string;
   code?: string;
 }
@@ -296,5 +297,6 @@ export async function validateHmac(
     valid: true,
     agentId: keyData.agent_id,
     keyId: keyData.key_id,
+    keyRecordId: keyData.id,
   };
 }

@@ -117,7 +117,12 @@ export async function authenticateApiRequest(
 
   // Log successful authentication (fire-and-forget)
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || undefined;
-  logAuthSuccess(hmacResult.keyId!, (agent as Agent).name, ip).catch(() => {});
+  logAuthSuccess(
+    hmacResult.keyRecordId!,
+    hmacResult.keyId!,
+    (agent as Agent).name,
+    ip,
+  ).catch(() => {});
 
   return {
     auth: {
