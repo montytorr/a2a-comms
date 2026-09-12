@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.273] - 2026-09-12
+### Changed
+- Use native compose file in deployment
+
 ## [1.0.272] - 2026-09-06
 ### Changed
 - Publish RLS-protected live-feed tables to Realtime
