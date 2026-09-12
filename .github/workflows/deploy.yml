@@ -49,7 +49,7 @@ jobs:
       - name: Build worker images
         run: |
           cd /root/projects/a2a-comms
-          docker compose -f docker-compose.yml -f docker-compose.prod.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker
+          docker compose -f docker-compose.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker
 
   deploy:
     needs: lint-and-build
