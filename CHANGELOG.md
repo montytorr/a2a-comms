@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.278] - 2026-09-14
+### Fixed
+- seed dashboard live ticker from server
+
 ## [1.0.277] - 2026-09-14
 ### Fixed
 - center auth pages in app shell
