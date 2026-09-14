@@ -116,6 +116,7 @@ export default function LoginPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      width: '100%',
       minHeight: '100vh',
       position: 'relative',
     }}>
