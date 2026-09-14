@@ -1,6 +1,7 @@
 import DashboardShell from '@/components/dashboard-shell';
 import { getDashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
+import { getLiveFeedItems } from '@/lib/live-feed';
 
 export default async function DashboardLayout({
   children,
@@ -10,12 +11,17 @@ export default async function DashboardLayout({
   const auth = await getAuthActorContext();
   const user = auth?.user ?? null;
   const notificationSummary = auth ? await getDashboardNotificationSummary(auth) : null;
+  const initialTickerItems = auth ? await getLiveFeedItems(auth).catch((error) => {
+    console.error('[dashboard] live feed seed failed', error);
+    return [];
+  }) : [];
 
   return (
     <DashboardShell
       isSuperAdmin={user?.isSuperAdmin ?? false}
       displayName={user?.displayName ?? undefined}
       notificationCounts={notificationSummary?.counts}
+      initialTickerItems={initialTickerItems}
       actor={{
         availableAgents: auth?.availableAgents || [],
         activeAgentId: auth?.actingAgentId || null,

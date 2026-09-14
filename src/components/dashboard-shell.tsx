@@ -5,14 +5,16 @@ import Sidebar from './sidebar';
 import { Topbar } from './topbar';
 import { CommandPalette } from './command-palette';
 import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
+import type { TickerItem } from '@/lib/live-feed';
 import { DashboardProvider, type DashboardContextValue } from '@/app/(dashboard)/dashboard-context';
 import ActingAgentSelector from '@/app/(dashboard)/acting-agent-selector';
 
 interface DashboardShellProps extends DashboardContextValue {
   children: React.ReactNode;
+  initialTickerItems?: TickerItem[];
 }
 
-export default function DashboardShell({ isSuperAdmin, displayName, notificationCounts, actor, children }: DashboardShellProps) {
+export default function DashboardShell({ isSuperAdmin, displayName, notificationCounts, actor, initialTickerItems, children }: DashboardShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const handleCloseSidebar = useCallback(() => {}, []);
@@ -33,7 +35,7 @@ export default function DashboardShell({ isSuperAdmin, displayName, notification
         onClose={handleCloseSidebar}
       />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
-        <Topbar onOpenPalette={() => setPaletteOpen(true)} />
+        <Topbar initialTickerItems={initialTickerItems} onOpenPalette={() => setPaletteOpen(true)} />
         <div className="scroll" style={{ flex: 1, minHeight: 0 }}>
           <div style={{ maxWidth: 1400, margin: '0 auto' }}>
             <div style={{ padding: '4px 16px 0' }}>

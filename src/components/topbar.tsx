@@ -5,18 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, RefreshCw, Bell } from 'lucide-react';
 import { Ticker } from '@/components/atoms';
-
-type TickerItem = { tone: string; actor: string; type: string; time: string };
+import type { TickerItem } from '@/lib/live-feed';
 
 interface TopbarProps {
-  tickerItems?: TickerItem[];
+  initialTickerItems?: TickerItem[];
   onOpenPalette: () => void;
 }
 
-export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
+export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) => {
   const router = useRouter();
   const [time, setTime] = useState('');
-  const [liveItems, setLiveItems] = useState<TickerItem[]>([]);
+  const [liveItems, setLiveItems] = useState<TickerItem[]>(initialTickerItems);
 
   useEffect(() => {
     const update = () => {
@@ -28,8 +27,6 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
   }, []);
 
   useEffect(() => {
-    if (tickerItems) return;
-
     let cancelled = false;
     let latestRequestId = 0;
     const load = async () => {
@@ -52,9 +49,9 @@ export const Topbar = ({ tickerItems, onOpenPalette }: TopbarProps) => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [tickerItems]);
+  }, []);
 
-  const displayItems = tickerItems ?? liveItems;
+  const displayItems = liveItems;
 
   return (
     <div style={{
