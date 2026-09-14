@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.277] - 2026-09-14
+### Fixed
+- center auth pages in app shell
+
 ## [1.0.275] - 2026-09-14
 ### Changed
 - Add A2A app container healthcheck
