@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.275] - 2026-09-14
+### Changed
+- Add A2A app container healthcheck
+
 ## [1.0.274] - 2026-09-12
 ### Changed
 - Fix native A2A audit and maintenance jobs
