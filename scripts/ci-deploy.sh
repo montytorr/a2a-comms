@@ -98,6 +98,11 @@ docker rm -f "$NEW_CONTAINER" >/dev/null 2>&1 || true
 docker run -d \
   --name "$NEW_CONTAINER" \
   --restart unless-stopped \
+  --health-cmd='wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/v1/health || exit 1' \
+  --health-interval=30s \
+  --health-timeout=10s \
+  --health-retries=3 \
+  --health-start-period=15s \
   --env-file .env \
   --network trading-v2-network \
   --network-alias a2a-comms-next \
