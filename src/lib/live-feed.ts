@@ -75,12 +75,15 @@ export async function getLiveFeedItems(auth: AuthActorContext): Promise<TickerIt
   }
 
   const [auditRes, deliveriesRes] = await Promise.all([auditQuery, deliveriesQuery]);
-  if (auditRes.error || deliveriesRes.error) {
-    throw new Error(`Live feed query failed: ${auditRes.error?.message || deliveriesRes.error?.message}`);
+  // The header is an enhancement, not a reason to hide all activity.  In
+  // particular, webhook delivery history may be unavailable while audit rows
+  // are healthy (and are the primary activity source on the overview page).
+  if (auditRes.error && deliveriesRes.error) {
+    throw new Error(`Live feed query failed: ${auditRes.error.message || deliveriesRes.error.message}`);
   }
 
   const items: TimestampedTickerItem[] = [];
-  for (const row of auditRes.data || []) {
+  for (const row of auditRes.error ? [] : auditRes.data || []) {
     const timestamp = validTimestamp(row.created_at);
     const action = stringValue(row.action);
     if (!timestamp || !action) continue;
@@ -93,7 +96,7 @@ export async function getLiveFeedItems(auth: AuthActorContext): Promise<TickerIt
     });
   }
 
-  for (const row of deliveriesRes.data || []) {
+  for (const row of deliveriesRes.error ? [] : deliveriesRes.data || []) {
     const timestamp = validTimestamp(row.delivered_at) || validTimestamp(row.created_at);
     const event = stringValue(row.event);
     if (!timestamp || !event) continue;

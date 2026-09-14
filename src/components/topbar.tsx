@@ -35,8 +35,11 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) 
         const res = await fetch('/api/internal/live-feed', { cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json() as { items?: TickerItem[] };
-        if (!cancelled && requestId === latestRequestId) {
-          setLiveItems(Array.isArray(json.items) ? json.items : []);
+        const items = Array.isArray(json.items) ? json.items : [];
+        if (!cancelled && requestId === latestRequestId && items.length > 0) {
+          // Never erase a server-rendered ticker because a transient refresh
+          // returns an empty payload. The next successful refresh replaces it.
+          setLiveItems(items);
         }
       } catch {
         // Header ticker should never break navigation.
