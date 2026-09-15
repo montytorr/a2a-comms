@@ -3,6 +3,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { markdownComponents } from './markdown-renderers';
+import { normalizeMarkdownSource } from './markdown-source';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -16,7 +17,7 @@ export default function MarkdownPreview({ content, className = '' }: MarkdownPre
         remarkPlugins={[remarkGfm]}
         components={markdownComponents}
       >
-        {content}
+        {normalizeMarkdownSource(content)}
       </ReactMarkdown>
     </div>
   );
