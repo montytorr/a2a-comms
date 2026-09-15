@@ -112,6 +112,16 @@ const errorResult = (error: unknown): Result<any> => {
   }
 }
 
+/** Preserve the JSON timestamp contract exposed by the former PostgREST client. */
+export const normalizeDatabaseValue = (value: unknown): unknown => {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(normalizeDatabaseValue)
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeDatabaseValue(entry)]))
+  }
+  return value
+}
+
 const fkCache = new Map<string, ForeignKey[]>()
 
 const foreignKeys = async (client: PoolClient, left: string, right: string) => {
@@ -356,7 +366,7 @@ class DirectQuery<T = DynamicRow[]> implements PromiseLike<Result<T>> {
           const countResult = await client.query<{ count: string }>(`select count(*)::text as count from ${identifier(this.table)} b${built.where}`, parameters)
           count = Number(countResult.rows[0]?.count ?? 0)
         }
-        const rows = this.head ? [] : (await client.query(built.sql, parameters)).rows
+        const rows = this.head ? [] : (await client.query(built.sql, parameters)).rows.map(normalizeDatabaseValue)
         return this.shape(rows, count) as Result<T>
       }
 
@@ -395,7 +405,7 @@ class DirectQuery<T = DynamicRow[]> implements PromiseLike<Result<T>> {
         sql += returning
       }
       const result = await client.query(sql, parameters)
-      return this.shape(result.rows, this.countMode ? result.rowCount : null, this.action === 'insert' || this.action === 'upsert' ? 201 : 200) as Result<T>
+      return this.shape(result.rows.map(normalizeDatabaseValue), this.countMode ? result.rowCount : null, this.action === 'insert' || this.action === 'upsert' ? 201 : 200) as Result<T>
     } catch (error) {
       return errorResult(error) as Result<T>
     } finally {
@@ -429,9 +439,10 @@ class RpcQuery<T = any> implements PromiseLike<Result<T>> {
       const entries = Object.entries(this.args)
       const invocation = entries.map(([key], index) => `${identifier(key)} => $${index + 1}`).join(', ')
       const { rows } = await pool().query(`select * from ${identifier(this.name)}(${invocation})`, entries.map(([, value]) => value))
-      let data: any = rows
-      if (rows.length === 1 && Object.keys(rows[0]!).length === 1 && this.name in rows[0]!) data = rows[0]![this.name]
-      else if (this.cardinality !== 'many') data = rows[0] ?? null
+      const normalizedRows = rows.map(normalizeDatabaseValue)
+      let data: any = normalizedRows
+      if (normalizedRows.length === 1 && Object.keys(normalizedRows[0] as object).length === 1 && this.name in (normalizedRows[0] as object)) data = (normalizedRows[0] as Record<string, unknown>)[this.name]
+      else if (this.cardinality !== 'many') data = normalizedRows[0] ?? null
       return { data, error: null, count: null, status: 200 } as Result<T>
     } catch (error) {
       return errorResult(error) as Result<T>
