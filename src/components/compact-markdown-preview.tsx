@@ -3,6 +3,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { compactMarkdownComponents } from './markdown-renderers';
+import { normalizeMarkdownSource } from './markdown-source';
 
 interface CompactMarkdownPreviewProps {
   content: string;
@@ -30,7 +31,7 @@ export default function CompactMarkdownPreview({
         remarkPlugins={[remarkGfm]}
         components={compactMarkdownComponents}
       >
-        {content}
+        {normalizeMarkdownSource(content)}
       </ReactMarkdown>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { markdownComponents } from '@/components/markdown-renderers';
+import { normalizeMarkdownSource } from '@/components/markdown-source';
 
 // ── Types ──
 
@@ -60,7 +61,7 @@ function RichText({ text, className }: { text: string; className?: string }) {
       className={`markdown-preview ${className || ''}`}
       style={{ fontSize: '13px', color: 'var(--fg-1)', lineHeight: 1.6 }}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{text}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{normalizeMarkdownSource(text)}</ReactMarkdown>
     </div>
   );
 }

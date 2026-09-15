@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import CompactMarkdownPreview from '../components/compact-markdown-preview';
+import MessageCard from '../app/(dashboard)/contracts/[id]/message-card';
 import {
   MAX_MESSAGE_PREVIEW_CHARS,
   extractMessagePreview,
@@ -54,4 +55,26 @@ test('CompactMarkdownPreview renders markdown cues into compact readable markup'
   assert.match(html, /Title/);
   assert.match(html, /\[x\]/);
   assert.match(html, /code/);
+});
+
+test('CompactMarkdownPreview normalizes legacy structural breaks', () => {
+  const html = renderToStaticMarkup(
+    <CompactMarkdownPreview content={'## Title\\n- first\\n- second'} />,
+  );
+
+  assert.doesNotMatch(html, /## Title/);
+  assert.match(html, /Title/);
+  assert.match(html, /first/);
+  assert.match(html, /second/);
+});
+
+test('contract MessageCard normalizes legacy structural breaks', () => {
+  const html = renderToStaticMarkup(
+    <MessageCard content={{ text: '## Review\\n\\n- first\\n- second' }} />,
+  );
+
+  assert.doesNotMatch(html, /## Review/);
+  assert.match(html, /<h2[^>]*>Review<\/h2>/);
+  assert.match(html, /first/);
+  assert.match(html, /second/);
 });
