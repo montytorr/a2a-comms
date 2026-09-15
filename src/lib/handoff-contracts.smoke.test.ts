@@ -8,6 +8,16 @@ test('tasks route accepts assignee_agent_id alias used by the CLI', () => {
   assert.match(routeSource, /url\.searchParams\.get\('assignee'\) \|\| url\.searchParams\.get\('assignee_agent_id'\)/);
 });
 
+test('task notification project lookups use the migrated projects.title column', () => {
+  const createRoute = fs.readFileSync(new URL('../app/api/v1/projects/[id]/tasks/route.ts', import.meta.url), 'utf8');
+  const updateRoute = fs.readFileSync(new URL('../app/api/v1/projects/[id]/tasks/[tid]/route.ts', import.meta.url), 'utf8');
+
+  for (const routeSource of [createRoute, updateRoute]) {
+    assert.match(routeSource, /from\('projects'\)\s*\.select\('title'\)/);
+    assert.doesNotMatch(routeSource, /from\('projects'\)\s*\.select\('name, title'\)/);
+  }
+});
+
 test('generated handoff description includes execution context needed for takeover', () => {
   const description = buildHandoffContractDescription({
     task: {

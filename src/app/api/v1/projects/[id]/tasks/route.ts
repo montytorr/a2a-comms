@@ -37,7 +37,7 @@ async function notifyAssigneeOwner(
 
   const { data: project } = await supabase
     .from('projects')
-    .select('name, title')
+    .select('title')
     .eq('id', options.projectId)
     .single();
 
@@ -50,7 +50,7 @@ async function notifyAssigneeOwner(
     email,
     {
       taskTitle: options.taskTitle,
-      projectName: project?.title || project?.name || 'Unknown Project',
+      projectName: project?.title || 'Unknown Project',
       priority: options.priority || 'medium',
       taskUrl: `${APP_URL}/projects/${options.projectId}/tasks/${options.taskId}`,
     },
