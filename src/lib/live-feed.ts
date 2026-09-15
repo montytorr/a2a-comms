@@ -15,7 +15,10 @@ function stringValue(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
-function validTimestamp(value: unknown): string | null {
+export function validTimestamp(value: unknown): string | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
   const text = stringValue(value);
   return text && !Number.isNaN(new Date(text).getTime()) ? text : null;
 }
