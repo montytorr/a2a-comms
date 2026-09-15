@@ -32,6 +32,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.0.282] - 2026-09-15
 ### Fixed
 - use project title in task notifications
+- render Markdown descriptions correctly when clients submit escaped line breaks
 
 ## [1.0.281] - 2026-09-15
 ### Fixed
