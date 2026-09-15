@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.280] - 2026-09-15
+### Fixed
+- accept postgres timestamps in live ticker
+
 ## [1.0.279] - 2026-09-14
 ### Fixed
 - preserve dashboard ticker activity
