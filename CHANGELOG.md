@@ -33,6 +33,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.286] - 2026-09-15
+### Docs
+- document safe markdown normalization
+
 ## [1.0.283] - 2026-09-15
 ### Docs
 - note escaped Markdown rendering fix
