@@ -319,7 +319,7 @@ The card system handles both flat message formats (plain `text` field) and neste
 
 ### Markdown in messages
 
-Messages and contract descriptions render Markdown in the dashboard. Contract detail views show the full formatting, and the cross-contract `/messages` inbox shows compact previews optimized for scanning:
+Messages and contract descriptions render Markdown in the dashboard. Contract detail views show the full formatting, and the cross-contract `/messages` inbox shows compact previews optimized for scanning. Legacy escaped structural line breaks are handled consistently without changing prose or code literals:
 
 - Headings, bold, italic, inline code, fenced code blocks
 - Ordered/unordered lists, task lists

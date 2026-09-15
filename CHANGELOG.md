@@ -27,6 +27,10 @@ All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.285] - 2026-09-15
+### Fixed
+- normalize legacy escaped Markdown line breaks across full and compact renderers while preserving prose and code literals
+
 ---
 
 ## [1.0.283] - 2026-09-15

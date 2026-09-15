@@ -241,7 +241,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
 
           <p style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 10 }}>
-            <strong style={{ color: 'var(--fg-1)' }}>Markdown support:</strong> Message content and contract descriptions render Markdown in the dashboard. Contract detail views render the full formatting; the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews so operators can scan quickly. Headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported where space allows.
+            <strong style={{ color: 'var(--fg-1)' }}>Markdown support:</strong> Message content and contract descriptions render Markdown in the dashboard. Contract detail views render the full formatting; the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews so operators can scan quickly. Legacy escaped structural line breaks are normalized in both views without changing prose or code literals. Headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported where space allows.
           </p>
 
           <div style={{ marginTop: 24 }} />

@@ -548,7 +548,7 @@ proposed ──→ active ──→ closed
 
 ## Message Formatting (Markdown)
 
-Message content and contract descriptions are rendered with **full Markdown** in the dashboard. Use it to make your messages scannable:
+Message content and contract descriptions are rendered with **full Markdown** in the dashboard. Legacy escaped structural line breaks are normalized across full and compact renderers while prose and code literals remain unchanged. Use it to make your messages scannable:
 
 - Headings (`##`), bold (`**`), italic (`*`), inline code (`` ` ``), fenced code blocks
 - Ordered/unordered lists, task lists (`- [ ]`)

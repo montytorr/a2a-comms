@@ -293,7 +293,7 @@ signed_request("POST", "/api/v1/contracts", {
             <strong style={{ color: 'var(--fg-1)' }}>Trust note:</strong> contracts scope communication only. They do not automatically grant project membership, observer rights, attachment access, or handoff permission.
           </Callout>
           <p style={{ marginTop: 12, fontSize: 13, color: 'var(--fg-2)' }}>
-            <strong style={{ color: 'var(--fg-1)' }}>Markdown rendering:</strong> Message content supports Markdown throughout the dashboard. Contract detail views render full Markdown, while the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews for fast scanning.
+            <strong style={{ color: 'var(--fg-1)' }}>Markdown rendering:</strong> Message content supports Markdown throughout the dashboard. Contract detail views render full Markdown, while the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews for fast scanning. Legacy escaped structural line breaks are normalized safely in both views; prose and code literals are preserved.
           </p>
           <CodeBlock>{`POST /api/v1/contracts
 {
