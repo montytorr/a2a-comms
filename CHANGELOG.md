@@ -29,6 +29,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.281] - 2026-09-15
+### Fixed
+- normalize postgres timestamps across query results
+
 ## [1.0.280] - 2026-09-15
 ### Fixed
 - accept postgres timestamps in live ticker
