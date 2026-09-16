@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* next-themes sets class="dark" / class="light" on <html>. The bare :root
+   below carries the DARK values, so an unthemed document (SSR first paint,
+   JS disabled, theme cookie missing) renders the console the way it has
+   always looked rather than flashing an undesigned light page. */
+@custom-variant dark (:root:not(.light) &);
+
 /* ══════════════════════════════════════════════
    DESIGN TOKENS — A2A Control Plane
    Warm-cool near-black operator console
@@ -13,6 +19,10 @@
   --bg-2: oklch(0.20 0.014 250);
   --bg-3: oklch(0.24 0.014 250);
   --bg-hover: oklch(0.22 0.014 250);
+  /* the sidebar rail and .card--inset both used this literal directly */
+  --bg-inset: oklch(0.13 0.012 250);
+  /* modal/drawer backdrop */
+  --scrim: oklch(0.05 0.01 250 / 0.8);
 
   /* lines */
   --line-1: oklch(0.27 0.012 250);
@@ -30,13 +40,22 @@
   --amber: oklch(0.80 0.155 65);
   --amber-2: oklch(0.68 0.16 55);
   --amber-bg: oklch(0.30 0.06 65 / 0.35);
+  --amber-line: oklch(0.55 0.12 60 / 0.55);
+  --on-amber: oklch(0.18 0.04 60);
   --mint: oklch(0.82 0.14 165);
   --mint-2: oklch(0.70 0.13 165);
   --mint-bg: oklch(0.30 0.05 165 / 0.35);
+  --mint-line: oklch(0.50 0.10 165 / 0.5);
   --peri: oklch(0.78 0.10 265);
   --peri-bg: oklch(0.30 0.04 265 / 0.4);
+  --peri-line: oklch(0.50 0.08 265 / 0.5);
   --rose: oklch(0.74 0.14 25);
   --rose-bg: oklch(0.30 0.06 25 / 0.4);
+  --rose-line: oklch(0.55 0.10 25 / 0.55);
+
+  /* ambient wash behind the shell */
+  --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.30 0.04 65 / 0.10), transparent 60%),
+          radial-gradient(900px 500px at -10% 110%, oklch(0.28 0.03 250 / 0.18), transparent 60%);
 
   /* fonts */
   --sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -48,6 +67,130 @@
   --pad: 18px;
   --radius: 8px;
   --sidebar-w: 232px;
+  /* Outer bound on page content. Was a hardcoded 1400 in dashboard-shell, with
+     nine further per-page caps stacked under it — the narrowest of which left
+     the Messages list using barely half a wide monitor. */
+  --content-max: 1600px;
+  /* One source of truth for the header band. The sidebar's logo block and the
+     topbar both derive their height from this, so their bottom borders cannot
+     drift apart the way they did when each computed its own. */
+  --topbar-h: 3rem;
+}
+
+/* ── light ─────────────────────────────────────
+   Authored against the same hue angles as the dark set. The signal hues are
+   darkened substantially: the dark palette's pastels measure ~2.2–2.6 against
+   white, well under the 4.5 readable line. */
+:root.light {
+  --bg-0: oklch(0.97 0.004 250);
+  --bg-1: oklch(1 0 0);
+  --bg-2: oklch(0.955 0.005 250);
+  --bg-3: oklch(0.92 0.008 250);
+  --bg-hover: oklch(0.945 0.006 250);
+  --bg-inset: oklch(0.945 0.005 250);
+  --scrim: oklch(0.30 0.01 250 / 0.4);
+
+  --line-1: oklch(0.90 0.006 250);
+  --line-2: oklch(0.84 0.008 250);
+  --line-strong: oklch(0.70 0.010 250);
+
+  --fg-0: oklch(0.22 0.012 250);
+  --fg-1: oklch(0.32 0.012 250);
+  --fg-2: oklch(0.46 0.012 250);
+  --fg-3: oklch(0.55 0.012 250);
+  --fg-4: oklch(0.62 0.012 250);
+
+  --amber: oklch(0.56 0.14 65);
+  --amber-2: oklch(0.48 0.15 55);
+  --amber-bg: oklch(0.94 0.055 65);
+  --amber-line: oklch(0.72 0.11 60);
+  --on-amber: oklch(1 0 0);
+  --mint: oklch(0.50 0.12 165);
+  --mint-2: oklch(0.43 0.12 165);
+  --mint-bg: oklch(0.94 0.05 165);
+  --mint-line: oklch(0.74 0.09 165);
+  --peri: oklch(0.50 0.14 265);
+  --peri-bg: oklch(0.95 0.035 265);
+  --peri-line: oklch(0.76 0.08 265);
+  --rose: oklch(0.52 0.18 25);
+  --rose-bg: oklch(0.95 0.045 25);
+  --rose-line: oklch(0.76 0.11 25);
+
+  --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.80 0.05 65 / 0.18), transparent 60%),
+          radial-gradient(900px 500px at -10% 110%, oklch(0.82 0.04 250 / 0.28), transparent 60%);
+}
+
+/* ══════════════════════════════════════════════
+   TAILWIND BRIDGE
+   Aliases the tokens above into Tailwind's namespace so bg-bg-1,
+   text-fg-2, border-line-1 and text-sm exist as real utilities.
+   `inline` keeps the utilities pointing at var(--token) rather than
+   snapshotting a value, which is what lets the theme swap at runtime.
+   ══════════════════════════════════════════════ */
+@theme inline {
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-inset: var(--bg-inset);
+  --color-scrim: var(--scrim);
+
+  --color-line-1: var(--line-1);
+  --color-line-2: var(--line-2);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg-0: var(--fg-0);
+  --color-fg-1: var(--fg-1);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-fg-4: var(--fg-4);
+
+  --color-amber: var(--amber);
+  --color-amber-2: var(--amber-2);
+  --color-amber-bg: var(--amber-bg);
+  --color-amber-line: var(--amber-line);
+  --color-on-amber: var(--on-amber);
+  --color-mint: var(--mint);
+  --color-mint-2: var(--mint-2);
+  --color-mint-bg: var(--mint-bg);
+  --color-mint-line: var(--mint-line);
+  --color-peri: var(--peri);
+  --color-peri-bg: var(--peri-bg);
+  --color-peri-line: var(--peri-line);
+  --color-rose: var(--rose);
+  --color-rose-bg: var(--rose-bg);
+  --color-rose-line: var(--rose-line);
+
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+
+  /* Type scale. The app previously carried 19 distinct sizes between 8px and
+     30px, ~48% of them at 11px or below, with .h3 identical to body text —
+     which is why it read as both too small and too flat. Seven steps, floor
+     at 11px, and a real gap between body and the heading above it. */
+  --text-2xs: 0.6875rem;      /* 11px — eyebrows, kbd, chips. Never prose. */
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem;         /* 12px — dense metadata, timestamps */
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.875rem;        /* 14px — secondary body, table cells, controls */
+  --text-sm--line-height: 1.5;
+  --text-base: 0.9375rem;     /* 15px — body default */
+  --text-base--line-height: 1.55;
+  --text-lg: 1.125rem;        /* 18px — panel and section titles (.h3) */
+  --text-lg--line-height: 1.35;
+  --text-xl: 1.5rem;          /* 24px — stat numbers (.h2) */
+  --text-xl--line-height: 1.2;
+  --text-2xl: 1.875rem;       /* 30px — page titles (.h1) */
+  --text-2xl--line-height: 1.1;
+
+  /* 0.25rem against a 16px root gives gap-1..6 == 4/8/12/16/24px, exactly
+     matching the hand-rolled .gap-* rules this replaces. */
+  --spacing: 0.25rem;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: var(--radius);
 }
 
 [data-density="compact"] {
@@ -69,20 +212,41 @@
 
 * { box-sizing: border-box; }
 
+html { color-scheme: dark; }
+html.light { color-scheme: light; }
+
 html, body {
   background: var(--bg-0);
   color: var(--fg-1);
   font-family: var(--sans);
-  font-size: 14px;
+  /* Was 14px, which made 1rem lie: every rem literal and every Tailwind
+     text-* utility rendered ~12.5% smaller than it read as. Body then takes
+     the reading size from the scale, so 1rem stays honest without forcing
+     unstyled text all the way up to 16px. */
+  font-size: 16px;
   line-height: 1.5;
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* The fixed, never-scrolling shell is right for an operator console on a
+   desktop, but on a phone it means the page cannot scroll at all. Below `md`
+   the document scrolls naturally; at `md` and up the original fixed shell
+   returns.
+
+   dvh rather than vh throughout: on iOS Safari 100vh is taller than the
+   visible viewport, so the bottom of every page sits under the URL bar. */
 body {
-  height: 100vh;
-  overflow: hidden;
+  font-size: var(--text-base);
+  min-height: 100dvh;
+}
+
+@media (min-width: 48rem) {
+  body {
+    height: 100dvh;
+    overflow: hidden;
+  }
 }
 
 body::before {
@@ -90,9 +254,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, oklch(0.30 0.04 65 / 0.10), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, oklch(0.28 0.03 250 / 0.18), transparent 60%);
+  background: var(--wash);
   z-index: 0;
 }
 
@@ -125,24 +287,31 @@ body::before {
 .upper {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--text-2xs);
+  /* 500 at 11px uppercase reads as grey mush; 600 gives the label weight to
+     act as a divider without needing to be larger. */
+  font-weight: 600;
   color: var(--fg-3);
 }
 .h1 {
-  font-size: 28px;
+  font-size: var(--text-2xl);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--fg-0);
   line-height: 1.1;
 }
 .h2 {
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--fg-0);
 }
-.h3 { font-size: 14px; font-weight: 600; color: var(--fg-0); }
+.h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg-0);
+}
 .muted { color: var(--fg-2); }
 .dim { color: var(--fg-3); }
 
@@ -159,7 +328,7 @@ body::before {
   border: 1px solid var(--line-1);
   border-radius: 4px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--fg-1);
   background: var(--bg-1);
   line-height: 1;
@@ -167,10 +336,10 @@ body::before {
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
-.pill--mint  { border-color: oklch(0.50 0.10 165 / 0.5); color: var(--mint); background: var(--mint-bg); }
-.pill--amber { border-color: oklch(0.55 0.12 60 / 0.55); color: var(--amber); background: var(--amber-bg); }
-.pill--peri  { border-color: oklch(0.50 0.08 265 / 0.5); color: var(--peri); background: var(--peri-bg); }
-.pill--rose  { border-color: oklch(0.55 0.10 25 / 0.55); color: var(--rose); background: var(--rose-bg); }
+.pill--mint  { border-color: var(--mint-line); color: var(--mint); background: var(--mint-bg); }
+.pill--amber { border-color: var(--amber-line); color: var(--amber); background: var(--amber-bg); }
+.pill--peri  { border-color: var(--peri-line); color: var(--peri); background: var(--peri-bg); }
+.pill--rose  { border-color: var(--rose-line); color: var(--rose); background: var(--rose-bg); }
 .pill--ghost { background: transparent; color: var(--fg-2); }
 
 /* count badge — a compact numeric pill for overlaying an icon control.
@@ -185,9 +354,9 @@ body::before {
   padding: 0 4px;
   border-radius: 999px;
   background: var(--amber);
-  color: oklch(0.18 0.04 60);
+  color: var(--on-amber);
   font-family: var(--sans);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -224,7 +393,7 @@ body::before {
   background: var(--bg-2);
   color: var(--fg-1);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.12s ease;
@@ -233,20 +402,20 @@ body::before {
 .btn:hover { background: var(--bg-3); border-color: var(--line-strong); color: var(--fg-0); }
 .btn--primary {
   background: linear-gradient(180deg, oklch(0.82 0.16 65), oklch(0.72 0.16 60));
-  color: oklch(0.18 0.04 60);
+  color: var(--on-amber);
   border-color: oklch(0.62 0.16 60);
   font-weight: 600;
   box-shadow: 0 1px 0 oklch(0.95 0.10 65 / 0.4) inset, 0 4px 12px oklch(0.40 0.10 60 / 0.25);
 }
 .btn--primary:hover {
   background: linear-gradient(180deg, oklch(0.86 0.16 65), oklch(0.76 0.16 60));
-  color: oklch(0.16 0.04 60);
+  color: var(--on-amber);
 }
 .btn--ghost { background: transparent; border-color: transparent; color: var(--fg-2); }
 .btn--ghost:hover { background: var(--bg-2); color: var(--fg-0); }
-.btn--sm { height: 26px; padding: 0 10px; font-size: 12px; }
+.btn--sm { height: 26px; padding: 0 10px; font-size: var(--text-xs); }
 .btn--icon { width: 32px; padding: 0; justify-content: center; }
-.btn--danger { color: var(--rose); border-color: oklch(0.40 0.08 25 / 0.5); }
+.btn--danger { color: var(--rose); border-color: var(--rose-line); }
 .btn--danger:hover { background: var(--rose-bg); color: var(--rose); }
 
 /* nav items */
@@ -260,7 +429,7 @@ body::before {
   background: transparent;
   border-left: 2px solid transparent;
   color: var(--fg-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 400;
   text-decoration: none;
   transition: background 0.1s, color 0.1s;
@@ -274,8 +443,20 @@ body::before {
 }
 .nav-item--active:hover { background: var(--bg-2); color: var(--fg-0); }
 
+/* Icon-rail mode. The label and any trailing badge cannot fit in 64px, so
+   they are removed and the icon centres; the group heading becomes a rule so
+   the grouping survives even though its name cannot. */
+[data-sidebar="icons"] .nav-item { justify-content: center; padding: 0; gap: 0; }
+[data-sidebar="icons"] .nav-label,
+[data-sidebar="icons"] .nav-trailing { display: none; }
+.nav-group-rule {
+  height: 1px;
+  background: var(--line-1);
+  margin: 10px 14px 8px;
+}
+
 /* inputs */
-.cp-input, .cp-select {
+.cp-input, .cp-select, .cp-textarea {
   height: 32px;
   padding: 0 10px;
   background: var(--bg-1);
@@ -283,15 +464,82 @@ body::before {
   border-radius: 6px;
   color: var(--fg-1);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
   width: 100%;
 }
-.cp-input:focus, .cp-select:focus {
+
+/* A native select cannot be styled past a point — the browser draws its own
+   chevron and metrics, which is why an otherwise-matching select still looked
+   foreign next to the inputs. appearance:none removes that chrome; the chevron
+   is redrawn as a background image so sizing, border and focus ring match. */
+.cp-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.cp-textarea {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+/* Checkbox and radio had no rule at all, so they rendered as raw browser
+   defaults — the light-grey square that looked out of place on every form. */
+.cp-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition: background 0.12s, border-color 0.12s;
+}
+.cp-check[type="radio"] { border-radius: 999px; }
+.cp-check::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  transform: scale(0);
+  transition: transform 0.12s ease;
+  background: var(--on-amber);
+  clip-path: polygon(14% 45%, 0 60%, 39% 100%, 100% 20%, 85% 5%, 37% 70%);
+}
+.cp-check[type="radio"]::before {
+  clip-path: none;
+  border-radius: 999px;
+  width: 6px;
+  height: 6px;
+}
+.cp-check:checked {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+.cp-check:checked::before { transform: scale(1); }
+.cp-check:hover:not(:disabled) { border-color: var(--line-strong); }
+.cp-check:focus-visible {
   outline: none;
   border-color: var(--amber);
   box-shadow: 0 0 0 3px oklch(0.70 0.16 60 / 0.15);
 }
-.cp-input::placeholder { color: var(--fg-3); }
+.cp-check:disabled { opacity: 0.5; cursor: not-allowed; }
+.cp-input:focus, .cp-select:focus, .cp-textarea:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px oklch(0.70 0.16 60 / 0.15);
+}
+.cp-input::placeholder, .cp-textarea::placeholder { color: var(--fg-3); }
 
 /* cards */
 .card {
@@ -301,7 +549,7 @@ body::before {
   overflow: hidden;
 }
 .card--inset {
-  background: oklch(0.13 0.01 250);
+  background: var(--bg-inset);
   border-color: var(--line-1);
 }
 
@@ -318,7 +566,7 @@ body::before {
   border-radius: 4px;
   background: var(--bg-2);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--fg-2);
 }
 
@@ -328,7 +576,7 @@ body::before {
   align-items: center;
   gap: 6px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--fg-2);
   background: var(--bg-2);
   padding: 2px 6px;
@@ -349,7 +597,7 @@ body::before {
   display: inline-flex;
   align-items: center;
   color: var(--fg-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   border-bottom: 1px solid transparent;
@@ -378,7 +626,7 @@ body::before {
   border: none;
   color: var(--fg-2);
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 500;
   cursor: pointer;
   border-radius: 4px;
@@ -386,16 +634,17 @@ body::before {
 .seg button.active { background: var(--bg-3); color: var(--fg-0); }
 .seg button:hover:not(.active) { color: var(--fg-1); }
 
-/* utility */
+/* utility
+   .gap-1..6 and .grow used to live here and shadowed Tailwind's own
+   utilities of the same name. They are gone: with --spacing: 0.25rem against
+   a 16px root, Tailwind's gap-1..6 resolve to exactly 4/8/12/16/24px, so the
+   deletion is pixel-identical. .grow differed for real (flex: 1 vs
+   flex-grow: 1) and its single call site now uses flex-1.
+   .row/.col/.nowrap/.truncate-text/.scroll collide with nothing and stay —
+   they are terser than their utility equivalents and carry 290+ uses. */
 .scroll { overflow: auto; }
 .row { display: flex; align-items: center; }
 .col { display: flex; flex-direction: column; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.gap-6 { gap: 24px; }
-.grow { flex: 1; }
 .nowrap { white-space: nowrap; }
 .truncate-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -412,7 +661,7 @@ body::before {
   background: var(--bg-0);
   color: var(--fg-3);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   z-index: 100;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -431,11 +680,19 @@ body::before {
 
 #app-root {
   flex: 1;
-  min-height: 0;
   display: flex;
+  flex-direction: column;
   position: relative;
   z-index: 1;
-  height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (min-width: 48rem) {
+  #app-root {
+    flex-direction: row;
+    min-height: 0;
+    height: 100dvh;
+  }
 }
 
 /* ══════════════════════════════════════════════

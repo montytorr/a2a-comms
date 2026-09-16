@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { BootScreen } from '@/components/boot-screen';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const geist = Geist({
   subsets: ['latin'],
@@ -30,7 +31,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1a1a2e',
+  // Without width/initialScale a phone renders the page at a ~980px desktop
+  // viewport and scales it down, which makes every responsive breakpoint in
+  // the app unreachable no matter how it is written.
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f7f7f8' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1a2e' },
+  ],
 };
 
 export default function RootLayout({
@@ -39,12 +49,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+    // suppressHydrationWarning: next-themes writes the theme class onto <html>
+    // in a pre-hydration script, so the server and client markup differ here by
+    // design.
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body>
-        <BootScreen />
-        <div id="app-root">
-          {children}
-        </div>
+        <ThemeProvider>
+          <BootScreen />
+          <div id="app-root">
+            {children}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

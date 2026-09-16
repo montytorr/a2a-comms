@@ -249,7 +249,7 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
             background: 'var(--bg-2)',
             borderBottom: '1px solid var(--line-1)',
           }}>
-            <span className="upper grow">Event Stream</span>
+            <span className="upper flex-1">Event Stream</span>
             <span className="mono dim" style={{ fontSize: 11 }}>{events.length} loaded</span>
             {!loading && (
               <span className={`dot ${connected ? 'dot--mint' : 'dot--rose'}`} title={connected ? 'Connected' : 'Disconnected'} />
