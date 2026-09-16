@@ -128,7 +128,7 @@ const Logo = ({ collapsed }: { collapsed?: boolean }) => (
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: 'inset 0 0 0 1px oklch(1 0 0 / 0.05)',
+      boxShadow: 'inset 0 0 0 1px var(--highlight)',
     }}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M2 3 L7 11 L12 3 Z" stroke="var(--amber)" strokeWidth="1.4" strokeLinejoin="round" />

@@ -8,9 +8,9 @@ interface AvatarProps {
 
 export const toneColors: Record<AvatarTone, [string, string]> = {
   amber: ['oklch(0.78 0.16 65)', 'oklch(0.18 0.05 65)'],
-  mint:  ['oklch(0.78 0.14 165)', 'oklch(0.18 0.04 165)'],
+  mint:  ['var(--mint)', 'oklch(0.18 0.04 165)'],
   peri:  ['oklch(0.72 0.10 265)', 'oklch(0.18 0.04 265)'],
-  rose:  ['oklch(0.74 0.14 25)', 'oklch(0.18 0.05 25)'],
+  rose:  ['var(--rose)', 'oklch(0.18 0.05 25)'],
 };
 
 export const avatarTones: AvatarTone[] = ['amber', 'mint', 'peri', 'rose'];

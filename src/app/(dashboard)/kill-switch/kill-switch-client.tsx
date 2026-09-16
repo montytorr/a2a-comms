@@ -99,7 +99,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
             width: 192,
             height: 192,
             borderRadius: '50%',
-            border: `1px solid ${isActive ? 'oklch(0.40 0.08 25 / 0.15)' : 'oklch(0.50 0.10 165 / 0.12)'}`,
+            border: `1px solid ${isActive ? 'var(--rose-line)' : 'var(--mint-line)'}`,
             animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
           }} />
           <div style={{
@@ -107,7 +107,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
             width: 192,
             height: 192,
             borderRadius: '50%',
-            border: `1px solid ${isActive ? 'oklch(0.40 0.08 25 / 0.10)' : 'oklch(0.50 0.10 165 / 0.08)'}`,
+            border: `1px solid ${isActive ? 'var(--rose-line)' : 'var(--mint-line)'}`,
             animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
             animationDelay: '0.5s',
           }} />
@@ -128,7 +128,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
             width: 128,
             height: 128,
             borderRadius: '50%',
-            border: `1px solid ${isActive ? 'oklch(0.40 0.08 25 / 0.25)' : 'oklch(0.50 0.10 165 / 0.18)'}`,
+            border: `1px solid ${isActive ? 'var(--rose-line)' : 'var(--mint-line)'}`,
             transition: 'all 0.7s',
             animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
           }} />
@@ -146,7 +146,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
             background: isActive
               ? 'radial-gradient(135deg, var(--rose-bg), oklch(0.25 0.06 25))'
               : 'radial-gradient(135deg, var(--mint-bg), oklch(0.25 0.06 165))',
-            border: `2px solid ${isActive ? 'oklch(0.45 0.10 25 / 0.4)' : 'oklch(0.50 0.10 165 / 0.3)'}`,
+            border: `2px solid ${isActive ? 'oklch(0.45 0.10 25 / 0.4)' : 'var(--mint-line)'}`,
           }}>
             <div style={{
               width: 56,
@@ -232,7 +232,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
                     height: 40,
                     fontWeight: 700,
                     background: isActive ? 'var(--mint-bg)' : 'var(--rose-bg)',
-                    borderColor: isActive ? 'oklch(0.50 0.10 165 / 0.4)' : 'oklch(0.40 0.08 25 / 0.4)',
+                    borderColor: isActive ? 'var(--mint-line)' : 'var(--rose-line)',
                     color: isActive ? 'var(--mint)' : 'var(--rose)',
                     transition: 'all 0.3s',
                   }}
@@ -267,7 +267,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
                 fontWeight: 700,
                 borderRadius: 10,
                 background: isActive ? 'var(--mint-bg)' : 'var(--rose-bg)',
-                borderColor: isActive ? 'oklch(0.50 0.10 165 / 0.3)' : 'oklch(0.40 0.08 25 / 0.3)',
+                borderColor: isActive ? 'var(--mint-line)' : 'var(--rose-line)',
                 color: isActive ? 'var(--mint)' : 'var(--rose)',
                 transition: 'all 0.5s',
               }}

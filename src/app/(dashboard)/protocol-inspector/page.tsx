@@ -110,7 +110,7 @@ function RequeueDeliveryButton({
 
   return (
     <form action={action}>
-      <button type="submit" className="btn btn--sm" style={{ color: 'var(--amber)', borderColor: 'oklch(0.55 0.12 60 / 0.4)' }}>
+      <button type="submit" className="btn btn--sm" style={{ color: 'var(--amber)', borderColor: 'var(--amber-line)' }}>
         Requeue for retry
       </button>
     </form>
@@ -148,7 +148,7 @@ function RunCard({ run }: { run: TaskExecutionRun }) {
       {(run.summary || run.error_message) && (
         <div className="text-xs" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {run.summary && <p style={{ color: 'var(--fg-2)' }}><span style={{ color: 'var(--fg-3)' }}>Summary:</span> {run.summary}</p>}
-          {run.error_message && <p style={{ color: 'var(--rose)' }}><span style={{ color: 'oklch(0.74 0.14 25 / 0.7)' }}>Error:</span> {run.error_message}</p>}
+          {run.error_message && <p style={{ color: 'var(--rose)' }}><span style={{ color: 'var(--rose)' }}>Error:</span> {run.error_message}</p>}
         </div>
       )}
     </div>
@@ -311,7 +311,7 @@ export default async function ProtocolInspectorPage({
                       {data.conformance.driftFlags.map((flag) => (
                         <li key={flag} style={{
                           borderRadius: 6,
-                          border: '1px solid oklch(0.40 0.08 25 / 0.3)',
+                          border: '1px solid var(--rose-line)',
                           background: 'var(--rose-bg)',
                           padding: '8px 12px',
                           listStyle: 'none',

@@ -107,7 +107,7 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'oklch(0.10 0.012 250 / 0.6)',
+        background: 'var(--scrim)',
         backdropFilter: 'blur(6px)',
         zIndex: 200,
         display: 'flex',
@@ -124,7 +124,7 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
           border: '1px solid var(--line-2)',
           borderRadius: 10,
           overflow: 'hidden',
-          boxShadow: '0 24px 80px oklch(0 0 0 / 0.5)',
+          boxShadow: '0 24px 80px var(--shadow-strong)',
         }}
       >
         <div className="row gap-2" style={{ padding: '12px 14px', borderBottom: '1px solid var(--line-1)', alignItems: 'center' }}>

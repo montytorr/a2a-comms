@@ -133,7 +133,7 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
               transition: 'all 0.2s',
               background: feedback.type === 'success' ? 'var(--mint-bg)' : 'var(--rose-bg)',
               color: feedback.type === 'success' ? 'var(--mint)' : 'var(--rose)',
-              border: `1px solid ${feedback.type === 'success' ? 'oklch(0.50 0.10 165 / 0.35)' : 'oklch(0.55 0.10 25 / 0.4)'}`,
+              border: `1px solid ${feedback.type === 'success' ? 'var(--mint-line)' : 'var(--rose-line)'}`,
             }}
           >
             {feedback.message}
@@ -168,7 +168,7 @@ function Toggle({
         cursor: disabled ? (enabled ? 'not-allowed' : 'wait') : 'pointer',
         opacity: disabled && !enabled ? 0.5 : disabled ? 0.6 : 1,
         background: enabled
-          ? 'oklch(0.50 0.10 165 / 0.5)'
+          ? 'var(--mint-line)'
           : 'var(--bg-3)',
         transition: 'background 0.2s',
         flexShrink: 0,

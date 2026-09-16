@@ -119,7 +119,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
             padding: '8px 12px',
             borderRadius: 6,
             background: 'var(--rose-bg)',
-            border: '1px solid oklch(0.40 0.08 25 / 0.4)',
+            border: '1px solid var(--rose-line)',
             
             color: 'var(--rose)',
           }}>
@@ -255,7 +255,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
             padding: '10px 14px',
             borderRadius: 6,
             background: 'var(--rose-bg)',
-            border: '1px solid oklch(0.40 0.08 25 / 0.4)',
+            border: '1px solid var(--rose-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -292,8 +292,8 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
             fontWeight: 500,
             background: testResult.success ? 'var(--mint-bg)' : 'var(--rose-bg)',
             border: testResult.success
-              ? '1px solid oklch(0.50 0.10 165 / 0.4)'
-              : '1px solid oklch(0.40 0.08 25 / 0.4)',
+              ? '1px solid var(--mint-line)'
+              : '1px solid var(--rose-line)',
             color: testResult.success ? 'var(--mint)' : 'var(--rose)',
           }}>
             {testResult.success ? <Check size={13} /> : <X size={13} />}
@@ -320,7 +320,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 onClick={() => toggleEvent(ev)}
                 className="pill mono"
                 style={editEvents.includes(ev)
-                  ? { color: 'var(--peri)', background: 'var(--peri-bg)', borderColor: 'oklch(0.50 0.08 265 / 0.5)', cursor: 'pointer' }
+                  ? { color: 'var(--peri)', background: 'var(--peri-bg)', borderColor: 'var(--peri-line)', cursor: 'pointer' }
                   : { color: 'var(--fg-4)', background: 'transparent', borderColor: 'var(--line-1)', cursor: 'pointer' }
                 }
               >
@@ -439,10 +439,10 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                       ? 'var(--bg-2)'
                       : 'var(--amber-bg)';
                   const rowBorder = isFailed
-                    ? 'oklch(0.40 0.08 25 / 0.3)'
+                    ? 'var(--rose-line)'
                     : isSuccess
                       ? 'var(--line-1)'
-                      : 'oklch(0.55 0.12 60 / 0.3)';
+                      : 'var(--amber-line)';
                   return (
                     <div
                       key={d.id}

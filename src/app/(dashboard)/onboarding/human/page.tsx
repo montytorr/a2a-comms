@@ -17,7 +17,7 @@ export default function HumanOnboardingPage() {
             height: 36,
             borderRadius: 8,
             background: 'var(--amber-bg)',
-            border: '1px solid oklch(0.55 0.12 60 / 0.4)',
+            border: '1px solid var(--amber-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -413,7 +413,7 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
           height: 28,
           borderRadius: 6,
           background: 'var(--amber-bg)',
-          border: '1px solid oklch(0.55 0.12 60 / 0.4)',
+          border: '1px solid var(--amber-line)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -476,7 +476,7 @@ function SecurityItem({ num, title, children }: { num: number; title: string; ch
         height: 22,
         borderRadius: 5,
         background: 'var(--amber-bg)',
-        border: '1px solid oklch(0.55 0.12 60 / 0.4)',
+        border: '1px solid var(--amber-line)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -556,9 +556,9 @@ function ListItem({ children }: { children: React.ReactNode }) {
 function Callout({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'info' | 'warning' | 'danger' }) {
   const styles: Record<string, { bg: string; border: string }> = {
     neutral: { bg: 'var(--bg-2)', border: 'var(--line-1)' },
-    info: { bg: 'var(--peri-bg)', border: 'oklch(0.50 0.08 265 / 0.3)' },
-    warning: { bg: 'var(--amber-bg)', border: 'oklch(0.55 0.12 60 / 0.3)' },
-    danger: { bg: 'var(--rose-bg)', border: 'oklch(0.55 0.10 25 / 0.3)' },
+    info: { bg: 'var(--peri-bg)', border: 'var(--peri-line)' },
+    warning: { bg: 'var(--amber-bg)', border: 'var(--amber-line)' },
+    danger: { bg: 'var(--rose-bg)', border: 'var(--rose-line)' },
   };
   const s = styles[tone];
   return (

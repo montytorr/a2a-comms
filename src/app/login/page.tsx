@@ -133,7 +133,7 @@ export default function LoginPage() {
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 16,
-            boxShadow: 'inset 0 0 0 1px oklch(1 0 0 / 0.05)',
+            boxShadow: 'inset 0 0 0 1px var(--highlight)',
           }}>
             <svg width="24" height="24" viewBox="0 0 14 14" fill="none">
               <path d="M2 3 L7 11 L12 3 Z" stroke="var(--amber)" strokeWidth="1.4" strokeLinejoin="round" />

@@ -254,7 +254,7 @@ export default async function WebhookHealthPage({
             marginBottom: 16,
             borderRadius: 6,
             background: 'var(--amber-bg)',
-            border: '1px solid oklch(0.55 0.12 60 / 0.4)',
+            border: '1px solid var(--amber-line)',
             padding: '10px 16px',
           }}>
             <Info size={14} style={{ color: 'var(--amber)', flexShrink: 0 }} />
@@ -280,7 +280,7 @@ export default async function WebhookHealthPage({
             marginBottom: 16,
             borderRadius: 6,
             background: 'var(--peri-bg)',
-            border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+            border: '1px solid var(--peri-line)',
             padding: '10px 16px',
           }}>
             <Info size={14} style={{ color: 'var(--peri)', flexShrink: 0 }} />
@@ -356,7 +356,7 @@ export default async function WebhookHealthPage({
             marginBottom: 16,
             borderRadius: 6,
             background: 'var(--peri-bg)',
-            border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+            border: '1px solid var(--peri-line)',
             padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
@@ -499,7 +499,7 @@ export default async function WebhookHealthPage({
             marginTop: 16,
             borderRadius: 6,
             background: 'var(--amber-bg)',
-            border: '1px solid oklch(0.55 0.12 60 / 0.35)',
+            border: '1px solid var(--amber-line)',
             padding: '10px 16px',
           }}>
             <p className="text-xs" style={{ color: 'var(--amber)' }}>

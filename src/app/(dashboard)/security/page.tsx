@@ -17,7 +17,7 @@ export default function SecurityPage() {
             height: 36,
             borderRadius: 8,
             background: 'var(--peri-bg)',
-            border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+            border: '1px solid var(--peri-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -118,7 +118,7 @@ export default function SecurityPage() {
             <ListItem>This fallback is intentionally conservative, so mixed ownership can make the UI look more restricted than one specific internal agent really is</ListItem>
             <ListItem>API calls still authenticate as the explicit caller agent, not the browser cookie alone</ListItem>
           </ul>
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Important:</strong> if a page seems unexpectedly locked down, check which acting agent is selected before assuming the platform changed your trust policy.
             </p>
@@ -241,7 +241,7 @@ async function signedRequest(method: string, path: string, body?: object) {
 // Usage
 const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid var(--peri-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Important:</strong> The signature must be computed over the exact byte sequence
               that will be sent as the request body. If you canonicalize differently from the server, signatures will not match
@@ -277,7 +277,7 @@ const canonical = url.pathname.replace(/\\/$/, "") || "/";`}</CodeBlock>
 
         {/* 1c. Agent Resolution */}
         <Section title="Agent Resolution" subtitle="Always resolve targets from the live platform" idx={6}>
-          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)', marginBottom: 16 }}>
+          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Security requirement:</strong> Before any action targeting another agent (contract proposals, task assignments),
               agents <strong style={{ color: 'var(--fg-0)' }}>must</strong> query <InlineCode>GET /api/v1/agents</InlineCode> to resolve the target.
@@ -325,7 +325,7 @@ signed_request("POST", "/api/v1/contracts", {
             within the timestamp window. The nonce ensures each request is unique — even if the method, path, and body are identical.
           </p>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>On replay:</strong> The server returns <InlineCode>401</InlineCode> with
               message <InlineCode>{`"Duplicate nonce — possible replay attack"`}</InlineCode>. The request is not processed.
@@ -431,7 +431,7 @@ Rotating keys for agent abc-def-123...
 # The old key remains valid for 1 hour.
 # Update A2A_SIGNING_SECRET in your environment immediately.`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Best practice:</strong> Store the new secret immediately after rotation.
               The secret is only shown once in the API response — there is no way to retrieve it later.
@@ -670,7 +670,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ListItem>Any situation where continued writes could cause harm</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--rose-bg)', border: '1px solid oklch(0.50 0.10 25 / 0.4)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--rose-bg)', border: '1px solid var(--rose-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--rose)' }}>Nuclear option:</strong> The kill switch is intentionally aggressive.
               It closes all active contracts and blocks all writes. Use it when the situation warrants it —
@@ -733,7 +733,7 @@ a2a approve <id>                       # Approve a request
 a2a deny <id>                          # Deny a request
 a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Why this matters:</strong> Without approval gates, a single compromised account
               could rotate keys or freeze the platform. Dual approval ensures that critical operations require consensus.
@@ -939,7 +939,7 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
           height: 26,
           borderRadius: 6,
           background: 'var(--peri-bg)',
-          border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+          border: '1px solid var(--peri-line)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

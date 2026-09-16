@@ -91,7 +91,7 @@ function EditableTitle({
         marginLeft: -6,
         outline: 'none',
         border: '1px solid var(--amber)',
-        boxShadow: '0 0 0 3px oklch(0.70 0.16 60 / 0.15)',
+        boxShadow: '0 0 0 3px var(--focus-ring)',
         width: 'calc(100% + 12px)',
         fontFamily: 'inherit',
       }}
@@ -184,7 +184,7 @@ function EditableDescription({
           padding: 8,
           outline: 'none',
           border: '1px solid var(--amber)',
-          boxShadow: '0 0 0 3px oklch(0.70 0.16 60 / 0.15)',
+          boxShadow: '0 0 0 3px var(--focus-ring)',
           resize: 'none',
           minHeight: 80,
           fontFamily: 'inherit',
@@ -295,7 +295,7 @@ function AssigneePicker({
             border: '1px solid var(--line-1)',
             background: 'var(--bg-1)',
             backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+            boxShadow: '0 8px 32px var(--scrim)',
           }}
         >
           <button
@@ -595,7 +595,7 @@ function PriorityPicker({
             border: '1px solid var(--line-1)',
             background: 'var(--bg-1)',
             backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+            boxShadow: '0 8px 32px var(--scrim)',
           }}
         >
           {priorityOptions.map((p) => (
@@ -715,7 +715,7 @@ function SprintPicker({
             border: '1px solid var(--line-1)',
             background: 'var(--bg-1)',
             backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+            boxShadow: '0 8px 32px var(--scrim)',
           }}
         >
           <button

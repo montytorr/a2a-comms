@@ -38,7 +38,7 @@ export default async function NotificationsPage() {
                 height: '36px',
                 borderRadius: '8px',
                 background: 'var(--mint-bg)',
-                border: '1px solid oklch(0.50 0.10 165 / 0.3)',
+                border: '1px solid var(--mint-line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

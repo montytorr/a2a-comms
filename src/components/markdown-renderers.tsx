@@ -4,8 +4,8 @@ import type { Components } from 'react-markdown';
 const baseCodeStyle: CSSProperties = {
   fontFamily: 'var(--mono)',
   fontFeatureSettings: '"ss01", "ss02"',
-  border: '1px solid oklch(0.50 0.08 265 / 0.45)',
-  background: 'oklch(0.30 0.04 265 / 0.32)',
+  border: '1px solid var(--peri-line)',
+  background: 'var(--peri-bg)',
   color: 'var(--peri)',
 };
 
@@ -107,7 +107,7 @@ export const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ color: 'var(--amber)', textDecoration: 'underline', textDecorationColor: 'oklch(0.80 0.155 65 / 0.55)', textUnderlineOffset: 3 }}
+      style={{ color: 'var(--amber)', textDecoration: 'underline', textDecorationColor: 'var(--amber-line)', textUnderlineOffset: 3 }}
     >
       {children}
     </a>

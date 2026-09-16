@@ -102,7 +102,7 @@ export default async function ApprovalsPage({
               height: 36,
               borderRadius: 8,
               background: 'var(--amber-bg)',
-              border: '1px solid oklch(0.55 0.12 60 / 0.35)',
+              border: '1px solid var(--amber-line)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

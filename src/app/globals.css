@@ -53,6 +53,12 @@
   --rose-bg: oklch(0.30 0.06 25 / 0.4);
   --rose-line: oklch(0.55 0.10 25 / 0.55);
 
+  /* focus ring and the inset hairline that makes a raised surface read as
+     raised. Both were repeated as literals across the components. */
+  --focus-ring: oklch(0.70 0.16 60 / 0.15);
+  --highlight: oklch(1 0 0 / 0.05);
+  --shadow-strong: oklch(0 0 0 / 0.5);
+
   /* ambient wash behind the shell */
   --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.30 0.04 65 / 0.10), transparent 60%),
           radial-gradient(900px 500px at -10% 110%, oklch(0.28 0.03 250 / 0.18), transparent 60%);
@@ -116,6 +122,10 @@
   --rose-bg: oklch(0.95 0.045 25);
   --rose-line: oklch(0.76 0.11 25);
 
+  --focus-ring: oklch(0.56 0.14 65 / 0.22);
+  --highlight: oklch(0 0 0 / 0.04);
+  --shadow-strong: oklch(0.30 0.01 250 / 0.22);
+
   --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.80 0.05 65 / 0.18), transparent 60%),
           radial-gradient(900px 500px at -10% 110%, oklch(0.82 0.04 250 / 0.28), transparent 60%);
 }
@@ -161,6 +171,7 @@
   --color-rose: var(--rose);
   --color-rose-bg: var(--rose-bg);
   --color-rose-line: var(--rose-line);
+  --color-focus-ring: var(--focus-ring);
 
   --font-sans: var(--sans);
   --font-mono: var(--mono);

@@ -72,21 +72,21 @@ function getSectionTone(type: string): { pill: string; dotColor: string; bg: str
         pill: 'pill--mint',
         dotColor: 'var(--mint)',
         bg: 'var(--mint-bg)',
-        border: 'oklch(0.50 0.10 165 / 0.3)',
+        border: 'var(--mint-line)',
       };
     case 'changed':
       return {
         pill: 'pill--peri',
         dotColor: 'var(--peri)',
         bg: 'var(--peri-bg)',
-        border: 'oklch(0.50 0.08 265 / 0.3)',
+        border: 'var(--peri-line)',
       };
     case 'fixed':
       return {
         pill: 'pill--amber',
         dotColor: 'var(--amber)',
         bg: 'var(--amber-bg)',
-        border: 'oklch(0.55 0.12 60 / 0.3)',
+        border: 'var(--amber-line)',
       };
     default:
       return {
@@ -111,7 +111,7 @@ export default function ChangelogPage() {
             height: 36,
             borderRadius: 8,
             background: 'var(--peri-bg)',
-            border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+            border: '1px solid var(--peri-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -178,7 +178,7 @@ export default function ChangelogPage() {
                     padding: '4px 10px',
                     borderRadius: 6,
                     background: 'var(--peri-bg)',
-                    border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+                    border: '1px solid var(--peri-line)',
                     color: 'var(--peri)',
                     
                     fontWeight: 700,

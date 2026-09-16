@@ -98,7 +98,7 @@ export default function ExecutionPanel({
         <div style={{
           marginBottom: 16,
           borderRadius: 6,
-          border: '1px solid oklch(0.55 0.10 25 / 0.55)',
+          border: '1px solid var(--rose-line)',
           background: 'var(--rose-bg)',
           padding: '12px 16px',
         }}>
@@ -185,7 +185,7 @@ export default function ExecutionPanel({
                         )}
                         {run.error_message && (
                           <p style={{ color: 'var(--rose)' }}>
-                            <span style={{ color: 'oklch(0.85 0.10 25)' }}>Error:</span> {run.error_message}
+                            <span style={{ color: 'var(--rose)' }}>Error:</span> {run.error_message}
                           </p>
                         )}
                         {delegation && (

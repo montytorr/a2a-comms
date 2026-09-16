@@ -151,7 +151,7 @@ export default async function ContractsPage({
                 <ContractRow key={contract.id} id={contract.id}>
                   <div className="row text-xs" style={{
                     padding: '10px 18px',
-                    borderBottom: i === rows.length - 1 ? 'none' : '1px solid oklch(0.19 0.012 250)',
+                    borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--line-1)',
                     alignItems: 'center',
                     
                     cursor: 'pointer',

@@ -34,19 +34,19 @@ export default function CloseContractButton({ contractId }: { contractId: string
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div
-            style={{ position: 'absolute', inset: 0, background: 'oklch(0.10 0.012 250 / 0.7)', backdropFilter: 'blur(6px)' }}
+            style={{ position: 'absolute', inset: 0, background: 'var(--scrim)', backdropFilter: 'blur(6px)' }}
             onClick={() => !loading && setConfirming(false)}
           />
           <div style={{
             position: 'relative', width: '100%', maxWidth: 420, margin: '0 16px',
             background: 'var(--bg-1)', border: '1px solid var(--line-2)',
             borderRadius: 10, overflow: 'hidden',
-            boxShadow: '0 24px 80px oklch(0 0 0 / 0.5)',
+            boxShadow: '0 24px 80px var(--shadow-strong)',
           }}>
             <div style={{ padding: 28 }}>
               <div style={{
                 width: 48, height: 48, borderRadius: 12,
-                background: 'var(--rose-bg)', border: '1px solid oklch(0.55 0.10 25 / 0.3)',
+                background: 'var(--rose-bg)', border: '1px solid var(--rose-line)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 20px',
               }}>

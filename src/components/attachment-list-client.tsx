@@ -92,7 +92,7 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
 
   if (isImageAttachment(attachment)) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'oklch(0.10 0.01 250)', padding: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 8 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={href} alt={attachment.original_name} style={{ display: 'block', maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 6 }} />
       </div>
@@ -154,7 +154,7 @@ const PreviewMetaPanel = ({ attachment }: { attachment: TaskAttachment }) => (
       <div className="mono num text-sm" style={{ marginTop: 8, color: 'var(--fg-1)' }}>{formatDateTime(attachment.created_at)}</div>
     </div>
     {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
-      <div className="card" style={{ padding: 16, borderColor: 'oklch(0.50 0.10 165 / 0.3)' }}>
+      <div className="card" style={{ padding: 16, borderColor: 'var(--mint-line)' }}>
         <div className="upper text-2xs" style={{ color: 'var(--mint)' }}>Attachment note</div>
         <div className="text-sm" style={{ marginTop: 8, color: 'var(--fg-1)', whiteSpace: 'pre-wrap' }}>{attachment.metadata.note}</div>
       </div>
@@ -190,7 +190,7 @@ const AttachmentPreviewModal = ({
 
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 2147483647, isolation: 'isolate' }} onClick={onClose}>
-      <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.05 0.01 250 / 0.95)', backdropFilter: 'blur(12px)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'var(--scrim)', backdropFilter: 'blur(12px)' }} />
       <div
         style={{ position: 'relative', display: 'flex', height: '100dvh', width: '100vw', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-0)' }}
         onClick={(e) => e.stopPropagation()}
@@ -244,11 +244,11 @@ const AttachmentPreviewModal = ({
         {/* Details sidebar */}
         {detailsOpen && (
           <>
-            <button type="button" aria-label="Close details" style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'oklch(0 0 0 / 0.4)' }} onClick={onToggleDetails} />
+            <button type="button" aria-label="Close details" style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'var(--scrim)' }} onClick={onToggleDetails} />
             <aside style={{
               position: 'absolute', inset: '0 0 0 auto', zIndex: 40,
               width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column',
-              borderLeft: '1px solid var(--line-1)', background: 'oklch(0.12 0.012 250 / 0.96)', backdropFilter: 'blur(24px)',
+              borderLeft: '1px solid var(--line-1)', background: 'var(--bg-inset)', backdropFilter: 'blur(24px)',
             }}>
               <div className="row" style={{ justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--line-1)', padding: '16px 20px' }}>
                 <div style={{ minWidth: 0 }}>

@@ -225,7 +225,7 @@ export default async function ContractDetailPage({
           </div>
 
           {isObserverParticipant && (
-            <div className="card card--inset" style={{ padding: 12, marginTop: 14, borderColor: 'oklch(0.50 0.08 265 / 0.5)' }}>
+            <div className="card card--inset" style={{ padding: 12, marginTop: 14, borderColor: 'var(--peri-line)' }}>
               <div className="text-2xs" style={{ color: 'var(--peri)' }}>
                 You are attached as a read-only observer on this contract.
               </div>

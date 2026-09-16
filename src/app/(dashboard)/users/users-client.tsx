@@ -156,7 +156,7 @@ export default function UsersClient({
               marginBottom: 16,
               padding: '10px 14px',
               background: 'var(--rose-bg)',
-              border: '1px solid oklch(0.50 0.10 25 / 0.4)',
+              border: '1px solid var(--rose-line)',
               borderRadius: 6,
               
               color: 'var(--rose)',
@@ -221,7 +221,7 @@ export default function UsersClient({
                       height: 20,
                       borderRadius: 10,
                       background: newIsSuperAdmin ? 'var(--amber-bg)' : 'var(--bg-2)',
-                      border: `1px solid ${newIsSuperAdmin ? 'oklch(0.55 0.12 60 / 0.55)' : 'var(--line-1)'}`,
+                      border: `1px solid ${newIsSuperAdmin ? 'var(--amber-line)' : 'var(--line-1)'}`,
                       transition: 'all 0.15s',
                       position: 'relative',
                     }}>
@@ -271,7 +271,7 @@ export default function UsersClient({
           marginBottom: 20,
           padding: '10px 14px',
           background: 'var(--rose-bg)',
-          border: '1px solid oklch(0.50 0.10 25 / 0.4)',
+          border: '1px solid var(--rose-line)',
           borderRadius: 6,
           
           color: 'var(--rose)',
@@ -327,7 +327,7 @@ export default function UsersClient({
                     className={profile.is_super_admin ? 'btn btn--sm btn--danger' : 'btn btn--sm'}
                     style={{
                       opacity: (loading === profile.id || (isSelf && profile.is_super_admin)) ? 0.35 : 1,
-                      ...(profile.is_super_admin ? {} : { color: 'var(--amber)', borderColor: 'oklch(0.55 0.12 60 / 0.4)' }),
+                      ...(profile.is_super_admin ? {} : { color: 'var(--amber)', borderColor: 'var(--amber-line)' }),
                     }}
                     title={isSelf && profile.is_super_admin ? 'Cannot remove your own admin' : undefined}
                   >
@@ -378,7 +378,7 @@ export default function UsersClient({
                           opacity: (!(selectedAgentByUser[profile.id]) || loading === `link-${profile.id}`) ? 0.35 : 1,
                           gap: 5,
                           color: 'var(--peri)',
-                          borderColor: 'oklch(0.50 0.08 265 / 0.4)',
+                          borderColor: 'var(--peri-line)',
                         }}
                       >
                         <Link2 size={12} />
@@ -409,7 +409,7 @@ export default function UsersClient({
                             height: 28,
                             borderRadius: 6,
                             background: 'var(--peri-bg)',
-                            border: '1px solid oklch(0.50 0.08 265 / 0.4)',
+                            border: '1px solid var(--peri-line)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

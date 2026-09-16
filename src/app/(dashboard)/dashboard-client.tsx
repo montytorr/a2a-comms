@@ -184,7 +184,7 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
           display: 'flex',
           flexDirection: 'column',
           gap: 6,
-          borderColor: isKillSwitchActive ? 'oklch(0.55 0.10 25 / 0.55)' : undefined,
+          borderColor: isKillSwitchActive ? 'var(--rose-line)' : undefined,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -341,7 +341,7 @@ export const DashboardClient = ({
       value:      activeContracts,
       hint:       'View all contracts →',
       icon:       FileText,
-      iconColor:  'oklch(0.78 0.14 165)',
+      iconColor:  'var(--mint)',
       href:       '/contracts?status=active',
     },
     {
@@ -349,7 +349,7 @@ export const DashboardClient = ({
       value:      messagesToday,
       hint:       'View messages →',
       icon:       MessageSquare,
-      iconColor:  'oklch(0.78 0.10 265)',
+      iconColor:  'var(--peri)',
       href:       '/contracts',
     },
     {
@@ -357,7 +357,7 @@ export const DashboardClient = ({
       value:      pendingInvitations,
       hint:       'Review project + contract inboxes →',
       icon:       Clock,
-      iconColor:  'oklch(0.80 0.155 65)',
+      iconColor:  'var(--amber)',
       href:       '/projects',
     },
     {
@@ -365,7 +365,7 @@ export const DashboardClient = ({
       value:      totalAgents,
       hint:       'View all agents →',
       icon:       Users,
-      iconColor:  'oklch(0.74 0.14 25)',
+      iconColor:  'var(--rose)',
       href:       '/agents',
     },
     {
@@ -373,7 +373,7 @@ export const DashboardClient = ({
       value:      activeProjects,
       hint:       'View projects →',
       icon:       Folder,
-      iconColor:  'oklch(0.78 0.14 165)',
+      iconColor:  'var(--mint)',
       href:       '/projects',
     },
     {
@@ -381,7 +381,7 @@ export const DashboardClient = ({
       value:      tasksInProgress,
       hint:       'View tasks →',
       icon:       Zap,
-      iconColor:  'oklch(0.78 0.10 265)',
+      iconColor:  'var(--peri)',
       href:       '/projects',
     },
     {
@@ -389,7 +389,7 @@ export const DashboardClient = ({
       value:      webhookDeliveries,
       hint:       'View webhooks →',
       icon:       Link2,
-      iconColor:  'oklch(0.80 0.155 65)',
+      iconColor:  'var(--amber)',
       href:       '/webhooks',
     },
   ];

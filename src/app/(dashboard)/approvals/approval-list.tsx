@@ -115,7 +115,7 @@ export default function ApprovalList({
           padding: '10px 14px',
           borderRadius: 6,
           background: 'var(--rose-bg)',
-          border: '1px solid oklch(0.40 0.08 25 / 0.4)',
+          border: '1px solid var(--rose-line)',
           
           color: 'var(--rose)',
         }}>
@@ -186,7 +186,7 @@ export default function ApprovalList({
                     className="btn btn--sm"
                     style={{
                       background: 'var(--mint-bg)',
-                      borderColor: 'oklch(0.50 0.10 165 / 0.4)',
+                      borderColor: 'var(--mint-line)',
                       color: 'var(--mint)',
                     }}
                   >

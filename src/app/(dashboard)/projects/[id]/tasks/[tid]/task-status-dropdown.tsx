@@ -89,7 +89,7 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
             border: '1px solid var(--line-1)',
             background: 'var(--bg-1)',
             backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px oklch(0.05 0.01 250 / 0.8)',
+            boxShadow: '0 8px 32px var(--scrim)',
             overflow: 'hidden',
           }}
         >

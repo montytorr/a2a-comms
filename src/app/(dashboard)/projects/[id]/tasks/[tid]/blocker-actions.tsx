@@ -77,7 +77,7 @@ export default function BlockerActions({
           disabled={isPending}
           className="btn btn--sm"
           style={{
-            borderColor: 'oklch(0.55 0.12 60 / 0.55)',
+            borderColor: 'var(--amber-line)',
             color: 'var(--amber)',
             background: 'var(--amber-bg)',
             opacity: isPending ? 0.5 : 1,
@@ -113,7 +113,7 @@ export default function BlockerActions({
           }}
         >
           <div
-            style={{ position: 'absolute', inset: 0, background: 'oklch(0.05 0.01 250 / 0.75)', backdropFilter: 'blur(6px)' }}
+            style={{ position: 'absolute', inset: 0, background: 'var(--scrim)', backdropFilter: 'blur(6px)' }}
             onClick={close}
           />
           <div
@@ -125,7 +125,7 @@ export default function BlockerActions({
               margin: '0 16px',
               background: 'var(--bg-1)',
               backdropFilter: 'blur(20px)',
-              boxShadow: '0 24px 64px oklch(0.05 0.01 250 / 0.8)',
+              boxShadow: '0 24px 64px var(--scrim)',
               overflow: 'hidden',
             }}
           >
@@ -220,8 +220,8 @@ export default function BlockerActions({
                   fontWeight: 700,
                   opacity: isPending ? 0.5 : 1,
                   ...(openMode === 'escalate'
-                    ? { background: 'var(--rose-bg)', borderColor: 'oklch(0.55 0.10 25 / 0.55)', color: 'var(--rose)' }
-                    : { background: 'var(--amber-bg)', borderColor: 'oklch(0.55 0.12 60 / 0.55)', color: 'var(--amber)' }
+                    ? { background: 'var(--rose-bg)', borderColor: 'var(--rose-line)', color: 'var(--rose)' }
+                    : { background: 'var(--amber-bg)', borderColor: 'var(--amber-line)', color: 'var(--amber)' }
                   ),
                 }}
               >
