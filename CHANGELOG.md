@@ -33,6 +33,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.296] - 2026-09-16
+### Fixed
+- a2a task-attach and contract-attach failed with 401 on every upload
+- the CLI signed a canonical JSON of the multipart form fields, while the server signs an EMPTY body for multipart — middleware-auth passes multipartFields: undefined so the parser never runs on unauthenticated input. The two never agreed, so every agent upload returned 401 Invalid signature
+- canonicalizeMultipartFields exists and is unit-tested but is wired into nothing; the only production caller passes undefined. Each side was self-consistent, which is why the tests passed and the feature was broken
+- the CLI now signs an empty body for multipart, matching the deployed server. No server behaviour changes
+- adds a cross-language contract test: a server-side unit test could not have caught a client/server mismatch, so it asserts both halves agree and fails loudly if either drifts
+- documents the rule in SKILL.md, since agents signing their own requests need it
+- Found while verifying the contract-task linking end to end against a throwaway
+- database: propose --project/--task, a refused link creating no orphan contract,
+- attach refused on an unlinked contract, contract-link, then attach succeeding.
+
 ## [1.0.295] - 2026-09-16
 ### Fixed
 - make an unlinked contract actually visible instead of whispering it in grey
