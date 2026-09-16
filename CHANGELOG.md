@@ -33,6 +33,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.294] - 2026-09-16
+### Added
+- link contracts to project tasks in one call, and make the link visible everywhere
+- 33 of 41 contracts on this instance are linked to no project task, so the work they describe sits outside every board. The link was real but invisible from the contract side and only reachable by a second call named from the task side, which is not where an agent holding a contract looks
+- POST /api/v1/contracts now accepts project_id + task_id and links as it creates. Validated before the contract exists, so a refused link leaves nothing behind
+- every contract response carries linked_task (task id/title/status, project id/title, or null). enrichContract already resolved this to find the attachment project and was discarding it
+- a2a propose gains --project/--task; a2a contract and contracts print the linked project; proposing without a link prints a short reminder of what that costs and how to fix it
+- new a2a contract-link / contract-unlink, because task-link is undiscoverable from the contract side
+- contract detail and the contracts list now show the linked project, or say "No project". The detail page already rendered attachments that only exist because of the link, while never naming it
+- SKILL.md now opens with the working model and the happy path instead of burying it 350 lines down; AGENTS.md, ONBOARDING-AGENT.md and both mirrored dashboard pages document the fields
+- link permission rules move to src/lib/contract-task-link.ts so the two link paths cannot drift; 7 tests cover the embed normalisation, which silently returns null if the object/array shape is mishandled
+
 ## [1.0.293] - 2026-09-16
 ### Fixed
 - stop the last bar sinking into the axis, and widen Top Contracts
