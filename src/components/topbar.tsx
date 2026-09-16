@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, RefreshCw, Bell } from 'lucide-react';
 import { Ticker } from '@/components/atoms';
+import { useDashboardContext } from '@/app/(dashboard)/dashboard-context';
 import type { TickerItem } from '@/lib/live-feed';
 
 interface TopbarProps {
@@ -14,6 +15,10 @@ interface TopbarProps {
 
 export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) => {
   const router = useRouter();
+  const { notificationCounts } = useDashboardContext();
+  // Derived per request in lib/dashboard-notifications.ts; there is no read
+  // state in the system, so this is "actionable now", not "unread".
+  const actionable = notificationCounts?.total ?? 0;
   const [time, setTime] = useState('');
   const [liveItems, setLiveItems] = useState<TickerItem[]>(initialTickerItems);
 
@@ -127,20 +132,24 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) 
         <Link
           href="/notifications"
           className="btn btn--ghost btn--sm btn--icon"
-          title="Notifications"
-          aria-label="Open notifications"
+          title={actionable > 0 ? `Notifications — ${actionable} needing attention` : 'Notifications'}
+          aria-label={
+            actionable > 0
+              ? `Open notifications, ${actionable} item${actionable === 1 ? '' : 's'} needing attention`
+              : 'Open notifications, nothing needing attention'
+          }
           style={{ position: 'relative', width: 26, height: 26 }}
         >
           <Bell size={13} />
-          <span style={{
-            position: 'absolute',
-            top: 4,
-            right: 4,
-            width: 5,
-            height: 5,
-            borderRadius: 999,
-            background: 'var(--amber)',
-          }} />
+          {actionable > 0 && (
+            <span
+              className="count-badge"
+              style={{ position: 'absolute', top: -3, right: -3 }}
+              aria-hidden
+            >
+              {actionable > 99 ? '99+' : actionable}
+            </span>
+          )}
         </Link>
       </div>
     </div>

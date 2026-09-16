@@ -173,6 +173,26 @@ body::before {
 .pill--rose  { border-color: oklch(0.55 0.10 25 / 0.55); color: var(--rose); background: var(--rose-bg); }
 .pill--ghost { background: transparent; color: var(--fg-2); }
 
+/* count badge — a compact numeric pill for overlaying an icon control.
+   Sized to sit in the corner of a 26px icon button without overlapping the
+   glyph, which a full-height .pill (22px) would. */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: oklch(0.18 0.04 60);
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
 .dot {
   width: 6px;
   height: 6px;
