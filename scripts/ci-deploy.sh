@@ -75,11 +75,25 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
   fi
 fi
 
+# This script runs under sudo (see .github/workflows/deploy.yml), so every
+# object and ref git writes here lands owned by root — inside a checkout the
+# runner owns. The next run's `git pull`, which is NOT sudo, then dies with
+# "insufficient permission for adding an object to repository database".
+#
+# That is why deploys alternated between passing and failing: each success
+# poisoned the run after it. Restoring ownership once the writes are done is
+# the whole fix. See AC-39.
+REPO_OWNER="$(stat -c '%u:%g' "$PWD")"
+
 git add package.json CHANGELOG.md
 git diff --cached --quiet || {
   git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
   git push origin main
 }
+
+# .git for the objects and refs git just wrote; the two files because the
+# version bump rewrites them in place with sed, also as root.
+chown -R "$REPO_OWNER" "$PWD/.git" "$PWD/package.json" "$PWD/CHANGELOG.md"
 
 # Build web image before touching the live container. This keeps the current
 # production app serving while the replacement image is compiled.
