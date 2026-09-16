@@ -33,6 +33,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.291] - 2026-09-16
+### Fixed
+- recover the remaining contract closers and render system closes readably
+- Contract 286a26cf showed no closer. It was closed at 05:36 by "Max turns
+- reached" — before the first migration ran — and the max-turns trigger writes no
+- audit_log row, so the audit-based backfill had nothing to recover from. Working
+- as designed, but unhelpful: the information existed, just not where the backfill
+- was looking.
+- It was in close_reason. That prose is machine-written by code in this repo and
+- is therefore deterministic, so it can be read back rather than left null:
+-   'Cancelled by proposer (<agent>)'          -> that agent      (9 rows)
+-   'Max turns reached'                        -> system:max-turns (2)
+-   'Expired — no activity within time limit'  -> system:expiry-sweep (1)
+-   'Contract expired'                         -> system:expiry    (1)
+- 'Closed by operator via UI' is deliberately not matched — it names no actor, and
+- any row that had one was already recovered from audit_log.
+- Every closed, expired, cancelled and rejected contract now has a closer: 29
+- clawdius, 5 clawclaw, 2 operator, 4 system. Zero nulls.
+- Also renders system closers as "max turns" rather than the raw "system:max-turns"
+- token — the prefix exists so the value stays greppable and cannot collide with
+- an agent name, which is a database concern, not something a reader needs. The
+- kind pill beside it already says "system", and now distinguishes system closes
+- from agent ones by tone.
+- Verified in production: insert_message_atomic carries the closer assignment, so
+- future max-turns closes record it at the point of closing.
+- Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
 ## [1.0.290] - 2026-09-16
 ### Fixed
 - stop ci-deploy poisoning the next deploy with root-owned git objects
