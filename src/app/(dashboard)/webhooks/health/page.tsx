@@ -28,6 +28,7 @@ type WebhookDelivery = {
     is_active: boolean;
     failure_count: number;
     last_delivery_at: string | null;
+    agents: { id: string; name: string; display_name: string | null } | null;
   };
 };
 
@@ -35,6 +36,7 @@ type WebhookSummary = {
   webhookId: string;
   url: string;
   agentId: string;
+  agentName: string | null;
   isActive: boolean;
   failureCount: number;
   lastDeliveryAt: string | null;
@@ -128,7 +130,7 @@ export default async function WebhookHealthPage({
       created_at,
       max_retries,
       last_retry_at,
-      webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at)
+      webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at, agents(id, name, display_name))
     `)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -155,7 +157,7 @@ export default async function WebhookHealthPage({
       webhook_id,
       status,
       attempts,
-      webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at)
+      webhooks!inner(id, url, agent_id, is_active, failure_count, last_delivery_at, agents(id, name, display_name))
     `)
     .gte('created_at', twentyFourHoursAgo);
 
@@ -177,6 +179,7 @@ export default async function WebhookHealthPage({
       is_active: boolean;
       failure_count: number;
       last_delivery_at: string | null;
+      agents: { id: string; name: string; display_name: string | null } | null;
     };
   }>;
 
@@ -189,6 +192,7 @@ export default async function WebhookHealthPage({
         webhookId: wid,
         url: d.webhooks.url,
         agentId: d.webhooks.agent_id,
+        agentName: d.webhooks.agents?.display_name || d.webhooks.agents?.name || null,
         isActive: d.webhooks.is_active,
         failureCount: d.webhooks.failure_count,
         lastDeliveryAt: d.webhooks.last_delivery_at,
@@ -331,6 +335,7 @@ export default async function WebhookHealthPage({
                   isActive={s.isActive}
                   url={s.url}
                   agentId={s.agentId}
+                  agentName={s.agentName}
                   failureCount={s.failureCount}
                   lastDeliveryAt={s.lastDeliveryAt}
                   successCount24h={s.successCount24h}
@@ -411,7 +416,7 @@ export default async function WebhookHealthPage({
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
-                      {['Event', 'Status', 'HTTP', 'Attempts', 'Webhook', 'Created', 'Delivered'].map(col => (
+                      {['Event', 'Status', 'HTTP', 'Attempts', 'Webhook', 'Target Agent', 'Created', 'Delivered'].map(col => (
                         <th key={col} style={{ textAlign: 'left', padding: '10px 16px' }}>
                           <span className="upper" style={{ fontSize: 10 }}>{col}</span>
                         </th>
@@ -460,6 +465,13 @@ export default async function WebhookHealthPage({
                         <td style={{ padding: '10px 16px' }}>
                           <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }} title={d.webhooks.url}>
                             {truncateUrl(d.webhooks.url)}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <span style={{ fontSize: 12, color: 'var(--fg-2)' }} title={d.webhooks.agents?.name || d.webhooks.agent_id}>
+                            {d.webhooks.agents?.display_name || d.webhooks.agents?.name || (
+                              <span className="mono dim">{d.webhooks.agent_id.slice(0, 8)}</span>
+                            )}
                           </span>
                         </td>
                         <td style={{ padding: '10px 16px' }}>

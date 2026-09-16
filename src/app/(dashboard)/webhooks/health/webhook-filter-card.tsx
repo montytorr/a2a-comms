@@ -7,6 +7,7 @@ interface WebhookFilterCardProps {
   isActive: boolean;
   url: string;
   agentId: string;
+  agentName: string | null;
   failureCount: number;
   lastDeliveryAt: string | null;
   successCount24h: number;
@@ -48,6 +49,7 @@ export default function WebhookFilterCard({
   isActive,
   url,
   agentId,
+  agentName,
   failureCount,
   lastDeliveryAt,
   successCount24h,
@@ -101,7 +103,7 @@ export default function WebhookFilterCard({
             )}
           </div>
           <div className="row gap-2" style={{ fontSize: 11, color: 'var(--fg-4)' }}>
-            <span className="mono">{agentId.slice(0, 8)}...</span>
+            <span title={agentId}>{agentName || <span className="mono">{agentId.slice(0, 8)}...</span>}</span>
             {failureCount > 0 && (
               <span style={{ color: 'var(--rose)' }}>
                 {failureCount} consecutive failure{failureCount !== 1 ? 's' : ''}
