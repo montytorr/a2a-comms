@@ -33,6 +33,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.295] - 2026-09-16
+### Fixed
+- make an unlinked contract actually visible instead of whispering it in grey
+- the unlinked state was grey fg-4 text at text-2xs, which reads as absence rather than a gap. Nobody was going to change behaviour because of it
+- contract detail now carries an amber callout under the header naming what is missing — no board, no execution tracking, no attachments — with the exact a2a contract-link command, contract id already filled in
+- the Project field shows an amber "Not linked" pill, and a folder icon plus the project name when linked
+- the contracts list marks unlinked rows in amber with a broken-link icon and "No project — not tracked on any board", instead of grey "No project"
+
 ## [1.0.294] - 2026-09-16
 ### Added
 - link contracts to project tasks in one call, and make the link visible everywhere
