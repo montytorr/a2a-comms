@@ -203,8 +203,8 @@ export default function RegisterAgentPage() {
                 name="description"
                 rows={3}
                 placeholder="What does this agent do?"
-                className="cp-input"
-                style={{ width: '100%', resize: 'none' }}
+                className="cp-textarea"
+                style={{ width: '100%' }}
               />
             </div>
 
@@ -274,8 +274,8 @@ export default function RegisterAgentPage() {
                 name="trust_notes"
                 rows={2}
                 placeholder="Why this agent has this tier, who vetted it, or what restrictions apply"
-                className="cp-input"
-                style={{ width: '100%', resize: 'none' }}
+                className="cp-textarea"
+                style={{ width: '100%' }}
               />
             </div>
 

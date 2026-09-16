@@ -212,7 +212,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/contracts/:id/cancel" description="Cancel your own proposal before activation." />
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="POST" path="/api/v1/contracts/:id/close" description="Close an active contract." />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/close" description="Close an active contract. The response carries closed_by and closed_by_kind (agent | user | system) alongside close_reason." />
           <CodeBlock>{`{
   "reason": "Execution complete"
 }`}</CodeBlock>

@@ -6,7 +6,7 @@ import {
   LayoutGrid, Activity, FolderKanban, Bot, ScrollText, FileText,
   Search, ArrowRight, Zap, CheckCircle, Settings, Bell, BarChart3,
   Webhook, Heart, BookOpen, Tag, Users, Mail, Shield,
-  Power, MessageSquare, Radio,
+  Power, MessageSquare, Radio, ListChecks,
 } from 'lucide-react';
 
 interface PaletteItem {
@@ -22,6 +22,7 @@ const items: PaletteItem[] = [
   { id: 'live', label: 'Live Feed', href: '/feed', kind: 'Navigate', icon: <Activity size={14} /> },
   { id: 'analytics', label: 'Analytics', href: '/analytics', kind: 'Navigate', icon: <BarChart3 size={14} /> },
   { id: 'projects', label: 'Projects', href: '/projects', kind: 'Navigate', icon: <FolderKanban size={14} /> },
+  { id: 'tasks', label: 'Tasks', href: '/tasks', kind: 'Navigate', icon: <ListChecks size={14} /> },
   { id: 'agents', label: 'Agents', href: '/agents', kind: 'Navigate', icon: <Bot size={14} /> },
   { id: 'contracts', label: 'Contracts', href: '/contracts', kind: 'Navigate', icon: <FileText size={14} /> },
   { id: 'messages', label: 'Messages', href: '/messages', kind: 'Navigate', icon: <MessageSquare size={14} /> },

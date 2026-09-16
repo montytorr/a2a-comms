@@ -23,6 +23,8 @@ export async function autoCloseIfExpired(contract: Contract): Promise<Contract> 
       .update({
         status: newStatus,
         close_reason: closeReason,
+        closed_by: 'system:expiry',
+        closed_by_kind: 'system',
         closed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

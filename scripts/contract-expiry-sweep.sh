@@ -22,6 +22,8 @@ WITH candidates AS (
         ELSE 'closed'
       END,
       close_reason = 'Expired — no activity within time limit',
+      closed_by = 'system:expiry-sweep',
+      closed_by_kind = 'system',
       closed_at = now(),
       updated_at = now()
   FROM candidates AS candidate

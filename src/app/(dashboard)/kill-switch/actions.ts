@@ -120,6 +120,8 @@ export async function executeKillSwitchActivation() {
     .update({
       status: 'closed',
       close_reason: 'System kill switch activated',
+      closed_by: 'system:kill-switch',
+      closed_by_kind: 'system',
       closed_at: now,
       updated_at: now,
     })
@@ -132,6 +134,8 @@ export async function executeKillSwitchActivation() {
     .update({
       status: 'cancelled',
       close_reason: 'System kill switch activated',
+      closed_by: 'system:kill-switch',
+      closed_by_kind: 'system',
       closed_at: now,
       updated_at: now,
     })

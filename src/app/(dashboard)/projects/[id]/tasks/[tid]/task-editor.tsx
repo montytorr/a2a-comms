@@ -174,7 +174,7 @@ function EditableDescription({
         }}
         disabled={isPending}
         placeholder="Write description (markdown supported)…"
-        className="text-sm" style={{
+        className="cp-textarea text-sm" style={{
           width: '100%',
           background: 'var(--bg-2)',
           

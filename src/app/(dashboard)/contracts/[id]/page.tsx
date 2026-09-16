@@ -232,10 +232,34 @@ export default async function ContractDetailPage({
             </div>
           )}
 
-          {contract.close_reason && (
-            <div style={{ marginTop: 18 }}>
-              <div className="upper" style={{ marginBottom: 4 }}>Close Reason</div>
-              <div className="text-sm" style={{ color: 'var(--fg-1)' }}>{contract.close_reason}</div>
+          {(contract.close_reason || contract.closed_at || contract.closed_by) && (
+            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
+              <div className="upper" style={{ marginBottom: 8 }}>Closed</div>
+              <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+                {contract.closed_by && (
+                  <KV label="Closed by">
+                    <span className="text-sm" style={{ color: 'var(--fg-1)' }}>
+                      {contract.closed_by}
+                    </span>
+                    {contract.closed_by_kind && (
+                      <span className="pill text-2xs" style={{ height: 16, marginLeft: 6 }}>
+                        {contract.closed_by_kind}
+                      </span>
+                    )}
+                  </KV>
+                )}
+                {contract.closed_at && (
+                  <KV label="Closed at">
+                    <span className="num mono text-sm">{formatDateTime(contract.closed_at)}</span>
+                  </KV>
+                )}
+              </div>
+              {contract.close_reason && (
+                <div style={{ marginTop: 12 }}>
+                  <div className="upper" style={{ marginBottom: 4 }}>Reason</div>
+                  <div className="text-sm" style={{ color: 'var(--fg-1)' }}>{contract.close_reason}</div>
+                </div>
+              )}
             </div>
           )}
 

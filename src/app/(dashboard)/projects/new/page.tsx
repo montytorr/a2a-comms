@@ -114,7 +114,7 @@ export default function NewProjectPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe your project (markdown supported)..."
             rows={5}
-            className="cp-input text-sm"
+            className="cp-textarea text-sm"
             style={{ width: '100%', resize: 'vertical', minHeight: '100px' }}
           />
           {description.trim() && (

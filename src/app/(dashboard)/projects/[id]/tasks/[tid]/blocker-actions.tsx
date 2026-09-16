@@ -158,7 +158,7 @@ export default function BlockerActions({
                     onChange={(event) => setNextAction(event.target.value)}
                     rows={3}
                     placeholder={openMode === 'escalate' ? 'Explain what needs intervention next' : 'Describe the next unblock step'}
-                    className="cp-input"
+                    className="cp-textarea"
                     style={{
                       height: 'auto',
                       minHeight: 72,

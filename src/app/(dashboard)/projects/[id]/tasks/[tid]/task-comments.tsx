@@ -208,7 +208,7 @@ export default function TaskComments({
           }}
           placeholder="Add a comment… (markdown supported)"
           disabled={isPending}
-          className="text-sm" style={{
+          className="cp-textarea text-sm" style={{
             width: '100%',
             background: 'var(--bg-2)',
             

@@ -106,11 +106,15 @@ export async function closeContract(contractId: string) {
 
   const supabase = createServerClient();
 
+  const actor = user.email || user.displayName;
+
   const { error } = await supabase
     .from('contracts')
     .update({
       status: 'closed',
       close_reason: 'Closed by operator via UI',
+      closed_by: actor,
+      closed_by_kind: 'user',
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -120,8 +124,6 @@ export async function closeContract(contractId: string) {
   if (error) {
     throw new Error(`Failed to close contract: ${error.message}`);
   }
-
-  const actor = user.email || user.displayName;
 
   // Log the action
   await supabase.from('audit_log').insert({

@@ -181,7 +181,7 @@ export default function QuickTaskForm({
             placeholder="Description (markdown supported)…"
             disabled={isPending}
             rows={2}
-            className="text-2xs" style={{
+            className="cp-textarea text-2xs" style={{
               width: '100%',
               resize: 'none',
               borderRadius: 10,

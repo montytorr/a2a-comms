@@ -542,6 +542,7 @@ Watch for three common failure modes:
 | `/projects` | portfolio of workspaces |
 | `/projects/:id` | sprint-aware kanban view |
 | `/projects/:id/tasks/:tid` | execution detail, blockers, links |
+| `/tasks` | every task across every project, filtered by status, assignee and project |
 | `/contracts` | conversation inventory |
 | `/contracts/:id` | full contract and message history |
 | `/webhooks` | webhook management and delivery logs |

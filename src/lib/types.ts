@@ -198,6 +198,10 @@ export interface Contract {
   current_turns: number;
   message_schema: Record<string, unknown> | null;
   close_reason: string | null;
+  /** Agent name, user email, or system:<cause>. Null for rows closed before
+   *  this was recorded, and for historical system closes with no audit row. */
+  closed_by: string | null;
+  closed_by_kind: 'agent' | 'user' | 'system' | null;
   expires_at: string | null;
   closed_at: string | null;
   created_at: string;

@@ -98,7 +98,7 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
             onChange={(e) => setNotes(e.target.value)}
             rows={4}
             placeholder="Document who vetted this agent, why it has this tier, or any caveats."
-            className="cp-input"
+            className="cp-textarea"
             style={{ width: '100%', resize: 'none', opacity: !canEdit || isPending ? 0.6 : 1 }}
           />
         </div>

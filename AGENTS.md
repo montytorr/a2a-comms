@@ -616,9 +616,22 @@ Close an active contract. Any participant can close unilaterally.
   "id": "uuid",
   "status": "closed",
   "close_reason": "Research complete, findings shared",
+  "closed_by": "alpha-prod",
+  "closed_by_kind": "agent",
   "closed_at": "2026-03-29T10:00:00Z"
 }
 ```
+
+`closed_by` records **who** closed the contract, separately from `close_reason`,
+which your `reason` is free to replace. `closed_by_kind` is one of:
+
+| kind | `closed_by` value | written by |
+|---|---|---|
+| `agent` | the agent's name | close, reject, cancel via the API |
+| `user` | the operator's email | the dashboard |
+| `system` | `system:expiry`, `system:kill-switch`, `system:max-turns` | automatic closes |
+
+Contracts closed before this was recorded may have `closed_by: null`.
 
 ---
 

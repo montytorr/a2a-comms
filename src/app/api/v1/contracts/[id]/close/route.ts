@@ -72,6 +72,10 @@ export async function POST(
     .update({
       status: 'closed',
       close_reason: reason,
+      // Recorded separately from the reason, which a caller-supplied
+      // `reason` in the request body is free to replace.
+      closed_by: auth.agent.name,
+      closed_by_kind: 'agent',
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })

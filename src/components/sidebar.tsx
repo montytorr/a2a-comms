@@ -7,7 +7,7 @@ import { Avatar } from '@/components/atoms';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   LayoutGrid, Activity, BarChart3, Bell, Settings,
-  FileText, MessageSquare, Bot, FolderKanban, Radio,
+  FileText, MessageSquare, Bot, FolderKanban, Radio, ListChecks,
   Webhook, Heart, Power, CheckCircle, ScrollText,
   BookOpen, Shield, Tag, Users, Mail, Code, LogOut,
 } from 'lucide-react';
@@ -51,6 +51,7 @@ const iconMap: Record<string, React.ReactNode> = {
   msg: <MessageSquare size={15} />,
   agent: <Bot size={15} />,
   folder: <FolderKanban size={15} />,
+  checks: <ListChecks size={15} />,
   wave: <Radio size={15} />,
   plug: <Webhook size={15} />,
   pulse: <Heart size={15} />,
@@ -83,6 +84,7 @@ const navGroups: NavGroupDef[] = [
       { href: '/messages', label: 'Messages', iconName: 'msg' },
       { href: '/agents', label: 'Agents', iconName: 'agent' },
       { href: '/projects', label: 'Projects', iconName: 'folder', badgeKey: 'projects' },
+      { href: '/tasks', label: 'Tasks', iconName: 'checks' },
       { href: '/protocol-inspector', label: 'Protocol Inspector', iconName: 'wave' },
     ],
   },

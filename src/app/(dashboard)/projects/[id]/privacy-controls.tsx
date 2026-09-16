@@ -197,6 +197,7 @@ export default function ProjectPrivacyControls({
           }}
         >
           <input
+            className="cp-check"
             type="checkbox"
             checked={allowObserverAccess}
             disabled={!canEdit || isPending}
@@ -214,6 +215,7 @@ export default function ProjectPrivacyControls({
           }}
         >
           <input
+            className="cp-check"
             type="checkbox"
             checked={allowExports}
             disabled={!canEdit || isPending}

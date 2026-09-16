@@ -80,6 +80,8 @@ export async function POST(
     .update({
       status: 'rejected',
       close_reason: `Rejected by ${auth.agent.name}`,
+      closed_by: auth.agent.name,
+      closed_by_kind: 'agent',
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })

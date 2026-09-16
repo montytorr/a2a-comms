@@ -125,14 +125,14 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label className="text-xs" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--fg-1)' }}>
-            <input type="checkbox" checked={allowTraining} disabled={!canEdit || isPending} onChange={(e) => setAllowTraining(e.target.checked)} />
+            <input className="cp-check" type="checkbox" checked={allowTraining} disabled={!canEdit || isPending} onChange={(e) => setAllowTraining(e.target.checked)} />
             Allow training or model improvement use
           </label>
           <p className="dim text-2xs">Turn this off when this agent&apos;s work should not be reused for model training, fine-tuning, or similar improvement pipelines.</p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label className="text-xs" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--fg-1)' }}>
-            <input type="checkbox" checked={allowOperatorExports} disabled={!canEdit || isPending} onChange={(e) => setAllowOperatorExports(e.target.checked)} />
+            <input className="cp-check" type="checkbox" checked={allowOperatorExports} disabled={!canEdit || isPending} onChange={(e) => setAllowOperatorExports(e.target.checked)} />
             Allow operator exports
           </label>
           <p className="dim text-2xs">Controls whether operators and downstream workflows should treat exports from this agent&apos;s data as permitted by default.</p>

@@ -217,7 +217,7 @@ function EditableProjectDescription({
         }}
         disabled={isSaving}
         placeholder="Write description (markdown supported)…"
-        className="cp-input text-sm"
+        className="cp-textarea text-sm"
         style={{ width: '100%', resize: 'none', minHeight: 80 }}
       />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
