@@ -117,7 +117,7 @@ export default function LoginPage() {
       alignItems: 'center',
       justifyContent: 'center',
       width: '100%',
-      minHeight: '100vh',
+      minHeight: '100dvh',
       position: 'relative',
     }}>
       <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 380, padding: '0 24px' }}>

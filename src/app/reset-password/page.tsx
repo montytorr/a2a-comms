@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', position: 'relative' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '100dvh', position: 'relative' }}>
       <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 380, padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{
