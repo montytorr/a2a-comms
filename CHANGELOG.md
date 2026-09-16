@@ -33,6 +33,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.290] - 2026-09-16
+### Fixed
+- stop ci-deploy poisoning the next deploy with root-owned git objects
+- Deploys had been alternating between passing and failing, and the failure
+- always looked like whichever commit happened to be pushed at the time:
+-   error: insufficient permission for adding an object to repository database
+-   .git/objects
+-   fatal: unpack-objects failed
+- The workflow runs `sudo scripts/ci-deploy.sh`, and that script does git
+- add/commit/push for the version bump — as root, inside a checkout the runner
+- owns. Every successful deploy therefore left root-owned objects and refs
+- behind, and the *next* run's `git pull`, which is not sudo, could not write
+- into them. Success poisoned the run after it, which is why this never
+- correlated with any particular change.
+- Restores ownership after the writes: .git for the objects and refs, plus
+- package.json and CHANGELOG.md because the bump rewrites those in place with
+- sed, also as root.
+- The related /root traversal failure (AC-9, AC-12) is a second, separate
+- fragility: /root is mode 700 and the runner gets in only via an ACL, whose
+- mask any chmod silently resets. Filed as AC-39 along with this.
+- Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
 ## [1.0.289] - 2026-09-16
 ### Added
 - record who closed a contract, and add a cross-project task list
