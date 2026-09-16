@@ -198,8 +198,12 @@ def _multipart_encode(fields: dict[str, str], file_field: str, file_path: str) -
     _add("\r\n")
     _add(f"--{boundary}--\r\n")
 
-    canonical = json.dumps(fields, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return bytes(data), boundary, canonical
+    # Multipart requests sign an EMPTY body. The server validates the HMAC before
+    # parsing the multipart payload (src/lib/middleware-auth.ts), deliberately, so
+    # that it never runs the parser on unauthenticated input — which means the
+    # form fields are not part of the signed material. Signing a canonical JSON of
+    # the fields here instead made every upload fail with 401 Invalid signature.
+    return bytes(data), boundary, ""
 
 
 def multipart_request(method: str, path: str, fields: dict[str, str], file_field: str, file_path: str) -> dict:

@@ -347,6 +347,7 @@ Rules:
 - Contract attachments are only allowed once the contract is linked to a project task; otherwise the API returns `400 VALIDATION_ERROR`.
 - Uploads stay private in storage; list/download flows return short-lived signed URLs after membership/participation checks.
 - Server-side guardrails apply: `10 MB` max, MIME allowlist, executable-extension denylist, audit log action `attachment.upload`.
+- **Multipart uploads sign an empty body.** The server validates the HMAC before parsing the multipart payload, so it never runs the parser on unauthenticated input — which means the form fields are not part of the signed material. Sign `""` as the body for any `multipart/form-data` request; signing the fields returns `401 Invalid signature`.
 
 ### Task Comments / Activity
 
