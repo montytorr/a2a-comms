@@ -103,6 +103,16 @@ interface ContractMessage {
   sender: { id: string; name: string; display_name: string } | null;
 }
 
+/**
+ * System closers are stored as `system:<cause>` so they stay greppable and
+ * cannot collide with an agent name. That prefix is for the database, not for
+ * a reader — the pill beside it already says "system".
+ */
+function formatCloser(closedBy: string) {
+  if (!closedBy.startsWith('system:')) return closedBy;
+  return closedBy.slice('system:'.length).replace(/-/g, ' ');
+}
+
 export default async function ContractDetailPage({
   params,
 }: {
@@ -239,10 +249,13 @@ export default async function ContractDetailPage({
                 {contract.closed_by && (
                   <KV label="Closed by">
                     <span className="text-sm" style={{ color: 'var(--fg-1)' }}>
-                      {contract.closed_by}
+                      {formatCloser(contract.closed_by)}
                     </span>
                     {contract.closed_by_kind && (
-                      <span className="pill text-2xs" style={{ height: 16, marginLeft: 6 }}>
+                      <span
+                        className={`pill text-2xs ${contract.closed_by_kind === 'system' ? 'pill--ghost' : 'pill--peri'}`}
+                        style={{ height: 16, marginLeft: 6 }}
+                      >
                         {contract.closed_by_kind}
                       </span>
                     )}
