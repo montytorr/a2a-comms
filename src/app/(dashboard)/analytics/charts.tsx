@@ -21,6 +21,8 @@ interface AnalyticsChartsProps {
   tasksByStatus: Record<string, number>;
   topContractsByMessages: { title: string; count: number }[];
   hourlyMessageCounts: number[];
+  allTimeTasks: number;
+  allTimeContracts: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -81,6 +83,19 @@ function formatShortDate(dateStr: string): string {
   return formatDate(d);
 }
 
+// Axis labels drop the year that formatDate() includes: the window is 90 days at
+// most, so the year is never in question and costs roughly half the label width.
+function formatAxisDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Cap the axis at ~8 labels whatever the window, so 90d is legible and 30d stops
+// colliding on a phone.
+function axisLabelStep(days: number): number {
+  return days <= 8 ? 1 : Math.ceil(days / 8);
+}
+
 export default function AnalyticsCharts({
   contractsByStatus,
   dayLabels,
@@ -98,6 +113,8 @@ export default function AnalyticsCharts({
   tasksByStatus,
   topContractsByMessages,
   hourlyMessageCounts,
+  allTimeTasks,
+  allTimeContracts,
 }: AnalyticsChartsProps) {
   const maxDayCount = Math.max(...dayCounts, 1);
   const maxAgentCount = agentStats.length > 0 ? Math.max(...agentStats.map((a) => a.count), 1) : 1;
@@ -106,7 +123,7 @@ export default function AnalyticsCharts({
   const maxContractDayCount = Math.max(...contractDayCounts, 1);
   const maxTopContractMessages = topContractsByMessages.length > 0 ? Math.max(...topContractsByMessages.map(c => c.count), 1) : 1;
   const maxHourlyCount = Math.max(...hourlyMessageCounts, 1);
-  const dayTabs = [7, 14, 30];
+  const dayTabs = [7, 14, 30, 90];
 
   return (
     <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
@@ -138,10 +155,10 @@ export default function AnalyticsCharts({
       {/* Summary Cards — Row 1 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '12px' }}>
         {[
-          { label: 'Total Contracts', value: totalContracts, accentVar: '--peri' },
+          { label: 'Contracts Created', value: totalContracts, suffix: ` (${days}d)`, accentVar: '--peri' },
           { label: 'Messages', value: totalMessages, suffix: ` (${days}d)`, accentVar: '--mint' },
-          { label: 'Avg Turns', value: avgTurns, accentVar: '--mint' },
-          { label: 'Active Agents', value: agentStats.length, accentVar: '--amber' },
+          { label: 'Avg Turns', value: avgTurns, suffix: ` (${days}d)`, accentVar: '--mint' },
+          { label: 'Active Agents', value: agentStats.length, suffix: ` (${days}d)`, accentVar: '--amber' },
         ].map((card, idx) => (
           <div
             key={card.label}
@@ -160,9 +177,9 @@ export default function AnalyticsCharts({
       {/* Summary Cards — Row 2 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '32px' }}>
         {[
-          { label: 'Active Projects', value: activeProjects, accentVar: '--mint' },
+          { label: 'Active Projects', value: activeProjects, suffix: ` (${days}d)`, accentVar: '--mint' },
           { label: 'Tasks Done', value: tasksDone, suffix: ` (${days}d)`, accentVar: '--mint' },
-          { label: 'Avg Response Time', value: avgResponseTimeHours !== null ? `${avgResponseTimeHours}h` : '—', accentVar: '--peri' },
+          { label: 'Avg Response Time', value: avgResponseTimeHours !== null ? `${avgResponseTimeHours}h` : '—', suffix: ` (${days}d)`, accentVar: '--peri' },
           { label: 'Webhooks Fired', value: webhooksFired, suffix: ` (${days}d)`, accentVar: '--rose' },
         ].map((card, idx) => (
           <div
@@ -183,8 +200,18 @@ export default function AnalyticsCharts({
         {/* Donut Chart — Contracts by Status */}
         <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.1s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts by Status</h2>
-          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>All time distribution</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Created in last {days} days</p>
 
+          {totalStatusCount === 0 ? (
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <p className="dim text-sm">No contracts created in this period</p>
+              {allTimeContracts > 0 && (
+                <p className="dim text-2xs" style={{ marginTop: '6px' }}>
+                  {allTimeContracts} all time
+                </p>
+              )}
+            </div>
+          ) : (
           <div className="row gap-6">
             {/* Donut */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -230,6 +257,7 @@ export default function AnalyticsCharts({
               ))}
             </div>
           </div>
+          )}
         </div>
 
         {/* Bar Chart — Per Agent Messages */}
@@ -278,11 +306,11 @@ export default function AnalyticsCharts({
             {dayLabels.map((label, idx) => {
               const count = dayCounts[idx];
               const heightPct = maxDayCount > 0 ? (count / maxDayCount) * 100 : 0;
-              const showLabel = days <= 14 || idx % Math.ceil(days / 14) === 0;
+              const showLabel = idx % axisLabelStep(days) === 0;
               return (
                 <div
                   key={label}
-                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                  style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
                   className="group"
                   title={`${formatShortDate(label)}: ${count}`}
                 >
@@ -305,7 +333,7 @@ export default function AnalyticsCharts({
                   </div>
                   {showLabel && (
                     <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
-                      {formatShortDate(label)}
+                      {formatAxisDate(label)}
                     </span>
                   )}
                 </div>
@@ -323,11 +351,11 @@ export default function AnalyticsCharts({
             {dayLabels.map((label, idx) => {
               const count = contractDayCounts[idx];
               const heightPct = maxContractDayCount > 0 ? (count / maxContractDayCount) * 100 : 0;
-              const showLabel = days <= 14 || idx % Math.ceil(days / 14) === 0;
+              const showLabel = idx % axisLabelStep(days) === 0;
               return (
                 <div
                   key={label}
-                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                  style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
                   className="group"
                   title={`${formatShortDate(label)}: ${count}`}
                 >
@@ -350,7 +378,7 @@ export default function AnalyticsCharts({
                   </div>
                   {showLabel && (
                     <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
-                      {formatShortDate(label)}
+                      {formatAxisDate(label)}
                     </span>
                   )}
                 </div>
@@ -362,11 +390,16 @@ export default function AnalyticsCharts({
         {/* Donut Chart — Task Status Distribution */}
         <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.3s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Task Status Distribution</h2>
-          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>All tasks</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Updated in last {days} days</p>
 
           {totalTaskStatusCount === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <p className="dim text-sm">No tasks yet</p>
+              <p className="dim text-sm">No task activity in this period</p>
+              {allTimeTasks > 0 && (
+                <p className="dim text-2xs" style={{ marginTop: '6px' }}>
+                  {allTimeTasks} tasks all time
+                </p>
+              )}
             </div>
           ) : (
             <div className="row gap-6">
@@ -466,7 +499,7 @@ export default function AnalyticsCharts({
               return (
                 <div
                   key={hour}
-                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
+                  style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
                   className="group"
                   title={`${hour}:00 UTC — ${count} messages`}
                 >

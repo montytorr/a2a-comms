@@ -4,6 +4,12 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import AnalyticsCharts from './charts';
+import {
+  deriveContractStats,
+  deriveTaskStats,
+  countActiveProjects,
+  toDaySeries,
+} from '@/lib/analytics-derive';
 export const dynamic = 'force-dynamic';
 
 export default async function AnalyticsPage({
@@ -46,8 +52,14 @@ export default async function AnalyticsPage({
   // Helper to apply scope to a query
   const noResultId = '00000000-0000-0000-0000-000000000000';
 
-  // 1. Contracts by status
-  let contractsQuery = supabase.from('contracts').select('id, status');
+  // 1. Contracts created in the window. One query feeds the status donut, the
+  // per-day bars and avg turns — before, those were three separate queries and
+  // only the per-day one was actually windowed.
+  let contractsQuery = supabase
+    .from('contracts')
+    .select('id, status, created_at, current_turns')
+    .gte('created_at', cutoffISO)
+    .order('created_at', { ascending: true });
   if (scopedContractIds !== null) {
     contractsQuery = scopedContractIds.length > 0
       ? contractsQuery.in('id', scopedContractIds)
@@ -55,10 +67,9 @@ export default async function AnalyticsPage({
   }
   const { data: allContracts } = await contractsQuery;
 
-  const contractsByStatus: Record<string, number> = {};
-  for (const c of allContracts || []) {
-    contractsByStatus[c.status] = (contractsByStatus[c.status] || 0) + 1;
-  }
+  const contractStats = deriveContractStats(allContracts || []);
+  const contractsByStatus = contractStats.byStatus;
+  const avgTurns = contractStats.avgTurns;
 
   // 2. Messages per day (last N days) — also used for hourly heatmap + avg response time
   let messagesQuery = supabase
@@ -124,48 +135,21 @@ export default async function AnalyticsPage({
     .map(([id, count]) => ({ name: agentNameMap[id] || id.slice(0, 8), count }))
     .sort((a, b) => b.count - a.count);
 
-  // 4. Average turns per contract
-  let turnsQuery = supabase
-    .from('contracts')
-    .select('current_turns')
-    .neq('status', 'proposed');
-  if (scopedContractIds !== null) {
-    turnsQuery = scopedContractIds.length > 0
-      ? turnsQuery.in('id', scopedContractIds)
-      : turnsQuery.eq('id', noResultId);
-  }
-  const { data: contractTurns } = await turnsQuery;
-
-  let avgTurns = 0;
-  if (contractTurns && contractTurns.length > 0) {
-    const total = contractTurns.reduce((sum, c) => sum + (c.current_turns || 0), 0);
-    avgTurns = Math.round((total / contractTurns.length) * 10) / 10;
-  }
-
-  // 5. Active Projects count
+  // 5. Projects that are currently active. Fetched as ids rather than a count so
+  // they can be intersected with the projects that actually saw task activity in
+  // the window — `projects.updated_at` only moves when the project row itself is
+  // edited, so it is useless as an activity signal.
   let activeProjectsQuery = supabase
     .from('projects')
-    .select('id', { count: 'exact', head: true })
+    .select('id')
     .eq('status', 'active');
   if (scopedProjectIds !== null) {
     activeProjectsQuery = scopedProjectIds.length > 0
       ? activeProjectsQuery.in('id', scopedProjectIds)
       : activeProjectsQuery.eq('id', noResultId);
   }
-  const { count: activeProjectsCount } = await activeProjectsQuery;
-
-  // 6. Tasks Done in time period
-  let tasksDoneQuery = supabase
-    .from('tasks')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'done')
-    .gte('updated_at', cutoffISO);
-  if (scopedProjectIds !== null) {
-    tasksDoneQuery = scopedProjectIds.length > 0
-      ? tasksDoneQuery.in('project_id', scopedProjectIds)
-      : tasksDoneQuery.eq('project_id', noResultId);
-  }
-  const { count: tasksDoneCount } = await tasksDoneQuery;
+  const { data: activeProjectRows } = await activeProjectsQuery;
+  const activeProjectIds = new Set((activeProjectRows || []).map((p) => p.id));
 
   // 7. Avg Response Time — compute from messages
   let totalResponseTimeMs = 0;
@@ -206,28 +190,16 @@ export default async function AnalyticsPage({
   }
   const { count: webhooksFiredCount } = await webhooksFiredQuery;
 
-  // 9. Contracts Created per Day
-  let contractsCreatedQuery = supabase
-    .from('contracts')
-    .select('id, created_at')
-    .gte('created_at', cutoffISO)
-    .order('created_at', { ascending: true });
-  if (scopedContractIds !== null) {
-    contractsCreatedQuery = scopedContractIds.length > 0
-      ? contractsCreatedQuery.in('id', scopedContractIds)
-      : contractsCreatedQuery.eq('id', noResultId);
-  }
-  const { data: contractsCreated } = await contractsCreatedQuery;
+  // 9. Contracts Created per Day — counted in the single pass above
+  const contractDayCounts = toDaySeries(contractStats.perDay, dayLabels);
 
-  const contractsPerDay: Record<string, number> = {};
-  for (const c of contractsCreated || []) {
-    const day = c.created_at.slice(0, 10);
-    contractsPerDay[day] = (contractsPerDay[day] || 0) + 1;
-  }
-  const contractDayCounts: number[] = dayLabels.map(label => contractsPerDay[label] || 0);
-
-  // 10. Task Status Distribution
-  let taskStatusQuery = supabase.from('tasks').select('id, status');
+  // 10. Tasks touched in the window. Windowed on updated_at rather than created_at
+  // so the donut's "done" slice is exactly the Tasks Done card above it — there is
+  // no NOT NULL completion timestamp on tasks to key off instead.
+  let taskStatusQuery = supabase
+    .from('tasks')
+    .select('id, status, project_id')
+    .gte('updated_at', cutoffISO);
   if (scopedProjectIds !== null) {
     taskStatusQuery = scopedProjectIds.length > 0
       ? taskStatusQuery.in('project_id', scopedProjectIds)
@@ -235,12 +207,35 @@ export default async function AnalyticsPage({
   }
   const { data: allTasks } = await taskStatusQuery;
 
-  const tasksByStatus: Record<string, number> = {};
-  for (const t of allTasks || []) {
-    tasksByStatus[t.status] = (tasksByStatus[t.status] || 0) + 1;
-  }
+  const taskStats = deriveTaskStats(allTasks || []);
+  const tasksByStatus = taskStats.byStatus;
+  const tasksDoneCount = taskStats.doneCount;
+  // "Active" means active *and* worked on during the window.
+  const activeProjectsCount = countActiveProjects(activeProjectIds, taskStats.projectIds);
 
-  // 11. Top Contracts by Messages — top 5
+  // 11. All-time totals. Shown only in the empty states, so that a window with no
+  // activity says "nothing happened lately" rather than implying nothing exists.
+  let allTimeTasksQuery = supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true });
+  if (scopedProjectIds !== null) {
+    allTimeTasksQuery = scopedProjectIds.length > 0
+      ? allTimeTasksQuery.in('project_id', scopedProjectIds)
+      : allTimeTasksQuery.eq('project_id', noResultId);
+  }
+  const { count: allTimeTaskCount } = await allTimeTasksQuery;
+
+  let allTimeContractsQuery = supabase
+    .from('contracts')
+    .select('id', { count: 'exact', head: true });
+  if (scopedContractIds !== null) {
+    allTimeContractsQuery = scopedContractIds.length > 0
+      ? allTimeContractsQuery.in('id', scopedContractIds)
+      : allTimeContractsQuery.eq('id', noResultId);
+  }
+  const { count: allTimeContractCount } = await allTimeContractsQuery;
+
+  // 12. Top Contracts by Messages — top 5
   const contractMessageCounts = Object.entries(messagesByContract)
     .map(([contractId, msgs]) => ({ contractId, count: msgs.length }))
     .sort((a, b) => b.count - a.count)
@@ -272,17 +267,19 @@ export default async function AnalyticsPage({
       dayCounts={dayCounts}
       agentStats={agentStats}
       avgTurns={avgTurns}
-      totalContracts={(allContracts || []).length}
+      totalContracts={contractStats.total}
       totalMessages={(recentMessages || []).length}
       days={days}
-      activeProjects={activeProjectsCount || 0}
-      tasksDone={tasksDoneCount || 0}
+      activeProjects={activeProjectsCount}
+      tasksDone={tasksDoneCount}
       avgResponseTimeHours={avgResponseTimeHours}
       webhooksFired={webhooksFiredCount || 0}
       contractDayCounts={contractDayCounts}
       tasksByStatus={tasksByStatus}
       topContractsByMessages={topContractsByMessages}
       hourlyMessageCounts={hourlyMessageCounts}
+      allTimeTasks={allTimeTaskCount || 0}
+      allTimeContracts={allTimeContractCount || 0}
     />
     </AutoRefresh>
   );
