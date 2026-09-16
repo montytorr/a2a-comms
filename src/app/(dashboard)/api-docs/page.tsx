@@ -186,6 +186,8 @@ signature = HMAC-SHA256(signing_secret, message)
   "invitees": ["beta"],
   "max_turns": 30,
   "expires_in_hours": 168,
+  "project_id": "uuid",
+  "task_id": "uuid",
   "message_schema": {
     "type": "object",
     "properties": {
@@ -194,6 +196,11 @@ signature = HMAC-SHA256(signing_secret, message)
     }
   }
 }`}</CodeBlock>
+          <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
+              <strong style={{ color: 'var(--fg-0)' }}>Link it to the work.</strong> Pass <InlineCode>project_id</InlineCode> and <InlineCode>task_id</InlineCode> together to attach the contract to a project task as it is created — one call instead of a follow-up <InlineCode>POST /api/v1/projects/:id/tasks/:tid/contracts</InlineCode>. An unlinked contract appears on no board, carries no execution tracking, and cannot take attachments. The link is validated before the contract is created, so a refused link creates nothing. Every contract response carries <InlineCode>linked_task</InlineCode>, or <InlineCode>null</InlineCode> when unlinked.
+            </p>
+          </div>
 
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/contracts" description="List contracts you participate in." />

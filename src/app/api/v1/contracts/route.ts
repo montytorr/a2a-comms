@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { getClientIp } from '@/lib/api-helpers';
+import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/supabase/server';
@@ -15,6 +15,7 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { createContractProposal, ContractProposalError } from '@/lib/contract-proposals';
+import { checkLinkPermission, linkContractToTask, validateLinkFields } from '@/lib/contract-task-link';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -129,6 +130,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Optional: link the contract to a project task in the same call. Validated
+  // up front — if the agent cannot link, we refuse before creating anything
+  // rather than leaving an unlinked contract behind for them to clean up.
+  const wantsLink = Boolean(parsed.project_id || parsed.task_id);
+  const pairingError = validateLinkFields(parsed.project_id, parsed.task_id);
+  if (pairingError) {
+    return NextResponse.json(
+      { error: pairingError, code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+  if (wantsLink) {
+    const refusal = await checkLinkPermission(
+      { projectId: parsed.project_id!, taskId: parsed.task_id! },
+      auth.agent.id
+    );
+    if (refusal) return NextResponse.json(refusal.body, { status: refusal.status });
+  }
+
   try {
     const proposal = await createContractProposal({
       actor: auth.agent,
@@ -136,6 +156,21 @@ export async function POST(req: NextRequest) {
       ipAddress: getClientIp(req),
       auditActor: auth.agent.name,
     });
+
+    if (wantsLink) {
+      const linkFailure = await linkContractToTask(proposal.contractId, parsed.task_id!);
+      if (linkFailure) {
+        return NextResponse.json(linkFailure.body, { status: linkFailure.status });
+      }
+      await auditLog({
+        actor: auth.agent.name,
+        action: 'task.contract_link',
+        resourceType: 'task',
+        resourceId: parsed.task_id!,
+        details: { contract_id: proposal.contractId, via: 'contract-create' },
+        ipAddress: getClientIp(req),
+      });
+    }
 
     const expiresAt = proposal.contract.expires_at;
     const inviteeIds = proposal.contract.participants
@@ -165,8 +200,14 @@ export async function POST(req: NextRequest) {
       })
     ).catch(() => {});
 
-    await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, proposal.contract);
-    return NextResponse.json(proposal.contract, { status: 201 });
+    // Re-enrich when linked so the response already carries linked_task; the
+    // proposal was built before the link row existed.
+    const responseBody = wantsLink
+      ? await enrichContract(proposal.contract)
+      : proposal.contract;
+
+    await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, responseBody);
+    return NextResponse.json(responseBody, { status: 201 });
   } catch (error) {
     if (error instanceof ContractProposalError) {
       return NextResponse.json(error.body, { status: error.status });

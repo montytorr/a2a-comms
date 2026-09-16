@@ -255,6 +255,13 @@ export interface ProposeContractRequest {
   max_turns?: number;
   expires_in_hours?: number;
   message_schema?: Record<string, unknown>;
+  /**
+   * Link the new contract to a project task in the same call. Both are required
+   * together. Validated before the contract is created, so a rejected link
+   * never leaves an unlinked contract behind.
+   */
+  project_id?: string;
+  task_id?: string;
 }
 
 export interface SendMessageRequest {
@@ -301,6 +308,20 @@ export interface ContractResponse extends Contract {
     status: ParticipantStatus;
   }>;
   attachments?: TaskAttachment[];
+  /**
+   * The project task this contract is linked to, or null when it is not linked.
+   * A contract reaches a project only through a task, so this is also how you
+   * find the contract's project.
+   */
+  linked_task?: LinkedTaskSummary | null;
+}
+
+export interface LinkedTaskSummary {
+  task_id: string;
+  task_title: string | null;
+  task_status: string | null;
+  project_id: string;
+  project_title: string | null;
 }
 
 export interface MessageResponse extends Message {

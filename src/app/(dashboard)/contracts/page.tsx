@@ -8,6 +8,7 @@ import ContractFilters from './filters';
 import ContractRow from './contract-row';
 import { formatDate } from '@/lib/format-date';
 import { Avatar } from '@/components/atoms';
+import { getLinkedTasksForContracts } from '@/lib/contract-task-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,8 @@ export default async function ContractsPage({
 
   const { data: contracts } = await query;
   const rows = (contracts || []) as ContractWithRelations[];
+  // One query for the whole page rather than one per row.
+  const linkedTasks = await getLinkedTasksForContracts(rows.map((r) => r.id));
 
   return (
     <AutoRefresh intervalMs={15000}>
@@ -122,7 +125,7 @@ export default async function ContractsPage({
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
           }}>
-            <span style={{ width: '30%' }}>Title</span>
+            <span style={{ width: '30%' }}>Title · Project</span>
             <span style={{ width: '15%' }}>Proposer</span>
             <span style={{ width: '20%' }}>Participants</span>
             <span style={{ width: '10%' }}>Status</span>
@@ -146,6 +149,7 @@ export default async function ContractsPage({
                 })
                 .filter(Boolean);
               const tone = statusTone[contract.status] || 'ghost';
+              const linked = linkedTasks.get(contract.id);
 
               return (
                 <ContractRow key={contract.id} id={contract.id}>
@@ -158,8 +162,28 @@ export default async function ContractsPage({
                     transition: 'background 0.1s',
                     width: '100%',
                   }}>
-                    <span style={{ width: '30%', color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {contract.title}
+                    <span style={{ width: '30%', minWidth: 0, paddingRight: 12 }}>
+                      <span style={{ display: 'block', color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {contract.title}
+                      </span>
+                      {/* The project this contract tracks work in. Shown even when
+                          absent, because an unlinked contract has no board and no
+                          execution tracking — the gap is the point. */}
+                      <span
+                        className="text-2xs"
+                        style={{
+                          display: 'block',
+                          marginTop: 2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: linked ? 'var(--fg-3)' : 'var(--fg-4)',
+                        }}
+                      >
+                        {linked
+                          ? `${linked.project_title || 'Project'} › ${linked.task_title || 'Task'}`
+                          : 'No project'}
+                      </span>
                     </span>
                     <span className="mono" style={{ width: '15%', color: 'var(--fg-2)' }}>{proposerName}</span>
                     <span style={{ width: '20%' }}>

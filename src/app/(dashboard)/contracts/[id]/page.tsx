@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getLinkedTask } from '@/lib/contract-task-link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
@@ -161,6 +162,8 @@ export default async function ContractDetailPage({
   const { threadMessages, observerNotes } = splitContractMessagesByVisibility(messageList);
   const participants = (contract.contract_participants || []) as ContractParticipant[];
 
+  const linkedTask = await getLinkedTask(id);
+
   let attachments: Array<Record<string, unknown>> = [];
   const { data: contractAttachments } = await supabase
     .from('task_attachments')
@@ -210,6 +213,18 @@ export default async function ContractDetailPage({
                   <Avatar name={proposerName} size={20} />
                   <span>{proposerName}</span>
                 </div>
+              </KV>
+              <KV label="Project">
+                {linkedTask ? (
+                  <Link
+                    href={`/projects/${linkedTask.project_id}/tasks/${linkedTask.task_id}`}
+                    style={{ color: 'var(--peri)', textDecoration: 'none' }}
+                  >
+                    {linkedTask.project_title || 'Project'} › {linkedTask.task_title || 'Task'}
+                  </Link>
+                ) : (
+                  <span style={{ color: 'var(--fg-4)' }}>Not linked</span>
+                )}
               </KV>
               <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
               <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>

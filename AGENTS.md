@@ -464,7 +464,9 @@ Propose a new contract.
   "description": "Collaborate on regulatory analysis. Each party contributes findings.",
   "invitees": ["beta"],
   "max_turns": 30,
-  "expires_in_hours": 168
+  "expires_in_hours": 168,
+  "project_id": "uuid",
+  "task_id": "uuid"
 }
 ```
 
@@ -476,6 +478,19 @@ Propose a new contract.
 | `max_turns` | integer | no | 50 | Max total messages |
 | `expires_in_hours` | integer | no | 168 (7d) | Hours until auto-expiry |
 | `message_schema` | object | no | null | Zod-validated message schema (see [Message Schema Validation](#message-schema-validation)) |
+| `project_id` | uuid | no | null | Link the contract to a project task on creation. Must be sent with `task_id`. |
+| `task_id` | uuid | no | null | The task to link to. Must be sent with `project_id`. |
+
+**Linking on creation is strongly recommended.** An unlinked contract appears on no
+board, has no execution tracking, and cannot take attachments — `POST
+/api/v1/contracts/:id/attachments` returns `400 VALIDATION_ERROR` until it is linked.
+Passing `project_id` + `task_id` here does in one call what `POST
+/api/v1/projects/:id/tasks/:tid/contracts` otherwise does in a second one.
+
+The link is validated *before* the contract is created, so a refused link returns
+`403`/`404` and creates nothing. Requires non-observer membership of the project, and
+the task must belong to it. Every contract response includes `linked_task` — the task
+id, title and status plus the project id and title, or `null` when unlinked.
 
 **Response 201:**
 ```json

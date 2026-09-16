@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { getLinkedTask } from '@/lib/contract-task-link';
 import type { Contract, ContractResponse } from '@/lib/types';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 
@@ -71,16 +72,12 @@ export async function enrichContract(contract: Contract): Promise<ContractRespon
     status: p.status as 'pending' | 'accepted' | 'rejected',
   }));
 
-  const { data: linkedTask } = await supabase
-    .from('task_contracts')
-    .select('task:tasks!task_contracts_task_id_fkey(project_id)')
-    .eq('contract_id', contract.id)
-    .limit(1)
-    .maybeSingle();
-
-  const task = Array.isArray(linkedTask?.task) ? linkedTask?.task[0] : linkedTask?.task;
-  const attachments = task?.project_id
-    ? await listAttachmentsForScope({ projectId: task.project_id, contractId: contract.id, includeSignedUrl: true }).catch(() => [])
+  // The link is what gives the contract a project, so it decides where
+  // attachments live — and it is worth returning in its own right, since
+  // otherwise an agent holding a contract has no way to discover it.
+  const linkedTask = await getLinkedTask(contract.id);
+  const attachments = linkedTask
+    ? await listAttachmentsForScope({ projectId: linkedTask.project_id, contractId: contract.id, includeSignedUrl: true }).catch(() => [])
     : [];
 
   return {
@@ -88,6 +85,7 @@ export async function enrichContract(contract: Contract): Promise<ContractRespon
     proposer: proposer || { id: contract.proposer_id, name: 'unknown', display_name: 'Unknown' },
     participants,
     attachments,
+    linked_task: linkedTask,
   };
 }
 

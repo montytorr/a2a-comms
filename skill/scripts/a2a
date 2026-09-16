@@ -54,6 +54,8 @@ Usage:
   a2a checkpoint <project_id> <task_id> <run_id> --key KEY [--summary TEXT] [--payload JSON] [--attachment-id ID...]
   a2a task-attach <project_id> <task_id> --file PATH [--note TEXT] [--run-id RID] [--checkpoint-id CID]
   a2a contract-attach <contract_id> --file PATH [--note TEXT]
+  a2a contract-link <contract_id> --project PID --task TID
+  a2a contract-unlink <contract_id> --project PID --task TID
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -261,6 +263,23 @@ def resolve_agent_id(name_or_id: str) -> str:
     return name_or_id  # Fall through — let the API error if invalid
 
 
+def link_hint(contract_id: str) -> str:
+    """Nudge shown when a contract has no project task behind it.
+
+    Unlinked contracts cannot take attachments and do not appear on any board,
+    so the work they describe is invisible to everyone not reading the thread.
+    """
+    return (
+        "\n💡 This contract is not linked to a project task, so it has no board,\n"
+        "   no execution tracking, and cannot take attachments.\n"
+        "   Link it to existing work:\n"
+        f"     a2a contract-link {contract_id} --project <project_id> --task <task_id>\n"
+        "   Or start a project for it:\n"
+        "     a2a project-create \"<title>\" --members <agent>...\n"
+        "     a2a task-create <project_id> \"<task title>\"\n"
+    )
+
+
 def format_contract(c: dict, verbose: bool = False) -> str:
     """Format a contract for display."""
     status_icons = {
@@ -284,9 +303,17 @@ def format_contract(c: dict, verbose: bool = False) -> str:
     agents = ", ".join(agent_names)
     turns = f"{c['current_turns']}/{c['max_turns']}"
 
+    linked = c.get("linked_task") if isinstance(c.get("linked_task"), dict) else None
+
     line = f"{icon} [{c['status'].upper()}] {c['title']}"
     line += f"\n   ID: {c['id']}"
     line += f"\n   Participants: {agents} | Turns: {turns}"
+    if linked:
+        project = linked.get("project_title") or linked.get("project_id")
+        task = linked.get("task_title") or linked.get("task_id")
+        line += f"\n   Project: {project} › {task}"
+        if linked.get("task_status"):
+            line += f" [{linked['task_status']}]"
 
     if verbose:
         if c.get("description"):
@@ -622,9 +649,18 @@ def cmd_propose(args):
             print("Error: --schema must be valid JSON or a path to a JSON file", file=sys.stderr)
             sys.exit(1)
 
+    if bool(args.project) != bool(args.task):
+        print("Error: --project and --task must be used together", file=sys.stderr)
+        sys.exit(1)
+    if args.project and args.task:
+        body["project_id"] = args.project
+        body["task_id"] = args.task
+
     data = api_request("POST", "/api/v1/contracts", body)
     print(f"✅ Contract proposed!")
     print(format_contract(data, verbose=True))
+    if not data.get("linked_task"):
+        print(link_hint(data.get("id", "<contract_id>")))
 
 
 def cmd_accept(args):
@@ -1387,6 +1423,27 @@ def cmd_task_link(args):
     print(f"✅ Contract {args.contract} linked to task {args.task_id}")
 
 
+def cmd_contract_link(args):
+    """Link this contract to a project task (contract-side alias for task-link)."""
+    api_request(
+        "POST",
+        f"/api/v1/projects/{args.project}/tasks/{args.task}/contracts",
+        {"contract_id": args.id},
+    )
+    print(f"✅ Contract {args.id} linked to task {args.task}")
+    print("   It now has a board, execution tracking, and can take attachments.")
+
+
+def cmd_contract_unlink(args):
+    """Unlink this contract from a project task."""
+    api_request(
+        "DELETE",
+        f"/api/v1/projects/{args.project}/tasks/{args.task}/contracts",
+        {"contract_id": args.id},
+    )
+    print(f"✅ Contract {args.id} unlinked from task {args.task}")
+
+
 def cmd_task_unlink(args):
     """Unlink a contract from a task."""
     api_request(
@@ -1600,6 +1657,8 @@ def main():
     p.add_argument("--max-turns", type=int, help="Max turns (default: 50)")
     p.add_argument("--expires-hours", type=int, help="Expiry in hours (default: 168)")
     p.add_argument("--schema", help="Message schema (inline JSON or path to JSON file)")
+    p.add_argument("--project", help="Link the new contract to this project (use with --task)")
+    p.add_argument("--task", help="Link the new contract to this task (use with --project)")
 
     # accept
     p = sub.add_parser("accept", help="Accept a contract invitation")
@@ -1934,6 +1993,17 @@ def main():
     p.add_argument("project_id", help="Project ID")
     p.add_argument("task_id", help="Task ID")
 
+    # contract-link / contract-unlink (contract-side aliases)
+    p = sub.add_parser("contract-link", help="Link this contract to a project task")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--project", required=True, help="Project ID")
+    p.add_argument("--task", required=True, help="Task ID")
+
+    p = sub.add_parser("contract-unlink", help="Unlink this contract from a project task")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--project", required=True, help="Project ID")
+    p.add_argument("--task", required=True, help="Task ID")
+
     # task-link
     p = sub.add_parser("task-link", help="Link a contract to a task")
     p.add_argument("project_id", help="Project ID")
@@ -2021,6 +2091,8 @@ def main():
         "dep-remove": cmd_dep_remove,
         # Task-Contract links
         "task-contracts": cmd_task_contracts,
+        "contract-link": cmd_contract_link,
+        "contract-unlink": cmd_contract_unlink,
         "task-link": cmd_task_link,
         "task-unlink": cmd_task_unlink,
         # Task comments

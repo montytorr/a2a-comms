@@ -4,6 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
+import { checkLinkPermission } from '@/lib/contract-task-link';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -88,27 +89,9 @@ export async function POST(
   const { auth, body } = result;
   const { id, tid } = await params;
 
-  const member = await verifyMembership(id, auth.agent.id);
-  if (!member) {
-    return NextResponse.json(
-      { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
-  if (member.accessKind === 'observer') {
-    return NextResponse.json(
-      { error: 'Observers may inspect linked contracts but cannot change task-contract links', code: 'FORBIDDEN' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
-  const taskInProject = await verifyTaskInProject(tid, id);
-  if (!taskInProject) {
-    return NextResponse.json(
-      { error: 'Task not found in this project', code: 'NOT_FOUND' } satisfies ApiError,
-      { status: 404 }
-    );
+  const refusal = await checkLinkPermission({ projectId: id, taskId: tid }, auth.agent.id);
+  if (refusal) {
+    return NextResponse.json(refusal.body, { status: refusal.status });
   }
 
   let parsed: { contract_id: string };
