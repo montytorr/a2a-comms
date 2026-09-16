@@ -33,6 +33,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.297] - 2026-09-16
+### Fixed
+- align every surface on the real HMAC multipart contract, and stop the changelog shredding prose
+- README.md and ONBOARDING-AGENT.md both documented the WRONG signing rule — "sign the canonical JSON object of the non-file fields". The CLI author followed the docs faithfully; the server signs an empty body. That mismatch is the actual root cause of every `a2a task-attach` returning 401, not a slip in the CLI
+- corrected in README.md, AGENTS.md, ONBOARDING-AGENT.md, SKILL.md, the api-docs page and the onboarding page, so all six now state the same contract
+- decided to keep the server behaviour: signing the fields would mean parsing untrusted multipart before authenticating, exposing a parser to anyone who can reach the endpoint. The risk it would remove — field tampering in flight — is already TLS's job, and neither option lets a request be forged, since method, path, timestamp and nonce are signed
+- removed canonicalizeMultipartFields and the multipartFields parameter. Both were tested but wired into nothing, and they implied a security model the server does not implement, which is precisely the false belief that produced the bug
+- ci-deploy no longer emits one changelog bullet per line of the commit body. Git convention wraps bodies at ~72 characters, so any ordinary prose commit was being shredded mid-sentence; continuation lines now join the bullet or paragraph they belong to. This is why changelog fixes kept needing a second push
+- adds scripts/verify-e2e.sh: its own postgres, all 39 migrations applied to an empty schema, the app booted against it, and real HMAC-signed CLI requests driven through the routes, then everything destroyed. 16 checks. CI applies no migrations, so nothing else catches a migration that stopped applying
+- verified the harness fails when it should by reintroducing the multipart bug: 3 checks went red with the exact 401. The unit contract test caught it too, so CI would now block that regression on every push
+
 ## [1.0.296] - 2026-09-16
 ### Fixed
 - a2a task-attach and contract-attach failed with 401 on every upload
