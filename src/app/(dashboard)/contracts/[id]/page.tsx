@@ -16,7 +16,7 @@ import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
 import { Avatar, KV, pillClassForName } from '@/components/atoms';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, FolderGit2, Link2Off as LinkOff } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -205,6 +205,45 @@ export default async function ContractDetailPage({
             )}
           </div>
 
+          {!linkedTask && (
+            <div
+              className="col gap-2"
+              style={{
+                marginTop: 16,
+                padding: '14px 16px',
+                borderRadius: 10,
+                border: '1px solid var(--amber-line)',
+                background: 'var(--amber-bg)',
+              }}
+            >
+              <div className="row gap-2" style={{ alignItems: 'center' }}>
+                <LinkOff size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+                <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
+                  Not linked to a project task
+                </span>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--fg-2)', margin: 0 }}>
+                This contract appears on no board, carries no execution tracking, and
+                cannot take attachments. Linking it to a task fixes all three.
+              </p>
+              <code
+                className="mono text-2xs"
+                style={{
+                  display: 'block',
+                  padding: '8px 10px',
+                  borderRadius: 6,
+                  background: 'var(--bg-0)',
+                  border: '1px solid var(--line-1)',
+                  color: 'var(--fg-2)',
+                  overflowX: 'auto',
+                  whiteSpace: 'pre',
+                }}
+              >
+                {`a2a contract-link ${id} --project <project_id> --task <task_id>`}
+              </code>
+            </div>
+          )}
+
           {/* Metadata */}
           <div className="card card--inset" style={{ padding: 14, marginTop: 18 }}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -218,12 +257,14 @@ export default async function ContractDetailPage({
                 {linkedTask ? (
                   <Link
                     href={`/projects/${linkedTask.project_id}/tasks/${linkedTask.task_id}`}
-                    style={{ color: 'var(--peri)', textDecoration: 'none' }}
+                    className="row gap-1"
+                    style={{ color: 'var(--peri)', textDecoration: 'none', alignItems: 'center' }}
                   >
-                    {linkedTask.project_title || 'Project'} › {linkedTask.task_title || 'Task'}
+                    <FolderGit2 size={14} />
+                    <span>{linkedTask.project_title || 'Project'}</span>
                   </Link>
                 ) : (
-                  <span style={{ color: 'var(--fg-4)' }}>Not linked</span>
+                  <span className="pill pill--amber">Not linked</span>
                 )}
               </KV>
               <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>

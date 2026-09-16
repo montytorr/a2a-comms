@@ -9,6 +9,7 @@ import ContractRow from './contract-row';
 import { formatDate } from '@/lib/format-date';
 import { Avatar } from '@/components/atoms';
 import { getLinkedTasksForContracts } from '@/lib/contract-task-link';
+import { FolderGit2, Link2Off } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -170,19 +171,21 @@ export default async function ContractsPage({
                           absent, because an unlinked contract has no board and no
                           execution tracking — the gap is the point. */}
                       <span
-                        className="text-2xs"
+                        className="row gap-1 text-2xs"
                         style={{
-                          display: 'block',
-                          marginTop: 2,
+                          marginTop: 3,
+                          alignItems: 'center',
                           overflow: 'hidden',
-                          textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          color: linked ? 'var(--fg-3)' : 'var(--fg-4)',
+                          color: linked ? 'var(--fg-3)' : 'var(--amber)',
                         }}
                       >
-                        {linked
-                          ? `${linked.project_title || 'Project'} › ${linked.task_title || 'Task'}`
-                          : 'No project'}
+                        {linked ? <FolderGit2 size={12} style={{ flexShrink: 0 }} /> : <Link2Off size={12} style={{ flexShrink: 0 }} />}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {linked
+                            ? `${linked.project_title || 'Project'} › ${linked.task_title || 'Task'}`
+                            : 'No project — not tracked on any board'}
+                        </span>
                       </span>
                     </span>
                     <span className="mono" style={{ width: '15%', color: 'var(--fg-2)' }}>{proposerName}</span>
