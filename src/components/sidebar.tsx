@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { Avatar } from '@/components/atoms';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   LayoutGrid, Activity, BarChart3, Bell, Settings,
   FileText, MessageSquare, Bot, FolderKanban, Radio,
@@ -16,8 +17,13 @@ interface SidebarProps {
   isSuperAdmin?: boolean;
   displayName?: string;
   notificationCounts?: DashboardNotificationCounts;
-  isOpen?: boolean;
-  onClose?: () => void;
+  /**
+   * Icon-rail mode. Desktop only — the mobile drawer always shows labels,
+   * because a 64px rail of unlabelled icons is not navigation on a phone.
+   */
+  collapsed?: boolean;
+  /** Closes the drawer after a tap. Absent on the desktop rail. */
+  onNavigate?: () => void;
 }
 
 interface NavItemDef {
@@ -107,11 +113,12 @@ const adminItems: NavItemDef[] = [
   { href: '/admin/emails', label: 'Email Templates', iconName: 'mail', adminOnly: true, badge: 'admin' },
 ];
 
-const Logo = () => (
-  <div className="row gap-2" style={{ alignItems: 'center' }}>
+const Logo = ({ collapsed }: { collapsed?: boolean }) => (
+  <div className="row gap-2" style={{ alignItems: 'center', minWidth: 0 }}>
     <div style={{
       width: 26,
       height: 26,
+      flexShrink: 0,
       borderRadius: 6,
       background: 'linear-gradient(135deg, oklch(0.32 0.02 250), oklch(0.20 0.01 250))',
       border: '1px solid var(--line-2)',
@@ -126,14 +133,24 @@ const Logo = () => (
         <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
       </svg>
     </div>
-    <div className="col" style={{ lineHeight: 1.1, gap: 2 }}>
-      <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--fg-0)', letterSpacing: '-0.01em' }}>A2A Comms</div>
-      <div className="upper" style={{ fontSize: 9.5 }}>Control Plane</div>
-    </div>
+    {!collapsed && (
+      <div className="col" style={{ lineHeight: 1.1, gap: 2, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, color: 'var(--fg-0)', letterSpacing: '-0.01em' }} className="text-sm truncate-text">A2A Comms</div>
+        <div className="upper truncate-text">Control Plane</div>
+      </div>
+    )}
   </div>
 );
 
-export default function Sidebar({ isSuperAdmin, displayName, notificationCounts, isOpen, onClose }: SidebarProps) {
+/**
+ * The sidebar's contents, with no outer frame of its own.
+ *
+ * It has two homes — the fixed rail on a wide screen and the drawer on a
+ * narrow one — and lives here so the two cannot drift apart. A phone showing
+ * a different set of destinations from the desktop is worse than no phone
+ * navigation at all.
+ */
+export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, collapsed, onNavigate }: SidebarProps) {
   const pathname = usePathname();
 
   const handleLogout = async () => {
@@ -155,17 +172,20 @@ export default function Sidebar({ isSuperAdmin, displayName, notificationCounts,
       <Link
         key={item.href}
         href={item.href}
-        onClick={onClose}
+        onClick={onNavigate}
         className={`nav-item ${active ? 'nav-item--active' : ''}`}
+        // In rail mode the label is hidden, so the icon needs to say what the
+        // destination is on hover.
+        title={collapsed ? item.label : undefined}
       >
-        <span style={{ color: 'inherit', display: 'flex' }}>{iconMap[item.iconName]}</span>
-        <span style={{ flex: 1, color: item.danger ? 'var(--rose)' : 'inherit' }}>{item.label}</span>
-        {item.badge === 'live' && <span className="dot dot--mint pulse" style={{ marginRight: 2 }} />}
+        <span style={{ color: 'inherit', display: 'flex', flexShrink: 0 }}>{iconMap[item.iconName]}</span>
+        <span className="nav-label truncate-text" style={{ flex: 1, color: item.danger ? 'var(--rose)' : 'inherit' }}>{item.label}</span>
+        {item.badge === 'live' && <span className="dot dot--mint pulse nav-trailing" style={{ marginRight: 2 }} />}
         {item.badge === 'admin' && (
-          <span className="pill pill--amber" style={{ height: 16, fontSize: 9, padding: '0 5px' }}>admin</span>
+          <span className="pill pill--amber nav-trailing" style={{ height: 16, padding: '0 5px' }}>admin</span>
         )}
         {badgeCount > 0 && (
-          <span className="pill pill--amber" style={{ height: 16, fontSize: 9, padding: '0 5px' }}>
+          <span className="pill pill--amber nav-trailing" style={{ height: 16, padding: '0 5px' }}>
             {badgeCount > 99 ? '99+' : badgeCount}
           </span>
         )}
@@ -173,70 +193,94 @@ export default function Sidebar({ isSuperAdmin, displayName, notificationCounts,
     );
   };
 
+  const renderGroup = (label: string, items: NavItemDef[]) => (
+    <div key={label} style={{ marginBottom: 12 }}>
+      {/* In rail mode the group heading becomes a rule: the label would not
+          fit in 64px, but the grouping it conveys still should. */}
+      {collapsed
+        ? <div className="nav-group-rule" role="presentation" />
+        : <div className="upper" style={{ padding: '6px 14px 4px' }}>{label}</div>}
+      <div>{items.map(renderNavItem)}</div>
+    </div>
+  );
+
   return (
-    <aside style={{
-      width: isOpen === false ? 0 : 'var(--sidebar-w)',
-      flexShrink: 0,
-      background: 'oklch(0.13 0.012 250)',
-      borderRight: isOpen === false ? 'none' : '1px solid var(--line-1)',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      transition: 'width 0.2s',
-      position: 'relative',
-      zIndex: 50,
-      overflow: 'hidden',
-    }}>
-      {/* Logo */}
-      <div style={{ padding: '14px 14px', borderBottom: '1px solid var(--line-1)' }}>
-        <Logo />
+    <>
+      {/* Height is taken from --topbar-h rather than from padding plus the
+          logo's own metrics, which is what left this block ~15px taller than
+          the topbar so their bottom borders never lined up. */}
+      <div style={{
+        height: 'var(--topbar-h)',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        padding: collapsed ? 0 : '0 14px',
+        borderBottom: '1px solid var(--line-1)',
+      }}>
+        <Logo collapsed={collapsed} />
       </div>
 
-      {/* Navigation */}
-      <nav className="scroll" style={{ flex: 1, padding: '8px 0' }}>
-        {navGroups.map((group) => (
-          <div key={group.label} style={{ marginBottom: 12 }}>
-            <div className="upper" style={{ padding: '6px 14px 4px', fontSize: 9.5 }}>{group.label}</div>
-            <div>
-              {group.items.map(renderNavItem)}
-            </div>
-          </div>
-        ))}
-
-        {isSuperAdmin && (
-          <div style={{ marginBottom: 12 }}>
-            <div className="upper" style={{ padding: '6px 14px 4px', fontSize: 9.5 }}>Admin</div>
-            <div>
-              {adminItems.map(renderNavItem)}
-            </div>
-          </div>
-        )}
+      <nav className="scroll" style={{ flex: 1, padding: '8px 0', minHeight: 0 }}>
+        {navGroups.map((group) => renderGroup(group.label, group.items))}
+        {isSuperAdmin && renderGroup('Admin', adminItems)}
       </nav>
 
-      {/* User footer */}
       <div style={{
-        padding: 12,
+        padding: collapsed ? '10px 0' : 12,
         borderTop: '1px solid var(--line-1)',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'flex-start',
         gap: 10,
+        flexShrink: 0,
       }}>
         <Avatar name={displayName || '?'} size={28} />
-        <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-          <div style={{ fontSize: 12, color: 'var(--fg-1)', fontWeight: 500 }}>{displayName || 'User'}</div>
-          {isSuperAdmin && (
-            <div className="mono dim" style={{ fontSize: 10 }}>SUPER ADMIN</div>
-          )}
-        </div>
-        <button
-          onClick={handleLogout}
-          className="btn btn--ghost btn--sm btn--icon"
-          title="Sign out"
-          style={{ width: 26, height: 26 }}
-        >
-          <LogOut size={13} />
-        </button>
+        {!collapsed && (
+          <>
+            <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+              <div className="text-xs truncate-text" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{displayName || 'User'}</div>
+              {isSuperAdmin && <div className="mono dim text-2xs">SUPER ADMIN</div>}
+            </div>
+            <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              className="btn btn--ghost btn--sm btn--icon"
+              title="Sign out"
+              aria-label="Sign out"
+              style={{ width: 26, height: 26 }}
+            >
+              <LogOut size={13} />
+            </button>
+          </>
+        )}
       </div>
+    </>
+  );
+}
+
+/** The desktop rail. Hidden below `md`, where MobileNav takes over. */
+export default function Sidebar(props: SidebarProps) {
+  return (
+    <aside
+      // Redefines --sidebar-w for this subtree via the [data-sidebar] hooks
+      // that already existed in globals.css but were never written by anything.
+      data-sidebar={props.collapsed ? 'icons' : undefined}
+      className="hidden md:flex"
+      style={{
+        width: 'var(--sidebar-w)',
+        flexShrink: 0,
+        background: 'var(--bg-inset)',
+        borderRight: '1px solid var(--line-1)',
+        flexDirection: 'column',
+        height: '100%',
+        transition: 'width 0.2s',
+        position: 'relative',
+        zIndex: 50,
+        overflow: 'hidden',
+      }}
+    >
+      <SidebarContent {...props} />
     </aside>
   );
 }

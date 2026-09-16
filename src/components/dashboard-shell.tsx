@@ -1,23 +1,32 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import { usePersistedToggle } from '@/lib/persisted-toggle';
 import Sidebar from './sidebar';
 import { Topbar } from './topbar';
+import { MobileNav } from './mobile-nav';
 import { CommandPalette } from './command-palette';
-import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
 import type { TickerItem } from '@/lib/live-feed';
 import { DashboardProvider, type DashboardContextValue } from '@/app/(dashboard)/dashboard-context';
 import ActingAgentSelector from '@/app/(dashboard)/acting-agent-selector';
 
 interface DashboardShellProps extends DashboardContextValue {
-  children: React.ReactNode;
   initialTickerItems?: TickerItem[];
+  children: React.ReactNode;
 }
 
-export default function DashboardShell({ isSuperAdmin, displayName, notificationCounts, actor, initialTickerItems, children }: DashboardShellProps) {
-  const [paletteOpen, setPaletteOpen] = useState(false);
+const COLLAPSE_KEY = 'a2a:sidebar-collapsed';
 
-  const handleCloseSidebar = useCallback(() => {}, []);
+export default function DashboardShell({
+  isSuperAdmin,
+  displayName,
+  notificationCounts,
+  actor,
+  initialTickerItems = [],
+  children,
+}: DashboardShellProps) {
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [collapsed, toggleCollapsed] = usePersistedToggle(COLLAPSE_KEY);
 
   const dashboardContext: DashboardContextValue = {
     isSuperAdmin,
@@ -32,13 +41,31 @@ export default function DashboardShell({ isSuperAdmin, displayName, notification
         isSuperAdmin={isSuperAdmin}
         displayName={displayName}
         notificationCounts={notificationCounts}
-        onClose={handleCloseSidebar}
+        collapsed={collapsed}
       />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
-        <Topbar initialTickerItems={initialTickerItems} onOpenPalette={() => setPaletteOpen(true)} />
-        <div className="scroll" style={{ flex: 1, minHeight: 0 }}>
-          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-            <div style={{ padding: '4px 16px 0' }}>
+      <main className="flex min-w-0 flex-1 flex-col md:h-full">
+        <Topbar
+          initialTickerItems={initialTickerItems}
+          onOpenPalette={() => setPaletteOpen(true)}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+          leading={
+            <MobileNav
+              isSuperAdmin={isSuperAdmin}
+              displayName={displayName}
+              notificationCounts={notificationCounts}
+            />
+          }
+        />
+        {/* Only this element scrolls on desktop; below `md` the document does,
+            so the inner scroller is released or the page ends up with a
+            scroll container inside a scrolling document. */}
+        <div className="min-h-0 flex-1 md:overflow-auto">
+          {/* children used to be a sibling of the padded acting-agent row, so
+              the two were inset by different amounts — a permanent 16px step
+              down the left edge of every page. One wrapper now pads both. */}
+          <div className="mx-auto w-full" style={{ maxWidth: 'var(--content-max)' }}>
+            <div className="px-4 pt-1 sm:px-6 lg:px-8">
               <ActingAgentSelector />
             </div>
             {children}

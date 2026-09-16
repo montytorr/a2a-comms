@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, RefreshCw, Bell } from 'lucide-react';
+import { Search, RefreshCw, Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Ticker } from '@/components/atoms';
 import { useDashboardContext } from '@/app/(dashboard)/dashboard-context';
 import type { TickerItem } from '@/lib/live-feed';
@@ -11,9 +11,13 @@ import type { TickerItem } from '@/lib/live-feed';
 interface TopbarProps {
   initialTickerItems?: TickerItem[];
   onOpenPalette: () => void;
+  /** Rendered at the far left — the mobile nav trigger. */
+  leading?: React.ReactNode;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }
 
-export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) => {
+export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collapsed, onToggleCollapsed }: TopbarProps) => {
   const router = useRouter();
   const { notificationCounts } = useDashboardContext();
   // Derived per request in lib/dashboard-notifications.ts; there is no read
@@ -62,21 +66,39 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) 
   const displayItems = liveItems;
 
   return (
-    <div style={{
-      height: 44,
-      borderBottom: '1px solid var(--line-1)',
-      background: 'oklch(0.15 0.012 250 / 0.85)',
-      backdropFilter: 'blur(12px)',
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 14px',
-      gap: 14,
-      flexShrink: 0,
-    }}>
-      {/* Command palette trigger */}
+    <div
+      className="sticky top-0 z-40 flex shrink-0 items-center gap-2 px-3 sm:gap-3 sm:px-4 md:static"
+      style={{
+        height: 'var(--topbar-h)',
+        borderBottom: '1px solid var(--line-1)',
+        background: 'color-mix(in oklab, var(--bg-1) 85%, transparent)',
+        backdropFilter: 'blur(12px)',
+      }}
+    >
+      {leading}
+
+      {/* Rail toggle. Desktop only — on a phone the drawer is the mechanism,
+          and a 64px icon rail would be most of the screen. */}
+      {onToggleCollapsed && (
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="btn btn--ghost btn--sm btn--icon hidden md:inline-flex"
+          style={{ width: 26, height: 26, flexShrink: 0 }}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-pressed={collapsed}
+        >
+          {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+        </button>
+      )}
+
+      {/* Command palette trigger. Full width control on a phone, a fixed
+          320px affordance once there is room for the ticker beside it. */}
       <button
         type="button"
         onClick={onOpenPalette}
+        className="text-xs min-w-0 flex-1 md:flex-none md:w-[20rem]"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -88,36 +110,36 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette }: TopbarProps) 
           borderRadius: 6,
           color: 'var(--fg-3)',
           fontFamily: 'var(--sans)',
-          fontSize: 12,
           cursor: 'pointer',
-          width: 320,
         }}
+        aria-label="Search or run a command"
       >
-        <Search size={13} />
-        <span style={{ flex: 1, textAlign: 'left' }}>Search or run command…</span>
-        <span className="kbd">⌘</span>
-        <span className="kbd">K</span>
+        <Search size={13} className="shrink-0" />
+        <span className="flex-1 truncate-text text-left">Search or run command…</span>
+        <span className="kbd hidden sm:inline-flex">⌘</span>
+        <span className="kbd hidden sm:inline-flex">K</span>
       </button>
 
-      {/* Ticker */}
+      {/* Ticker — a scrolling marquee needs room to be legible, so it only
+          appears once the viewport is wide enough to give it any. */}
       {displayItems.length > 0 ? (
-        <Ticker items={displayItems} />
+        <div className="hidden min-w-0 flex-1 lg:flex"><Ticker items={displayItems} /></div>
       ) : (
-        <div style={{ flex: 1 }} />
+        <div className="hidden flex-1 lg:block" />
       )}
 
       {/* Right side */}
-      <div className="row gap-3" style={{ alignItems: 'center' }}>
+      <div className="row gap-2 sm:gap-3 ml-auto md:ml-0" style={{ alignItems: 'center', flexShrink: 0 }}>
         {/* LIVE indicator */}
-        <div className="row gap-2" style={{ alignItems: 'center' }}>
+        <div className="row gap-2 hidden sm:flex" style={{ alignItems: 'center' }}>
           <span className="dot dot--mint pulse" />
-          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live</span>
+          <span className="mono text-2xs" style={{ color: 'var(--fg-2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live</span>
         </div>
 
         {/* UTC clock */}
-        <div className="mono num" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{time} UTC</div>
+        <div className="mono num text-2xs hidden md:block" style={{ color: 'var(--fg-3)' }}>{time} UTC</div>
 
-        <div style={{ width: 1, height: 18, background: 'var(--line-1)' }} />
+        <div className="hidden sm:block" style={{ width: 1, height: 18, background: 'var(--line-1)' }} />
 
         <button
           type="button"
