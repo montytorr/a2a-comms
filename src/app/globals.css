@@ -29,12 +29,16 @@
   --line-2: oklch(0.32 0.014 250);
   --line-strong: oklch(0.42 0.014 250);
 
-  /* text */
-  --fg-0: oklch(0.98 0.005 250);
-  --fg-1: oklch(0.88 0.008 250);
-  --fg-2: oklch(0.66 0.01 250);
-  --fg-3: oklch(0.50 0.012 250);
-  --fg-4: oklch(0.38 0.012 250);
+  /* text — every tier measured against bg-1 and bg-2, the two grounds text
+     actually sits on. The previous ramp bottomed out at 1.9:1 for --fg-4 and
+     3.2:1 for --fg-3, so the timestamps, table headers, dates and ref chips
+     that make up most of this UI were below the readable line. All five now
+     clear 4.5:1 on both grounds. */
+  --fg-0: oklch(0.98 0.005 250);   /* 18.0 : 1 */
+  --fg-1: oklch(0.88 0.008 250);   /* 13.3 : 1 */
+  --fg-2: oklch(0.74 0.01 250);    /*  8.3 : 1 */
+  --fg-3: oklch(0.66 0.012 250);   /*  6.2 : 1 */
+  --fg-4: oklch(0.60 0.012 250);   /*  4.9 : 1 */
 
   /* signals — only 4 hues allowed */
   --amber: oklch(0.80 0.155 65);
@@ -100,11 +104,11 @@
   --line-2: oklch(0.84 0.008 250);
   --line-strong: oklch(0.70 0.010 250);
 
-  --fg-0: oklch(0.22 0.012 250);
-  --fg-1: oklch(0.32 0.012 250);
-  --fg-2: oklch(0.46 0.012 250);
-  --fg-3: oklch(0.55 0.012 250);
-  --fg-4: oklch(0.62 0.012 250);
+  --fg-0: oklch(0.22 0.012 250);   /* 15.9 : 1 */
+  --fg-1: oklch(0.32 0.012 250);   /* 11.6 : 1 */
+  --fg-2: oklch(0.44 0.012 250);   /*  7.1 : 1 */
+  --fg-3: oklch(0.52 0.012 250);   /*  5.0 : 1 */
+  --fg-4: oklch(0.55 0.012 250);   /*  4.5 : 1 */
 
   --amber: oklch(0.56 0.14 65);
   --amber-2: oklch(0.48 0.15 55);
@@ -179,14 +183,19 @@
   /* Type scale. The app previously carried 19 distinct sizes between 8px and
      30px, ~48% of them at 11px or below, with .h3 identical to body text —
      which is why it read as both too small and too flat. Seven steps, floor
-     at 11px, and a real gap between body and the heading above it. */
-  --text-2xs: 0.6875rem;      /* 11px — eyebrows, kbd, chips. Never prose. */
+     at 12px, and a real gap between body and the heading above it.
+
+     The floor started at 11px and was raised: at 11px the table headers,
+     timestamps and ref chips that carry most of this UI's information were
+     still uncomfortable to read, which is the density this console actually
+     needs rather than the density it had. */
+  --text-2xs: 0.75rem;        /* 12px — eyebrows, kbd, chips. Never prose. */
   --text-2xs--line-height: 1.45;
-  --text-xs: 0.75rem;         /* 12px — dense metadata, timestamps */
+  --text-xs: 0.8125rem;       /* 13px — dense metadata, timestamps */
   --text-xs--line-height: 1.45;
   --text-sm: 0.875rem;        /* 14px — secondary body, table cells, controls */
   --text-sm--line-height: 1.5;
-  --text-base: 0.9375rem;     /* 15px — body default */
+  --text-base: 1rem;          /* 16px — body default */
   --text-base--line-height: 1.55;
   --text-lg: 1.125rem;        /* 18px — panel and section titles (.h3) */
   --text-lg--line-height: 1.35;

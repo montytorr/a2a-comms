@@ -210,9 +210,8 @@ export default function QuickTaskForm({
                 key={p.id}
                 type="button"
                 onClick={() => setPriority(p.id)}
-                className={priority === p.id ? `pill pill--${p.tone}` : 'pill pill--ghost'}
+                className={`text-2xs ${priority === p.id ? `pill pill--${p.tone}` : 'pill pill--ghost'}`}
                 style={{
-                  fontSize: 8,
                   padding: '2px 6px',
                   opacity: priority === p.id ? 1 : 0.5,
                 }}

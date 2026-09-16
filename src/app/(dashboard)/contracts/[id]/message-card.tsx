@@ -58,8 +58,8 @@ function SyntaxJson({ data }: { data: unknown }) {
 function RichText({ text, className }: { text: string; className?: string }) {
   return (
     <div
-      className={`markdown-preview ${className || ''}`}
-      style={{ fontSize: '13px', color: 'var(--fg-1)', lineHeight: 1.6 }}
+      className={`markdown-preview ${className || ''} text-sm`}
+      style={{ color: 'var(--fg-1)', lineHeight: 1.6 }}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{normalizeMarkdownSource(text)}</ReactMarkdown>
     </div>

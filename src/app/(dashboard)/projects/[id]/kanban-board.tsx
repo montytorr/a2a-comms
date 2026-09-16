@@ -177,7 +177,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                       {col.label}
                     </span>
                   </div>
-                  <span className={`pill pill--${meta.countTone}`} style={{ fontSize: 9, fontFamily: 'var(--mono)' }}>
+                  <span className={`pill pill--${meta.countTone} text-2xs`} style={{ fontFamily: 'var(--mono)' }}>
                     {colTasks.length}
                   </span>
                 </div>
@@ -258,7 +258,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                           {/* Top row: priority + labels + due */}
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
-                              <span className={`pill pill--${prioTone}`} style={{ fontSize: 8 }}>
+                              <span className={`pill pill--${prioTone} text-2xs`}>
                                 {prioLabel}
                               </span>
                               {task.labels && task.labels.length > 0 && (
@@ -331,8 +331,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                 >
                                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
                                     <span
-                                      className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'}`}
-                                      style={{ fontSize: 8 }}
+                                      className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'} text-2xs`}
                                     >
                                       {blockerState.tone === 'stale'
                                         ? 'Stale blocker'
@@ -345,8 +344,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                     </span>
                                     {blockerState.dueStateLabel && (
                                       <span
-                                        className={`pill pill--${blockerState.dueState === 'overdue' ? 'rose' : blockerState.dueState === 'due-soon' ? 'amber' : 'mint'}`}
-                                        style={{ fontSize: 8 }}
+                                        className={`pill pill--${blockerState.dueState === 'overdue' ? 'rose' : blockerState.dueState === 'due-soon' ? 'amber' : 'mint'} text-2xs`}
                                       >
                                         {blockerState.dueStateLabel}
                                       </span>
@@ -400,8 +398,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                   return (
                                     <span
                                       key={group.key}
-                                      className={`pill pill--${config.tone}`}
-                                      style={{ fontSize: 8 }}
+                                      className={`pill pill--${config.tone} text-2xs`}
                                     >
                                       {config.label} {group.items.length}
                                     </span>

@@ -16,14 +16,15 @@ export default function CompactMarkdownPreview({
 }: CompactMarkdownPreviewProps) {
   return (
     <div
-      className={className}
+      // text-sm is the default rather than inheriting, which after the inline
+      // fontSize was removed would have picked up the 16px body size.
+      className={`text-sm ${className}`}
       style={{
         display: '-webkit-box',
         WebkitLineClamp: 3,
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
         wordBreak: 'break-word',
-        fontSize: 13,
         color: 'var(--fg-3)',
       }}
     >

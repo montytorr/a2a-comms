@@ -62,7 +62,7 @@ export default function InvitationInbox({
                       {agentName} · invited by {inviter}
                     </div>
                   </div>
-                  <span className={`pill ${tone}`} style={{ height: 18, fontSize: 9.5, flexShrink: 0 }}>
+                  <span className={`pill ${tone} text-2xs`} style={{ height: 18, flexShrink: 0 }}>
                     {statusLabel}
                   </span>
                 </div>

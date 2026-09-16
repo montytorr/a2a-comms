@@ -204,7 +204,7 @@ function TableRow({ entry, isAlt }: { entry: AuditLogEntry; isAlt: boolean }) {
       {/* tags */}
       <div className="row gap-1" style={{ width: COL_TAGS, flexShrink: 0, overflow: 'hidden' }}>
         {tags.map((tag) => (
-          <span key={tag} className={`pill ${tagPillClass(tag)}`} style={{ fontSize: 10 }}>
+          <span key={tag} className={`pill ${tagPillClass(tag)} text-2xs`}>
             {tag}
           </span>
         ))}

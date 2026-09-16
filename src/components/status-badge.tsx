@@ -27,7 +27,7 @@ export default function StatusBadge({ status, variant = 'contract', className = 
   const isActive = status === 'active' || status === 'accepted' || status === 'proposed' || status === 'pending';
 
   return (
-    <span className={`pill pill--${tone} ${className}`} style={{ height: 18, fontSize: 9.5 }}>
+    <span className={`pill pill--${tone} ${className} text-2xs`} style={{ height: 18}}>
       <span
         className={`dot dot--${tone} ${isActive ? 'pulse' : ''}`}
         style={{ width: 4, height: 4 }}

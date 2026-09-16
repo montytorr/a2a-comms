@@ -173,7 +173,7 @@ export default async function ContractsPage({
                       </div>
                     </span>
                     <span style={{ width: '10%' }}>
-                      <span className={`pill pill--${tone}`} style={{ height: 18, fontSize: 9.5 }}>
+                      <span className={`pill pill--${tone} text-2xs`} style={{ height: 18}}>
                         <span className={`dot dot--${tone}`} style={{ width: 4, height: 4 }} />
                         {contract.status}
                       </span>

@@ -503,16 +503,16 @@ export default async function TaskDetailPage({
                       {dependencySections.map((section) => (
                         <span
                           key={section.key}
-                          className={`pill pill--${section.config.pillTone}`}
-                          style={{ fontSize: '10px', fontWeight: 600 }}
+                          className={`pill pill--${section.config.pillTone} text-2xs`}
+                          style={{ fontWeight: 600 }}
                         >
                           {section.config.label} · {section.items.length}
                         </span>
                       ))}
                       {blockerState && (
                         <span
-                          className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'}`}
-                          style={{ fontSize: '10px', fontWeight: 600 }}
+                          className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'} text-2xs`}
+                          style={{ fontWeight: 600 }}
                         >
                           {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
                         </span>
@@ -555,7 +555,7 @@ export default async function TaskDetailPage({
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
                           <p className="text-2xs" style={{ fontWeight: 500, color: section.config.accentColor }}>{section.config.label}</p>
-                          <span className={`pill pill--${section.config.pillTone}`} style={{ fontSize: '9px', fontWeight: 600 }}>
+                          <span className={`pill pill--${section.config.pillTone} text-2xs`} style={{ fontWeight: 600 }}>
                             {section.items.length}
                           </span>
                         </div>
