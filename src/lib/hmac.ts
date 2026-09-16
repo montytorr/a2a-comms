@@ -118,19 +118,29 @@ export interface HmacValidationResult {
   code?: string;
 }
 
-export function canonicalizeMultipartFields(fields: Record<string, string | null | undefined>): string {
-  const normalized: Record<string, string> = {};
-  for (const [key, value] of Object.entries(fields)) {
-    if (typeof value === 'string') normalized[key] = value;
-  }
-  return canonicalize(normalized);
-}
-
-export function deriveSigningBody(
-  body: string,
-  multipartFields?: Record<string, string | null | undefined>
-): string {
-  if (multipartFields) return canonicalizeMultipartFields(multipartFields);
+/**
+ * The body a request's signature is computed over.
+ *
+ * **`multipart/form-data` requests sign an empty body.** `authenticateApiRequest`
+ * validates the HMAC *before* parsing the multipart payload, so the parser is
+ * never run on unauthenticated input — which means neither the file nor the form
+ * fields are covered by the signature. The signature still binds the method,
+ * path, timestamp and nonce, so a request cannot be forged or replayed; what it
+ * does not do is protect the payload from tampering in flight, which is TLS's
+ * job.
+ *
+ * This used to be ambiguous: a `canonicalizeMultipartFields` helper existed and
+ * was unit-tested, but nothing ever called it in the request path. The CLI was
+ * written against the design that helper implied and signed the form fields, so
+ * every `a2a task-attach` / `contract-attach` failed with 401 — each side
+ * self-consistent, both test suites green, the feature entirely broken. The
+ * helper is gone so the code states the actual contract.
+ *
+ * If field integrity is ever wanted, parsing untrusted multipart before
+ * authenticating is the cost — change the server, the CLI's `_multipart_encode`
+ * and `src/lib/multipart-signing-contract.test.ts` together.
+ */
+export function deriveSigningBody(body: string): string {
   if (!body) return '';
 
   try {
@@ -164,9 +174,6 @@ export async function validateHmac(
     signature?: string;
     nonce?: string;
   },
-  options?: {
-    multipartFields?: Record<string, string | null | undefined>;
-  }
 ): Promise<HmacValidationResult> {
   ensureNonceCleanupInterval();
 
@@ -221,7 +228,7 @@ export async function validateHmac(
     };
   }
 
-  const canonicalBody = deriveSigningBody(body, options?.multipartFields);
+  const canonicalBody = deriveSigningBody(body);
 
   // Look up service key
   const supabase = createServerClient();

@@ -16,8 +16,9 @@ import { deriveSigningBody } from './hmac';
  */
 
 test('server derives an empty signing body for multipart requests', () => {
-  // This is what middleware-auth does: empty body, no multipartFields.
-  assert.equal(deriveSigningBody('', undefined), '');
+  // This is exactly what authenticateApiRequest does for multipart: body is
+  // left empty, so nothing about the payload enters the signature.
+  assert.equal(deriveSigningBody(''), '');
 });
 
 test('the CLI signs an empty body for multipart, matching the server', () => {
@@ -41,8 +42,9 @@ test('the CLI signs an empty body for multipart, matching the server', () => {
 
 test('signing fields instead of an empty body produces a different body', () => {
   // The precise divergence that caused the 401, pinned so it cannot silently
-  // return: if these ever match, the contract above stopped meaning anything.
-  const asFields = deriveSigningBody('', { note: 'verification' });
-  assert.notEqual(asFields, '', 'field canonicalization must differ from the empty body');
+  // return: a canonical JSON of the form fields is not the empty string, so a
+  // client that signs the fields can never match the server.
+  const asFields = deriveSigningBody('{"note":"verification"}');
+  assert.notEqual(asFields, deriveSigningBody(''));
   assert.equal(asFields, '{"note":"verification"}');
 });

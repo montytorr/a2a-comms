@@ -56,22 +56,52 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
     # Build the changelog block
     BLOCK="\\n## [$NEW_VERSION] - $TODAY\\n### $SECTION\\n- $ENTRY"
 
-    # Append body lines as additional bullet points if commit body exists
+    # Append the commit body as bullets.
+    #
+    # Git convention wraps commit bodies at ~72 characters, so a line is NOT a
+    # unit of meaning — emitting one bullet per line shreds ordinary prose
+    # mid-sentence. Instead, accumulate continuation lines into the bullet or
+    # paragraph they belong to, and flush on a blank line or a new "- " bullet.
     if [[ -n "$COMMIT_BODY" ]]; then
+      PENDING=""
+
+      flush_pending() {
+        if [[ -n "$PENDING" ]]; then
+          BLOCK="$BLOCK\\n- $PENDING"
+          PENDING=""
+        fi
+      }
+
       while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        # Skip git trailers (Co-Authored-By, Signed-off-by, Refs, ...). They are
-        # commit metadata, not changelog content, and were leaking in as bullets.
-        if [[ "$line" =~ ^[A-Za-z-]+-([Bb]y|[Tt]o):[[:space:]] || "$line" =~ ^(Refs|Closes|Fixes|Co-authored-by|Signed-off-by): ]]; then
+        # Trim trailing whitespace
+        line="${line%"${line##*[![:space:]]}"}"
+
+        # A blank line ends the current bullet or paragraph.
+        if [[ -z "$line" ]]; then
+          flush_pending
           continue
         fi
-        # Lines starting with - are already bullets; otherwise prefix with -
-        if [[ "$line" == -* ]]; then
-          BLOCK="$BLOCK\\n$line"
+
+        # Skip git trailers (Co-Authored-By, Signed-off-by, Refs, ...). They are
+        # commit metadata, not changelog content.
+        if [[ "$line" =~ ^[A-Za-z-]+-([Bb]y|[Tt]o):[[:space:]] || "$line" =~ ^(Refs|Closes|Fixes|Co-authored-by|Signed-off-by): ]]; then
+          flush_pending
+          continue
+        fi
+
+        # An explicit bullet starts a new one; anything else continues the
+        # current bullet or paragraph.
+        if [[ "$line" =~ ^[[:space:]]*[-*][[:space:]]+ ]]; then
+          flush_pending
+          PENDING="$(printf '%s' "$line" | sed -E 's/^[[:space:]]*[-*][[:space:]]+//')"
+        elif [[ -n "$PENDING" ]]; then
+          PENDING="$PENDING $(printf '%s' "$line" | sed -E 's/^[[:space:]]+//')"
         else
-          BLOCK="$BLOCK\\n- $line"
+          PENDING="$line"
         fi
       done <<< "$COMMIT_BODY"
+
+      flush_pending
     fi
 
     # Insert new version block after the FIRST "---" separator line only

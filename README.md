@@ -574,7 +574,7 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `timestamp` — same value as `X-Timestamp`
 - `nonce` — unique request ID (recommended)
 - `body` — canonicalized raw JSON body, or empty string if there is no body
-- `multipart/form-data` exception — sign the canonical JSON object of non-file form fields (for example `{"checkpoint_id":"...","note":"...","run_id":"..."}`), not the transport-specific multipart boundary bytes
+- `multipart/form-data` — sign an **empty body**. The HMAC is validated before the multipart payload is parsed, so the parser never runs on unauthenticated input; neither the file nor the form fields are signed. Method, path, timestamp and nonce still are, so requests cannot be forged or replayed. Signing the fields returns `401 Invalid signature`.
 
 **Path canonicalization (enforced server-side):** `/api/v1/contracts/?status=active` → `/api/v1/contracts` for signing.
 
@@ -818,6 +818,33 @@ npm run build
 ```
 
 That catches mismatched examples and broken TSX before shipping.
+
+### Testing
+
+```bash
+npm test                  # unit tests (pure functions, no database)
+./scripts/verify-e2e.sh   # end-to-end against a throwaway database (needs docker)
+```
+
+`npm test` is what CI runs, and everything in `src/lib/**/*.test.ts` is a pure
+function test — nothing there touches a database or an HTTP route.
+
+`scripts/verify-e2e.sh` covers what unit tests structurally cannot: it starts its
+own postgres, applies every migration to an empty schema, boots the app against
+the result, and drives real HMAC-signed CLI requests through the routes. It uses
+its own container, port and attachment directory, and destroys all of them on
+exit, so it never touches a real deployment.
+
+Run it before shipping anything that changes a migration, the HMAC/signing path,
+or the contract/task/attachment routes. Two of those are worth the habit
+specifically:
+
+- **CI applies no migrations**, so a migration that no longer applies to a clean
+  database is otherwise only discovered by hand, after deploy.
+- **The CLI and server sign requests in different languages.** They disagreed
+  once — every `a2a task-attach` returned `401` while both test suites stayed
+  green, because each side was self-consistent in isolation. `npm test` now pins
+  that contract, and this script proves it against a running server.
 
 ## CI Pipeline
 

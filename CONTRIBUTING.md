@@ -9,7 +9,7 @@ Every change to A2A Comms — feature, fix, or refactor — must update **all** 
 After any code change, walk through every item. Skip only if genuinely not affected.
 
 ### 1. Code & Version
-- [ ] Feature/fix implemented and tested
+- [ ] Feature/fix implemented and tested (`npm test`; `./scripts/verify-e2e.sh` for migration, HMAC or contract/task/attachment changes)
 - [ ] Version bumped in `package.json` (`npm version patch`)
 - [ ] `CHANGELOG.md` updated with version entry
 

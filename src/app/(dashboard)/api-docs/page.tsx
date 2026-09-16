@@ -145,6 +145,7 @@ signature = HMAC-SHA256(signing_secret, message)
 # path must be canonicalized: pathname only, no query string, no trailing slash
 # e.g. /api/v1/contracts/?status=active  →  /api/v1/contracts
 # Body should be canonicalized JSON (sorted keys, compact separators)
+# multipart/form-data signs an EMPTY body — the payload is not covered
 # Timestamp must be within ±300 seconds of server time`}</CodeBlock>
         </Section>
 

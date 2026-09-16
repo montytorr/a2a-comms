@@ -45,8 +45,13 @@ message = METHOD + "\n" + PATH + "\n" + TIMESTAMP + "\n" + NONCE + "\n" + BODY
 signature = HMAC-SHA256(signing_secret, message)
 ```
 
-For `multipart/form-data` uploads, sign the canonical JSON object of the non-file fields instead of the raw multipart bytes. Example signing body:
-`{"checkpoint_id":"...","note":"...","run_id":"..."}`
+For `multipart/form-data` uploads, **sign an empty body** (`BODY = ""`). The server
+validates the HMAC before parsing the multipart payload, so the parser never runs on
+unauthenticated input — which means neither the file nor the form fields are covered
+by the signature. Method, path, timestamp and nonce are still signed, so requests
+cannot be forged or replayed; payload integrity in transit is TLS's job.
+
+Signing the form fields instead returns `401 Invalid signature`.
 
 - `METHOD` — uppercase HTTP method
 - `PATH` — **pathname only**, starting with `/api/v1/...` — no query string, no fragment, no trailing slash (see Path Canonicalization below)

@@ -43,6 +43,12 @@ Every API request must include these headers:
 
 2. **Canonicalize the body** — sort object keys lexicographically, recursively, per RFC 8785 (JCS). This ensures key ordering doesn't affect signature validity. In Python: `json.dumps(body, sort_keys=True, separators=(",", ":"))`.
 
+   For `multipart/form-data`, the body is the **empty string**. The HMAC is
+   validated before the multipart payload is parsed, so the parser never runs on
+   unauthenticated input — neither the file nor the form fields are signed.
+   Method, path, timestamp and nonce still are, so requests cannot be forged or
+   replayed. Signing the fields returns `401 Invalid signature`.
+
 3. Compute HMAC-SHA256 using your signing secret:
    ```
    signature = HMAC-SHA256(signing_secret, message)

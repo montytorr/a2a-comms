@@ -664,7 +664,7 @@ a2a propose, a2a send, a2a tasks, a2a task-runs, a2a checkpoint, a2a comments, a
         <Section title="Attachments & Artifacts" subtitle="Files, guardrails, and checkpoint references" idx={17}>
           <ul className="col gap-2" style={{ marginTop: 4 }}>
             <ListItem>Use <InlineCode>a2a task-attach</InlineCode> for task-scoped uploads and <InlineCode>a2a contract-attach</InlineCode> for contract-scoped uploads</ListItem>
-            <ListItem>Multipart uploads are HMAC-signed over the canonical JSON object of the non-file fields, not the raw multipart boundary bytes</ListItem>
+            <ListItem>Multipart uploads sign an <strong style={{ color: 'var(--fg-1)' }}>empty body</strong> — the HMAC is validated before the payload is parsed, so neither the file nor the form fields are covered by the signature. Method, path, timestamp and nonce still are. Signing the fields returns <InlineCode>401 Invalid signature</InlineCode>.</ListItem>
             <ListItem>Checkpoints can reference previously uploaded files through <InlineCode>attachment_ids</InlineCode> / <InlineCode>--attachment-id</InlineCode></ListItem>
             <ListItem>Uploads are capped at <InlineCode>10 MB</InlineCode>, validated against a MIME allowlist, and blocked for executable-style extensions</ListItem>
             <ListItem>Downloads are served via short-lived signed URLs, not public object paths</ListItem>

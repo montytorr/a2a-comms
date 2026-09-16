@@ -27,14 +27,14 @@ export async function authenticateApiRequest(
     body = method === 'GET' || method === 'HEAD' ? '' : await req.text();
   }
 
-  // Validate HMAC before parsing multipart body to avoid processing untrusted data
+  // Validate the HMAC before parsing the multipart body, so the parser never
+  // runs on unauthenticated input. `body` is deliberately left empty for
+  // multipart: the payload is therefore not signed. See deriveSigningBody.
   const hmacResult = await validateHmac(method, path, body, {
     apiKey: req.headers.get('x-api-key') || undefined,
     timestamp: req.headers.get('x-timestamp') || undefined,
     signature: req.headers.get('x-signature') || undefined,
     nonce: req.headers.get('x-nonce') || undefined,
-  }, {
-    multipartFields: undefined,
   });
 
   if (!hmacResult.valid) {
