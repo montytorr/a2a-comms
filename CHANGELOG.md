@@ -33,6 +33,40 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.288] - 2026-09-16
+### Changed
+- apply the type scale and make every page responsive
+- The largest pass. Three sweeps that had to happen together because they touch
+- the same lines.
+- Typography. 883 inline fontSize declarations become text-* utilities from the
+- scale, leaving 19 computed or conditional ones for review — the ratchet added
+- earlier drops from 912 to 19. This is what actually fixes "text is too small":
+- the scale existed after the previous commit, but 912 inline pixel values were
+- still overriding it at every call site. Everything below 11px lifts to 11px,
+- and the 19 distinct sizes collapse to seven steps.
+- Done with a codemod over the TypeScript AST rather than a regex — JSX opening
+- tags contain arbitrarily nested braces and a regex that appears to handle them
+- corrupts the ones it does not. Computed sizes are deliberately left alone and
+- reported; the right step for a conditional is a judgement call.
+- Email templates are excluded and exempted from the ratchet. Mail clients do
+- not load the stylesheet, so inline styles are the only thing that renders
+- there — the codemod converted one and it was reverted.
+- Width. The nine competing per-page caps are gone, along with the 19 hand-rolled
+- copies of padding: '28px 32px 60px'. Each page now declares an intent —
+- narrow / prose / default / wide — and the messages list, which the operator
+- called out, moves from a left-aligned 1100px to the full content width.
+- Responsive. 34 fixed-column grids become auto-fit/minmax, which reflows without
+- a breakpoint — the mechanism matters because these are inline styles and inline
+- styles cannot carry a media query. That is also why four pages had dead
+- sm:/lg: padding classes: an inline padding beat them at every breakpoint, so
+- they had never once applied. Those are now classes only.
+- Nine tables gain a minimum width, so the overflow wrappers around them actually
+- scroll instead of squashing columns to one character per line, and markdown
+- tables get a wrapper for the first time. The kanban board gains scroll snapping
+- and lanes that fit a phone, with overscroll containment so a sideways swipe does
+- not trigger iOS back-navigation.
+- Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
 ## [1.0.286] - 2026-09-15
 ### Docs
 - document safe markdown normalization
