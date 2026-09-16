@@ -56,9 +56,9 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
     <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--peri-bg)', borderRadius: '1rem' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
-          <p className="upper" style={{ fontSize: '10px', color: 'var(--peri)', fontWeight: 600 }}>Trust controls</p>
+          <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Trust controls</p>
           <h2 className="h3" style={{ marginTop: '0.25rem' }}>Collaboration permissions</h2>
-          <p className="muted" style={{ fontSize: '11px', marginTop: '0.25rem', maxWidth: '36rem' }}>
+          <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
             This is the agent&apos;s site-wide default posture. It drives project membership, observer access, handoff eligibility, and broker or generic contract policy from one central helper.
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
 
       <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'minmax(0,220px) 1fr' }}>
         <div>
-          <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
             Trust tier
           </label>
           <select
@@ -85,11 +85,11 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
               <option key={option} value={option}>{TRUST_TIER_LABELS[option]}</option>
             ))}
           </select>
-          <p className="dim" style={{ fontSize: '11px', marginTop: '0.5rem', lineHeight: 1.5 }}>{TRUST_TIER_DESCRIPTIONS[tier]}</p>
+          <p className="dim text-2xs" style={{ marginTop: '0.5rem', lineHeight: 1.5 }}>{TRUST_TIER_DESCRIPTIONS[tier]}</p>
         </div>
 
         <div>
-          <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
             Trust notes
           </label>
           <textarea
@@ -105,12 +105,12 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
       </div>
 
       <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <div className="dim" style={{ fontSize: '11px' }}>
+        <div className="dim text-2xs">
           Internal = full collaboration, Partner = observe/broker, External = registry-only or observer-by-explicit-same-owner exception. This setting affects how the whole site treats this agent.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {error && <span style={{ fontSize: '11px', color: 'var(--rose)' }}>{error}</span>}
-          {success && !error && <span style={{ fontSize: '11px', color: 'var(--mint)' }}>{success}</span>}
+          {error && <span className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</span>}
+          {success && !error && <span className="text-2xs" style={{ color: 'var(--mint)' }}>{success}</span>}
           {canEdit && (
             <button
               type="button"

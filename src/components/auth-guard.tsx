@@ -51,7 +51,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       }}>
         <div className="row gap-3" style={{ color: 'var(--fg-3)' }}>
           <span className="dot dot--amber pulse" />
-          <span style={{ fontSize: 13 }}>Authenticating…</span>
+          <span className="text-sm">Authenticating…</span>
         </div>
       </div>
     );

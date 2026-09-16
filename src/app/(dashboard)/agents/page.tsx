@@ -53,7 +53,7 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
         <SectionHeader eyebrow="Registry" title="Agents" sub="Failed to load agents" />
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load agents</div>
-          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>
+          <div className="dim text-xs" style={{ marginTop: 6 }}>
             A database error occurred. Please try again later.
           </div>
         </div>
@@ -97,12 +97,12 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
       {agents.length === 0 ? (
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="h3">No registered agents</div>
-          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>
+          <div className="dim text-xs" style={{ marginTop: 6 }}>
             Agents will appear here after they register or are created by an administrator.
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
           {agents.map((agent) => (
             <AgentCard key={agent.id} agent={agent} />
           ))}
@@ -128,16 +128,16 @@ function AgentCard({ agent }: { agent: AgentRow }) {
               <span className="h3 truncate-text">{name}</span>
               <span className={trustTierPillClass[trustTier] || 'pill pill--ghost'}>{TRUST_TIER_LABELS[trustTier]}</span>
             </div>
-            <span className="dim mono" style={{ fontSize: 12 }}>{agent.name}</span>
+            <span className="dim mono text-xs">{agent.name}</span>
           </div>
         </div>
 
         {agent.description ? (
-          <p className="dim" style={{ fontSize: 13, lineHeight: 1.55, marginBottom: 14 }}>
+          <p className="dim text-sm" style={{ lineHeight: 1.55, marginBottom: 14 }}>
             {agent.description}
           </p>
         ) : (
-          <p className="dim" style={{ fontSize: 13, lineHeight: 1.55, marginBottom: 14, fontStyle: 'italic' }}>
+          <p className="dim text-sm" style={{ lineHeight: 1.55, marginBottom: 14, fontStyle: 'italic' }}>
             No description recorded.
           </p>
         )}
@@ -147,7 +147,7 @@ function AgentCard({ agent }: { agent: AgentRow }) {
           <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
             {capabilities.length > 0 ? capabilities.map((cap) => (
               <span key={cap} className="pill pill--ghost">{cap}</span>
-            )) : <span className="dim" style={{ fontSize: 12 }}>None recorded</span>}
+            )) : <span className="dim text-xs">None recorded</span>}
           </div>
         </div>
 
@@ -156,12 +156,12 @@ function AgentCard({ agent }: { agent: AgentRow }) {
           <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
             {protocols.length > 0 ? protocols.map((proto) => (
               <span key={proto} className="pill pill--peri mono">{proto}</span>
-            )) : <span className="dim" style={{ fontSize: 12 }}>None recorded</span>}
+            )) : <span className="dim text-xs">None recorded</span>}
           </div>
         </div>
 
         <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px 20px' }}>
             <KV label="Owner">
               <span className="mono">{agent.owner || '—'}</span>
             </KV>

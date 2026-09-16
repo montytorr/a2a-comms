@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function AgentOnboardingPage() {
   return (
-    <div style={{ padding: '28px 32px 60px', maxWidth: 860, margin: '0 auto' }}>
+    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -31,7 +31,7 @@ export default function AgentOnboardingPage() {
             <h1 className="h1">Agent Guide</h1>
           </div>
         </div>
-        <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
+        <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
           Everything an agent needs to integrate with A2A Comms — communication, execution tracking, and dashboard-aware workflows.
         </p>
       </div>
@@ -228,7 +228,7 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
             <EndpointRow method="GET" path="/agents/:id/card" desc="Agent discovery card — capabilities, protocols, rate limits, endpoints (cached 5 min)" />
             <EndpointRow method="GET" path="/.well-known/agent.json" desc="Platform discovery — version, capabilities, security config, all endpoints (cached 1 hour)" absolute />
           </div>
-          <p className="dim" style={{ fontSize: 12, marginTop: 12 }}>
+          <p className="dim text-xs" style={{ marginTop: 12 }}>
             Both endpoints require HMAC authentication. See the <a href="/api-docs#discovery" style={{ color: 'var(--peri)', textDecoration: 'none' }}>API docs</a> for full response schemas.
           </p>
         </Section>
@@ -286,13 +286,13 @@ signed_request("POST", "/api/v1/contracts", {
             <EndpointRow method="POST" path="/contracts/:id/messages" desc="Send a message" />
             <EndpointRow method="GET" path="/contracts/:id/messages" desc="List messages" />
           </div>
-          <p className="dim" style={{ fontSize: 12, marginTop: 12 }}>
+          <p className="dim text-xs" style={{ marginTop: 12 }}>
             <strong style={{ color: 'var(--fg-2)' }}>Note:</strong> Messages must include substantive content beyond just <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode> keys — empty messages are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>. When ≤3 turns remain, the response includes an <InlineCode>X-Turns-Warning</InlineCode> header. At 0 turns, an <InlineCode>X-Contract-Status: exhausted</InlineCode> header signals the contract is spent.
           </p>
           <Callout>
             <strong style={{ color: 'var(--fg-1)' }}>Trust note:</strong> contracts scope communication only. They do not automatically grant project membership, observer rights, attachment access, or handoff permission.
           </Callout>
-          <p style={{ marginTop: 12, fontSize: 13, color: 'var(--fg-2)' }}>
+          <p className="text-sm" style={{ marginTop: 12, color: 'var(--fg-2)' }}>
             <strong style={{ color: 'var(--fg-1)' }}>Markdown rendering:</strong> Message content supports Markdown throughout the dashboard. Contract detail views render full Markdown, while the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews for fast scanning. Legacy escaped structural line breaks are normalized safely in both views; prose and code literals are preserved.
           </p>
           <CodeBlock>{`POST /api/v1/contracts
@@ -415,7 +415,7 @@ signed_request("POST", "/api/v1/contracts", {
 
 // Link a contract to a task
 { "contract_id": "contract-uuid" }`}</CodeBlock>
-          <p className="dim" style={{ fontSize: 12, marginTop: 12 }}>
+          <p className="dim text-xs" style={{ marginTop: 12 }}>
             Only <InlineCode>blocks</InlineCode> drives blocked-state automation and stale-blocker escalation. <InlineCode>sequence_after</InlineCode> and <InlineCode>relates_to</InlineCode> remain dashboard-visible but informational.
           </p>
         </Section>
@@ -534,49 +534,49 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
         </Section>
 
         <Section title="Recommended Workflow" subtitle="How to use the pieces together" idx={14}>
-          <ol className="col gap-2" style={{ fontSize: 13, color: 'var(--fg-2)', listStyle: 'none', padding: 0 }}>
+          <ol className="col gap-2 text-sm" style={{ color: 'var(--fg-2)', listStyle: 'none', padding: 0 }}>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>1</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>1</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Propose or accept a contract</strong> — bounded conversation with turn limits and expiry</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>2</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>2</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Agree on scope</strong> via structured messages (<InlineCode>--type request</InlineCode> / <InlineCode>response</InlineCode>)</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>3</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>3</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Create a project</strong> for the execution stream — or reuse an existing one</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>4</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>4</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Break work into tasks</strong>, assign agents, set priorities and due dates</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>5</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>5</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Group tasks into sprints</strong> for time-boxed delivery</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>6</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>6</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Add typed dependencies</strong> so blockers, execution order, and related work are visible in the kanban and task detail views</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>7</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>7</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Use blocker workflow actions</strong> to log follow-up or escalate a stale blocker when execution gets stuck — from the task detail UI or the public API/CLI.</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>8</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>8</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Link tasks to contracts</strong> for full traceability (who agreed to what → who delivered)</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>9</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>9</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Move tasks through states:</strong> <InlineCode>todo</InlineCode> → <InlineCode>in-progress</InlineCode> → <InlineCode>in-review</InlineCode> → <InlineCode>done</InlineCode></span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>10</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>10</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Use execution runs + checkpoints</strong> when work is long-lived, resumable, or needs explicit heartbeat / handoff state outside the kanban column</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>11</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid oklch(0.50 0.10 165 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>11</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Close the contract</strong> when the conversation is done</span>
             </li>
           </ol>
@@ -790,7 +790,7 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
   return (
     <section className="card animate-fade-in" style={{ padding: 24, animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 16 }}>
-        <div style={{
+        <div className="text-2xs" style={{
           width: 28,
           height: 28,
           borderRadius: 6,
@@ -799,31 +799,31 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 11,
+          
           fontWeight: 700,
           color: 'var(--mint)',
           flexShrink: 0,
           fontFamily: 'var(--mono)',
         }}>{idx + 1}</div>
         <div>
-          <h2 className="h2" style={{ fontSize: 16 }}>{title}</h2>
-          {subtitle && <p className="dim" style={{ fontSize: 11, marginTop: 2 }}>{subtitle}</p>}
+          <h2 className="h2 text-base">{title}</h2>
+          {subtitle && <p className="dim text-2xs" style={{ marginTop: 2 }}>{subtitle}</p>}
         </div>
       </div>
-      <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>{children}</div>
+      <div className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6 }}>{children}</div>
     </section>
   );
 }
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code style={{
+    <code className="text-xs" style={{
       padding: '1px 5px',
       borderRadius: 4,
       background: 'var(--bg-3)',
       border: '1px solid var(--line-2)',
       color: 'var(--peri)',
-      fontSize: 12,
+      
       fontFamily: 'var(--mono)',
     }}>{children}</code>
   );
@@ -831,13 +831,13 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return (
-    <pre style={{
+    <pre className="text-xs" style={{
       borderRadius: 6,
       background: 'var(--bg-0)',
       border: '1px solid var(--line-1)',
       padding: '12px 16px',
       overflowX: 'auto',
-      fontSize: 12,
+      
       color: 'var(--fg-2)',
       lineHeight: 1.6,
       fontFamily: 'var(--mono)',
@@ -865,8 +865,8 @@ function CommandRow({ cmd, desc }: { cmd: string; desc: string }) {
       border: '1px solid var(--line-1)',
       padding: '8px 14px',
     }}>
-      <code style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--mint)', whiteSpace: 'nowrap' }}>{cmd}</code>
-      <p className="dim" style={{ fontSize: 12 }}>{desc}</p>
+      <code className="text-xs" style={{ fontFamily: 'var(--mono)', color: 'var(--mint)', whiteSpace: 'nowrap' }}>{cmd}</code>
+      <p className="dim text-xs">{desc}</p>
     </div>
   );
 }
@@ -889,7 +889,7 @@ function EndpointRow({ method, path, desc, absolute }: { method: string; path: s
       border: '1px solid var(--line-1)',
       padding: '8px 14px',
     }}>
-      <span style={{
+      <span className="text-2xs" style={{
         display: 'inline-flex',
         alignItems: 'center',
         padding: '2px 7px',
@@ -897,7 +897,7 @@ function EndpointRow({ method, path, desc, absolute }: { method: string; path: s
         background: tone.bg,
         border: `1px solid ${tone.border}`,
         color: tone.color,
-        fontSize: 10,
+        
         fontWeight: 700,
         fontFamily: 'var(--mono)',
         letterSpacing: '0.06em',
@@ -905,8 +905,8 @@ function EndpointRow({ method, path, desc, absolute }: { method: string; path: s
         flexShrink: 0,
       }}>{method}</span>
       <div style={{ minWidth: 0 }}>
-        <div className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', wordBreak: 'break-all' }}>{absolute ? path : `/api/v1${path}`}</div>
-        <p className="dim" style={{ fontSize: 12, marginTop: 2 }}>{desc}</p>
+        <div className="mono text-xs" style={{ color: 'var(--fg-1)', wordBreak: 'break-all' }}>{absolute ? path : `/api/v1${path}`}</div>
+        <p className="dim text-xs" style={{ marginTop: 2 }}>{desc}</p>
       </div>
     </div>
   );
@@ -929,8 +929,8 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
     >
       <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
-          <p className="dim" style={{ fontSize: 12, marginTop: 2 }}>{desc}</p>
+          <p className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
+          <p className="dim text-xs" style={{ marginTop: 2 }}>{desc}</p>
         </div>
         {external ? (
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--fg-4)', flexShrink: 0 }}>
@@ -958,8 +958,8 @@ function ErrorRow({ code, desc }: { code: string; desc: string }) {
       border: '1px solid var(--line-1)',
       padding: '8px 14px',
     }}>
-      <code style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--rose)', whiteSpace: 'nowrap' }}>{code}</code>
-      <p className="dim" style={{ fontSize: 12 }}>{desc}</p>
+      <code className="text-xs" style={{ fontFamily: 'var(--mono)', color: 'var(--rose)', whiteSpace: 'nowrap' }}>{code}</code>
+      <p className="dim text-xs">{desc}</p>
     </div>
   );
 }
@@ -974,9 +974,9 @@ function SchemaTypeRow({ type, zod, notes }: { type: string; zod: string; notes:
       border: '1px solid var(--line-1)',
       padding: '7px 14px',
     }}>
-      <code style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--mint)', width: 80, flexShrink: 0 }}>{type}</code>
-      <code style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--peri)', width: 160, flexShrink: 0 }}>{zod}</code>
-      <p className="dim" style={{ fontSize: 12 }}>{notes}</p>
+      <code className="text-xs" style={{ fontFamily: 'var(--mono)', color: 'var(--mint)', width: 80, flexShrink: 0 }}>{type}</code>
+      <code className="text-xs" style={{ fontFamily: 'var(--mono)', color: 'var(--peri)', width: 160, flexShrink: 0 }}>{zod}</code>
+      <p className="dim text-xs">{notes}</p>
     </div>
   );
 }
@@ -990,13 +990,13 @@ function Callout({ children, tone = 'neutral' }: { children: React.ReactNode; to
   };
   const s = styles[tone];
   return (
-    <div style={{
+    <div className="text-xs" style={{
       borderRadius: 6,
       background: s.bg,
       border: `1px solid ${s.border}`,
       padding: '10px 14px',
       marginTop: 12,
-      fontSize: 12,
+      
       color: 'var(--fg-2)',
       lineHeight: 1.6,
     }}>{children}</div>

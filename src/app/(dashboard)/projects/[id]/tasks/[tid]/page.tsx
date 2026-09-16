@@ -290,7 +290,7 @@ export default async function TaskDetailPage({
     {
       label: 'Assignee',
       value: hasReadOnlyObserverAccess ? (
-        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
+        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
       ) : (
         <AssigneePicker
           currentId={task.assignee_agent_id}
@@ -303,7 +303,7 @@ export default async function TaskDetailPage({
     {
       label: 'Sprint',
       value: hasReadOnlyObserverAccess ? (
-        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{_sprint ? _sprint.title : 'Backlog'}</span>
+        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{_sprint ? _sprint.title : 'Backlog'}</span>
       ) : (
         <SprintPicker currentSprintId={task.sprint_id} sprints={sprints} projectId={projectId} taskId={tid} />
       ),
@@ -311,7 +311,7 @@ export default async function TaskDetailPage({
     {
       label: 'Due date',
       value: hasReadOnlyObserverAccess ? (
-        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{task.due_date || 'None'}</span>
+        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{task.due_date || 'None'}</span>
       ) : (
         <DueDatePicker value={task.due_date} projectId={projectId} taskId={tid} isOverdue={!!isOverdue} />
       ),
@@ -322,33 +322,33 @@ export default async function TaskDetailPage({
     {
       label: 'Reporter',
       value: reporter ? (
-        <span style={{ fontSize: '13px', color: 'var(--fg-1)', fontWeight: 500 }}>{reporter.display_name || reporter.name}</span>
+        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{reporter.display_name || reporter.name}</span>
       ) : (
-        <span style={{ fontSize: '12px', color: 'var(--fg-3)', fontStyle: 'italic' }}>Unknown</span>
+        <span className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Unknown</span>
       ),
     },
     {
       label: 'Created',
-      value: <span className="mono" style={{ fontSize: '11px', color: 'var(--fg-2)' }}>{formatDate(task.created_at)}</span>,
+      value: <span className="mono text-2xs" style={{ color: 'var(--fg-2)' }}>{formatDate(task.created_at)}</span>,
     },
     {
       label: 'Last updated',
-      value: <span className="mono" style={{ fontSize: '11px', color: 'var(--fg-2)' }}>{formatDateTime(task.updated_at)}</span>,
+      value: <span className="mono text-2xs" style={{ color: 'var(--fg-2)' }}>{formatDateTime(task.updated_at)}</span>,
     },
   ];
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div style={{ maxWidth: '1500px', margin: '0 auto', padding: '1rem 1.5rem' }} className="lg:px-10 lg:py-8">
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 animate-fade-in">
-          <Link href="/projects" style={{ fontSize: '11px', color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
-          <span style={{ color: 'var(--fg-3)', fontSize: '10px' }}>›</span>
-          <Link href={`/projects/${projectId}`} style={{ fontSize: '11px', color: 'var(--fg-3)', textDecoration: 'none' }}>
+          <Link href="/projects" className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
+          <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>›</span>
+          <Link href={`/projects/${projectId}`} className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>
             {project?.title || 'Project'}
           </Link>
-          <span style={{ color: 'var(--fg-3)', fontSize: '10px' }}>›</span>
-          <span style={{ fontSize: '11px', color: 'var(--fg-2)' }}>Task</span>
+          <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>›</span>
+          <span className="text-2xs" style={{ color: 'var(--fg-2)' }}>Task</span>
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)] 2xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.9fr)]">
@@ -357,20 +357,20 @@ export default async function TaskDetailPage({
             <section className="card animate-fade-in" style={{ padding: '1.5rem' }}>
               <div style={{ minWidth: 0 }}>
                 {hasReadOnlyObserverAccess ? (
-                  <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>{task.title}</h1>
+                  <h1 className="text-2xl" style={{ fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>{task.title}</h1>
                 ) : (
                   <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
                 )}
                 <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.625rem' }}>
                   {hasReadOnlyObserverAccess ? (
                     <span
-                      style={{
+                      className="text-2xs" style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.375rem',
                         padding: '0.125rem 0.5rem',
                         borderRadius: '9999px',
-                        fontSize: '10px',
+                        
                         fontWeight: 600,
                         textTransform: 'uppercase',
                         letterSpacing: '0.08em',
@@ -395,13 +395,13 @@ export default async function TaskDetailPage({
                   )}
                   {hasReadOnlyObserverAccess ? (
                     <span
-                      style={{
+                      className="text-2xs" style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.375rem',
                         borderRadius: '9999px',
                         padding: '0.25rem 0.625rem',
-                        fontSize: '10px',
+                        
                         fontWeight: 600,
                         background: 'var(--bg-2)',
                         border: '1px solid var(--line-1)',
@@ -415,12 +415,12 @@ export default async function TaskDetailPage({
                   )}
                   {isOverdue && (
                     <span
-                      style={{
+                      className="text-2xs" style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         padding: '0.25rem 0.625rem',
                         borderRadius: '9999px',
-                        fontSize: '10px',
+                        
                         fontWeight: 700,
                         color: 'var(--rose)',
                         background: 'var(--rose-bg)',
@@ -432,12 +432,12 @@ export default async function TaskDetailPage({
                   )}
                   {blockerState && (
                     <span
-                      style={{
+                      className="text-2xs" style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         padding: '0.25rem 0.625rem',
                         borderRadius: '9999px',
-                        fontSize: '10px',
+                        
                         fontWeight: 700,
                         border: '1px solid',
                         color: blockerState.tone === 'stale' ? 'var(--rose)' : blockerState.tone === 'follow-through' ? 'var(--amber)' : 'var(--rose)',
@@ -454,12 +454,12 @@ export default async function TaskDetailPage({
               <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--line-1)', paddingTop: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                   <div>
-                    <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Description</p>
-                    <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Keep the brief close to the task metadata instead of pushing it further down the page.</p>
+                    <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Description</p>
+                    <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Keep the brief close to the task metadata instead of pushing it further down the page.</p>
                   </div>
                 </div>
                 {hasReadOnlyObserverAccess ? (
-                  <div style={{ fontSize: '13px', color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{task.description || 'No description yet.'}</div>
+                  <div className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{task.description || 'No description yet.'}</div>
                 ) : (
                   <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
                 )}
@@ -478,8 +478,8 @@ export default async function TaskDetailPage({
                   animationDelay: '0.04s',
                 }}
               >
-                <p className="upper" style={{ fontSize: '11px', fontWeight: 600, color: 'var(--peri)' }}>Observer mode</p>
-                <p style={{ fontSize: '12px', color: 'var(--fg-1)', marginTop: '0.5rem' }}>
+                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--peri)' }}>Observer mode</p>
+                <p className="text-xs" style={{ color: 'var(--fg-1)', marginTop: '0.5rem' }}>
                   You can inspect execution state, checkpoints, attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state.
                 </p>
               </div>
@@ -493,11 +493,11 @@ export default async function TaskDetailPage({
                 <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.12s' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                     <div>
-                      <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Task links and dependency graph</p>
-                      <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.5rem' }}>
+                      <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Task links and dependency graph</p>
+                      <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.5rem' }}>
                         Full visibility into blocker, downstream, sequencing, and related-task context for this task.
                       </p>
-                      {blockerState && <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>{blockerState.meta}</p>}
+                      {blockerState && <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>{blockerState.meta}</p>}
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                       {dependencySections.map((section) => (
@@ -522,7 +522,7 @@ export default async function TaskDetailPage({
 
                   {blockerState && (
                     <>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem', fontSize: '11px' }}>
+                      <div className="text-2xs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
                         {[
                           { label: 'Blocked since', value: formatDateTime(blockerState.blockedSince) },
                           { label: 'Unblock owner', value: blockerState.blockerResolutionOwner || 'Unassigned' },
@@ -533,7 +533,7 @@ export default async function TaskDetailPage({
                           { label: 'Workflow state', value: blockerState.blockerResolutionStatus || 'Blocked' },
                         ].map((item) => (
                           <div key={item.label} className="card--inset" style={{ padding: '0.5rem 0.75rem', gridColumn: item.wide ? '1 / -1' : undefined }}>
-                            <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.25rem' }}>{item.label}</p>
+                            <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.25rem' }}>{item.label}</p>
                             <p style={{ color: 'var(--fg-1)', lineHeight: 1.5 }}>{item.value}</p>
                           </div>
                         ))}
@@ -554,7 +554,7 @@ export default async function TaskDetailPage({
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', fontWeight: 500, color: section.config.accentColor }}>{section.config.label}</p>
+                          <p className="text-2xs" style={{ fontWeight: 500, color: section.config.accentColor }}>{section.config.label}</p>
                           <span className={`pill pill--${section.config.pillTone}`} style={{ fontSize: '9px', fontWeight: 600 }}>
                             {section.items.length}
                           </span>
@@ -580,8 +580,8 @@ export default async function TaskDetailPage({
                                 }}
                               >
                                 <span style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-                                <span style={{ fontSize: '12px', color: 'var(--fg-1)', flex: 1 }}>{t.title}</span>
-                                <span className="upper" style={{ fontSize: '9px', fontWeight: 600, color: dotColor }}>{t.status}</span>
+                                <span className="text-xs" style={{ color: 'var(--fg-1)', flex: 1 }}>{t.title}</span>
+                                <span className="upper text-2xs" style={{ fontWeight: 600, color: dotColor }}>{t.status}</span>
                               </Link>
                             );
                           })}
@@ -602,14 +602,14 @@ export default async function TaskDetailPage({
             <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.05s' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Task snapshot</p>
-                  <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Fast ownership and scheduling context while reading the task.</p>
+                  <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Task snapshot</p>
+                  <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Fast ownership and scheduling context while reading the task.</p>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }} className="xl:grid-cols-1">
                 {detailItems.map((item) => (
                   <div key={`rail-${item.label}`} className="card--inset" style={{ padding: '0.75rem' }}>
-                    <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
+                    <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
                     <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
                   </div>
                 ))}
@@ -620,19 +620,19 @@ export default async function TaskDetailPage({
             <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.06s' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Labels</p>
-                  <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Compact taxonomy for routing and filtering.</p>
+                  <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Labels</p>
+                  <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Compact taxonomy for routing and filtering.</p>
                 </div>
               </div>
               {hasReadOnlyObserverAccess ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                   {(task.labels || []).length
                     ? (task.labels || []).map((label: string) => (
-                        <span key={label} className="pill" style={{ fontSize: '11px' }}>
+                        <span key={label} className="pill text-2xs">
                           {label}
                         </span>
                       ))
-                    : <span style={{ fontSize: '12px', color: 'var(--fg-3)', fontStyle: 'italic' }}>No labels</span>}
+                    : <span className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>No labels</span>}
                 </div>
               ) : (
                 <LabelsEditor labels={task.labels || []} projectId={projectId} taskId={tid} />
@@ -643,13 +643,13 @@ export default async function TaskDetailPage({
             <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.08s' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Attachments</p>
-                  <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.5rem' }}>Task artifacts stay handy in the supporting rail.</p>
+                  <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Attachments</p>
+                  <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.5rem' }}>Task artifacts stay handy in the supporting rail.</p>
                 </div>
               </div>
               {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
               {hasReadOnlyObserverAccess && (
-                <p style={{ fontSize: '11px', color: 'var(--fg-3)' }}>Observers can inspect attachments but cannot upload new artifacts.</p>
+                <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>Observers can inspect attachments but cannot upload new artifacts.</p>
               )}
               <div style={{ marginTop: '1rem' }}>
                 <AttachmentList attachments={attachments} />
@@ -659,7 +659,7 @@ export default async function TaskDetailPage({
             {/* Linked Contracts */}
             {visibleContracts.length > 0 && (
               <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.1s' }}>
-                <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Linked Contracts</p>
+                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Linked Contracts</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                   {visibleContracts.map((lc) => {
                     const c = lc.contract;
@@ -683,8 +683,8 @@ export default async function TaskDetailPage({
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                           <path d="M14 2v6h6" />
                         </svg>
-                        <span style={{ fontSize: '12px', color: 'var(--fg-1)', flex: 1 }}>{c.title}</span>
-                        <span className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>{c.status}</span>
+                        <span className="text-xs" style={{ color: 'var(--fg-1)', flex: 1 }}>{c.title}</span>
+                        <span className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>{c.status}</span>
                       </Link>
                     );
                   })}
@@ -694,25 +694,25 @@ export default async function TaskDetailPage({
 
             {/* Timeline */}
             <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.12s' }}>
-              <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Timeline</p>
+              <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Timeline</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }} className="xl:grid-cols-1">
                 {secondaryDetailItems.map((item) => (
                   <div key={`secondary-${item.label}`} className="card--inset" style={{ padding: '0.75rem' }}>
-                    <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
+                    <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
                     <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
               <div className="card--inset" style={{ padding: '0.75rem' }}>
-                <p className="upper" style={{ fontSize: '10px', color: 'var(--fg-3)', marginBottom: '0.75rem' }}>Activity feed</p>
+                <p className="upper text-2xs" style={{ color: 'var(--fg-3)', marginBottom: '0.75rem' }}>Activity feed</p>
                 {taskActivity.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: 'var(--fg-3)' }}>No activity events captured yet.</p>
+                  <p className="text-xs" style={{ color: 'var(--fg-3)' }}>No activity events captured yet.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {taskActivity.map((event) => (
                       <div key={event.id} style={{ borderLeft: '1px solid var(--peri)', paddingLeft: '0.75rem' }}>
-                        <p style={{ fontSize: '12px', color: 'var(--fg-1)' }}>{event.summary}</p>
-                        <p className="upper" style={{ marginTop: '0.25rem', fontSize: '10px', color: 'var(--fg-3)' }}>
+                        <p className="text-xs" style={{ color: 'var(--fg-1)' }}>{event.summary}</p>
+                        <p className="upper text-2xs" style={{ marginTop: '0.25rem', color: 'var(--fg-3)' }}>
                           {event.actor_agent?.display_name || event.actor_agent?.name || event.actor_user?.display_name || 'System'} · {formatDateTime(event.created_at)}
                         </p>
                       </div>
@@ -725,8 +725,8 @@ export default async function TaskDetailPage({
             {/* Task controls */}
             {!hasReadOnlyObserverAccess && (
               <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.14s' }}>
-                <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Task controls</p>
-                <p style={{ fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1rem' }}>Destructive actions stay tucked into the rail to keep the main flow focused.</p>
+                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Task controls</p>
+                <p className="text-xs" style={{ color: 'var(--fg-3)', marginBottom: '1rem' }}>Destructive actions stay tucked into the rail to keep the main flow focused.</p>
                 <DeleteTaskButton projectId={projectId} taskId={tid} />
               </div>
             )}

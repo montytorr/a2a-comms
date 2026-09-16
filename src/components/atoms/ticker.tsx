@@ -54,7 +54,7 @@ export const Ticker = ({ items, paused = false }: TickerProps) => {
         height: '100%',
       }}>
         {list.map((it, i) => (
-          <span key={i} className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+          <span key={i} className="mono text-2xs" style={{ color: 'var(--fg-2)', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
             <span className={`dot dot--${it.tone}`} />
             <span style={{ color: 'var(--fg-3)' }}>{it.actor}</span>
             <span style={{ color: 'var(--fg-1)' }}>{it.type}</span>

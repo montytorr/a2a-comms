@@ -135,13 +135,13 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
             onChange={e => { setQ(e.target.value); setActiveIdx(0); }}
             onKeyDown={handleKeyDown}
             placeholder="Search or jump to…"
-            style={{
+            className="text-sm" style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
               outline: 'none',
               color: 'var(--fg-0)',
-              fontSize: 14,
+              
               fontFamily: 'var(--sans)',
             }}
           />
@@ -169,13 +169,13 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
               onMouseEnter={() => setActiveIdx(idx)}
             >
               <span style={{ color: 'var(--fg-3)' }}>{item.icon}</span>
-              <span style={{ flex: 1, fontSize: 13 }}>{item.label}</span>
-              <span className="upper" style={{ fontSize: 9 }}>{item.kind}</span>
+              <span className="text-sm" style={{ flex: 1 }}>{item.label}</span>
+              <span className="upper text-2xs">{item.kind}</span>
               <ArrowRight size={11} style={{ color: 'var(--fg-3)' }} />
             </button>
           ))}
           {filtered.length === 0 && (
-            <div style={{ padding: '20px 10px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+            <div className="text-sm" style={{ padding: '20px 10px', textAlign: 'center', color: 'var(--fg-3)' }}>
               No results for &ldquo;{q}&rdquo;
             </div>
           )}

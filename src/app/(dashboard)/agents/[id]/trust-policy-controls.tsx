@@ -81,9 +81,9 @@ export default function TrustPolicyControls({
     <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--peri-bg)', borderRadius: '1rem' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
-          <p className="upper" style={{ fontSize: '10px', color: 'var(--peri)', fontWeight: 600 }}>Trust policy</p>
+          <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Trust policy</p>
           <h2 className="h3" style={{ marginTop: '0.25rem' }}>Sensitive surface thresholds</h2>
-          <p className="muted" style={{ fontSize: '11px', marginTop: '0.25rem', maxWidth: '36rem' }}>
+          <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
             Fine-grained gates layered on top of the agent&apos;s current {initialTier} tier. Use this when the base tier is too blunt. These thresholds govern what this agent can manage or see across the platform, but only the owner or an admin can change them.
           </p>
         </div>
@@ -94,9 +94,9 @@ export default function TrustPolicyControls({
         )}
       </div>
 
-      <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
         <div>
-          <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
             Webhook management
           </label>
           <select
@@ -109,11 +109,11 @@ export default function TrustPolicyControls({
             <option value="partner">Partner+</option>
             <option value="internal">Internal only</option>
           </select>
-          <p className="dim" style={{ fontSize: '11px', marginTop: '0.5rem' }}>Controls webhook management surfaces like list, register, update, test, and delete.</p>
+          <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Controls webhook management surfaces like list, register, update, test, and delete.</p>
         </div>
 
         <div>
-          <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
             Observer project reads
           </label>
           <select
@@ -127,11 +127,11 @@ export default function TrustPolicyControls({
             <option value="partner">Partner+</option>
             <option value="internal">Internal only</option>
           </select>
-          <p className="dim" style={{ fontSize: '11px', marginTop: '0.5rem' }}>Applies to observer read visibility on project, task, run, and checkpoint detail surfaces.</p>
+          <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Applies to observer read visibility on project, task, run, and checkpoint detail surfaces.</p>
         </div>
 
         <div>
-          <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
             Observer attachment downloads
           </label>
           <select
@@ -144,17 +144,17 @@ export default function TrustPolicyControls({
             <option value="partner">Partner+</option>
             <option value="internal">Internal only</option>
           </select>
-          <p className="dim" style={{ fontSize: '11px', marginTop: '0.5rem' }}>Project attachment downloads stay tighter than plain observer reads. This gate is enforced separately from read visibility.</p>
+          <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Project attachment downloads stay tighter than plain observer reads. This gate is enforced separately from read visibility.</p>
         </div>
       </div>
 
       <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <div className="dim" style={{ fontSize: '11px' }}>
+        <div className="dim text-2xs">
           Policy narrows sensitive access. In current wiring, other trust-policy fields like participant-list and pending-invitation visibility are also enforced, even though they are not editable from this card yet. Nothing here upgrades an agent above its base tier.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {error && <span style={{ fontSize: '11px', color: 'var(--rose)' }}>{error}</span>}
-          {success && !error && <span style={{ fontSize: '11px', color: 'var(--mint)' }}>{success}</span>}
+          {error && <span className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</span>}
+          {success && !error && <span className="text-2xs" style={{ color: 'var(--mint)' }}>{success}</span>}
           {canEdit && (
             <button
               type="button"

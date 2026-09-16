@@ -122,8 +122,8 @@ const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileP
       {/* Label + icon row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span
-          className="upper"
-          style={{ fontSize: 10, letterSpacing: '0.12em' }}
+          className="upper text-2xs"
+          style={{ letterSpacing: '0.12em' }}
         >
           {label}
         </span>
@@ -146,9 +146,9 @@ const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileP
 
       {/* Value */}
       <div
-        className="num"
+        className="num text-2xl"
         style={{
-          fontSize: 30,
+          
           fontFamily: 'var(--sans)',
           fontWeight: 700,
           color: 'var(--fg-0)',
@@ -160,7 +160,7 @@ const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileP
       </div>
 
       {/* Hint */}
-      <div className="dim" style={{ fontSize: 11 }}>{hint}</div>
+      <div className="dim text-2xs">{hint}</div>
 
     </div>
   </Link>
@@ -188,7 +188,7 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="upper" style={{ fontSize: 10, letterSpacing: '0.12em' }}>System Status</span>
+          <span className="upper text-2xs" style={{ letterSpacing: '0.12em' }}>System Status</span>
           <span
             style={{
               width: 28,
@@ -229,8 +229,8 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
             />
           </span>
           <span
-            style={{
-              fontSize: 18,
+            className="text-lg" style={{
+              
               fontWeight: 700,
               color,
               fontFamily: 'var(--sans)',
@@ -241,7 +241,7 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
           </span>
         </div>
 
-        <div className="dim" style={{ fontSize: 11 }}>{hint}</div>
+        <div className="dim text-2xs">{hint}</div>
       </div>
     </Link>
   );
@@ -272,16 +272,16 @@ const ActivityRow = ({ entry }: { entry: AuditEntry }) => {
 
       {/* Actor (mono) */}
       <span
-        className="mono"
-        style={{ fontSize: 12, color: 'var(--fg-1)', flexShrink: 0, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        className="mono text-xs"
+        style={{ color: 'var(--fg-1)', flexShrink: 0, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
         {entry.actor}
       </span>
 
       {/* Action type (mono) */}
       <span
-        className="mono"
-        style={{ fontSize: 11, color: 'var(--fg-3)', flexShrink: 0, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        className="mono text-2xs"
+        style={{ color: 'var(--fg-3)', flexShrink: 0, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
         {entry.action}
       </span>
@@ -301,8 +301,8 @@ const ActivityRow = ({ entry }: { entry: AuditEntry }) => {
 
       {/* Timestamp */}
       <span
-        className="mono dim"
-        style={{ fontSize: 11, flexShrink: 0, whiteSpace: 'nowrap' }}
+        className="mono dim text-2xs"
+        style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
       >
         {timeAgo(entry.created_at)}
       </span>
@@ -407,7 +407,7 @@ export const DashboardClient = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
           gap: 12,
           marginBottom: 20,
         }}
@@ -429,7 +429,7 @@ export const DashboardClient = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1.6fr 1fr',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
           gap: 12,
           alignItems: 'start',
         }}
@@ -447,7 +447,7 @@ export const DashboardClient = ({
           >
             <div className="col gap-1">
               <span className="h3">Recent Activity</span>
-              <span className="dim" style={{ fontSize: 11 }}>Latest system events</span>
+              <span className="dim text-2xs">Latest system events</span>
             </div>
             <Link href="/audit" className="btn btn--ghost btn--sm">
               View all →
@@ -468,8 +468,8 @@ export const DashboardClient = ({
                 }}
               >
                 <Clock size={20} style={{ color: 'var(--fg-4)' }} />
-                <span className="muted" style={{ fontSize: 13 }}>No activity yet</span>
-                <span className="dim" style={{ fontSize: 11 }}>Events will appear here as they happen</span>
+                <span className="muted text-sm">No activity yet</span>
+                <span className="dim text-2xs">Events will appear here as they happen</span>
               </div>
             ) : (
               recentAudit.map(entry => <ActivityRow key={entry.id} entry={entry} />)
@@ -482,7 +482,7 @@ export const DashboardClient = ({
           <div className="card" style={{ padding: 16 }}>
             <div className="col gap-2">
               <span className="h3">Live Data Only</span>
-              <span className="dim" style={{ fontSize: 12 }}>
+              <span className="dim text-xs">
                 This dashboard now shows only persisted contracts, messages, audit rows, projects, tasks, agents, and webhook delivery timestamps.
               </span>
             </div>
@@ -490,11 +490,11 @@ export const DashboardClient = ({
 
           <div className="card" style={{ padding: 16 }}>
             <div className="col gap-1">
-              <span className="upper" style={{ fontSize: 10 }}>Latest Webhook Delivery</span>
+              <span className="upper text-2xs">Latest Webhook Delivery</span>
               <div
-                className="num"
+                className="num text-xl"
                 style={{
-                  fontSize: 26,
+                  
                   fontFamily: 'var(--sans)',
                   fontWeight: 700,
                   color: 'var(--fg-0)',
@@ -503,7 +503,7 @@ export const DashboardClient = ({
               >
                 {latestWebhookDeliveryAt ? timeAgo(latestWebhookDeliveryAt) : '—'}
               </div>
-              <span className="dim" style={{ fontSize: 11 }}>
+              <span className="dim text-2xs">
                 {latestWebhookDeliveryAt ? latestWebhookDeliveryAt : 'No webhook delivery timestamp recorded yet'}
               </span>
             </div>

@@ -53,7 +53,7 @@ export default function CloseContractButton({ contractId }: { contractId: string
                 <AlertTriangle size={24} style={{ color: 'var(--rose)' }} />
               </div>
               <div className="h2" style={{ textAlign: 'center', marginBottom: 8 }}>Close Contract</div>
-              <div className="muted" style={{ fontSize: 13, textAlign: 'center', lineHeight: 1.5 }}>
+              <div className="muted text-sm" style={{ textAlign: 'center', lineHeight: 1.5 }}>
                 This will permanently close the contract. No more messages can be exchanged. This action cannot be undone.
               </div>
             </div>

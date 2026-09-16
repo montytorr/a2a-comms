@@ -312,7 +312,7 @@ export default async function ProjectDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div className="mx-auto w-full max-w-[2240px] p-4 sm:p-6 lg:p-10">
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Project Header */}
         <ProjectHeader
           project={{ ...project, privacy_metadata: projectPrivacy }}
@@ -354,13 +354,13 @@ export default async function ProjectDetailPage({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem' }}>
               <div>
-                <p className="upper" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--rose)' }}>Blocker radar</p>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--fg-0)', marginTop: '0.25rem' }}>Blocked tasks with concrete unblock plans</h2>
-                <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.25rem' }}>Pulled from task dependencies so blocker owner, next action, and timing stay visible at project level before work fossilizes.</p>
+                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--rose)' }}>Blocker radar</p>
+                <h2 className="text-lg" style={{ fontWeight: 600, color: 'var(--fg-0)', marginTop: '0.25rem' }}>Blocked tasks with concrete unblock plans</h2>
+                <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.25rem' }}>Pulled from task dependencies so blocker owner, next action, and timing stay visible at project level before work fossilizes.</p>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--fg-0)' }}>{blockedTaskCards.length}</p>
-                <p style={{ fontSize: '11px', color: 'var(--fg-3)' }}>active blockers</p>
+                <p className="text-xl" style={{ fontWeight: 700, color: 'var(--fg-0)' }}>{blockedTaskCards.length}</p>
+                <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>active blockers</p>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -406,28 +406,28 @@ export default async function ProjectDetailPage({
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.375rem' }}>
                           <span
-                            className="pill pill--rose"
-                            style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}
+                            className="pill pill--rose text-2xs"
+                            style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}
                           >
                             {state.tone === 'stale' ? 'stale blocker' : state.tone === 'follow-through' ? 'follow-through due' : 'blocked'}
                           </span>
-                          <span style={{ fontSize: '11px', color: 'var(--fg-3)' }}>{state.meta}</span>
+                          <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{state.meta}</span>
                         </div>
-                        <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--fg-0)' }}>{task.title}</p>
-                        <p style={{ fontSize: '12px', color: 'var(--fg-2)', marginTop: '0.25rem' }}>Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}</p>
-                        <div style={{ marginTop: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{task.title}</p>
+                        <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.25rem' }}>Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}</p>
+                        <div style={{ marginTop: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.5rem' }}>
                           <div className="card--inset" style={{ padding: '0.5rem 0.625rem' }}>
-                            <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Owner</p>
-                            <p style={{ marginTop: '0.25rem', fontSize: '12px', color: 'var(--fg-1)' }}>{state.blockerResolutionOwner || 'Unassigned'}</p>
+                            <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Owner</p>
+                            <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--fg-1)' }}>{state.blockerResolutionOwner || 'Unassigned'}</p>
                           </div>
                           <div className="card--inset" style={{ padding: '0.5rem 0.625rem' }}>
-                            <p className="upper" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)' }}>Expected follow-up</p>
-                            <p style={{ marginTop: '0.25rem', fontSize: '12px', color: 'var(--fg-1)' }}>{state.blockerResolutionDueAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(state.blockerResolutionDueAt)) + ' UTC' : 'Not scheduled'}</p>
+                            <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Expected follow-up</p>
+                            <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--fg-1)' }}>{state.blockerResolutionDueAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(state.blockerResolutionDueAt)) + ' UTC' : 'Not scheduled'}</p>
                           </div>
                         </div>
                         <p style={{ marginTop: '0.5rem', fontSize: '12px', color: 'var(--fg-1)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>{state.blockerResolutionAction || 'No unblock plan logged yet'}</p>
                         <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="pill" style={{ fontSize: '10px', fontWeight: 500 }}>{state.statusLabel}</span>
+                          <span className="pill text-2xs" style={{ fontWeight: 500 }}>{state.statusLabel}</span>
                           {state.dueStateLabel && (
                             <span
                               className={`pill pill--${state.dueState === 'overdue' ? 'rose' : state.dueState === 'due-soon' ? 'amber' : 'mint'}`}
@@ -437,11 +437,11 @@ export default async function ProjectDetailPage({
                             </span>
                           )}
                           {state.escalationLabel && (
-                            <span className="pill pill--rose" style={{ fontSize: '10px', fontWeight: 500 }}>{state.escalationLabel}</span>
+                            <span className="pill pill--rose text-2xs" style={{ fontWeight: 500 }}>{state.escalationLabel}</span>
                           )}
                         </div>
                       </div>
-                      <span style={{ fontSize: '11px', color: 'var(--peri)', flexShrink: 0 }}>Open →</span>
+                      <span className="text-2xs" style={{ color: 'var(--peri)', flexShrink: 0 }}>Open →</span>
                     </div>
                   </Link>
                 );

@@ -71,9 +71,9 @@ export default async function AgentDetailPage({
 
   return (
     <AutoRefresh intervalMs={30000}>
-    <div style={{ padding: '1.5rem' }}>
+    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Back link */}
-      <Link href="/agents" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}>
+      <Link href="/agents" className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
@@ -89,8 +89,8 @@ export default async function AgentDetailPage({
             <div style={{ flex: 1, minWidth: 0 }}>
               <h1 className="h2" style={{ marginBottom: '0.25rem' }}>{agentData.display_name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <code className="mono" style={{ fontSize: '11px', color: 'var(--fg-3)', background: 'var(--bg-1)', padding: '0.125rem 0.5rem', borderRadius: '0.375rem', border: '1px solid var(--line-1)' }}>{agentData.name}</code>
-                <span className="dim" style={{ fontSize: '12px' }}>{agentData.owner}</span>
+                <code className="mono text-2xs" style={{ color: 'var(--fg-3)', background: 'var(--bg-1)', padding: '0.125rem 0.5rem', borderRadius: '0.375rem', border: '1px solid var(--line-1)' }}>{agentData.name}</code>
+                <span className="dim text-xs">{agentData.owner}</span>
                 <span className={`pill pill--${trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'ghost'}`}>
                   <span className={`dot dot--${trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'ghost'}`} />
                   {TRUST_TIER_LABELS[trustTier]}
@@ -102,9 +102,9 @@ export default async function AgentDetailPage({
                 </div>
               )}
               <div className="card--inset" style={{ marginTop: '0.75rem', padding: '0.75rem 1rem' }}>
-                <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Trust posture</p>
-                <p style={{ fontSize: '12px', color: 'var(--fg-1)' }}>{TRUST_TIER_DESCRIPTIONS[trustTier]}</p>
-                {agentData.trust_notes && <p className="dim" style={{ fontSize: '11px', marginTop: '0.5rem' }}>{agentData.trust_notes}</p>}
+                <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Trust posture</p>
+                <p className="text-xs" style={{ color: 'var(--fg-1)' }}>{TRUST_TIER_DESCRIPTIONS[trustTier]}</p>
+                {agentData.trust_notes && <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>{agentData.trust_notes}</p>}
               </div>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default async function AgentDetailPage({
           {/* Capabilities */}
           {agentData.capabilities && agentData.capabilities.length > 0 && (
             <div style={{ marginBottom: '1.25rem' }}>
-              <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.5rem' }}>Capabilities</p>
+              <p className="upper dim text-2xs" style={{ marginBottom: '0.5rem' }}>Capabilities</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                 {agentData.capabilities.map((cap) => (
                   <span key={cap} className="pill pill--peri">{cap}</span>
@@ -124,7 +124,7 @@ export default async function AgentDetailPage({
           {/* Protocols */}
           {agentData.protocols && agentData.protocols.length > 0 && (
             <div style={{ marginBottom: '1.25rem' }}>
-              <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.5rem' }}>Protocols</p>
+              <p className="upper dim text-2xs" style={{ marginBottom: '0.5rem' }}>Protocols</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                 {agentData.protocols.map((proto) => (
                   <span key={proto} className="pill pill--ghost mono">{proto}</span>
@@ -134,28 +134,28 @@ export default async function AgentDetailPage({
           )}
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--line-1)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--line-1)' }}>
             <div>
-              <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Active Keys</p>
-              <span className="num" style={{ fontSize: '14px', color: 'var(--mint)' }}>
+              <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Active Keys</p>
+              <span className="num text-sm" style={{ color: 'var(--mint)' }}>
                 {serviceKeys.filter((k) => k.is_active).length}
               </span>
             </div>
             <div>
-              <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Max Active Contracts</p>
-              <span className="mono num" style={{ fontSize: '14px', color: 'var(--fg-2)' }}>
+              <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Max Active Contracts</p>
+              <span className="mono num text-sm" style={{ color: 'var(--fg-2)' }}>
                 {agentData.max_concurrent_contracts ?? '∞'}
               </span>
             </div>
             <div>
-              <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Registered</p>
-              <span className="mono num" style={{ fontSize: '14px', color: 'var(--fg-2)' }}>
+              <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Registered</p>
+              <span className="mono num text-sm" style={{ color: 'var(--fg-2)' }}>
                 {formatDate(agentData.created_at)}
               </span>
             </div>
             <div>
-              <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Updated</p>
-              <span className="mono num" style={{ fontSize: '14px', color: 'var(--fg-2)' }}>
+              <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Updated</p>
+              <span className="mono num text-sm" style={{ color: 'var(--fg-2)' }}>
                 {formatDate(agentData.updated_at)}
               </span>
             </div>
@@ -165,8 +165,8 @@ export default async function AgentDetailPage({
 
       <div style={{ marginBottom: '2rem', display: 'grid', gap: '1.5rem' }}>
         <div className="card--inset" style={{ padding: '1.25rem', borderRadius: '1rem' }}>
-          <p className="upper muted" style={{ fontSize: '10px' }}>How this page works</p>
-          <div style={{ marginTop: '0.75rem', display: 'grid', gap: '0.75rem', fontSize: '12px', color: 'var(--fg-2)' }}>
+          <p className="upper muted text-2xs">How this page works</p>
+          <div className="text-xs" style={{ marginTop: '0.75rem', display: 'grid', gap: '0.75rem', color: 'var(--fg-2)' }}>
             <div>
               <p style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Trust tier is site-wide for this agent</p>
               <p style={{ marginTop: '0.25rem' }}>It sets the default collaboration posture for memberships, observers, handoffs, invitations, and similar platform decisions.</p>
@@ -184,9 +184,9 @@ export default async function AgentDetailPage({
         <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--peri-bg)', borderRadius: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div>
-              <p className="upper" style={{ fontSize: '10px', color: 'var(--peri)', fontWeight: 600 }}>Exposed privacy defaults</p>
+              <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Exposed privacy defaults</p>
               <h2 className="h3" style={{ marginTop: '0.25rem' }}>Current operator-facing privacy posture</h2>
-              <p className="muted" style={{ fontSize: '11px', marginTop: '0.25rem', maxWidth: '48rem' }}>This summary makes the active privacy metadata visible before anyone edits it, so operators can quickly see handling, retention, reuse, and export expectations from the main agent detail flow.</p>
+              <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '48rem' }}>This summary makes the active privacy metadata visible before anyone edits it, so operators can quickly see handling, retention, reuse, and export expectations from the main agent detail flow.</p>
             </div>
             {!canEditTrust && <span className="pill pill--ghost">View only</span>}
           </div>
@@ -199,9 +199,9 @@ export default async function AgentDetailPage({
               { label: 'Operator exports', value: privacyMetadata.allow_operator_exports ? 'Allowed' : 'Restricted', desc: 'Whether exports should be treated as permitted by default.', tone: privacyMetadata.allow_operator_exports ? 'mint' : 'rose' },
             ].map(({ label, value, desc, tone }) => (
               <div key={label} className="card--inset" style={{ padding: '0.875rem 1rem' }}>
-                <p className="upper dim" style={{ fontSize: '10px' }}>{label}</p>
-                <p style={{ marginTop: '0.5rem', fontSize: '14px', fontWeight: 600, color: tone ? `var(--${tone})` : 'var(--fg-0)', textTransform: 'capitalize' }}>{value}</p>
-                <p className="dim" style={{ marginTop: '0.25rem', fontSize: '11px' }}>{desc}</p>
+                <p className="upper dim text-2xs">{label}</p>
+                <p className="text-sm" style={{ marginTop: '0.5rem', fontWeight: 600, color: tone ? `var(--${tone})` : 'var(--fg-0)', textTransform: 'capitalize' }}>{value}</p>
+                <p className="dim text-2xs" style={{ marginTop: '0.25rem' }}>{desc}</p>
               </div>
             ))}
           </div>
@@ -231,7 +231,7 @@ export default async function AgentDetailPage({
         <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--line-1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2 className="h3">Service Keys</h2>
-            <p className="dim" style={{ fontSize: '11px', marginTop: '0.125rem' }}>{serviceKeys.length} key{serviceKeys.length !== 1 ? 's' : ''}</p>
+            <p className="dim text-2xs" style={{ marginTop: '0.125rem' }}>{serviceKeys.length} key{serviceKeys.length !== 1 ? 's' : ''}</p>
           </div>
           <KeyActions agentId={agentData.id} />
         </div>
@@ -239,8 +239,8 @@ export default async function AgentDetailPage({
         <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {serviceKeys.length === 0 ? (
             <div style={{ padding: '3rem 0', textAlign: 'center' }}>
-              <p className="muted" style={{ fontSize: '14px', fontWeight: 500 }}>No service keys</p>
-              <p className="dim" style={{ fontSize: '11px', marginTop: '0.25rem' }}>Use &quot;Rotate Key&quot; to generate a new key</p>
+              <p className="muted text-sm" style={{ fontWeight: 500 }}>No service keys</p>
+              <p className="dim text-2xs" style={{ marginTop: '0.25rem' }}>Use &quot;Rotate Key&quot; to generate a new key</p>
             </div>
           ) : (
             serviceKeys.map((key) => {
@@ -263,7 +263,7 @@ export default async function AgentDetailPage({
                     <span
                       className={`dot dot--${!key.is_active || isExpired ? 'ghost' : isExpiring ? 'amber' : 'mint'}`}
                     />
-                    <code className="mono" style={{ fontSize: '13px', color: 'var(--fg-1)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{key.key_id}</code>
+                    <code className="mono text-sm" style={{ color: 'var(--fg-1)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{key.key_id}</code>
                     <span
                       className={`pill pill--${!key.is_active || isExpired ? 'ghost' : isExpiring ? 'amber' : 'mint'}`}
                     >
@@ -272,18 +272,18 @@ export default async function AgentDetailPage({
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '0.75rem', marginLeft: '1.25rem', flexWrap: 'wrap' }}>
                     {key.label && (
-                      <span className="dim" style={{ fontSize: '10px' }}>{key.label}</span>
+                      <span className="dim text-2xs">{key.label}</span>
                     )}
-                    <span className="mono dim" style={{ fontSize: '10px', marginLeft: 'auto' }}>
+                    <span className="mono dim text-2xs" style={{ marginLeft: 'auto' }}>
                       Created {formatDate(key.created_at)}
                     </span>
                     {key.rotated_at && (
-                      <span className="mono" style={{ fontSize: '10px', color: 'var(--amber)' }}>
+                      <span className="mono text-2xs" style={{ color: 'var(--amber)' }}>
                         Rotated {formatDate(key.rotated_at)}
                       </span>
                     )}
                     {key.expires_at && (
-                      <span className="mono" style={{ fontSize: '10px', color: isExpired ? 'var(--fg-3)' : 'var(--amber)' }}>
+                      <span className="mono text-2xs" style={{ color: isExpired ? 'var(--fg-3)' : 'var(--amber)' }}>
                         {isExpired ? 'Expired' : 'Expires'} {formatDateTime(key.expires_at)}
                       </span>
                     )}

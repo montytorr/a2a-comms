@@ -96,14 +96,14 @@ export default async function MessagesPage({
   const { data: messages, error: messagesError } = await query;
   if (messagesError) {
     return (
-      <div style={{ padding: '28px 32px 60px', maxWidth: '1100px' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         <div style={{ marginBottom: '28px' }}>
           <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
           <h1 className="h1">Messages</h1>
         </div>
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load messages</div>
-          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>A database error occurred. Please try again later.</div>
+          <div className="dim text-xs" style={{ marginTop: 6 }}>A database error occurred. Please try again later.</div>
         </div>
       </div>
     );
@@ -131,14 +131,14 @@ export default async function MessagesPage({
 
   return (
     <AutoRefresh intervalMs={10000}>
-      <div style={{ padding: '28px 32px 60px', maxWidth: '1100px' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div style={{ marginBottom: '28px' }}>
           <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <h1 className="h1">Messages</h1>
-              <p className="dim" style={{ fontSize: '13px', marginTop: '4px' }}>
+              <p className="dim text-sm" style={{ marginTop: '4px' }}>
                 All messages across contracts
                 {allMessages.length > 0 && (
                   <span className="mono num" style={{ marginLeft: '6px', color: 'var(--fg-3)' }}>· {allMessages.length} shown</span>
@@ -170,8 +170,8 @@ export default async function MessagesPage({
               >
                 <MessageSquare size={20} style={{ color: 'var(--fg-4)' }} />
               </div>
-              <p className="muted" style={{ fontSize: '13px', fontWeight: 500 }}>No messages found</p>
-              <p className="dim" style={{ fontSize: '11px', marginTop: '4px' }}>Try adjusting your filters</p>
+              <p className="muted text-sm" style={{ fontWeight: 500 }}>No messages found</p>
+              <p className="dim text-2xs" style={{ marginTop: '4px' }}>Try adjusting your filters</p>
             </div>
           ) : (
             <div>
@@ -200,12 +200,12 @@ export default async function MessagesPage({
                     {/* Content */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="row gap-2" style={{ marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                        <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
                         <span className={`pill ${typePillTone[msg.message_type] || 'pill--ghost'}`}>
                           {msg.message_type}
                         </span>
                         {contract && (
-                          <span className="dim" style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span className="dim text-2xs" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             in {contract.title}
                           </span>
                         )}
@@ -215,7 +215,7 @@ export default async function MessagesPage({
 
                     {/* Time + arrow */}
                     <div className="row gap-2" style={{ flexShrink: 0, paddingTop: '2px', alignItems: 'center' }}>
-                      <span className="mono num dim" style={{ fontSize: '11px' }}>
+                      <span className="mono num dim text-2xs">
                         {timeAgo(msg.created_at)}
                       </span>
                       <ChevronRight size={14} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />

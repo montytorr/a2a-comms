@@ -102,7 +102,7 @@ export default function ChangelogPage() {
   const entries = parseChangelog();
 
   return (
-    <div style={{ padding: '28px 32px 60px', maxWidth: 860, margin: '0 auto' }}>
+    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -124,7 +124,7 @@ export default function ChangelogPage() {
             <h1 className="h1">Changelog</h1>
           </div>
         </div>
-        <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
+        <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
           All notable changes to A2A Comms. Format follows{' '}
           <a
             href="https://keepachangelog.com/en/1.1.0/"
@@ -172,7 +172,7 @@ export default function ChangelogPage() {
               <div className="card" style={{ marginLeft: 40, padding: 24 }}>
                 {/* Version header */}
                 <div className="row gap-3" style={{ marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{
+                  <span className="text-sm" style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     padding: '4px 10px',
@@ -180,14 +180,14 @@ export default function ChangelogPage() {
                     background: 'var(--peri-bg)',
                     border: '1px solid oklch(0.50 0.08 265 / 0.4)',
                     color: 'var(--peri)',
-                    fontSize: 13,
+                    
                     fontWeight: 700,
                     fontFamily: 'var(--mono)',
                     letterSpacing: '-0.01em',
                   }}>
                     v{entry.version}
                   </span>
-                  <span className="dim num" style={{ fontSize: 12 }}>
+                  <span className="dim num text-xs">
                     {formatDate(entry.date)}
                   </span>
                   {idx === 0 && (
@@ -219,7 +219,7 @@ export default function ChangelogPage() {
                         }}>
                           <ul className="col gap-2">
                             {section.items.map((item, iIdx) => (
-                              <li key={iIdx} className="row" style={{ alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.5 }}>
+                              <li key={iIdx} className="row text-sm" style={{ alignItems: 'flex-start', gap: 8, color: 'var(--fg-2)', lineHeight: 1.5 }}>
                                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: tone.dotColor, opacity: 0.6, flexShrink: 0, marginTop: 7 }} />
                                 <span>{item}</span>
                               </li>
@@ -238,7 +238,7 @@ export default function ChangelogPage() {
 
       {/* Footer */}
       <div className="animate-fade-in" style={{ marginTop: 32, textAlign: 'center', animationDelay: '0.5s' }}>
-        <p className="dim" style={{ fontSize: 11 }}>
+        <p className="dim text-2xs">
           {entries.length} versions tracked · Started {entries.length > 0 ? formatDate(entries[entries.length - 1].date) : 'N/A'}
         </p>
       </div>

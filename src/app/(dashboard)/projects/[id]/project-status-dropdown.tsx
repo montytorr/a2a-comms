@@ -87,14 +87,14 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
               <button
                 key={status}
                 onClick={() => handleSelect(status)}
-                style={{
+                className="text-2xs" style={{
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
                   padding: '8px 12px',
                   textAlign: 'left',
-                  fontSize: 11,
+                  
                   fontWeight: 600,
                   background: isSelected ? 'var(--bg-2)' : 'transparent',
                   color: isSelected ? 'var(--fg-1)' : 'var(--fg-3)',
@@ -116,7 +116,7 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
                 }}
               >
                 <span className={sOpt.dotClass} />
-                <span className="upper" style={{ fontSize: 10 }}>{status}</span>
+                <span className="upper text-2xs">{status}</span>
                 {isSelected && <Check size={12} style={{ marginLeft: 'auto' }} />}
               </button>
             );

@@ -80,23 +80,23 @@ export default function RegisterWebhookPage() {
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--fg-0)', marginBottom: '0.5rem' }}>Webhook Registered</h2>
-          <p style={{ fontSize: '0.875rem', color: 'var(--fg-3)' }}>Redirecting to webhooks…</p>
+          <h2 className="text-lg" style={{ fontWeight: 700, color: 'var(--fg-0)', marginBottom: '0.5rem' }}>Webhook Registered</h2>
+          <p className="text-sm" style={{ color: 'var(--fg-3)' }}>Redirecting to webhooks…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '42rem' }} className="sm:p-6 lg:p-10">
+    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Back */}
       <a
         href="/webhooks"
-        style={{
+        className="text-xs" style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.375rem',
-          fontSize: '12px',
+          
           color: 'var(--fg-3)',
           textDecoration: 'none',
           marginBottom: '1.5rem',
@@ -110,9 +110,9 @@ export default function RegisterWebhookPage() {
       </a>
 
       <div className="animate-fade-in" style={{ marginBottom: '2rem' }}>
-        <p className="upper" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--peri)', marginBottom: '0.5rem' }}>Register</p>
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>New Webhook</h1>
-        <p style={{ fontSize: '0.875rem', color: 'var(--fg-3)', marginTop: '0.25rem' }}>Register a push notification endpoint for an agent</p>
+        <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--peri)', marginBottom: '0.5rem' }}>Register</p>
+        <h1 className="text-2xl" style={{ fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>New Webhook</h1>
+        <p className="text-sm" style={{ color: 'var(--fg-3)', marginTop: '0.25rem' }}>Register a push notification endpoint for an agent</p>
       </div>
 
       <form
@@ -122,12 +122,12 @@ export default function RegisterWebhookPage() {
       >
         {error && (
           <div
-            style={{
+            className="text-sm" style={{
               borderRadius: '0.75rem',
               background: 'var(--rose-bg)',
               border: '1px solid var(--rose)',
               padding: '0.75rem 1rem',
-              fontSize: '13px',
+              
               color: 'var(--rose)',
             }}
           >
@@ -137,7 +137,7 @@ export default function RegisterWebhookPage() {
 
         {/* Agent */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Agent</label>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Agent</label>
           <select
             value={agentId}
             onChange={(e) => setAgentId(e.target.value)}
@@ -153,7 +153,7 @@ export default function RegisterWebhookPage() {
 
         {/* URL */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Webhook URL</label>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Webhook URL</label>
           <input
             type="url"
             value={url}
@@ -166,7 +166,7 @@ export default function RegisterWebhookPage() {
 
         {/* Secret */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Signing Secret</label>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Signing Secret</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="text"
@@ -179,28 +179,28 @@ export default function RegisterWebhookPage() {
             <button
               type="button"
               onClick={generateSecret}
-              className="btn btn--peri"
-              style={{ padding: '0.75rem 1rem', fontSize: '11px', fontWeight: 600, flexShrink: 0 }}
+              className="btn btn--peri text-2xs"
+              style={{ padding: '0.75rem 1rem', fontWeight: 600, flexShrink: 0 }}
             >
               Generate
             </button>
           </div>
-          <p style={{ fontSize: '10px', color: 'var(--fg-3)', marginTop: '0.5rem' }}>Used to sign webhook payloads (HMAC-SHA256). Store securely — shown here once.</p>
+          <p className="text-2xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Used to sign webhook payloads (HMAC-SHA256). Store securely — shown here once.</p>
         </div>
 
         {/* Events */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.75rem' }}>Events</label>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.75rem' }}>Events</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {ALL_EVENTS.map(ev => (
               <button
                 key={ev}
                 type="button"
                 onClick={() => toggleEvent(ev)}
-                style={{
+                className="text-2xs" style={{
                   padding: '0.375rem 0.75rem',
                   borderRadius: '0.5rem',
-                  fontSize: '11px',
+                  
                   fontWeight: 600,
                   border: `1px solid ${events.includes(ev) ? 'var(--peri)' : 'var(--line-1)'}`,
                   background: events.includes(ev) ? 'var(--peri-bg)' : 'var(--bg-1)',
@@ -219,11 +219,11 @@ export default function RegisterWebhookPage() {
         <button
           type="submit"
           disabled={loading}
-          className="btn btn--peri"
+          className="btn btn--peri text-sm"
           style={{
             width: '100%',
             padding: '0.875rem 1.5rem',
-            fontSize: '13px',
+            
             fontWeight: 700,
             opacity: loading ? 0.5 : 1,
             cursor: loading ? 'not-allowed' : 'pointer',

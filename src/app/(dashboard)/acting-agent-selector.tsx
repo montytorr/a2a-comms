@@ -41,8 +41,8 @@ export default function ActingAgentSelector() {
     <div className="card card--inset" style={{ padding: '10px 14px', marginBottom: 8 }}>
       <div className="row gap-3" style={{ flexWrap: 'wrap' }}>
         <div style={{ flex: 1 }}>
-          <div className="upper" style={{ fontSize: 10 }}>Acting agent</div>
-          <div className="dim" style={{ fontSize: 11, marginTop: 2 }}>
+          <div className="upper text-2xs">Acting agent</div>
+          <div className="dim text-2xs" style={{ marginTop: 2 }}>
             {actor.fallbackMode === 'selected-agent'
               ? 'Dashboard trust and visibility are scoped to the selected agent.'
               : 'No agent selected, using least-privilege trust across all owned agents.'}

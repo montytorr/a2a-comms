@@ -236,13 +236,13 @@ async function renderProjectsPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div style={{ padding: '28px 32px 60px' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
           <div className="col gap-1">
             <div className="upper">Management</div>
             <div className="h1">Projects</div>
-            <div className="muted" style={{ fontSize: 13 }}>
+            <div className="muted text-sm">
               <span className="num">{rows.length}</span> project{rows.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -255,7 +255,7 @@ async function renderProjectsPage({
 
         {/* Invitations */}
         {(pendingMine.length > 0 || historyMine.length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
             <InvitationInbox
               title="My project invitations"
               invitations={pendingMine}
@@ -272,12 +272,12 @@ async function renderProjectsPage({
         <ProjectFilters current={statusFilter} />
 
         {/* Project cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginTop: 16 }}>
           {rows.length === 0 ? (
             <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}>
               <FolderKanban size={32} style={{ color: 'var(--fg-3)', margin: '0 auto' }} />
               <div className="h3" style={{ marginTop: 14 }}>No projects found</div>
-              <div className="dim" style={{ fontSize: 13, marginTop: 4 }}>Create a project to start organizing tasks</div>
+              <div className="dim text-sm" style={{ marginTop: 4 }}>Create a project to start organizing tasks</div>
             </div>
           ) : (
             rows.map((project) => {
@@ -321,8 +321,8 @@ async function renderProjectsPage({
                   {/* Title */}
                   <div className="h2" style={{ marginBottom: 4 }}>{project.title}</div>
                   {project.description && (
-                    <div className="dim" style={{
-                      fontSize: 12,
+                    <div className="dim text-xs" style={{
+                      
                       marginBottom: 14,
                       lineHeight: 1.5,
                       display: '-webkit-box',
@@ -337,18 +337,18 @@ async function renderProjectsPage({
                   {/* Tags */}
                   <div className="row gap-1" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
                     {activeSprint && (
-                      <span className="pill pill--ghost" style={{ fontSize: 10 }}>{activeSprint}</span>
+                      <span className="pill pill--ghost text-2xs">{activeSprint}</span>
                     )}
-                    <span className="pill pill--ghost" style={{ fontSize: 10 }}>{privacyMetadata.visibility}</span>
-                    <span className="pill pill--ghost" style={{ fontSize: 10 }}>{privacyMetadata.retention_days}d retention</span>
+                    <span className="pill pill--ghost text-2xs">{privacyMetadata.visibility}</span>
+                    <span className="pill pill--ghost text-2xs">{privacyMetadata.retention_days}d retention</span>
                   </div>
 
                   {/* Progress */}
                   {stats.total > 0 && (
                     <div className="col gap-2" style={{ marginBottom: 14 }}>
                       <div className="row" style={{ justifyContent: 'space-between' }}>
-                        <span className="upper" style={{ fontSize: 10 }}>Progress</span>
-                        <span className="mono num" style={{ fontSize: 11, color: 'var(--fg-1)' }}>
+                        <span className="upper text-2xs">Progress</span>
+                        <span className="mono num text-2xs" style={{ color: 'var(--fg-1)' }}>
                           {stats.done}/{stats.total}
                         </span>
                       </div>
@@ -364,8 +364,8 @@ async function renderProjectsPage({
                   {/* Hidden invitations summary */}
                   {canSeeInvitationSummary && hiddenPendingInvitations > 0 && (
                     <div className="card card--inset" style={{ padding: '8px 12px', marginBottom: 14 }}>
-                      <div className="upper" style={{ fontSize: 9 }}>Restricted invitation summary</div>
-                      <div className="dim" style={{ fontSize: 11, marginTop: 2 }}>
+                      <div className="upper text-2xs">Restricted invitation summary</div>
+                      <div className="dim text-2xs" style={{ marginTop: 2 }}>
                         {hiddenPendingInvitations} pending invitation{hiddenPendingInvitations !== 1 ? 's' : ''} hidden by trust policy
                       </div>
                     </div>
@@ -376,21 +376,21 @@ async function renderProjectsPage({
                     <div className="row gap-3">
                       {access?.canSeeParticipantCounts !== false && (
                         <>
-                          <span className="mono dim" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span className="mono dim text-2xs" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Users size={11} /> {members}
                           </span>
                           {observers > 0 && (
-                            <span className="mono dim" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span className="mono dim text-2xs" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                               <Eye size={11} /> {observers}
                             </span>
                           )}
                         </>
                       )}
-                      <span className="mono dim" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="mono dim text-2xs" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Layers size={11} /> {stats.total} tasks
                       </span>
                     </div>
-                    <span className="mono dim" style={{ fontSize: 11 }}>{formatDate(project.created_at)}</span>
+                    <span className="mono dim text-2xs">{formatDate(project.created_at)}</span>
                   </div>
                 </Link>
               );

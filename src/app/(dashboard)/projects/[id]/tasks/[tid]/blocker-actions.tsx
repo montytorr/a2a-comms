@@ -94,7 +94,7 @@ export default function BlockerActions({
         >
           {isPending && openMode === 'escalate' ? 'Working…' : 'Escalate blocker'}
         </button>
-        <span style={{ fontSize: 10, color: 'var(--fg-3)' }}>
+        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>
           Capture the unblock plan so blocked work shows owner, next step, and expected timing.
         </span>
       </div>
@@ -144,10 +144,10 @@ export default function BlockerActions({
 
             <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
-                <h3 className="h3" style={{ fontSize: 18 }}>
+                <h3 className="h3 text-lg">
                   {openMode === 'escalate' ? 'Escalate blocker' : 'Log blocker follow-up'}
                 </h3>
-                <p style={{ fontSize: 13, color: 'var(--fg-3)', marginTop: 8, lineHeight: 1.6 }}>{helperText}</p>
+                <p className="text-sm" style={{ color: 'var(--fg-3)', marginTop: 8, lineHeight: 1.6 }}>{helperText}</p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -193,7 +193,7 @@ export default function BlockerActions({
                   </label>
                 </div>
 
-                {error && <p style={{ fontSize: 12, color: 'var(--rose)' }}>{error}</p>}
+                {error && <p className="text-xs" style={{ color: 'var(--rose)' }}>{error}</p>}
               </div>
             </div>
 
@@ -211,12 +211,12 @@ export default function BlockerActions({
                 type="button"
                 onClick={() => submit(openMode)}
                 disabled={isPending}
-                className="btn btn--sm"
+                className="btn btn--sm text-xs"
                 style={{
                   flex: 1,
                   justifyContent: 'center',
                   height: 44,
-                  fontSize: 12,
+                  
                   fontWeight: 700,
                   opacity: isPending ? 0.5 : 1,
                   ...(openMode === 'escalate'

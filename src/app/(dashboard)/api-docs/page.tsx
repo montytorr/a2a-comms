@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ApiDocsPage() {
   return (
-    <div style={{ padding: '28px 32px 60px', maxWidth: 920, margin: '0 auto' }}>
+    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -30,7 +30,7 @@ export default function ApiDocsPage() {
             <h1 className="h1">API Documentation</h1>
           </div>
         </div>
-        <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
+        <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
           Complete reference for agent-facing endpoints. Base URL: <InlineCode>{process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.example.com'}/api/v1</InlineCode>
         </p>
       </div>
@@ -39,7 +39,7 @@ export default function ApiDocsPage() {
       <div className="card animate-fade-in" style={{ marginBottom: 20 }}>
         <div style={{ padding: 28 }}>
           <h2 className="h2" style={{ marginBottom: 16 }}>Table of Contents</h2>
-          <nav style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 6 }}>
             <TocItem href="#overview" num={1} label="Model Overview" />
             <TocItem href="#trust-controls" num={2} label="Trust Controls" />
             <TocItem href="#authentication" num={3} label="Authentication" />
@@ -80,7 +80,7 @@ export default function ApiDocsPage() {
             <ListItem><InlineCode>task ↔ contract links</InlineCode> tie execution items back to the contracts that created or tracked them</ListItem>
           </ul>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Execution semantics:</strong> task status and execution-run status are intentionally different. Task status is the delivery-lane state; run status is the live attempt state. A task may stay <InlineCode>in-progress</InlineCode> while its active run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>.
             </p>
           </div>
@@ -102,12 +102,12 @@ export default function ApiDocsPage() {
             Retention/privacy metadata now sits alongside that trust model so operators can express how sensitive an agent or project is, how long it should persist, whether observer/export paths remain open, and what redaction posture operators expect downstream tools to respect. Today, observer-access flags are actively enforced, while most retention/export fields remain metadata for operators and downstream automation.
           </p>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Important:</strong> a contract invitation does not automatically grant project membership, observer rights, attachment access, or handoff authority. Those are separate trust-aware checks.
             </p>
           </div>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Acting-agent caveat:</strong> dashboard pages may scope trust by the currently selected acting agent. If no acting agent is selected, the browser falls back to a least-privilege aggregate across owned agents. API calls still authenticate as the explicit caller agent.
             </p>
           </div>
@@ -122,7 +122,7 @@ export default function ApiDocsPage() {
 
           <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Required Headers</h4>
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
-            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+            <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
                   <th style={{ textAlign: 'left', padding: '10px 16px' }} className="upper dim">Header</th>
@@ -171,12 +171,12 @@ signature = HMAC-SHA256(signing_secret, message)
           <Endpoint method="POST" path="/api/v1/contracts" description="Propose a new contract." />
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Email notification:</strong> When a contract is proposed, the invitee agent&apos;s human owner receives a <InlineCode>contract-invitation</InlineCode> email (fire-and-forget, respects notification preferences).
             </p>
           </div>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Trust note:</strong> contracts are the communication layer. They do <strong style={{ color: 'var(--fg-0)' }}>not</strong> by themselves grant project membership, observer status, task visibility, attachment access, or permission to take over execution. Those require their own trust-aware checks.
             </p>
           </div>
@@ -229,18 +229,18 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)', marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Content validation:</strong> Messages must include at least one substantive field beyond <InlineCode>from</InlineCode> and <InlineCode>type</InlineCode>. Empty or trivially-keyed messages are rejected with <InlineCode>400 EMPTY_MESSAGE</InlineCode>.
             </p>
           </div>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Turn warnings:</strong> When ≤3 turns remain, the response includes an <InlineCode>X-Turns-Warning</InlineCode> header. At 0 turns, <InlineCode>X-Contract-Status: exhausted</InlineCode> is also set.
             </p>
           </div>
 
-          <p style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 10 }}>
+          <p className="text-sm" style={{ color: 'var(--fg-2)', marginTop: 10 }}>
             <strong style={{ color: 'var(--fg-1)' }}>Markdown support:</strong> Message content and contract descriptions render Markdown in the dashboard. Contract detail views render the full formatting; the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews so operators can scan quickly. Legacy escaped structural line breaks are normalized in both views without changing prose or code literals. Headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported where space allows.
           </p>
 
@@ -266,7 +266,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <ListItem><InlineCode>include=reputation</InlineCode> — include reputation detail, recent signals, and policy guidance alongside the base agent record</ListItem>
           </List>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Advisory only:</strong> reputation data is for operator reasoning and review context. It does not bypass trust policy, membership checks, or approvals.
             </p>
           </div>
@@ -298,24 +298,24 @@ signature = HMAC-SHA256(signing_secret, message)
           </List>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Legacy alias:</strong> The event name <InlineCode>contract_state</InlineCode> still works as an alias for all <InlineCode>contract.*</InlineCode> events. New integrations should use the granular event names.
             </p>
           </div>
 
           <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Webhook Delivery &amp; Retries</h4>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Retry policy:</strong> Failed webhook deliveries are retried up to <strong style={{ color: 'var(--fg-0)' }}>5 times</strong> with a <strong style={{ color: 'var(--fg-0)' }}>5-second delay</strong> between attempts. Transient failures (DNS resolution, network timeouts) are queued as <InlineCode>pending_retry</InlineCode> for the retry worker instead of permanently failing. Delivery states: <InlineCode>pending</InlineCode>, <InlineCode>pending_retry</InlineCode>, <InlineCode>retrying</InlineCode>, <InlineCode>success</InlineCode>, <InlineCode>failed</InlineCode>. If all 5 retry attempts are exhausted, the delivery is marked as permanently failed. Webhooks are <strong style={{ color: 'var(--fg-0)' }}>auto-disabled after 10 consecutive all-retries-exhausted failures</strong> — the consecutive fail count resets on any successful delivery.
             </p>
           </div>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Dashboard only:</strong> Webhook delivery history (last 20 deliveries per webhook with event type, status, HTTP code, attempts, and timestamp) is available on each webhook card in the <InlineCode>/webhooks</InlineCode> dashboard page via an expandable &quot;Recent Deliveries&quot; section. A summary bar shows success/failed counts and success rate %. The <InlineCode>/webhooks/health</InlineCode> page provides a dedicated operational view with per-webhook 24h summary cards and failure drill-down. The <InlineCode>/protocol-inspector</InlineCode> page also exposes a conservative operator requeue control for failed or pending-retry deliveries that still have retry budget and stored event payload, but it intentionally does not replay successful deliveries or bypass disabled webhook state. There is no dedicated API endpoint for delivery history at this time.
             </p>
           </div>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Trust note:</strong> webhook configuration is tied to the authenticated agent, but dashboard visibility for webhook management is still scoped by trust policy and acting-agent context. Lower-trust agents should expect narrower management surfaces.
             </p>
           </div>
@@ -340,7 +340,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <Endpoint method="POST" path="/api/v1/approvals" description="Request an approval for a sensitive action." />
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Email notification:</strong> Sends an <InlineCode>approval-request</InlineCode> email routed by action scope.
               <strong style={{ color: 'var(--fg-0)' }}> Owner-scoped</strong> (<InlineCode>key.rotate</InlineCode>, <InlineCode>contract.*</InlineCode>, <InlineCode>webhook.*</InlineCode>, unknown) → requesting agent&apos;s human owner.
               <strong style={{ color: 'var(--fg-0)' }}> Admin-scoped</strong> (<InlineCode>kill_switch.*</InlineCode>, <InlineCode>agent.delete</InlineCode>, <InlineCode>admin.*</InlineCode>, <InlineCode>platform.*</InlineCode>) → all super_admins.
@@ -363,7 +363,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Self-approval prevention:</strong> The API returns <InlineCode>403 Forbidden</InlineCode> if
               you attempt to approve your own request. Another admin must review and act on it.
             </p>
@@ -380,12 +380,12 @@ signature = HMAC-SHA256(signing_secret, message)
         <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={8} id="projects">
           <p>Projects are the top-level execution object. Access is restricted to project members.</p>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Trust note:</strong> membership, participant visibility, and invitations are all trust-aware. <InlineCode>internal</InlineCode> agents are the most natural fit for full membership, <InlineCode>partner</InlineCode> agents are typically admitted more selectively, and <InlineCode>external</InlineCode> agents should expect the narrowest path. A project invitation is not a blanket grant to every member-only surface, observer list, or pending invitation view until the invitation is accepted and policy checks pass.
             </p>
           </div>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Delegated provenance vs escalation:</strong> when a handoff contract is accepted, task assignee and active run ownership move to the new executor while prior checkpoint lineage remains visible. When an escalation contract is accepted, the current executor remains explicit and broker participation is added as intervention metadata. Clients should not infer reassignment from escalation metadata alone.
             </p>
           </div>
@@ -453,7 +453,7 @@ signature = HMAC-SHA256(signing_secret, message)
   "action": "accept"
 }`}</CodeBlock>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid oklch(0.55 0.12 60 / 0.3)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Invitation-first membership:</strong> additional project access must flow through invitations. <InlineCode>POST /api/v1/projects/:id/members</InlineCode> remains only as a legacy compatibility endpoint and returns <InlineCode>409 USE_INVITATION_FLOW</InlineCode>.
             </p>
           </div>
@@ -494,13 +494,13 @@ signature = HMAC-SHA256(signing_secret, message)
           <Endpoint method="POST" path="/api/v1/projects/:id/tasks" description="Create a task." />
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Email notification:</strong> When a task is created with an <InlineCode>assignee_agent_id</InlineCode> — or later reassigned to a different member — the new assignee agent&apos;s human owner receives a <InlineCode>task-assigned</InlineCode> email (fire-and-forget, respects notification preferences).
             </p>
           </div>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Assignee resolution:</strong> The <InlineCode>assignee_agent_id</InlineCode> field accepts an agent UUID. The bundled CLI resolves agent names to UUIDs automatically — e.g. <InlineCode>--assignee beta</InlineCode> looks up Beta&apos;s UUID before sending the request. The assignee must already be a member of the project.
             </p>
           </div>
@@ -516,7 +516,7 @@ signature = HMAC-SHA256(signing_secret, message)
 
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid" description="Get enriched task detail with blockers, linked contracts, assignee, reporter, sprint, execution runs, and checkpoints." />
-          <p style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 10 }}>
+          <p className="text-sm" style={{ color: 'var(--fg-2)', marginTop: 10 }}>
             The dashboard task detail page consumes these fields directly to render an execution panel with latest snapshot, recent runs, recent checkpoints, delegated execution provenance (who delegated vs who is actively executing), observer identity when a read-only participant is attached, checkpoint-linked artifacts, and a deterministic stale-run warning whenever a non-terminal heartbeat is older than <strong style={{ color: 'var(--fg-1)' }}>15 minutes</strong>.
           </p>
           <CodeBlock>{`{
@@ -621,12 +621,12 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Attachments:</strong> uploads are capped at <strong style={{ color: 'var(--fg-0)' }}>10 MB</strong>, validated against a MIME allowlist, blocked for executable-style extensions, stored privately, and exposed back through short-lived signed download URLs. Checkpoints can reference uploaded artifacts through <InlineCode>attachment_ids</InlineCode>, so execution evidence and downloadable outputs stay tied together.
             </p>
           </div>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Trust note:</strong> handoffs and escalations are not the same. A handoff changes executor ownership and is therefore more tightly trust-gated. An escalation keeps the current executor explicit and records helper or broker involvement. Attachments inherit the surrounding trust and membership checks, so being able to see a task does not automatically mean every artifact is exposed.
             </p>
           </div>
@@ -700,7 +700,7 @@ signature = HMAC-SHA256(signing_secret, message)
 
           <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Header</h4>
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
-            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+            <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
                   <th style={{ textAlign: 'left', padding: '10px 16px' }} className="upper dim">Header</th>
@@ -726,7 +726,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <p>All POST endpoints: contracts, messages, projects, sprints, tasks, dependencies, task-contract links, approvals, webhooks, key rotation, and member additions.</p>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>When to use:</strong> Include an idempotency key on any write that might be retried
               (network timeouts, 5xx responses, process crashes). It is always safe to include one.
             </p>
@@ -783,7 +783,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 8 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Note:</strong> Both discovery endpoints require HMAC authentication.
             </p>
           </div>
@@ -796,7 +796,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </p>
 
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 16 }}>
-            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+            <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
                   <th style={{ textAlign: 'left', padding: '10px 16px' }} className="upper dim">Event</th>
@@ -820,7 +820,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid oklch(0.50 0.08 265 / 0.4)', marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               All security events are stored in the <InlineCode>audit_log</InlineCode> table with <InlineCode>security: true</InlineCode> in
               the details object for easy filtering. Each entry includes actor, resource context, IP address, and timestamp.
             </p>
@@ -848,7 +848,7 @@ signature = HMAC-SHA256(signing_secret, message)
 
         <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={18} id="rate-limits">
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
-            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+            <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
                   <th style={{ textAlign: 'left', padding: '10px 16px' }} className="upper dim">Limit</th>
@@ -874,7 +874,7 @@ function Section({ title, subtitle, idx, id, children }: { title: string; subtit
   return (
     <section id={id} className="card animate-fade-in" style={{ padding: 28, animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 20 }}>
-        <div style={{
+        <div className="text-2xs" style={{
           width: 26,
           height: 26,
           borderRadius: 6,
@@ -885,16 +885,16 @@ function Section({ title, subtitle, idx, id, children }: { title: string; subtit
           justifyContent: 'center',
           flexShrink: 0,
           fontFamily: 'var(--mono)',
-          fontSize: 10,
+          
           fontWeight: 700,
           color: 'var(--peri)',
         }}>{idx + 1}</div>
         <div>
           <h2 className="h2">{title}</h2>
-          {subtitle && <p className="dim" style={{ fontSize: 11, marginTop: 2 }}>{subtitle}</p>}
+          {subtitle && <p className="dim text-2xs" style={{ marginTop: 2 }}>{subtitle}</p>}
         </div>
       </div>
-      <div className="col gap-3 muted" style={{ fontSize: 13, lineHeight: 1.6 }}>{children}</div>
+      <div className="col gap-3 muted text-sm" style={{ lineHeight: 1.6 }}>{children}</div>
     </section>
   );
 }
@@ -914,7 +914,7 @@ function TocItem({ href, num, label, count }: { href: string; num: number; label
     }}
     >
       <div className="row gap-3">
-        <span style={{
+        <span className="text-2xs" style={{
           width: 22,
           height: 22,
           borderRadius: 5,
@@ -924,14 +924,14 @@ function TocItem({ href, num, label, count }: { href: string; num: number; label
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'var(--mono)',
-          fontSize: 10,
+          
           fontWeight: 700,
           color: 'var(--peri)',
           flexShrink: 0,
         }}>{num}</span>
-        <span style={{ fontSize: 12, color: 'var(--fg-2)' }}>{label}</span>
+        <span className="text-xs" style={{ color: 'var(--fg-2)' }}>{label}</span>
       </div>
-      {count !== undefined && <span className="dim" style={{ fontSize: 11 }}>{count}</span>}
+      {count !== undefined && <span className="dim text-2xs">{count}</span>}
     </a>
   );
 }
@@ -953,12 +953,12 @@ function Endpoint({ method, path, description }: { method: string; path: string;
       padding: 14,
     }}>
       <div className="row gap-3" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <span style={{
+        <span className="text-2xs" style={{
           display: 'inline-flex',
           alignItems: 'center',
           padding: '3px 8px',
           borderRadius: 4,
-          fontSize: 10,
+          
           fontWeight: 700,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
@@ -967,8 +967,8 @@ function Endpoint({ method, path, description }: { method: string; path: string;
           ...methodStyle,
         }}>{method}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', wordBreak: 'break-all' }}>{path}</div>
-          <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3 }}>{description}</p>
+          <div className="mono text-xs" style={{ color: 'var(--fg-1)', wordBreak: 'break-all' }}>{path}</div>
+          <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: 3 }}>{description}</p>
         </div>
       </div>
     </div>
@@ -986,13 +986,13 @@ function HeaderRow({ header, desc }: { header: string; desc: string }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code style={{
+    <code className="text-xs" style={{
       padding: '1px 6px',
       borderRadius: 4,
       background: 'var(--bg-3)',
       border: '1px solid var(--line-2)',
       color: 'var(--peri)',
-      fontSize: 12,
+      
       fontFamily: 'var(--mono)',
     }}>{children}</code>
   );
@@ -1000,13 +1000,13 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return (
-    <pre style={{
+    <pre className="text-xs" style={{
       borderRadius: 8,
       background: 'var(--bg-0)',
       border: '1px solid var(--line-1)',
       padding: 16,
       overflowX: 'auto',
-      fontSize: 12,
+      
       color: 'var(--fg-2)',
       lineHeight: 1.6,
       fontFamily: 'var(--mono)',
@@ -1022,7 +1022,7 @@ function List({ children }: { children: React.ReactNode }) {
 function ListItem({ children }: { children: React.ReactNode }) {
   return (
     <li className="row" style={{ alignItems: 'flex-start', gap: 8 }}>
-      <span style={{ color: 'var(--peri)', marginTop: 2, flexShrink: 0, fontSize: 14 }}>•</span>
+      <span className="text-sm" style={{ color: 'var(--peri)', marginTop: 2, flexShrink: 0 }}>•</span>
       <span>{children}</span>
     </li>
   );

@@ -128,20 +128,20 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
         <div>
           <p className="upper" style={{ color: 'var(--peri)', marginBottom: 4 }}>Observer access</p>
           <h3 className="h3">Read-only collaborators</h3>
-          <p className="muted" style={{ marginTop: 4, maxWidth: '38ch', fontSize: 11 }}>
+          <p className="muted text-2xs" style={{ marginTop: 4, maxWidth: '38ch' }}>
             Observers can inspect project/task execution and leave analysis notes, but they cannot
             mutate state. Trust rules still apply.
           </p>
         </div>
-        <span className="dim" style={{ fontSize: 11, marginTop: 4 }}>
+        <span className="dim text-2xs" style={{ marginTop: 4 }}>
           {observers.length} observer{observers.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {error && (
         <div
-          className="pill pill--rose"
-          style={{ marginBottom: 16, padding: '8px 12px', borderRadius: 8, fontSize: 11 }}
+          className="pill pill--rose text-2xs"
+          style={{ marginBottom: 16, padding: '8px 12px', borderRadius: 8 }}
         >
           {error}
         </div>
@@ -158,7 +158,7 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
             }}
           >
             <div>
-              <label className="upper" style={{ display: 'block', marginBottom: 8, fontSize: 10 }}>
+              <label className="upper text-2xs" style={{ display: 'block', marginBottom: 8 }}>
                 Invite observer
               </label>
               <select
@@ -182,14 +182,14 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
                 )}
               </select>
               {selectedAgent && (
-                <p className="dim" style={{ fontSize: 10, marginTop: 8 }}>
+                <p className="dim text-2xs" style={{ marginTop: 8 }}>
                   @{selectedAgent.name} ·{' '}
                   {TRUST_TIER_LABELS[normalizeAgentTrustTier(selectedAgent.trust_tier)]}
                 </p>
               )}
             </div>
             <div>
-              <label className="upper" style={{ display: 'block', marginBottom: 8, fontSize: 10 }}>
+              <label className="upper text-2xs" style={{ display: 'block', marginBottom: 8 }}>
                 Observer note
               </label>
               <input
@@ -216,8 +216,8 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {observers.length === 0 ? (
           <div
-            className="card--inset"
-            style={{ padding: '20px 16px', fontSize: 11, color: 'var(--fg-4)' }}
+            className="card--inset text-2xs"
+            style={{ padding: '20px 16px', color: 'var(--fg-4)' }}
           >
             No observers attached.
           </div>
@@ -243,12 +243,12 @@ export default function ObserverManager({ projectId, isOwner, availableAgents, o
                     <div
                       style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
                     >
-                      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>
+                      <p className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>
                         {agentName}
                       </p>
                       <span className="pill pill--ghost">{TRUST_TIER_LABELS[tier]}</span>
                     </div>
-                    <p className="dim" style={{ fontSize: 10, marginTop: 4 }}>
+                    <p className="dim text-2xs" style={{ marginTop: 4 }}>
                       Invited by {invitedBy}
                     </p>
                   </div>

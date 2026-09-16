@@ -117,17 +117,17 @@ export default function UsersClient({
   }
 
   return (
-    <div style={{ padding: '28px 32px 60px' }}>
+    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 28 }}>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <p className="upper" style={{ color: 'var(--amber)', marginBottom: 6 }}>Administration</p>
             <h1 className="h1" style={{ marginBottom: 4 }}>Users</h1>
-            <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 4 }}>
+            <p className="text-sm" style={{ color: 'var(--fg-3)', marginBottom: 4 }}>
               Manage user profiles and agent ownership
             </p>
-            <p className="mono dim" style={{ fontSize: 11 }}>
+            <p className="mono dim text-2xs">
               Acting agent scope: {activeAgentId ? 'selected agent' : fallbackMode === 'least-privilege' ? 'least-privilege aggregate' : 'selected agent'}.
               Admin controls remain global.
             </p>
@@ -152,13 +152,13 @@ export default function UsersClient({
           <h3 className="h3" style={{ marginBottom: 16 }}>Create New User</h3>
 
           {addUserError && (
-            <div style={{
+            <div className="text-sm" style={{
               marginBottom: 16,
               padding: '10px 14px',
               background: 'var(--rose-bg)',
               border: '1px solid oklch(0.50 0.10 25 / 0.4)',
               borderRadius: 6,
-              fontSize: 13,
+              
               color: 'var(--rose)',
             }}>
               {addUserError}
@@ -166,7 +166,7 @@ export default function UsersClient({
           )}
 
           <form onSubmit={handleCreateUser}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
               <div>
                 <label className="upper" style={{ display: 'block', marginBottom: 6 }}>
                   Email <span style={{ color: 'var(--rose)' }}>*</span>
@@ -237,7 +237,7 @@ export default function UsersClient({
                       }} />
                     </div>
                   </div>
-                  <span style={{ fontSize: 12, color: 'var(--fg-2)' }}>Super Admin</span>
+                  <span className="text-xs" style={{ color: 'var(--fg-2)' }}>Super Admin</span>
                 </label>
               </div>
             </div>
@@ -267,13 +267,13 @@ export default function UsersClient({
       )}
 
       {error && (
-        <div className="animate-fade-in" style={{
+        <div className="animate-fade-in text-sm" style={{
           marginBottom: 20,
           padding: '10px 14px',
           background: 'var(--rose-bg)',
           border: '1px solid oklch(0.50 0.10 25 / 0.4)',
           borderRadius: 6,
-          fontSize: 13,
+          
           color: 'var(--rose)',
         }}>
           {error}
@@ -313,8 +313,8 @@ export default function UsersClient({
                           </span>
                         )}
                       </div>
-                      <p className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }}>{profile.email}</p>
-                      <p className="mono dim" style={{ fontSize: 11, marginTop: 2 }}>
+                      <p className="mono text-xs" style={{ color: 'var(--fg-3)' }}>{profile.email}</p>
+                      <p className="mono dim text-2xs" style={{ marginTop: 2 }}>
                         ID: {profile.id.slice(0, 8)}…
                       </p>
                     </div>
@@ -332,7 +332,7 @@ export default function UsersClient({
                     title={isSelf && profile.is_super_admin ? 'Cannot remove your own admin' : undefined}
                   >
                     {loading === profile.id ? (
-                      <span style={{ fontSize: 11 }}>…</span>
+                      <span className="text-2xs">…</span>
                     ) : profile.is_super_admin ? (
                       'Remove Admin'
                     ) : (
@@ -346,9 +346,9 @@ export default function UsersClient({
                   <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
                     <p className="upper dim">Linked Agents ({userAgents.length})</p>
                     <button
-                      className="btn btn--ghost btn--sm"
+                      className="btn btn--ghost btn--sm text-2xs"
                       onClick={() => setLinkingUser(linkingUser === profile.id ? null : profile.id)}
-                      style={{ height: 'auto', padding: '2px 8px', fontSize: 11 }}
+                      style={{ height: 'auto', padding: '2px 8px' }}
                     >
                       {linkingUser === profile.id ? 'Cancel' : '+ Link Agent'}
                     </button>
@@ -388,7 +388,7 @@ export default function UsersClient({
                   )}
 
                   {userAgents.length === 0 ? (
-                    <p className="dim" style={{ fontSize: 12, fontStyle: 'italic' }}>
+                    <p className="dim text-xs" style={{ fontStyle: 'italic' }}>
                       No agents linked
                     </p>
                   ) : (
@@ -418,10 +418,10 @@ export default function UsersClient({
                             <Bot size={12} style={{ color: 'var(--peri)' }} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 13, color: 'var(--fg-1)' }}>
+                            <span className="text-sm" style={{ color: 'var(--fg-1)' }}>
                               {agent.display_name}
                             </span>
-                            <span className="mono dim" style={{ fontSize: 10, marginLeft: 8 }}>
+                            <span className="mono dim text-2xs" style={{ marginLeft: 8 }}>
                               {agent.name}
                             </span>
                           </div>
@@ -429,12 +429,12 @@ export default function UsersClient({
                           {agent.capabilities && agent.capabilities.length > 0 && (
                             <div className="row gap-1">
                               {agent.capabilities.slice(0, 3).map((cap: string) => (
-                                <span key={cap} className="pill pill--peri" style={{ fontSize: 9 }}>
+                                <span key={cap} className="pill pill--peri text-2xs">
                                   {cap}
                                 </span>
                               ))}
                               {agent.capabilities.length > 3 && (
-                                <span className="dim" style={{ fontSize: 10 }}>
+                                <span className="dim text-2xs">
                                   +{agent.capabilities.length - 3}
                                 </span>
                               )}
@@ -465,7 +465,7 @@ export default function UsersClient({
                   paddingTop: 16,
                   borderTop: '1px solid var(--line-1)',
                 }}>
-                  <span className="mono dim num" style={{ fontSize: 11 }}>
+                  <span className="mono dim num text-2xs">
                     Joined {formatDate(profile.created_at)}
                   </span>
                 </div>

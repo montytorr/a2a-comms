@@ -126,7 +126,13 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
   return (
     <div style={{ animationDelay: '0.1s' }}>
-      <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: 8 }}>
+      <div style={{
+        overflowX: 'auto',
+        overflowY: 'visible',
+        paddingBottom: 8,
+        scrollSnapType: 'x mandatory',
+        overscrollBehaviorX: 'contain',
+      }}>
         <div style={{ display: 'flex', minWidth: 'max-content', alignItems: 'flex-start', gap: 16 }}>
           {columns.map((col) => {
             const colTasks = tasksByStatus[col.id] || [];
@@ -136,8 +142,9 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
               <div
                 key={col.id}
                 style={{
-                  width: 360,
-                  minWidth: 360,
+                  width: 'min(360px, 85vw)',
+                  minWidth: 'min(360px, 85vw)',
+                  scrollSnapAlign: 'start',
                   display: 'flex',
                   flexDirection: 'column',
                   maxHeight: 720,
@@ -164,8 +171,8 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <span className={meta.dotClass} />
                     <span
-                      className="upper"
-                      style={{ color: meta.headingColor, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      className="upper text-2xs"
+                      style={{ color: meta.headingColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
                       {col.label}
                     </span>
@@ -187,7 +194,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                         textAlign: 'center',
                       }}
                     >
-                      <p className="upper" style={{ fontSize: 10, color: 'var(--fg-4)' }}>No tasks</p>
+                      <p className="upper text-2xs" style={{ color: 'var(--fg-4)' }}>No tasks</p>
                     </div>
                   )}
 
@@ -259,14 +266,14 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                   {task.labels.slice(0, 3).map((label) => (
                                     <span
                                       key={label}
-                                      className="pill pill--peri"
-                                      style={{ fontSize: 8, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                      className="pill pill--peri text-2xs"
+                                      style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
                                     >
                                       {label}
                                     </span>
                                   ))}
                                   {task.labels.length > 3 && (
-                                    <span className="pill pill--ghost" style={{ fontSize: 8 }}>
+                                    <span className="pill pill--ghost text-2xs">
                                       +{task.labels.length - 3}
                                     </span>
                                   )}
@@ -283,7 +290,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                 </span>
                               )}
                               {isOverdue && (
-                                <span className="pill pill--rose" style={{ fontSize: 8 }}>
+                                <span className="pill pill--rose text-2xs">
                                   Overdue
                                 </span>
                               )}
@@ -292,8 +299,8 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
 
                           {/* Title */}
                           <h4
-                            style={{
-                              fontSize: 14,
+                            className="text-sm" style={{
+                              
                               fontWeight: 600,
                               lineHeight: 1.4,
                               color: 'var(--fg-1)',
@@ -333,7 +340,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                         ? 'Follow-up due'
                                         : 'Blocked'}
                                     </span>
-                                    <span className="pill pill--ghost" style={{ fontSize: 8 }}>
+                                    <span className="pill pill--ghost text-2xs">
                                       {blockerState.statusLabel}
                                     </span>
                                     {blockerState.dueStateLabel && (
@@ -345,13 +352,13 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                       </span>
                                     )}
                                   </div>
-                                  <p className="upper" style={{ fontSize: 9, marginTop: 8, color: 'var(--fg-4)' }}>
+                                  <p className="upper text-2xs" style={{ marginTop: 8, color: 'var(--fg-4)' }}>
                                     Next unblock step
                                   </p>
                                   <p
-                                    style={{
+                                    className="text-2xs" style={{
                                       marginTop: 4,
-                                      fontSize: 11,
+                                      
                                       lineHeight: 1.4,
                                       color: 'var(--fg-1)',
                                       display: '-webkit-box',
@@ -363,12 +370,12 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                     {blockerState.blockerResolutionAction || 'No unblock plan logged yet'}
                                   </p>
                                   <div
-                                    style={{
+                                    className="text-2xs" style={{
                                       marginTop: 8,
                                       display: 'flex',
                                       flexWrap: 'wrap',
                                       gap: 12,
-                                      fontSize: 10,
+                                      
                                       color: 'var(--fg-2)',
                                     }}
                                   >
@@ -432,16 +439,16 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                           marginBottom: 2,
                                         }}
                                       >
-                                        <span className="upper" style={{ fontSize: 8, color: 'var(--fg-4)' }}>
+                                        <span className="upper text-2xs" style={{ color: 'var(--fg-4)' }}>
                                           {config.previewLabel}
                                         </span>
-                                        <span style={{ fontSize: 8, color: 'var(--fg-4)' }}>
+                                        <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>
                                           {group.items.length}
                                         </span>
                                       </div>
                                       <p
-                                        style={{
-                                          fontSize: 10,
+                                        className="text-2xs" style={{
+                                          
                                           lineHeight: 1.4,
                                           color: 'var(--fg-2)',
                                           display: '-webkit-box',
@@ -479,8 +486,8 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                               >
                                 <Avatar name={assigneeName} size={20} />
                                 <span
-                                  style={{
-                                    fontSize: 9,
+                                  className="text-2xs" style={{
+                                    
                                     color: 'var(--fg-3)',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -491,14 +498,14 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                 </span>
                               </div>
                             ) : (
-                              <span style={{ fontSize: 9, fontStyle: 'italic', color: 'var(--fg-4)' }}>
+                              <span className="text-2xs" style={{ fontStyle: 'italic', color: 'var(--fg-4)' }}>
                                 Unassigned
                               </span>
                             )}
                             <span
-                              className="mono"
+                              className="mono text-2xs"
                               style={{
-                                fontSize: 8,
+                                
                                 color: 'var(--fg-4)',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.12em',

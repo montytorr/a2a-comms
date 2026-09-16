@@ -82,7 +82,7 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
           <div>
             <h2 className="h3">Reputation</h2>
-            <p className="dim" style={{ fontSize: '11px', marginTop: '0.125rem' }}>Advisory only, read-only scoring from recent platform signals.</p>
+            <p className="dim text-2xs" style={{ marginTop: '0.125rem' }}>Advisory only, read-only scoring from recent platform signals.</p>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
             <span className="pill pill--ghost">{reputation.confidence_band} confidence</span>
@@ -95,18 +95,18 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
       </div>
 
       <div style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
           <div className="card--inset" style={{ padding: '1rem', gridColumn: 'span 2' }}>
-            <p className="upper dim" style={{ fontSize: '9px' }}>Overall score</p>
+            <p className="upper dim text-2xs">Overall score</p>
             <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.75rem' }}>
-              <span className="num" style={{ fontSize: '1.875rem', fontWeight: 600, color: scoreToneVar(score) }}>{toPercent(score)}</span>
+              <span className="num text-2xl" style={{ fontWeight: 600, color: scoreToneVar(score) }}>{toPercent(score)}</span>
               {recentDelta !== null && (
-                <span style={{ marginBottom: '0.25rem', fontSize: '11px', fontWeight: 500, color: deltaToneVar(recentDelta) }}>
+                <span className="text-2xs" style={{ marginBottom: '0.25rem', fontWeight: 500, color: deltaToneVar(recentDelta) }}>
                   {recentDelta > 0 ? '+' : ''}{(recentDelta * 100).toFixed(1)} pts vs prior recent window
                 </span>
               )}
             </div>
-            <p className="muted" style={{ marginTop: '0.5rem', fontSize: '12px' }}>
+            <p className="muted text-xs" style={{ marginTop: '0.5rem' }}>
               {visible
                 ? 'Weighted blend of delivery, approvals, collaboration, and security.'
                 : reputation.explanation.gating.reason || 'Not enough evidence yet to show a score.'}
@@ -114,24 +114,24 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
           </div>
 
           <div className="card--inset" style={{ padding: '1rem' }}>
-            <p className="upper dim" style={{ fontSize: '9px' }}>Confidence</p>
-            <p className="num" style={{ marginTop: '0.5rem', fontSize: '1.5rem', fontWeight: 600, color: 'var(--fg-0)' }}>{toPercent(confidence)}</p>
-            <p className="dim" style={{ marginTop: '0.5rem', fontSize: '11px' }}>Band: {reputation.confidence_band}</p>
+            <p className="upper dim text-2xs">Confidence</p>
+            <p className="num text-xl" style={{ marginTop: '0.5rem', fontWeight: 600, color: 'var(--fg-0)' }}>{toPercent(confidence)}</p>
+            <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Band: {reputation.confidence_band}</p>
           </div>
 
           <div className="card--inset" style={{ padding: '1rem' }}>
-            <p className="upper dim" style={{ fontSize: '9px' }}>Sample size</p>
-            <p className="num" style={{ marginTop: '0.5rem', fontSize: '1.5rem', fontWeight: 600, color: 'var(--fg-0)' }}>{reputation.explanation.gating.observed_events}</p>
-            <p className="dim" style={{ marginTop: '0.5rem', fontSize: '11px' }}>Latest signal {newestEventAt ? formatDateTime(newestEventAt) : '—'}</p>
+            <p className="upper dim text-2xs">Sample size</p>
+            <p className="num text-xl" style={{ marginTop: '0.5rem', fontWeight: 600, color: 'var(--fg-0)' }}>{reputation.explanation.gating.observed_events}</p>
+            <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Latest signal {newestEventAt ? formatDateTime(newestEventAt) : '—'}</p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1.2fr 0.8fr' }}>
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
           <div className="card--inset" style={{ padding: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
               <div>
-                <p className="upper muted" style={{ fontSize: '11px' }}>Component breakdown</p>
-                <p className="dim" style={{ fontSize: '11px', marginTop: '0.25rem' }}>Read-only breakdown of the current scoring inputs.</p>
+                <p className="upper muted text-2xs">Component breakdown</p>
+                <p className="dim text-2xs" style={{ marginTop: '0.25rem' }}>Read-only breakdown of the current scoring inputs.</p>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -144,24 +144,24 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
                   <div key={signal.key} className="card--inset" style={{ padding: '0.75rem', opacity: isScored ? 1 : 0.6 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
                       <div>
-                        <p style={{ fontSize: '12px', fontWeight: 500, color: isScored ? 'var(--fg-0)' : 'var(--fg-3)' }}>{meta?.label ?? signal.key}</p>
-                        {meta?.description && <p className="dim" style={{ fontSize: '11px', marginTop: '0.25rem' }}>{meta.description}</p>}
+                        <p className="text-xs" style={{ fontWeight: 500, color: isScored ? 'var(--fg-0)' : 'var(--fg-3)' }}>{meta?.label ?? signal.key}</p>
+                        {meta?.description && <p className="dim text-2xs" style={{ marginTop: '0.25rem' }}>{meta.description}</p>}
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <p className="num" style={{ fontSize: '12px', fontWeight: 600, color: isScored ? scoreToneVar(signal.value) : 'var(--fg-3)' }}>{isScored ? toPercent(signal.value) : '—'}</p>
-                        <p className="dim" style={{ fontSize: '10px' }}>weight {(meta?.weight ?? 0) * 100}%</p>
+                        <p className="num text-xs" style={{ fontWeight: 600, color: isScored ? scoreToneVar(signal.value) : 'var(--fg-3)' }}>{isScored ? toPercent(signal.value) : '—'}</p>
+                        <p className="dim text-2xs">weight {(meta?.weight ?? 0) * 100}%</p>
                       </div>
                     </div>
                     <div style={{ marginTop: '0.75rem', height: '0.5rem', borderRadius: '9999px', background: 'var(--bg-2)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', borderRadius: '9999px', background: isScored ? 'var(--mint)' : 'var(--bg-2)', width }} />
                     </div>
-                    <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem 1rem', fontSize: '10px', color: 'var(--fg-3)' }}>
+                    <div className="text-2xs" style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem 1rem', color: 'var(--fg-3)' }}>
                       <span>samples {signal.sample_count}</span>
                       <span>contribution {isScored ? toPercent(signal.weighted_contribution ?? 0, 1) : '—'}</span>
                       <span>latest {signal.last_event_at ? formatDateTime(signal.last_event_at) : '—'}</span>
                     </div>
                     {signal.notes && signal.notes.length > 0 && (
-                      <ul style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '11px', color: 'var(--fg-2)' }}>
+                      <ul className="text-2xs" style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', color: 'var(--fg-2)' }}>
                         {signal.notes.slice(0, 2).map((note) => (
                           <li key={note}>• {note}</li>
                         ))}
@@ -175,8 +175,8 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="card--inset" style={{ padding: '1rem' }}>
-              <p className="upper muted" style={{ fontSize: '11px' }}>Policy guidance</p>
-              <p className="muted" style={{ marginTop: '0.5rem', fontSize: '12px' }}>Reputation can suggest extra review or caution, but it does not grant or revoke access.</p>
+              <p className="upper muted text-2xs">Policy guidance</p>
+              <p className="muted text-xs" style={{ marginTop: '0.5rem' }}>Reputation can suggest extra review or caution, but it does not grant or revoke access.</p>
               {policyGuidance && (
                 <>
                   <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -187,18 +187,18 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
                     {policyGuidance.items.map((item) => (
                       <div key={item.id} className="card--inset" style={{ padding: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
-                          <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--fg-0)' }}>{item.title}</p>
+                          <p className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{item.title}</p>
                           <span
-                            className="upper"
+                            className="upper text-2xs"
                             style={{
-                              fontSize: '10px',
+                              
                               color: item.severity === 'elevated' ? 'var(--rose)' : item.severity === 'warning' ? 'var(--amber)' : 'var(--fg-3)',
                             }}
                           >{item.severity}</span>
                         </div>
-                        <p className="muted" style={{ marginTop: '0.5rem', fontSize: '11px' }}>{item.summary}</p>
-                        <p style={{ marginTop: '0.5rem', fontSize: '11px', color: 'var(--peri)' }}>Recommended: {item.recommendation}</p>
-                        {item.rationale && <p className="dim" style={{ marginTop: '0.5rem', fontSize: '11px' }}>Why: {item.rationale}</p>}
+                        <p className="muted text-2xs" style={{ marginTop: '0.5rem' }}>{item.summary}</p>
+                        <p className="text-2xs" style={{ marginTop: '0.5rem', color: 'var(--peri)' }}>Recommended: {item.recommendation}</p>
+                        {item.rationale && <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Why: {item.rationale}</p>}
                       </div>
                     ))}
                   </div>
@@ -207,8 +207,8 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
             </div>
 
             <div className="card--inset" style={{ padding: '1rem' }}>
-              <p className="upper muted" style={{ fontSize: '11px' }}>Recent changes</p>
-              <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '12px', color: 'var(--fg-2)' }}>
+              <p className="upper muted text-2xs">Recent changes</p>
+              <div className="text-xs" style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--fg-2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
                   <span>Visible score</span>
                   <span>{visible ? 'Yes' : 'No'}</span>
@@ -227,7 +227,7 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
                 </div>
               </div>
               {reputation.explanation.adjustments.reasons.length > 0 && (
-                <ul style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '11px', color: 'var(--amber)' }}>
+                <ul className="text-2xs" style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', color: 'var(--amber)' }}>
                   {reputation.explanation.adjustments.reasons.map((reason) => (
                     <li key={reason}>• {reason}</li>
                   ))}
@@ -236,9 +236,9 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
             </div>
 
             <div className="card--inset" style={{ padding: '1rem' }}>
-              <p className="upper muted" style={{ fontSize: '11px' }}>Evidence and context</p>
+              <p className="upper muted text-2xs">Evidence and context</p>
               {recentEvents.length === 0 ? (
-                <p className="dim" style={{ marginTop: '0.75rem', fontSize: '12px' }}>No reputation ledger events recorded yet.</p>
+                <p className="dim text-xs" style={{ marginTop: '0.75rem' }}>No reputation ledger events recorded yet.</p>
               ) : (
                 <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {recentEvents.map((event) => {
@@ -249,19 +249,19 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
                       <div key={event.id} className="card--inset" style={{ padding: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
                           <div>
-                            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--fg-0)' }}>{signalMeta(event.signal_key)?.label ?? event.signal_key}</p>
-                            <p className="upper dim" style={{ fontSize: '10px', marginTop: '0.25rem' }}>{event.source_type.replace(/_/g, ' ')}</p>
+                            <p className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{signalMeta(event.signal_key)?.label ?? event.signal_key}</p>
+                            <p className="upper dim text-2xs" style={{ marginTop: '0.25rem' }}>{event.source_type.replace(/_/g, ' ')}</p>
                           </div>
-                          <span className="num" style={{ fontSize: '11px', fontWeight: 600, color: scoreToneVar((event.value + 1) / 2) }}>
+                          <span className="num text-2xs" style={{ fontWeight: 600, color: scoreToneVar((event.value + 1) / 2) }}>
                             {event.value > 0 ? '+' : ''}{event.value.toFixed(2)}
                           </span>
                         </div>
-                        <p className="dim" style={{ marginTop: '0.5rem', fontSize: '11px' }}>Occurred {formatDateTime(event.occurred_at)}</p>
+                        <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Occurred {formatDateTime(event.occurred_at)}</p>
                         {meta?.notes && meta.notes.length > 0 && (
-                          <p className="muted" style={{ marginTop: '0.5rem', fontSize: '11px' }}>{meta.notes[0]}</p>
+                          <p className="muted text-2xs" style={{ marginTop: '0.5rem' }}>{meta.notes[0]}</p>
                         )}
                         {metadataSummary.length > 0 && (
-                          <ul className="dim" style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '11px' }}>
+                          <ul className="dim text-2xs" style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             {metadataSummary.map((item) => (
                               <li key={item}>• {item}</li>
                             ))}
@@ -270,7 +270,7 @@ export default function ReputationPanel({ reputation }: ReputationPanelProps) {
                         {evidenceLinks.length > 0 && (
                           <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                             {evidenceLinks.map((link) => (
-                              <Link key={`${event.id}-${link.href}`} href={link.href} style={{ fontSize: '11px', color: 'var(--peri)', textDecoration: 'none' }}>
+                              <Link key={`${event.id}-${link.href}`} href={link.href} className="text-2xs" style={{ color: 'var(--peri)', textDecoration: 'none' }}>
                                 {link.label} →
                               </Link>
                             ))}

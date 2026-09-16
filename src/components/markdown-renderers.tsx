@@ -44,34 +44,34 @@ export const markdownComponents: Components = {
     <h1 className="h2" style={{ marginTop: 18, marginBottom: 8 }}>{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="h3" style={{ fontSize: 15, marginTop: 18, marginBottom: 8 }}>{children}</h2>
+    <h2 className="h3 text-base" style={{ marginTop: 18, marginBottom: 8 }}>{children}</h2>
   ),
   h3: ({ children }) => (
     <h3 className="h3" style={{ marginTop: 14, marginBottom: 6 }}>{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 style={{ fontSize: 12, fontWeight: 650, color: 'var(--fg-1)', marginTop: 10, marginBottom: 4 }}>{children}</h4>
+    <h4 className="text-xs" style={{ fontWeight: 650, color: 'var(--fg-1)', marginTop: 10, marginBottom: 4 }}>{children}</h4>
   ),
   p: ({ children }) => (
-    <p style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.68, marginBottom: 12 }}>{children}</p>
+    <p className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.68, marginBottom: 12 }}>{children}</p>
   ),
   ul: ({ children }) => (
     <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 5, margin: '0 0 12px 0', padding: 0 }}>{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol style={{ listStyleType: 'decimal', listStylePosition: 'outside', display: 'flex', flexDirection: 'column', gap: 5, margin: '0 0 12px 1.25rem', padding: 0, fontSize: 13, color: 'var(--fg-2)' }}>{children}</ol>
+    <ol className="text-sm" style={{ listStyleType: 'decimal', listStylePosition: 'outside', display: 'flex', flexDirection: 'column', gap: 5, margin: '0 0 12px 1.25rem', padding: 0, color: 'var(--fg-2)' }}>{children}</ol>
   ),
   li: ({ children, ...props }) => {
     const ordered = 'ordered' in props && props.ordered;
     if (ordered) {
       return (
-        <li style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6, paddingLeft: 4 }}>
+        <li className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6, paddingLeft: 4 }}>
           {children}
         </li>
       );
     }
     return (
-      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>
+      <li className="text-sm" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, color: 'var(--fg-2)', lineHeight: 1.6 }}>
         <span style={{ color: 'var(--amber)', marginTop: 1, flexShrink: 0 }}>•</span>
         <span>{children}</span>
       </li>
@@ -114,7 +114,9 @@ export const markdownComponents: Components = {
   ),
   table: ({ children }) => (
     <div style={{ overflowX: 'auto', margin: '12px 0', border: '1px solid var(--line-1)', borderRadius: 8 }}>
-      <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>{children}</table>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="text-xs" style={{ width: '100%', minWidth: 420, borderCollapse: 'collapse' }}>{children}</table>
+      </div>
     </div>
   ),
   thead: ({ children }) => (
@@ -125,7 +127,7 @@ export const markdownComponents: Components = {
     <tr style={{ borderBottom: '1px solid var(--line-1)' }}>{children}</tr>
   ),
   th: ({ children }) => (
-    <th className="upper" style={{ textAlign: 'left', padding: '8px 12px', fontSize: 10, color: 'var(--fg-2)' }}>
+    <th className="upper text-2xs" style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--fg-2)' }}>
       {children}
     </th>
   ),

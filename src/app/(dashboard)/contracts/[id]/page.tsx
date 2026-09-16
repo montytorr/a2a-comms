@@ -27,7 +27,7 @@ function SchemaDisplay({ schema, depth = 0 }: { schema: Record<string, unknown>;
     const props = schema.properties as Record<string, Record<string, unknown>>;
     const entries = Object.entries(props);
     return (
-      <pre style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-1)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+      <pre className="text-2xs" style={{ fontFamily: 'var(--mono)', color: 'var(--fg-1)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
         {indent}<span style={{ color: 'var(--peri)' }}>{'{'}</span>{'\n'}
         {entries.map(([key, val], i) => {
           const isOptional = val.optional === true;
@@ -48,7 +48,7 @@ function SchemaDisplay({ schema, depth = 0 }: { schema: Record<string, unknown>;
   }
 
   return (
-    <pre style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-2)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+    <pre className="text-2xs" style={{ fontFamily: 'var(--mono)', color: 'var(--fg-2)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
       {JSON.stringify(schema, null, 2)}
     </pre>
   );
@@ -165,9 +165,9 @@ export default async function ContractDetailPage({
 
   return (
     <AutoRefresh intervalMs={10000}>
-      <div style={{ padding: '28px 32px 60px', maxWidth: 1100, margin: '0 auto' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <div className="row gap-2" style={{ marginBottom: 14, fontSize: 12 }}>
+        <div className="row gap-2 text-xs" style={{ marginBottom: 14 }}>
           <Link href="/contracts" className="dim" style={{ cursor: 'pointer', textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
           <ChevronRight size={11} style={{ color: 'var(--fg-3)' }} />
           <span style={{ color: 'var(--fg-1)' }}>{contractIdShort}</span>
@@ -182,7 +182,7 @@ export default async function ContractDetailPage({
                 <StatusBadge status={contract.status} />
               </div>
               {contract.description && (
-                <div className="muted" style={{ fontSize: 13 }}>
+                <div className="muted text-sm">
                   <MarkdownPreview content={contract.description} className="" />
                 </div>
               )}
@@ -226,7 +226,7 @@ export default async function ContractDetailPage({
 
           {isObserverParticipant && (
             <div className="card card--inset" style={{ padding: 12, marginTop: 14, borderColor: 'oklch(0.50 0.08 265 / 0.5)' }}>
-              <div style={{ fontSize: 11, color: 'var(--peri)' }}>
+              <div className="text-2xs" style={{ color: 'var(--peri)' }}>
                 You are attached as a read-only observer on this contract.
               </div>
             </div>
@@ -235,7 +235,7 @@ export default async function ContractDetailPage({
           {contract.close_reason && (
             <div style={{ marginTop: 18 }}>
               <div className="upper" style={{ marginBottom: 4 }}>Close Reason</div>
-              <div style={{ fontSize: 13, color: 'var(--fg-1)' }}>{contract.close_reason}</div>
+              <div className="text-sm" style={{ color: 'var(--fg-1)' }}>{contract.close_reason}</div>
             </div>
           )}
 
@@ -244,7 +244,7 @@ export default async function ContractDetailPage({
             <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
               <div className="row gap-2" style={{ marginBottom: 8, alignItems: 'center' }}>
                 <div className="upper">Message Schema</div>
-                <span className="pill pill--mint" style={{ height: 16, fontSize: 9 }}>Zod Enforced</span>
+                <span className="pill pill--mint text-2xs" style={{ height: 16 }}>Zod Enforced</span>
               </div>
               <div className="card card--inset" style={{ padding: 14, overflow: 'auto' }}>
                 <SchemaDisplay schema={contract.message_schema} />
@@ -255,7 +255,7 @@ export default async function ContractDetailPage({
             <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
               <div className="row gap-2" style={{ alignItems: 'center' }}>
                 <div className="upper">Message Schema</div>
-                <span className="pill pill--ghost" style={{ height: 16, fontSize: 9 }}>None — Free-form</span>
+                <span className="pill pill--ghost text-2xs" style={{ height: 16 }}>None — Free-form</span>
               </div>
             </div>
           )}
@@ -266,12 +266,12 @@ export default async function ContractDetailPage({
           <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
             <div className="col gap-1">
               <div className="h3">Attachments</div>
-              <div className="dim" style={{ fontSize: 11 }}>Artifacts shared on this contract</div>
+              <div className="dim text-2xs">Artifacts shared on this contract</div>
             </div>
           </div>
           <div style={{ padding: 22 }}>
             {isObserverParticipant ? (
-              <div className="dim" style={{ fontSize: 11 }}>Observers can inspect artifacts but cannot upload.</div>
+              <div className="dim text-2xs">Observers can inspect artifacts but cannot upload.</div>
             ) : (
               <ContractAttachmentUpload contractId={contract.id} />
             )}
@@ -284,13 +284,13 @@ export default async function ContractDetailPage({
         {/* Message Thread */}
         <div className="card">
           <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-            <div className="h3">Message Thread <span className="dim" style={{ fontWeight: 400, fontSize: 12 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></div>
+            <div className="h3">Message Thread <span className="dim text-xs" style={{ fontWeight: 400 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></div>
           </div>
 
           {threadMessages.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center' }}>
               <div className="h3" style={{ marginTop: 14 }}>No messages yet</div>
-              <div className="dim" style={{ fontSize: 13, marginTop: 4 }}>Messages will appear here once exchanged</div>
+              <div className="dim text-sm" style={{ marginTop: 4 }}>Messages will appear here once exchanged</div>
             </div>
           ) : (
             threadMessages.map((msg, i) => {
@@ -303,9 +303,9 @@ export default async function ContractDetailPage({
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
                         <StatusBadge status={msg.message_type} variant="message" />
-                        <span className="dim mono num" style={{ fontSize: 11, marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
+                        <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
                       </div>
-                      <div style={{ fontSize: 13.5, color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
                         <MessageCard content={msg.content} />
                       </div>
                     </div>
@@ -320,7 +320,7 @@ export default async function ContractDetailPage({
         {observerNotes.length > 0 && (
           <div className="card" style={{ marginTop: 16 }}>
             <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-              <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim" style={{ fontWeight: 400, fontSize: 12 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
+              <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim text-xs" style={{ fontWeight: 400 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
             </div>
             {observerNotes.map((msg, i) => {
               const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
@@ -331,10 +331,10 @@ export default async function ContractDetailPage({
                     <div className="col" style={{ flex: 1, gap: 8 }}>
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <span className="pill pill--peri" style={{ height: 16, fontSize: 9 }}>observer note</span>
-                        <span className="dim mono num" style={{ fontSize: 11, marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
+                        <span className="pill pill--peri text-2xs" style={{ height: 16 }}>observer note</span>
+                        <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
                       </div>
-                      <div style={{ fontSize: 13.5, color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
                         <MessageCard content={msg.content} />
                       </div>
                     </div>

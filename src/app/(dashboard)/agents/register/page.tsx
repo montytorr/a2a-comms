@@ -43,10 +43,10 @@ export default function RegisterAgentPage() {
 
   if (result) {
     return (
-      <div style={{ padding: '1.5rem' }}>
+      <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         <Link
           href="/agents"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
+          className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5" />
@@ -65,7 +65,7 @@ export default function RegisterAgentPage() {
               </div>
 
               <h2 className="h2" style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Agent Registered</h2>
-              <p className="muted" style={{ fontSize: '13px', textAlign: 'center', marginBottom: '1.5rem' }}>
+              <p className="muted text-sm" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                 Save these credentials now. The signing secret will <span style={{ color: 'var(--amber)', fontWeight: 600 }}>not be shown again</span>.
               </p>
 
@@ -76,15 +76,15 @@ export default function RegisterAgentPage() {
                     <line x1="12" y1="9" x2="12" y2="13" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
-                  <p style={{ fontSize: '11px', color: 'var(--amber)', lineHeight: 1.6 }}>
+                  <p className="text-2xs" style={{ color: 'var(--amber)', lineHeight: 1.6 }}>
                     Copy both values below. The signing secret is displayed only once and cannot be recovered.
                   </p>
                 </div>
 
                 <div>
-                  <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Key ID</p>
+                  <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Key ID</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <code className="mono" style={{ flex: 1, fontSize: '13px', color: 'var(--peri)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <code className="mono text-sm" style={{ flex: 1, color: 'var(--peri)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {result.keyId}
                     </code>
                     <button
@@ -97,9 +97,9 @@ export default function RegisterAgentPage() {
                 </div>
 
                 <div>
-                  <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Signing Secret</p>
+                  <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Signing Secret</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <code className="mono" style={{ flex: 1, fontSize: '13px', color: 'var(--mint)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', userSelect: 'all' }}>
+                    <code className="mono text-sm" style={{ flex: 1, color: 'var(--mint)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', userSelect: 'all' }}>
                       {result.signingSecret}
                     </code>
                     <button
@@ -127,10 +127,10 @@ export default function RegisterAgentPage() {
   }
 
   return (
-    <div style={{ padding: '1.5rem' }}>
+    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       <Link
         href="/agents"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '12px', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
+        className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5" />
@@ -140,22 +140,22 @@ export default function RegisterAgentPage() {
       </Link>
 
       <div style={{ marginBottom: '2rem' }}>
-        <p className="upper" style={{ fontSize: '10px', color: 'var(--peri)', fontWeight: 600, marginBottom: '0.5rem' }}>Registry</p>
+        <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600, marginBottom: '0.5rem' }}>Registry</p>
         <h1 className="h1">Register Agent</h1>
-        <p className="muted" style={{ fontSize: '14px', marginTop: '0.25rem' }}>Create a new agent identity and service key</p>
+        <p className="muted text-sm" style={{ marginTop: '0.25rem' }}>Create a new agent identity and service key</p>
       </div>
 
       <div style={{ maxWidth: '32rem' }}>
         <div className="card" style={{ overflow: 'hidden' }}>
           <form onSubmit={handleSubmit} style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {error && (
-              <div style={{ borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', fontSize: '12px', color: 'var(--rose)' }}>
+              <div className="text-xs" style={{ borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', color: 'var(--rose)' }}>
                 {error}
               </div>
             )}
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Name <span style={{ color: 'var(--rose)' }}>*</span>
               </label>
               <input
@@ -166,11 +166,11 @@ export default function RegisterAgentPage() {
                 className="cp-input mono"
                 style={{ width: '100%' }}
               />
-              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>Slug format: lowercase, numbers, hyphens, underscores</p>
+              <p className="dim text-2xs" style={{ marginTop: '0.375rem' }}>Slug format: lowercase, numbers, hyphens, underscores</p>
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Display Name <span style={{ color: 'var(--rose)' }}>*</span>
               </label>
               <input
@@ -183,7 +183,7 @@ export default function RegisterAgentPage() {
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Owner <span style={{ color: 'var(--rose)' }}>*</span>
               </label>
               <input
@@ -196,7 +196,7 @@ export default function RegisterAgentPage() {
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Description
               </label>
               <textarea
@@ -209,7 +209,7 @@ export default function RegisterAgentPage() {
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Capabilities
               </label>
               <input
@@ -218,11 +218,11 @@ export default function RegisterAgentPage() {
                 className="cp-input"
                 style={{ width: '100%' }}
               />
-              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>Comma-separated list</p>
+              <p className="dim text-2xs" style={{ marginTop: '0.375rem' }}>Comma-separated list</p>
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Protocols
               </label>
               <input
@@ -231,11 +231,11 @@ export default function RegisterAgentPage() {
                 className="cp-input"
                 style={{ width: '100%' }}
               />
-              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>Comma-separated list</p>
+              <p className="dim text-2xs" style={{ marginTop: '0.375rem' }}>Comma-separated list</p>
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Max Active Contracts
               </label>
               <input
@@ -250,7 +250,7 @@ export default function RegisterAgentPage() {
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Trust Tier
               </label>
               <select
@@ -263,11 +263,11 @@ export default function RegisterAgentPage() {
                 <option value="partner">Partner — can observe and broker, but not take handoffs</option>
                 <option value="external">External — registry only until explicitly trusted</option>
               </select>
-              <p className="dim" style={{ fontSize: '10px', marginTop: '0.375rem' }}>This is the base trust rail. Fine-grained trust-policy thresholds can be adjusted later from the agent detail page.</p>
+              <p className="dim text-2xs" style={{ marginTop: '0.375rem' }}>This is the base trust rail. Fine-grained trust-policy thresholds can be adjusted later from the agent detail page.</p>
             </div>
 
             <div>
-              <label className="upper dim" style={{ display: 'block', fontSize: '10px', marginBottom: '0.5rem' }}>
+              <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Trust Notes
               </label>
               <textarea

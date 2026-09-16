@@ -79,8 +79,8 @@ function EditableTitle({
         if (e.key === 'Escape') { setText(value); setEditing(false); }
       }}
       disabled={isPending}
-      style={{
-        fontSize: 28,
+      className="text-2xl" style={{
+        
         fontWeight: 600,
         color: 'var(--fg-0)',
         letterSpacing: '-0.02em',
@@ -153,7 +153,7 @@ function EditableDescription({
         {value ? (
           <MarkdownPreview content={value} />
         ) : (
-          <p style={{ fontSize: 13, color: 'var(--fg-4)', fontStyle: 'italic' }}>Click to add description…</p>
+          <p className="text-sm" style={{ color: 'var(--fg-4)', fontStyle: 'italic' }}>Click to add description…</p>
         )}
       </div>
     );
@@ -174,10 +174,10 @@ function EditableDescription({
         }}
         disabled={isPending}
         placeholder="Write description (markdown supported)…"
-        style={{
+        className="text-sm" style={{
           width: '100%',
           background: 'var(--bg-2)',
-          fontSize: 13,
+          
           color: 'var(--fg-1)',
           lineHeight: 1.6,
           borderRadius: 6,
@@ -272,12 +272,12 @@ function AssigneePicker({
         {current ? (
           <>
             <Avatar name={current.display_name || current.name} size={24} />
-            <span style={{ fontSize: 13, color: 'var(--fg-1)', fontWeight: 500 }}>{current.display_name || current.name}</span>
+            <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{current.display_name || current.name}</span>
           </>
         ) : (
-          <span style={{ fontSize: 12, color: 'var(--fg-4)', fontStyle: 'italic' }}>Unassigned — click to assign</span>
+          <span className="text-xs" style={{ color: 'var(--fg-4)', fontStyle: 'italic' }}>Unassigned — click to assign</span>
         )}
-        {isPending && <span style={{ fontSize: 10, color: 'var(--fg-3)', marginLeft: 'auto' }}>…</span>}
+        {isPending && <span className="text-2xs" style={{ color: 'var(--fg-3)', marginLeft: 'auto' }}>…</span>}
       </button>
 
       {open && (
@@ -300,14 +300,14 @@ function AssigneePicker({
         >
           <button
             onClick={() => handleSelect(null)}
-            style={{
+            className="text-2xs" style={{
               width: '100%',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
               padding: '8px 12px',
               textAlign: 'left',
-              fontSize: 11,
+              
               color: 'var(--fg-3)',
               background: 'transparent',
               border: 'none',
@@ -317,9 +317,9 @@ function AssigneePicker({
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; }}
           >
-            <span style={{
+            <span className="text-2xs" style={{
               width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'var(--fg-3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)',
             }}>—</span>
             Unassigned
           </button>
@@ -331,14 +331,14 @@ function AssigneePicker({
               <button
                 key={m.agent.id}
                 onClick={() => handleSelect(m.agent!.id)}
-                style={{
+                className="text-2xs" style={{
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
                   padding: '8px 12px',
                   textAlign: 'left',
-                  fontSize: 11,
+                  
                   color: isSelected ? 'var(--amber)' : 'var(--fg-2)',
                   background: isSelected ? 'var(--bg-3)' : 'transparent',
                   border: 'none',
@@ -411,12 +411,12 @@ function LabelsEditor({
             <button
               onClick={() => removeLabel(label)}
               disabled={isPending}
-              style={{
+              className="text-2xs" style={{
                 color: 'var(--peri)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                fontSize: 10,
+                
                 lineHeight: 1,
                 padding: 0,
                 opacity: 0,
@@ -463,8 +463,8 @@ function LabelsEditor({
       ) : (
         <button
           onClick={() => setEditing(true)}
-          style={{
-            fontSize: 10,
+          className="text-2xs" style={{
+            
             color: 'var(--fg-3)',
             background: 'none',
             border: 'none',
@@ -520,8 +520,7 @@ function DueDatePicker({
         <button
           onClick={() => handleChange('')}
           disabled={isPending}
-          className="btn btn--ghost btn--sm"
-          style={{ fontSize: 10 }}
+          className="btn btn--ghost btn--sm text-2xs"
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--rose)'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = ''; }}
         >
@@ -580,7 +579,7 @@ function PriorityPicker({
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
         <span>{current.icon}</span>
-        <span style={{ fontSize: 12, fontWeight: 500 }}>{current.label}</span>
+        <span className="text-xs" style={{ fontWeight: 500 }}>{current.label}</span>
       </button>
 
       {open && (
@@ -612,14 +611,14 @@ function PriorityPicker({
                   setOpen(false);
                 }
               }}
-              style={{
+              className="text-2xs" style={{
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
                 padding: '8px 12px',
                 textAlign: 'left',
-                fontSize: 11,
+                
                 color: p.id === value ? p.varColor : 'var(--fg-2)',
                 background: p.id === value ? 'var(--bg-3)' : 'transparent',
                 border: 'none',
@@ -700,7 +699,7 @@ function SprintPicker({
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
-        <span style={{ fontSize: 12, color: 'var(--fg-1)', fontWeight: 500 }}>{current?.title || 'Backlog'}</span>
+        <span className="text-xs" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{current?.title || 'Backlog'}</span>
       </button>
 
       {open && (
@@ -730,14 +729,14 @@ function SprintPicker({
                 setOpen(false);
               }
             }}
-            style={{
+            className="text-2xs" style={{
               width: '100%',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
               padding: '8px 12px',
               textAlign: 'left',
-              fontSize: 11,
+              
               color: !currentSprintId ? 'var(--amber)' : 'var(--fg-2)',
               background: !currentSprintId ? 'var(--bg-3)' : 'transparent',
               border: 'none',
@@ -767,14 +766,14 @@ function SprintPicker({
                   setOpen(false);
                 }
               }}
-              style={{
+              className="text-2xs" style={{
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
                 padding: '8px 12px',
                 textAlign: 'left',
-                fontSize: 11,
+                
                 color: s.id === currentSprintId ? 'var(--amber)' : 'var(--fg-2)',
                 background: s.id === currentSprintId ? 'var(--bg-3)' : 'transparent',
                 border: 'none',

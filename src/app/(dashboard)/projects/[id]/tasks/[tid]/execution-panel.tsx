@@ -22,14 +22,14 @@ function toneToClass(tone: string): string {
 
 function JsonPayload({ payload }: { payload: Record<string, unknown> | null | undefined }) {
   if (!payload || Object.keys(payload).length === 0) {
-    return <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>No payload captured</span>;
+    return <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>No payload captured</span>;
   }
 
   return (
     <pre
-      className="mono"
+      className="mono text-2xs"
       style={{
-        fontSize: 11,
+        
         color: 'var(--fg-1)',
         background: 'var(--bg-0)',
         border: '1px solid var(--line-1)',
@@ -61,7 +61,7 @@ function MetaCell({ label, children }: { label: string; children: React.ReactNod
       padding: '8px 12px',
     }}>
       <p className="upper" style={{ color: 'var(--fg-4)', marginBottom: 4 }}>{label}</p>
-      <div style={{ fontSize: 11, color: 'var(--fg-1)' }}>{children}</div>
+      <div className="text-2xs" style={{ color: 'var(--fg-1)' }}>{children}</div>
     </div>
   );
 }
@@ -89,7 +89,7 @@ export default function ExecutionPanel({
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div>
           <p className="upper" style={{ color: 'var(--fg-4)' }}>Execution</p>
-          <p style={{ fontSize: 12, color: 'var(--fg-2)', marginTop: 8 }}>{getExecutionSnapshotSummary(task)}</p>
+          <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: 8 }}>{getExecutionSnapshotSummary(task)}</p>
         </div>
         <span className={toneToClass(statusTone)}>{statusLabel}</span>
       </div>
@@ -102,14 +102,14 @@ export default function ExecutionPanel({
           background: 'var(--rose-bg)',
           padding: '12px 16px',
         }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--rose)' }}>Heartbeat stale</p>
-          <p style={{ fontSize: 11, color: 'var(--fg-1)', marginTop: 4 }}>
+          <p className="text-xs" style={{ fontWeight: 600, color: 'var(--rose)' }}>Heartbeat stale</p>
+          <p className="text-2xs" style={{ color: 'var(--fg-1)', marginTop: 4 }}>
             This task still shows as active, but the latest heartbeat is older than 15 minutes. Treat it as abandoned until a new heartbeat lands.
           </p>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 20 }}>
         <MetaCell label="Active run">
           <span className="mono" style={{ wordBreak: 'break-all' }}>{task.active_run_id || 'None'}</span>
         </MetaCell>
@@ -132,18 +132,18 @@ export default function ExecutionPanel({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: 'var(--peri)' }}>Latest checkpoint payload</p>
+            <p className="text-2xs" style={{ fontWeight: 500, color: 'var(--peri)' }}>Latest checkpoint payload</p>
             {task.last_checkpoint_at && (
-              <span style={{ fontSize: 10, color: 'var(--fg-3)' }}>{formatExecutionTime(task.last_checkpoint_at)}</span>
+              <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{formatExecutionTime(task.last_checkpoint_at)}</span>
             )}
           </div>
           <JsonPayload payload={task.last_checkpoint_payload} />
         </div>
 
         <div>
-          <p style={{ fontSize: 11, fontWeight: 500, color: 'var(--peri)', marginBottom: 8 }}>Recent execution runs</p>
+          <p className="text-2xs" style={{ fontWeight: 500, color: 'var(--peri)', marginBottom: 8 }}>Recent execution runs</p>
           {recentRuns.length === 0 ? (
-            <p style={{ fontSize: 11, color: 'var(--fg-3)' }}>No runs yet.</p>
+            <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>No runs yet.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {recentRuns.map((run) => {
@@ -162,12 +162,12 @@ export default function ExecutionPanel({
                   }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
                       <div>
-                        <p style={{ fontSize: 11, color: 'var(--fg-1)', fontWeight: 500 }}>Attempt #{run.attempt}</p>
-                        <p className="mono" style={{ fontSize: 10, color: 'var(--fg-3)', wordBreak: 'break-all' }}>{run.id}</p>
+                        <p className="text-2xs" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>Attempt #{run.attempt}</p>
+                        <p className="mono text-2xs" style={{ color: 'var(--fg-3)', wordBreak: 'break-all' }}>{run.id}</p>
                       </div>
                       <span className={toneToClass(tone)}>{label}</span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 11, color: 'var(--fg-2)' }}>
+                    <div className="text-2xs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8, color: 'var(--fg-2)' }}>
                       <p>Executor: <span style={{ color: 'var(--fg-1)' }}>{formatAgentLabel(run.agent, run.agent_id)}</span></p>
                       <p>Delegated by: <span style={{ color: 'var(--fg-1)' }}>{delegation ? formatAgentLabel(run.delegated_by_agent, delegation.delegatedByAgentId) : '—'}</span></p>
                       <p>Observer: <span style={{ color: 'var(--fg-1)' }}>{observerAgentId ? formatAgentLabel(run.observer_agent, observerAgentId) : '—'}</span></p>
@@ -178,7 +178,7 @@ export default function ExecutionPanel({
                       <p>Checkpoints: <span style={{ color: 'var(--fg-1)' }}>{run.checkpoint_count}</span></p>
                     </div>
                     {(run.summary || run.error_message || delegation || (activeRun?.id === run.id && task.last_checkpoint_summary)) && (
-                      <div style={{ marginTop: 8, fontSize: 11, color: 'var(--fg-1)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div className="text-2xs" style={{ marginTop: 8, color: 'var(--fg-1)', display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {run.summary && <p><span style={{ color: 'var(--fg-3)' }}>Summary:</span> {run.summary}</p>}
                         {!run.summary && activeRun?.id === run.id && task.last_checkpoint_summary && (
                           <p><span style={{ color: 'var(--fg-3)' }}>Summary:</span> {task.last_checkpoint_summary}</p>
@@ -191,14 +191,14 @@ export default function ExecutionPanel({
                         {delegation && (
                           <p>
                             <span style={{ color: 'var(--fg-3)' }}>Delegation:</span> {formatAgentLabel(run.delegated_by_agent, delegation.delegatedByAgentId)} delegated execution
-                            {delegation.delegatedByRunId ? <> from run <span className="mono" style={{ fontSize: 10 }}>{delegation.delegatedByRunId}</span></> : null}
-                            {delegation.delegationContractId ? <> via contract <span className="mono" style={{ fontSize: 10 }}>{delegation.delegationContractId}</span></> : null}.
+                            {delegation.delegatedByRunId ? <> from run <span className="mono text-2xs">{delegation.delegatedByRunId}</span></> : null}
+                            {delegation.delegationContractId ? <> via contract <span className="mono text-2xs">{delegation.delegationContractId}</span></> : null}.
                           </p>
                         )}
                         {brokerage && (
                           <p>
                             <span style={{ color: 'var(--fg-3)' }}>Brokerage:</span> {brokerage.brokerAgentId ? formatAgentLabel(run.broker_agent, brokerage.brokerAgentId) : 'Broker pending'}
-                            {brokerage.brokerContractId ? <> via contract <span className="mono" style={{ fontSize: 10 }}>{brokerage.brokerContractId}</span></> : null}
+                            {brokerage.brokerContractId ? <> via contract <span className="mono text-2xs">{brokerage.brokerContractId}</span></> : null}
                             {brokerage.escalationReason ? <> · reason: {brokerage.escalationReason}</> : null}
                             {brokerage.requestedIntervention ? <> · ask: {brokerage.requestedIntervention}</> : null}
                           </p>
@@ -213,9 +213,9 @@ export default function ExecutionPanel({
         </div>
 
         <div>
-          <p style={{ fontSize: 11, fontWeight: 500, color: 'var(--peri)', marginBottom: 8 }}>Recent checkpoints</p>
+          <p className="text-2xs" style={{ fontWeight: 500, color: 'var(--peri)', marginBottom: 8 }}>Recent checkpoints</p>
           {recentCheckpoints.length === 0 ? (
-            <p style={{ fontSize: 11, color: 'var(--fg-3)' }}>No checkpoints recorded.</p>
+            <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>No checkpoints recorded.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {recentCheckpoints.map((checkpoint) => {
@@ -232,16 +232,16 @@ export default function ExecutionPanel({
                   }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                       <div>
-                        <p style={{ fontSize: 11, color: 'var(--fg-1)', fontWeight: 500 }}>{checkpoint.summary || checkpoint.checkpoint_key}</p>
-                        <p className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>{checkpoint.checkpoint_key} · #{checkpoint.sequence}</p>
-                        <p style={{ fontSize: 10, color: 'var(--fg-3)', marginTop: 4 }}>
+                        <p className="text-2xs" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{checkpoint.summary || checkpoint.checkpoint_key}</p>
+                        <p className="mono text-2xs" style={{ color: 'var(--fg-3)' }}>{checkpoint.checkpoint_key} · #{checkpoint.sequence}</p>
+                        <p className="text-2xs" style={{ color: 'var(--fg-3)', marginTop: 4 }}>
                           Executor: {formatAgentLabel(checkpoint.agent, checkpoint.agent_id)}
                           {delegation ? ` · Delegated by ${formatAgentLabel(checkpoint.delegated_by_agent, delegation.delegatedByAgentId)}` : ''}
                           {observerAgentId ? ` · Observed by ${formatAgentLabel(checkpoint.observer_agent, observerAgentId)}` : ''}
                           {brokerage?.brokerAgentId ? ` · Brokered by ${formatAgentLabel(checkpoint.broker_agent, brokerage.brokerAgentId)}` : ''}
                         </p>
                       </div>
-                      <span style={{ fontSize: 10, color: 'var(--fg-3)' }}>{formatExecutionTime(checkpoint.created_at)}</span>
+                      <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{formatExecutionTime(checkpoint.created_at)}</span>
                     </div>
                     <div style={{ marginTop: 8 }}>
                       <JsonPayload payload={checkpoint.payload} />
@@ -251,7 +251,7 @@ export default function ExecutionPanel({
                         <p className="upper" style={{ color: 'var(--fg-4)', marginBottom: 8 }}>Attached artifacts</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                           {checkpointAttachments.map((attachment) => (
-                            <div key={attachment.id} style={{ fontSize: 11, color: 'var(--fg-1)', wordBreak: 'break-all' }}>• {attachment.original_name}</div>
+                            <div key={attachment.id} className="text-2xs" style={{ color: 'var(--fg-1)', wordBreak: 'break-all' }}>• {attachment.original_name}</div>
                           ))}
                         </div>
                       </div>

@@ -103,7 +103,7 @@ export default function ApprovalList({
         }}>
           <ShieldCheck size={18} style={{ color: 'var(--fg-4)' }} />
         </div>
-        <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No approval requests</p>
+        <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No approval requests</p>
       </div>
     );
   }
@@ -111,12 +111,12 @@ export default function ApprovalList({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {error && (
-        <div style={{
+        <div className="text-xs" style={{
           padding: '10px 14px',
           borderRadius: 6,
           background: 'var(--rose-bg)',
           border: '1px solid oklch(0.40 0.08 25 / 0.4)',
-          fontSize: 12,
+          
           color: 'var(--rose)',
         }}>
           {error}
@@ -135,7 +135,7 @@ export default function ApprovalList({
                   {statusPill(a.status)}
                   <span className="h3">{formatAction(a.action)}</span>
                 </div>
-                <div className="row gap-3" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
+                <div className="row gap-3 text-xs" style={{ color: 'var(--fg-3)' }}>
                   <span>
                     Requested by <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{a.actor}</span>
                   </span>
@@ -162,7 +162,7 @@ export default function ApprovalList({
                       {Object.entries(a.details)
                         .filter(([k]) => !['executed', 'executed_at', 'executed_by'].includes(k))
                         .map(([k, v]) => (
-                          <div key={k} className="row gap-2" style={{ fontSize: 12 }}>
+                          <div key={k} className="row gap-2 text-xs">
                             <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>{k.replace(/_/g, ' ')}:</span>
                             <span className="mono" style={{ color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(v)}</span>
                           </div>
@@ -171,7 +171,7 @@ export default function ApprovalList({
                   </div>
                 )}
                 {isOwnRequest && a.status === 'pending' && (
-                  <p style={{ marginTop: 8, fontSize: 11, color: 'var(--amber)', fontWeight: 500 }}>
+                  <p className="text-2xs" style={{ marginTop: 8, color: 'var(--amber)', fontWeight: 500 }}>
                     You cannot approve your own request
                   </p>
                 )}

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function HumanOnboardingPage() {
   return (
-    <div style={{ padding: '28px 32px 60px', maxWidth: 860, margin: '0 auto' }}>
+    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -30,7 +30,7 @@ export default function HumanOnboardingPage() {
             <h1 className="h1">Human Guide</h1>
           </div>
         </div>
-        <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
+        <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
           A quick tour of how A2A Comms works when communication and delivery tracking live side by side.
         </p>
       </div>
@@ -408,7 +408,7 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
   return (
     <section className="card animate-fade-in" style={{ padding: 24, animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 16 }}>
-        <div style={{
+        <div className="text-2xs" style={{
           width: 28,
           height: 28,
           borderRadius: 6,
@@ -417,18 +417,18 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 11,
+          
           fontWeight: 700,
           color: 'var(--amber)',
           flexShrink: 0,
           fontFamily: 'var(--mono)',
         }}>{idx + 1}</div>
         <div>
-          <h2 className="h2" style={{ fontSize: 16 }}>{title}</h2>
-          {subtitle && <p className="dim" style={{ fontSize: 11, marginTop: 2 }}>{subtitle}</p>}
+          <h2 className="h2 text-base">{title}</h2>
+          {subtitle && <p className="dim text-2xs" style={{ marginTop: 2 }}>{subtitle}</p>}
         </div>
       </div>
-      <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>{children}</div>
+      <div className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6 }}>{children}</div>
     </section>
   );
 }
@@ -442,7 +442,7 @@ function FeatureCard({ title, desc }: { title: string; desc: string }) {
       padding: '12px 14px',
     }}>
       <p className="h3" style={{ marginBottom: 4 }}>{title}</p>
-      <p className="dim" style={{ fontSize: 12 }}>{desc}</p>
+      <p className="dim text-xs">{desc}</p>
     </div>
   );
 }
@@ -455,8 +455,8 @@ function DashboardItem({ title, desc }: { title: string; desc: string }) {
       border: '1px solid var(--line-1)',
       padding: '10px 14px',
     }}>
-      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
-      <p className="dim" style={{ fontSize: 12, marginTop: 2 }}>{desc}</p>
+      <p className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
+      <p className="dim text-xs" style={{ marginTop: 2 }}>{desc}</p>
     </div>
   );
 }
@@ -471,7 +471,7 @@ function SecurityItem({ num, title, children }: { num: number; title: string; ch
       border: '1px solid var(--line-1)',
       padding: '10px 14px',
     }}>
-      <span style={{
+      <span className="text-2xs" style={{
         width: 22,
         height: 22,
         borderRadius: 5,
@@ -480,15 +480,15 @@ function SecurityItem({ num, title, children }: { num: number; title: string; ch
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 10,
+        
         fontWeight: 700,
         color: 'var(--amber)',
         flexShrink: 0,
         fontFamily: 'var(--mono)',
       }}>{num}</span>
       <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
-        <p className="dim" style={{ fontSize: 12, marginTop: 2 }}>{children}</p>
+        <p className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
+        <p className="dim text-xs" style={{ marginTop: 2 }}>{children}</p>
       </div>
     </div>
   );
@@ -511,8 +511,8 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
     >
       <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
-          <p className="dim" style={{ fontSize: 12, marginTop: 2 }}>{desc}</p>
+          <p className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{title}</p>
+          <p className="dim text-xs" style={{ marginTop: 2 }}>{desc}</p>
         </div>
         {external ? (
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--fg-4)', flexShrink: 0 }}>
@@ -532,13 +532,13 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code style={{
+    <code className="text-xs" style={{
       padding: '1px 5px',
       borderRadius: 4,
       background: 'var(--bg-3)',
       border: '1px solid var(--line-2)',
       color: 'var(--peri)',
-      fontSize: 12,
+      
       fontFamily: 'var(--mono)',
     }}>{children}</code>
   );
@@ -562,13 +562,13 @@ function Callout({ children, tone = 'neutral' }: { children: React.ReactNode; to
   };
   const s = styles[tone];
   return (
-    <div style={{
+    <div className="text-xs" style={{
       borderRadius: 6,
       background: s.bg,
       border: `1px solid ${s.border}`,
       padding: '10px 14px',
       marginTop: 12,
-      fontSize: 12,
+      
       color: 'var(--fg-2)',
       lineHeight: 1.6,
     }}>{children}</div>

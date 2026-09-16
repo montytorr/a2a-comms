@@ -136,11 +136,11 @@ export default async function AuditPage({
   const { data: entries, error: dataError } = await dataQuery;
   if (dataError) {
     return (
-      <PageFrame maxW={1400}>
+      <PageFrame>
         <SectionHeader eyebrow="Monitoring" title="Audit Log" sub="Failed to load audit entries" />
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load audit log</div>
-          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>A database error occurred. Please try again later.</div>
+          <div className="dim text-xs" style={{ marginTop: 6 }}>A database error occurred. Please try again later.</div>
         </div>
       </PageFrame>
     );
@@ -151,7 +151,7 @@ export default async function AuditPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <PageFrame maxW={1400}>
+      <PageFrame>
         <SectionHeader
           eyebrow="Monitoring"
           title="Audit Log"
@@ -185,7 +185,7 @@ export default async function AuditPage({
             </button>
           )}
 
-          <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)', padding: '0 8px' }}>
+          <span className="mono num text-xs" style={{ color: 'var(--fg-2)', padding: '0 8px' }}>
             {page} / {totalPages}
           </span>
 

@@ -231,7 +231,7 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
   );
 
   return (
-    <PageFrame maxW={1300}>
+    <PageFrame>
       <SectionHeader
         eyebrow="Monitoring · Live"
         title="Live Feed"
@@ -239,7 +239,7 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
         right={headerRight}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 16, alignItems: 'start' }}>
 
         {/* ── Left: event stream ─────────────────────────────────────────── */}
         <div className="card">
@@ -250,7 +250,7 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
             borderBottom: '1px solid var(--line-1)',
           }}>
             <span className="upper flex-1">Event Stream</span>
-            <span className="mono dim" style={{ fontSize: 11 }}>{events.length} loaded</span>
+            <span className="mono dim text-2xs">{events.length} loaded</span>
             {!loading && (
               <span className={`dot ${connected ? 'dot--mint' : 'dot--rose'}`} title={connected ? 'Connected' : 'Disconnected'} />
             )}
@@ -260,11 +260,11 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
           <div style={{ maxHeight: 600, overflowY: 'auto' }}>
             {loading ? (
               <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                <span className="dim" style={{ fontSize: 13 }}>Loading events…</span>
+                <span className="dim text-sm">Loading events…</span>
               </div>
             ) : events.length === 0 ? (
               <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                <span className="dim" style={{ fontSize: 13 }}>No events yet</span>
+                <span className="dim text-sm">No events yet</span>
               </div>
             ) : (
               events.map((ev) => (
@@ -281,14 +281,14 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
           <div className="card" style={{ padding: 16 }}>
             <div className="upper" style={{ marginBottom: 12 }}>Event Types</div>
             {topEventTypes.length === 0 ? (
-              <div className="dim" style={{ fontSize: 12 }}>No real events loaded yet.</div>
+              <div className="dim text-xs">No real events loaded yet.</div>
             ) : (
               <div className="col gap-3">
                 {topEventTypes.map(([type, count]) => (
                   <div key={type}>
                     <div className="row gap-2" style={{ marginBottom: 5 }}>
-                      <span className="mono" style={{ flex: 1, fontSize: 12, color: TYPE_COLOR[type] }}>{type}</span>
-                      <span className="mono num dim" style={{ fontSize: 12 }}>{count}</span>
+                      <span className="mono text-xs" style={{ flex: 1, color: TYPE_COLOR[type] }}>{type}</span>
+                      <span className="mono num dim text-xs">{count}</span>
                     </div>
                     <div style={{ height: 3, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden' }}>
                       <div style={{ width: `${Math.max(6, (count / maxTopEventCount) * 100)}%`, height: '100%', background: TYPE_COLOR[type] }} />
@@ -329,8 +329,8 @@ function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
     >
       {/* Timestamp */}
       <span
-        className="mono num"
-        style={{ fontSize: 10.5, color: 'var(--fg-4)', width: 70, flexShrink: 0, userSelect: 'none' }}
+        className="mono num text-2xs"
+        style={{ color: 'var(--fg-4)', width: 70, flexShrink: 0, userSelect: 'none' }}
       >
         {ts}
       </span>
@@ -340,8 +340,8 @@ function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
 
       {/* Actor */}
       <span
-        className="mono truncate-text"
-        style={{ fontSize: 11, color: 'var(--fg-3)', width: 90, flexShrink: 0 }}
+        className="mono truncate-text text-2xs"
+        style={{ color: 'var(--fg-3)', width: 90, flexShrink: 0 }}
         title={event.actor}
       >
         {event.actor}
@@ -349,8 +349,8 @@ function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
 
       {/* Summary */}
       <span
-        className="truncate-text"
-        style={{ flex: 1, fontSize: 12, color: 'var(--fg-2)' }}
+        className="truncate-text text-xs"
+        style={{ flex: 1, color: 'var(--fg-2)' }}
         title={event.summary}
       >
         {event.summary}

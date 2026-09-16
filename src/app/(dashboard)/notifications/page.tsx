@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
 
   return (
     <AutoRefresh intervalMs={10000}>
-      <div style={{ padding: '28px 32px 60px', maxWidth: '900px' }}>
+      <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div style={{ marginBottom: '32px' }} className="animate-fade-in">
           <div className="row gap-3" style={{ marginBottom: '8px' }}>
@@ -52,13 +52,13 @@ export default async function NotificationsPage() {
               <h1 className="h1">Notifications</h1>
             </div>
           </div>
-          <p className="muted" style={{ fontSize: '13px', lineHeight: '1.6', marginTop: '8px' }}>
+          <p className="muted text-sm" style={{ lineHeight: '1.6', marginTop: '8px' }}>
             Derived in-app attention queue for blocked work, contract invites, project invites, assigned work, and approval requests.
           </p>
         </div>
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px' }} className="animate-fade-in">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px', marginBottom: '20px' }} className="animate-fade-in">
           <StatCard label="Total" value={counts.total} accentVar="--mint" />
           <StatCard label="Blockers" value={counts.blockers} accentVar="--rose" />
           <StatCard label="Contracts + projects" value={counts.contracts + counts.projects} accentVar="--peri" />
@@ -79,7 +79,7 @@ export default async function NotificationsPage() {
           >
             <div>
               <h2 className="h3">Actionable items</h2>
-              <p className="dim" style={{ fontSize: '11px', marginTop: '2px' }}>Auto-refreshing every 10 seconds.</p>
+              <p className="dim text-2xs" style={{ marginTop: '2px' }}>Auto-refreshing every 10 seconds.</p>
             </div>
             <span className="pill pill--mint">{items.length} visible</span>
           </div>
@@ -101,8 +101,8 @@ export default async function NotificationsPage() {
               >
                 <Bell size={18} style={{ color: 'var(--fg-4)' }} />
               </div>
-              <p className="muted" style={{ fontSize: '13px', fontWeight: 500 }}>Nothing needs attention</p>
-              <p className="dim" style={{ fontSize: '11px', marginTop: '4px' }}>A rare and suspiciously pleasant state of affairs.</p>
+              <p className="muted text-sm" style={{ fontWeight: 500 }}>Nothing needs attention</p>
+              <p className="dim text-2xs" style={{ marginTop: '4px' }}>A rare and suspiciously pleasant state of affairs.</p>
             </div>
           ) : (
             <div>
@@ -124,14 +124,14 @@ export default async function NotificationsPage() {
                         <span className={`pill ${kindPillTone[item.kind] || 'pill--ghost'}`}>
                           {item.kind.replace(/-/g, ' ')}
                         </span>
-                        {item.meta && <span className="dim" style={{ fontSize: '11px' }}>{item.meta}</span>}
+                        {item.meta && <span className="dim text-2xs">{item.meta}</span>}
                       </div>
-                      <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fg-0)', margin: 0 }}>{item.title}</p>
-                      <p className="muted" style={{ fontSize: '13px', marginTop: '3px' }}>{item.body}</p>
+                      <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)', margin: 0 }}>{item.title}</p>
+                      <p className="muted text-sm" style={{ marginTop: '3px' }}>{item.body}</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: '16px' }}>
-                      <p className="mono dim" style={{ fontSize: '11px' }}>{formatDate(item.createdAt)}</p>
-                      <p style={{ fontSize: '11px', color: 'var(--mint)', marginTop: '4px' }}>Open →</p>
+                      <p className="mono dim text-2xs">{formatDate(item.createdAt)}</p>
+                      <p className="text-2xs" style={{ color: 'var(--mint)', marginTop: '4px' }}>Open →</p>
                     </div>
                   </div>
                 </Link>
@@ -151,7 +151,7 @@ function StatCard({ label, value, accentVar }: { label: string; value: number; a
       style={{ padding: '16px 18px' }}
     >
       <p className="upper dim" style={{ marginBottom: '6px' }}>{label}</p>
-      <p className="mono num" style={{ fontSize: '28px', fontWeight: 700, color: `var(${accentVar})` }}>{value}</p>
+      <p className="mono num text-2xl" style={{ fontWeight: 700, color: `var(${accentVar})` }}>{value}</p>
     </div>
   );
 }

@@ -89,9 +89,9 @@ function SprintEditForm({
         className="cp-input"
         style={{ width: '100%', marginBottom: 8 }}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8, marginBottom: 8 }}>
         <div>
-          <label className="upper" style={{ display: 'block', fontSize: 9, marginBottom: 6 }}>Start</label>
+          <label className="upper text-2xs" style={{ display: 'block', marginBottom: 6 }}>Start</label>
           <input
             type="date"
             value={startDate}
@@ -102,7 +102,7 @@ function SprintEditForm({
           />
         </div>
         <div>
-          <label className="upper" style={{ display: 'block', fontSize: 9, marginBottom: 6 }}>End</label>
+          <label className="upper text-2xs" style={{ display: 'block', marginBottom: 6 }}>End</label>
           <input
             type="date"
             value={endDate}
@@ -189,9 +189,9 @@ export default function SprintSelector({
                 {tab.label}
                 {pct !== null && stats && stats.total > 0 && (
                   <span
-                    className="mono"
+                    className="mono text-2xs"
                     style={{
-                      fontSize: 9,
+                      
                       marginLeft: 2,
                       color: pct === 100 ? 'var(--mint)' : isActive ? 'var(--peri)' : 'var(--fg-4)',
                     }}
@@ -239,7 +239,7 @@ export default function SprintSelector({
             setShowNewForm(!showNewForm);
             setEditingSprintId(null);
           }}
-          style={{
+          className="text-2xs" style={{
             display: 'flex',
             alignItems: 'center',
             gap: 4,
@@ -248,7 +248,7 @@ export default function SprintSelector({
             border: '1px dashed var(--line-1)',
             background: 'transparent',
             color: 'var(--fg-4)',
-            fontSize: 10,
+            
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
@@ -301,8 +301,8 @@ export default function SprintSelector({
             <div style={{ flex: 1, minWidth: 0 }}>
               {activeSprint.goal && (
                 <>
-                  <p className="upper" style={{ fontSize: 9, marginBottom: 4 }}>Sprint Goal</p>
-                  <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 8 }}>
+                  <p className="upper text-2xs" style={{ marginBottom: 4 }}>Sprint Goal</p>
+                  <p className="muted text-xs" style={{ lineHeight: 1.5, marginBottom: 8 }}>
                     {activeSprint.goal}
                   </p>
                 </>
@@ -321,10 +321,10 @@ export default function SprintSelector({
                         marginBottom: 6,
                       }}
                     >
-                      <p className="upper" style={{ fontSize: 9 }}>Progress</p>
+                      <p className="upper text-2xs">Progress</p>
                       <p
-                        className="mono"
-                        style={{ fontSize: 10, color: 'var(--fg-4)' }}
+                        className="mono text-2xs"
+                        style={{ color: 'var(--fg-4)' }}
                       >
                         {stats.done}/{stats.total} tasks ·{' '}
                         <span style={{ color: pct === 100 ? 'var(--mint)' : 'var(--peri)' }}>
@@ -356,8 +356,8 @@ export default function SprintSelector({
             </div>
             {(activeSprint.start_date || activeSprint.end_date) && (
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <p className="upper" style={{ fontSize: 9, marginBottom: 4 }}>Duration</p>
-                <p className="mono dim" style={{ fontSize: 11 }}>
+                <p className="upper text-2xs" style={{ marginBottom: 4 }}>Duration</p>
+                <p className="mono dim text-2xs">
                   {activeSprint.start_date ? formatDate(activeSprint.start_date) : '—'}
                   {' → '}
                   {activeSprint.end_date ? formatDate(activeSprint.end_date) : '—'}

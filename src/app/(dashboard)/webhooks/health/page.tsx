@@ -228,7 +228,7 @@ export default async function WebhookHealthPage({
 
   return (
     <AutoRefresh intervalMs={30000}>
-      <div style={{ padding: '28px 32px 60px' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
           <div>
@@ -240,7 +240,7 @@ export default async function WebhookHealthPage({
               <p className="upper">Delivery Health</p>
             </div>
             <h1 className="h1">Webhook Health</h1>
-            <p className="muted" style={{ marginTop: 4, fontSize: 13 }}>Delivery status monitoring &amp; diagnostics</p>
+            <p className="muted text-sm" style={{ marginTop: 4 }}>Delivery status monitoring &amp; diagnostics</p>
           </div>
           <Link href="/webhooks" className="btn">
             <ArrowLeft size={14} />
@@ -258,7 +258,7 @@ export default async function WebhookHealthPage({
             padding: '10px 16px',
           }}>
             <Info size={14} style={{ color: 'var(--amber)', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 500 }}>
+            <span className="text-xs" style={{ color: 'var(--amber)', fontWeight: 500 }}>
               Admin view — showing all platform webhook deliveries.
             </span>
           </div>
@@ -271,7 +271,7 @@ export default async function WebhookHealthPage({
             padding: '10px 16px',
           }}>
             <Info size={14} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>
+            <span className="text-xs" style={{ color: 'var(--fg-3)', fontWeight: 500 }}>
               No webhooks registered for your agents. Register a webhook to see delivery health here.
             </span>
           </div>
@@ -284,33 +284,33 @@ export default async function WebhookHealthPage({
             padding: '10px 16px',
           }}>
             <Info size={14} style={{ color: 'var(--peri)', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--peri)', fontWeight: 500 }}>
+            <span className="text-xs" style={{ color: 'var(--peri)', fontWeight: 500 }}>
               Showing deliveries for your webhooks only.
             </span>
           </div>
         )}
 
         {/* Overall Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 32 }}>
           <div className="card" style={{ padding: '16px 20px' }}>
             <p className="upper" style={{ marginBottom: 8 }}>24h Total</p>
-            <p className="num" style={{ fontSize: 24, fontWeight: 700, color: 'var(--fg-0)' }}>{totalDeliveries24h}</p>
+            <p className="num text-xl" style={{ fontWeight: 700, color: 'var(--fg-0)' }}>{totalDeliveries24h}</p>
           </div>
           <div className="card" style={{ padding: '16px 20px' }}>
             <p className="upper" style={{ marginBottom: 8, color: 'var(--mint)' }}>Success</p>
-            <p className="num" style={{ fontSize: 24, fontWeight: 700, color: 'var(--mint)' }}>{totalSuccess}</p>
+            <p className="num text-xl" style={{ fontWeight: 700, color: 'var(--mint)' }}>{totalSuccess}</p>
           </div>
           <div className="card" style={{ padding: '16px 20px' }}>
             <p className="upper" style={{ marginBottom: 8, color: 'var(--rose)' }}>Failed</p>
-            <p className="num" style={{ fontSize: 24, fontWeight: 700, color: 'var(--rose)' }}>{totalFailed}</p>
+            <p className="num text-xl" style={{ fontWeight: 700, color: 'var(--rose)' }}>{totalFailed}</p>
           </div>
           <div className="card" style={{ padding: '16px 20px' }}>
             <p className="upper" style={{ marginBottom: 8, color: 'var(--peri)' }}>Retrying</p>
-            <p className="num" style={{ fontSize: 24, fontWeight: 700, color: 'var(--peri)' }}>{totalRetrying}</p>
+            <p className="num text-xl" style={{ fontWeight: 700, color: 'var(--peri)' }}>{totalRetrying}</p>
           </div>
           <div className="card" style={{ padding: '16px 20px' }}>
             <p className="upper" style={{ marginBottom: 8 }}>Success Rate</p>
-            <p className="num" style={{ fontSize: 24, fontWeight: 700, color: successRate >= 90 ? 'var(--mint)' : successRate >= 70 ? 'var(--amber)' : 'var(--rose)' }}>
+            <p className="num text-xl" style={{ fontWeight: 700, color: successRate >= 90 ? 'var(--mint)' : successRate >= 70 ? 'var(--amber)' : 'var(--rose)' }}>
               {successRate}%
             </p>
           </div>
@@ -325,9 +325,9 @@ export default async function WebhookHealthPage({
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
               <h2 className="h3">Per-Webhook Summary</h2>
-              <span className="dim" style={{ fontSize: 11 }}>(last 24h · click to filter failures)</span>
+              <span className="dim text-2xs">(last 24h · click to filter failures)</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
               {summaries.map((s, idx) => (
                 <WebhookFilterCard
                   key={s.webhookId}
@@ -362,7 +362,7 @@ export default async function WebhookHealthPage({
             alignItems: 'center',
             justifyContent: 'space-between',
           }}>
-            <p style={{ fontSize: 12, color: 'var(--peri)' }}>
+            <p className="text-xs" style={{ color: 'var(--peri)' }}>
               <span style={{ fontWeight: 600 }}>Filtered:</span> Showing failures for{' '}
               <span className="mono" style={{ color: 'var(--fg-1)' }}>{truncateUrl(filteredWebhookUrl || '', 60)}</span>
             </p>
@@ -379,7 +379,7 @@ export default async function WebhookHealthPage({
             <h2 className="h3">
               {filterWebhookId ? 'Failed Deliveries' : 'Recent Deliveries'}
             </h2>
-            <span className="dim" style={{ fontSize: 11 }}>
+            <span className="dim text-2xs">
               {filterWebhookId ? `(${deliveries.length} failures)` : '(last 50)'}
             </span>
           </div>
@@ -401,10 +401,10 @@ export default async function WebhookHealthPage({
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </div>
-              <p style={{ fontSize: 13, color: 'var(--fg-3)', fontWeight: 500 }}>
+              <p className="text-sm" style={{ color: 'var(--fg-3)', fontWeight: 500 }}>
                 {filterWebhookId ? 'No failures found' : 'No deliveries recorded'}
               </p>
-              <p style={{ fontSize: 12, color: 'var(--fg-4)', marginTop: 4 }}>
+              <p className="text-xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>
                 {filterWebhookId
                   ? 'This webhook has no failed deliveries in the last 50 attempts.'
                   : 'Webhook deliveries will appear here once events are dispatched.'}
@@ -413,12 +413,12 @@ export default async function WebhookHealthPage({
           ) : (
             <div className="card" style={{ overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
                       {['Event', 'Status', 'HTTP', 'Attempts', 'Webhook', 'Target Agent', 'Created', 'Delivered'].map(col => (
                         <th key={col} style={{ textAlign: 'left', padding: '10px 16px' }}>
-                          <span className="upper" style={{ fontSize: 10 }}>{col}</span>
+                          <span className="upper text-2xs">{col}</span>
                         </th>
                       ))}
                     </tr>
@@ -434,7 +434,7 @@ export default async function WebhookHealthPage({
                         }}
                       >
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="pill pill--peri mono" style={{ fontSize: 11 }}>
+                          <span className="pill pill--peri mono text-2xs">
                             {d.event}
                           </span>
                         </td>
@@ -443,8 +443,8 @@ export default async function WebhookHealthPage({
                         </td>
                         <td style={{ padding: '10px 16px' }}>
                           {d.response_status ? (
-                            <span className="mono num" style={{
-                              fontSize: 12,
+                            <span className="mono num text-xs" style={{
+                              
                               color: d.response_status >= 200 && d.response_status < 300
                                 ? 'var(--mint)'
                                 : d.response_status >= 400
@@ -454,33 +454,33 @@ export default async function WebhookHealthPage({
                               {d.response_status}
                             </span>
                           ) : (
-                            <span className="dim" style={{ fontSize: 12 }}>—</span>
+                            <span className="dim text-xs">—</span>
                           )}
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="mono num" style={{ fontSize: 12, color: d.attempts > 1 ? 'var(--amber)' : 'var(--fg-3)' }}>
+                          <span className="mono num text-xs" style={{ color: d.attempts > 1 ? 'var(--amber)' : 'var(--fg-3)' }}>
                             {d.attempts}/{d.max_retries}
                           </span>
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }} title={d.webhooks.url}>
+                          <span className="mono text-xs" style={{ color: 'var(--fg-3)' }} title={d.webhooks.url}>
                             {truncateUrl(d.webhooks.url)}
                           </span>
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span style={{ fontSize: 12, color: 'var(--fg-2)' }} title={d.webhooks.agents?.name || d.webhooks.agent_id}>
+                          <span className="text-xs" style={{ color: 'var(--fg-2)' }} title={d.webhooks.agents?.name || d.webhooks.agent_id}>
                             {d.webhooks.agents?.display_name || d.webhooks.agents?.name || (
                               <span className="mono dim">{d.webhooks.agent_id.slice(0, 8)}</span>
                             )}
                           </span>
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="num" style={{ fontSize: 12, color: 'var(--fg-3)' }} title={d.created_at}>
+                          <span className="num text-xs" style={{ color: 'var(--fg-3)' }} title={d.created_at}>
                             {formatTimestamp(d.created_at)}
                           </span>
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="num" style={{ fontSize: 12, color: 'var(--fg-3)' }} title={d.delivered_at || undefined}>
+                          <span className="num text-xs" style={{ color: 'var(--fg-3)' }} title={d.delivered_at || undefined}>
                             {d.delivered_at ? formatTimestamp(d.delivered_at) : '—'}
                           </span>
                         </td>
@@ -502,7 +502,7 @@ export default async function WebhookHealthPage({
             border: '1px solid oklch(0.55 0.12 60 / 0.35)',
             padding: '10px 16px',
           }}>
-            <p style={{ fontSize: 12, color: 'var(--amber)' }}>
+            <p className="text-xs" style={{ color: 'var(--amber)' }}>
               <span style={{ fontWeight: 600 }}>{totalPending + totalRetrying}</span> deliveries pending or retrying in the last 24h.
             </p>
           </div>

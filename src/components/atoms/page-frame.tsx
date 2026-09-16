@@ -15,10 +15,11 @@ import { cn } from '@/lib/utils';
  * Horizontal padding matches the shell's own so the acting-agent row and the
  * page body line up at every breakpoint.
  */
-type PageWidth = 'prose' | 'default' | 'wide';
+type PageWidth = 'narrow' | 'prose' | 'default' | 'wide';
 
 const widths: Record<PageWidth, string> = {
-  prose: 'max-w-[68rem]',
+  narrow: 'max-w-[46rem]',
+  prose: 'max-w-[58rem]',
   default: 'max-w-[var(--content-max)]',
   wide: 'max-w-none',
 };

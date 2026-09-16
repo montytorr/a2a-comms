@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 function SearchForm({ contractId, taskId }: { contractId: string; taskId: string }) {
   return (
-    <form style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr auto' }} action="/protocol-inspector" method="get">
+    <form style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }} action="/protocol-inspector" method="get">
       <div>
         <label htmlFor="contract" className="upper" style={{ display: 'block', marginBottom: 6 }}>
           Contract ID
@@ -56,23 +56,23 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
   return (
     <div className="card" style={{ padding: '14px 18px' }}>
       <p className="upper" style={{ marginBottom: 8 }}>{label}</p>
-      <p className="num" style={{ fontSize: 22, fontWeight: 700, color: tone || 'var(--fg-0)' }}>{value}</p>
+      <p className="num text-xl" style={{ fontWeight: 700, color: tone || 'var(--fg-0)' }}>{value}</p>
     </div>
   );
 }
 
 function JsonBlock({ value }: { value: unknown }) {
   if (!value || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value as Record<string, unknown>).length === 0)) {
-    return <p style={{ fontSize: 12, color: 'var(--fg-3)' }}>No payload.</p>;
+    return <p className="text-xs" style={{ color: 'var(--fg-3)' }}>No payload.</p>;
   }
   return (
-    <pre className="mono" style={{
+    <pre className="mono text-2xs" style={{
       overflowX: 'auto',
       borderRadius: 6,
       border: '1px solid var(--line-1)',
       background: 'var(--bg-0)',
       padding: 12,
-      fontSize: 11,
+      
       lineHeight: 1.6,
       color: 'var(--fg-2)',
     }}>
@@ -132,21 +132,21 @@ function RunCard({ run }: { run: TaskExecutionRun }) {
     <div className="card" style={{ padding: 16 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>Attempt #{run.attempt}</p>
-          <p className="mono" style={{ marginTop: 4, fontSize: 11, color: 'var(--fg-4)' }}>{run.id}</p>
+          <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>Attempt #{run.attempt}</p>
+          <p className="mono text-2xs" style={{ marginTop: 4, color: 'var(--fg-4)' }}>{run.id}</p>
         </div>
         <span className="pill" style={{ color: executionStatusToneColor(toneCls) }}>
           {getExecutionStatusLabel(run.status, stale)}
         </span>
       </div>
-      <div style={{ marginTop: 12, display: 'grid', gap: 8, fontSize: 12, color: 'var(--fg-3)', gridTemplateColumns: '1fr 1fr' }}>
+      <div className="text-xs" style={{ marginTop: 12, display: 'grid', gap: 8, color: 'var(--fg-3)', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         <p>Started: <span style={{ color: 'var(--fg-1)' }}>{run.started_at ? formatDateTime(run.started_at) : '—'}</span></p>
         <p>Heartbeat: <span style={{ color: 'var(--fg-1)' }}>{run.heartbeat_at ? `${formatDateTime(run.heartbeat_at)} (${formatRelative(run.heartbeat_at)})` : '—'}</span></p>
         <p>Completed: <span style={{ color: 'var(--fg-1)' }}>{run.completed_at ? formatDateTime(run.completed_at) : '—'}</span></p>
         <p>Checkpoints: <span style={{ color: 'var(--fg-1)' }}>{run.checkpoint_count}</span></p>
       </div>
       {(run.summary || run.error_message) && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+        <div className="text-xs" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {run.summary && <p style={{ color: 'var(--fg-2)' }}><span style={{ color: 'var(--fg-3)' }}>Summary:</span> {run.summary}</p>}
           {run.error_message && <p style={{ color: 'var(--rose)' }}><span style={{ color: 'oklch(0.74 0.14 25 / 0.7)' }}>Error:</span> {run.error_message}</p>}
         </div>
@@ -160,10 +160,10 @@ function CheckpointCard({ checkpoint }: { checkpoint: TaskExecutionCheckpoint })
     <div className="card" style={{ padding: 16 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>{checkpoint.summary || checkpoint.checkpoint_key}</p>
-          <p className="mono" style={{ marginTop: 4, fontSize: 11, color: 'var(--fg-4)' }}>{checkpoint.checkpoint_key} · seq {checkpoint.sequence}</p>
+          <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{checkpoint.summary || checkpoint.checkpoint_key}</p>
+          <p className="mono text-2xs" style={{ marginTop: 4, color: 'var(--fg-4)' }}>{checkpoint.checkpoint_key} · seq {checkpoint.sequence}</p>
         </div>
-        <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>{formatDateTime(checkpoint.created_at)}</span>
+        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{formatDateTime(checkpoint.created_at)}</span>
       </div>
       <div style={{ marginTop: 12 }}>
         <JsonBlock value={checkpoint.payload} />
@@ -196,12 +196,12 @@ export default async function ProtocolInspectorPage({
   const searched = !!contractId || !!taskId;
 
   return (
-    <div style={{ padding: '28px 32px 60px' }}>
+    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <p className="upper" style={{ marginBottom: 6 }}>Debugging Cockpit</p>
         <h1 className="h1">Protocol Inspector</h1>
-        <p className="muted" style={{ marginTop: 8, maxWidth: 640, fontSize: 13, lineHeight: 1.6 }}>
+        <p className="muted text-sm" style={{ marginTop: 8, maxWidth: 640, lineHeight: 1.6 }}>
           One operator-facing view for contract state, message timeline, task linkage, execution evidence, webhook delivery, and obvious conformance drift.
         </p>
       </div>
@@ -213,13 +213,13 @@ export default async function ProtocolInspectorPage({
 
       {!searched ? (
         <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>Enter a contract ID, task ID, or both.</p>
-          <p style={{ marginTop: 4, fontSize: 12, color: 'var(--fg-4)' }}>The inspector will stitch together the visible flow instead of making you bounce across five screens like a lunatic.</p>
+          <p className="text-sm" style={{ color: 'var(--fg-3)' }}>Enter a contract ID, task ID, or both.</p>
+          <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-4)' }}>The inspector will stitch together the visible flow instead of making you bounce across five screens like a lunatic.</p>
         </div>
       ) : (
         <>
           {/* Stats row */}
-          <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24 }}>
+          <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', marginBottom: 24 }}>
             <StatCard label="Messages" value={data.conformance.messageCount} />
             <StatCard label="Linked Tasks" value={data.conformance.linkedTaskCount} />
             <StatCard label="Runs" value={data.conformance.runCount} />
@@ -237,7 +237,7 @@ export default async function ProtocolInspectorPage({
             />
           </div>
 
-          <div style={{ display: 'grid', gap: 24, gridTemplateColumns: '1.15fr 0.85fr' }}>
+          <div style={{ display: 'grid', gap: 24, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
             {/* Left column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Conformance section */}
@@ -246,7 +246,7 @@ export default async function ProtocolInspectorPage({
                   <p className="upper" style={{ marginBottom: 4 }}>Conformance Summary</p>
                   <h2 className="h2">Live sanity checks</h2>
                 </div>
-                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
                   {[
                     {
                       label: 'Contract visible',
@@ -292,12 +292,12 @@ export default async function ProtocolInspectorPage({
                   ].map((item) => (
                     <div key={item.label} className="card" style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                        <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-2)' }}>{item.label}</p>
+                        <p className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{item.label}</p>
                         <span className={`pill ${item.ok ? 'pill--mint' : 'pill--rose'}`}>
                           {item.ok ? 'ok' : 'check'}
                         </span>
                       </div>
-                      <p style={{ marginTop: 8, fontSize: 12, color: 'var(--fg-3)' }}>{item.detail}</p>
+                      <p className="text-xs" style={{ marginTop: 8, color: 'var(--fg-3)' }}>{item.detail}</p>
                     </div>
                   ))}
                 </div>
@@ -305,9 +305,9 @@ export default async function ProtocolInspectorPage({
                 <div className="card--inset" style={{ marginTop: 16, padding: '12px 16px', borderRadius: 6 }}>
                   <p className="upper" style={{ marginBottom: 8 }}>Drift flags</p>
                   {data.conformance.driftFlags.length === 0 ? (
-                    <p style={{ fontSize: 13, color: 'var(--mint)' }}>Nothing obviously cursed.</p>
+                    <p className="text-sm" style={{ color: 'var(--mint)' }}>Nothing obviously cursed.</p>
                   ) : (
-                    <ul style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: 'var(--rose)' }}>
+                    <ul className="text-xs" style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8, color: 'var(--rose)' }}>
                       {data.conformance.driftFlags.map((flag) => (
                         <li key={flag} style={{
                           borderRadius: 6,
@@ -330,17 +330,17 @@ export default async function ProtocolInspectorPage({
                     <h2 className="h2">Summary + timeline</h2>
                   </div>
                   {data.contract && (
-                    <Link href={`/contracts/${data.contract.id}`} style={{ fontSize: 12, fontWeight: 600, color: 'var(--peri)', textDecoration: 'none' }}>
+                    <Link href={`/contracts/${data.contract.id}`} className="text-xs" style={{ fontWeight: 600, color: 'var(--peri)', textDecoration: 'none' }}>
                       Open contract →
                     </Link>
                   )}
                 </div>
 
                 {!data.contract ? (
-                  <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No visible contract in scope.</p>
+                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No visible contract in scope.</p>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                    <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
                       {[
                         { label: 'Title', value: data.contract.title },
                         { label: 'Status', value: data.contract.status },
@@ -349,23 +349,23 @@ export default async function ProtocolInspectorPage({
                       ].map(({ label, value }) => (
                         <div key={label} className="card" style={{ padding: '10px 14px' }}>
                           <p className="upper" style={{ marginBottom: 6 }}>{label}</p>
-                          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-1)' }}>{value}</p>
+                          <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>{value}</p>
                         </div>
                       ))}
                     </div>
 
                     <div className="card" style={{ marginTop: 12, padding: 16 }}>
                       <p className="upper" style={{ marginBottom: 12 }}>Participants</p>
-                      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                         {data.contract.participants.map((participant) => (
                           <div key={participant.id} className="card--inset" style={{ padding: '8px 12px', borderRadius: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-0)' }}>{participant.agent?.display_name || participant.agent?.name || 'Unknown agent'}</p>
+                              <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{participant.agent?.display_name || participant.agent?.name || 'Unknown agent'}</p>
                               <span className={`pill ${participant.status === 'accepted' ? 'pill--mint' : participant.status === 'pending' ? 'pill--amber' : 'pill--rose'}`}>
                                 {participant.status}
                               </span>
                             </div>
-                            <p style={{ marginTop: 4, fontSize: 12, color: 'var(--fg-3)' }}>{participant.role}{participant.responded_at ? ` · responded ${formatRelative(participant.responded_at)}` : ''}</p>
+                            <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{participant.role}{participant.responded_at ? ` · responded ${formatRelative(participant.responded_at)}` : ''}</p>
                           </div>
                         ))}
                       </div>
@@ -374,15 +374,15 @@ export default async function ProtocolInspectorPage({
                     <div className="card" style={{ marginTop: 12, padding: 16 }}>
                       <p className="upper" style={{ marginBottom: 12 }}>Message timeline</p>
                       {data.messages.length === 0 ? (
-                        <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No messages visible.</p>
+                        <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No messages visible.</p>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {data.messages.map((message) => (
                             <div key={message.id} className="card--inset" style={{ padding: 16, borderRadius: 6 }}>
                               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                                 <div>
-                                  <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-0)' }}>{message.sender?.display_name || message.sender?.name || 'Unknown sender'}</p>
-                                  <p style={{ marginTop: 4, fontSize: 12, color: 'var(--fg-3)' }}>{message.message_type} · {formatDateTime(message.created_at)} ({formatRelative(message.created_at)})</p>
+                                  <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{message.sender?.display_name || message.sender?.name || 'Unknown sender'}</p>
+                                  <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{message.message_type} · {formatDateTime(message.created_at)} ({formatRelative(message.created_at)})</p>
                                 </div>
                                 <span className="pill">{message.message_type}</span>
                               </div>
@@ -409,7 +409,7 @@ export default async function ProtocolInspectorPage({
                 </div>
 
                 {data.linkedTasks.length === 0 ? (
-                  <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No linked tasks found.</p>
+                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No linked tasks found.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.linkedTasks.map((task) => {
@@ -419,16 +419,16 @@ export default async function ProtocolInspectorPage({
                         <div key={task.id} className="card" style={{ padding: 16 }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                             <div>
-                              <Link href={`/projects/${task.project_id}/tasks/${task.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)', textDecoration: 'none' }}>
+                              <Link href={`/projects/${task.project_id}/tasks/${task.id}`} className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)', textDecoration: 'none' }}>
                                 {task.title}
                               </Link>
-                              <p style={{ marginTop: 4, fontSize: 12, color: 'var(--fg-3)' }}>{task.project_title || task.project_id} · {task.status} · {task.priority}</p>
+                              <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{task.project_title || task.project_id} · {task.status} · {task.priority}</p>
                             </div>
                             <span className="pill" style={{ color: executionStatusToneColor(toneCls) }}>
                               {getExecutionStatusLabel(task.execution_status, stale)}
                             </span>
                           </div>
-                          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--fg-3)' }}>
+                          <div className="text-xs" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--fg-3)' }}>
                             <p>Assignee: <span style={{ color: 'var(--fg-2)' }}>{task.assignee?.display_name || task.assignee?.name || '—'}</span></p>
                             <p>Last checkpoint: <span style={{ color: 'var(--fg-2)' }}>{task.last_checkpoint_summary || '—'}</span></p>
                             <p>Linked via contract: <span className="mono" style={{ color: 'var(--fg-2)' }}>{task.linked_via_contract_id || 'Direct task lookup'}</span></p>
@@ -449,7 +449,7 @@ export default async function ProtocolInspectorPage({
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {data.executionRuns.length === 0 ? (
-                    <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No execution runs found.</p>
+                    <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No execution runs found.</p>
                   ) : (
                     data.executionRuns.map((run) => <RunCard key={run.id} run={run} />)
                   )}
@@ -457,7 +457,7 @@ export default async function ProtocolInspectorPage({
 
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {data.executionCheckpoints.length === 0 ? (
-                    <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No checkpoints found.</p>
+                    <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No checkpoints found.</p>
                   ) : (
                     data.executionCheckpoints.map((checkpoint) => <CheckpointCard key={checkpoint.id} checkpoint={checkpoint} />)
                   )}
@@ -471,25 +471,25 @@ export default async function ProtocolInspectorPage({
                     <p className="upper" style={{ marginBottom: 4 }}>Webhooks</p>
                     <h2 className="h2">Delivery evidence</h2>
                   </div>
-                  <Link href="/webhooks/health" style={{ fontSize: 12, fontWeight: 600, color: 'var(--peri)', textDecoration: 'none' }}>
+                  <Link href="/webhooks/health" className="text-xs" style={{ fontWeight: 600, color: 'var(--peri)', textDecoration: 'none' }}>
                     Health view →
                   </Link>
                 </div>
 
                 {data.webhookDeliveries.length === 0 ? (
-                  <p style={{ fontSize: 13, color: 'var(--fg-3)' }}>No matching webhook deliveries found in the recent audit window.</p>
+                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No matching webhook deliveries found in the recent audit window.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.webhookDeliveries.map((delivery) => (
                       <div key={delivery.id} className="card" style={{ padding: 16 }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                           <div>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>{delivery.event}</p>
-                            <p style={{ marginTop: 4, fontSize: 12, color: 'var(--fg-3)' }}>{formatDateTime(delivery.created_at)} ({formatRelative(delivery.created_at)})</p>
+                            <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{delivery.event}</p>
+                            <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{formatDateTime(delivery.created_at)} ({formatRelative(delivery.created_at)})</p>
                           </div>
                           <DeliveryBadge status={delivery.status} />
                         </div>
-                        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--fg-3)' }}>
+                        <div className="text-xs" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--fg-3)' }}>
                           <p>Webhook: <span className="mono" style={{ color: 'var(--fg-2)' }}>{delivery.webhook?.url || delivery.webhook_id}</span></p>
                           <p>Attempts: <span style={{ color: 'var(--fg-2)' }}>{delivery.attempts}{delivery.max_retries ? ` / ${delivery.max_retries}` : ''}</span></p>
                           <p>HTTP: <span style={{ color: 'var(--fg-2)' }}>{delivery.response_status ?? '—'}</span></p>
@@ -511,13 +511,13 @@ export default async function ProtocolInspectorPage({
                                 <span className="btn btn--sm" style={{ cursor: 'default', color: 'var(--fg-3)' }}>
                                   Requeue unavailable
                                 </span>
-                                <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>
+                                <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>
                                   {delivery.replay_debug.requeue_reason || 'This delivery is not eligible for operator requeue.'}
                                 </span>
                               </div>
                             )}
                           </div>
-                          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--fg-3)' }}>
+                          <div className="text-xs" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--fg-3)' }}>
                             <p>Delivery ID: <span className="mono" style={{ color: 'var(--fg-2)' }}>{delivery.replay_debug.delivery_id}</span></p>
                             <p>Signature version: <span style={{ color: 'var(--fg-2)' }}>{delivery.replay_debug.signature_version}</span></p>
                             <p>Retryability: <span style={{ color: 'var(--fg-2)' }}>{delivery.replay_debug.retryable ? `yes${delivery.replay_debug.next_attempt_number ? ` · next attempt #${delivery.replay_debug.next_attempt_number}` : ''}` : delivery.replay_debug.final_attempt ? 'no · retries exhausted' : 'no'}</span></p>

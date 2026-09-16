@@ -108,7 +108,7 @@ export default function QuickTaskForm({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        style={{
+        className="text-2xs" style={{
           marginTop: 6,
           width: '100%',
           display: 'flex',
@@ -120,7 +120,7 @@ export default function QuickTaskForm({
           border: '1px dashed var(--line-1)',
           background: 'transparent',
           color: 'var(--fg-4)',
-          fontSize: 10,
+          
           fontWeight: 500,
           cursor: 'pointer',
           transition: 'border-color 0.15s, color 0.15s, background 0.15s',
@@ -162,12 +162,12 @@ export default function QuickTaskForm({
           onFocus={() => setExpanded(true)}
           placeholder="Task title…"
           disabled={isPending}
-          style={{
+          className="text-2xs" style={{
             width: '100%',
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            fontSize: 11,
+            
             fontWeight: 500,
             color: 'var(--fg-1)',
             fontFamily: 'var(--sans)',
@@ -181,14 +181,14 @@ export default function QuickTaskForm({
             placeholder="Description (markdown supported)…"
             disabled={isPending}
             rows={2}
-            style={{
+            className="text-2xs" style={{
               width: '100%',
               resize: 'none',
               borderRadius: 10,
               border: '1px solid var(--line-1)',
               background: 'var(--bg-0)',
               padding: '8px 10px',
-              fontSize: 10,
+              
               color: 'var(--fg-2)',
               outline: 'none',
               fontFamily: 'var(--sans)',
@@ -260,8 +260,8 @@ export default function QuickTaskForm({
             {members.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <label
-                  className="upper"
-                  style={{ width: 48, flexShrink: 0, fontSize: 8 }}
+                  className="upper text-2xs"
+                  style={{ width: 48, flexShrink: 0 }}
                 >
                   Assign
                 </label>
@@ -287,8 +287,8 @@ export default function QuickTaskForm({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <label
-                className="upper"
-                style={{ width: 48, flexShrink: 0, fontSize: 8 }}
+                className="upper text-2xs"
+                style={{ width: 48, flexShrink: 0 }}
               >
                 Labels
               </label>
@@ -305,8 +305,8 @@ export default function QuickTaskForm({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <label
-                className="upper"
-                style={{ width: 48, flexShrink: 0, fontSize: 8 }}
+                className="upper text-2xs"
+                style={{ width: 48, flexShrink: 0 }}
               >
                 Due
               </label>

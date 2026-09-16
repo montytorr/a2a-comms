@@ -114,13 +114,13 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
 
       <div style={{ padding: '16px 20px' }}>
         {error && (
-          <div style={{
+          <div className="text-xs" style={{
             marginBottom: 12,
             padding: '8px 12px',
             borderRadius: 6,
             background: 'var(--rose-bg)',
             border: '1px solid oklch(0.40 0.08 25 / 0.4)',
-            fontSize: 12,
+            
             color: 'var(--rose)',
           }}>
             {error}
@@ -160,11 +160,11 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 style={{ height: 32 }}
               />
             ) : (
-              <p className="mono" style={{ fontSize: 13, color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wh.url}>
+              <p className="mono text-sm" style={{ color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wh.url}>
                 {truncateUrl(wh.url, 60)}
               </p>
             )}
-            <p style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 2 }}>
+            <p className="text-2xs" style={{ color: 'var(--fg-4)', marginTop: 2 }}>
               {wh.is_active ? 'Active' : 'Inactive'}
               {wh.failure_count > 0 && (
                 <span style={{ color: 'var(--amber)', marginLeft: 8 }}>
@@ -260,7 +260,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
             alignItems: 'center',
             justifyContent: 'space-between',
           }}>
-            <span style={{ fontSize: 12, color: 'var(--rose)', fontWeight: 500 }}>Delete this webhook?</span>
+            <span className="text-xs" style={{ color: 'var(--rose)', fontWeight: 500 }}>Delete this webhook?</span>
             <div className="row gap-2">
               <button
                 onClick={handleDelete}
@@ -281,14 +281,14 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
 
         {/* Test result */}
         {testResult && (
-          <div style={{
+          <div className="text-xs" style={{
             marginBottom: 16,
             borderRadius: 6,
             padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            fontSize: 12,
+            
             fontWeight: 500,
             background: testResult.success ? 'var(--mint-bg)' : 'var(--rose-bg)',
             border: testResult.success
@@ -305,7 +305,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   : `Failed — ${testResult.status} ${testResult.statusText}`}
             </span>
             {testResult.responseTime !== undefined && (
-              <span className="mono num" style={{ color: 'var(--fg-4)', marginLeft: 'auto', fontSize: 11 }}>{testResult.responseTime}ms</span>
+              <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', marginLeft: 'auto' }}>{testResult.responseTime}ms</span>
             )}
           </div>
         )}
@@ -340,28 +340,28 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
         <div className="row gap-6" style={{ paddingTop: 12, borderTop: '1px solid var(--line-1)' }}>
           <div>
             <p className="upper" style={{ marginBottom: 4 }}>Last Delivery</p>
-            <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <span className="mono num text-xs" style={{ color: 'var(--fg-2)' }}>
               {wh.last_delivery_at ? timeAgo(wh.last_delivery_at) : 'Never'}
             </span>
           </div>
           <div>
             <p className="upper" style={{ marginBottom: 4 }}>Created</p>
-            <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <span className="mono num text-xs" style={{ color: 'var(--fg-2)' }}>
               {formatDate(wh.created_at)}
             </span>
           </div>
           <div>
             <p className="upper" style={{ marginBottom: 4 }}>Updated</p>
-            <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+            <span className="mono num text-xs" style={{ color: 'var(--fg-2)' }}>
               {formatDate(wh.updated_at)}
             </span>
           </div>
           {wh.failure_count > 0 && (
             <div>
               <p className="upper" style={{ marginBottom: 4 }}>Consecutive Fails</p>
-              <span className="mono num" style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 600 }}>
+              <span className="mono num text-xs" style={{ color: 'var(--amber)', fontWeight: 600 }}>
                 {wh.failure_count}
-                <span style={{ fontSize: 11, color: 'var(--fg-4)', fontWeight: 400, marginLeft: 4 }}>/ 10 to auto-disable</span>
+                <span className="text-2xs" style={{ color: 'var(--fg-4)', fontWeight: 400, marginLeft: 4 }}>/ 10 to auto-disable</span>
               </span>
             </div>
           )}
@@ -389,7 +389,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 transform: showDeliveries ? 'rotate(90deg)' : 'rotate(0deg)',
               }}
             />
-            <span className="upper" style={{ fontSize: 10 }}>
+            <span className="upper text-2xs">
               {deliveriesLoading ? 'Loading…' : `Recent Deliveries${deliveries.length > 0 ? ` (${deliveries.length})` : ''}`}
             </span>
           </button>
@@ -407,27 +407,27 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   background: 'var(--bg-2)',
                   border: '1px solid var(--line-1)',
                 }}>
-                  <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Last {deliveries.length} deliveries:</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--mint)' }}>{successCount} OK</span>
-                  {failedCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--rose)' }}>{failedCount} failed</span>}
+                  <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Last {deliveries.length} deliveries:</span>
+                  <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--mint)' }}>{successCount} OK</span>
+                  {failedCount > 0 && <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--rose)' }}>{failedCount} failed</span>}
                   {deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length} retrying</span>
+                    <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length} retrying</span>
                   )}
                   {deliveries.filter(d => d.status === 'pending').length > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'pending').length} pending</span>
+                    <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'pending').length} pending</span>
                   )}
-                  <span className="mono num" style={{ fontSize: 11, color: 'var(--fg-4)', marginLeft: 'auto' }}>
+                  <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', marginLeft: 'auto' }}>
                     {Math.round((successCount / deliveries.length) * 100)}% success rate
                   </span>
                 </div>
 
                 {/* Header */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px 80px 100px', gap: 8, padding: '4px 12px' }}>
-                  <span className="upper" style={{ fontSize: 10 }}>Event</span>
-                  <span className="upper" style={{ fontSize: 10 }}>Status</span>
-                  <span className="upper" style={{ fontSize: 10 }}>HTTP</span>
-                  <span className="upper" style={{ fontSize: 10 }}>Attempts</span>
-                  <span className="upper" style={{ fontSize: 10, textAlign: 'right' }}>When</span>
+                  <span className="upper text-2xs">Event</span>
+                  <span className="upper text-2xs">Status</span>
+                  <span className="upper text-2xs">HTTP</span>
+                  <span className="upper text-2xs">Attempts</span>
+                  <span className="upper text-2xs" style={{ textAlign: 'right' }}>When</span>
                 </div>
                 {deliveries.map((d) => {
                   const maxRetries = d.max_retries ?? 1;
@@ -456,8 +456,8 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                         border: `1px solid ${rowBorder}`,
                       }}
                     >
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.event}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: isSuccess ? 'var(--mint)' : isFailed ? 'var(--rose)' : 'var(--amber)' }}>
+                      <span className="mono text-xs" style={{ color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.event}</span>
+                      <span className="text-xs" style={{ fontWeight: 600, color: isSuccess ? 'var(--mint)' : isFailed ? 'var(--rose)' : 'var(--amber)' }}>
                         {isSuccess
                           ? d.attempts > 1 ? `Attempt ${d.attempts}` : 'OK'
                           : isFailed
@@ -466,13 +466,13 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                               ? `Retry ${d.attempts}/${maxRetries}`
                               : 'Pending'}
                       </span>
-                      <span className="mono num" style={{ fontSize: 12, color: d.response_status && d.response_status >= 200 && d.response_status < 300 ? 'var(--mint)' : d.response_status ? 'var(--rose)' : 'var(--fg-4)' }}>
+                      <span className="mono num text-xs" style={{ color: d.response_status && d.response_status >= 200 && d.response_status < 300 ? 'var(--mint)' : d.response_status ? 'var(--rose)' : 'var(--fg-4)' }}>
                         {d.response_status ? d.response_status : d.status === 'failed' ? 'Network' : '—'}
                       </span>
-                      <span className="mono num" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
+                      <span className="mono num text-xs" style={{ color: 'var(--fg-3)' }}>
                         {d.attempts}/{maxRetries}
                       </span>
-                      <span className="mono num" style={{ fontSize: 11, color: 'var(--fg-4)', textAlign: 'right' }}>
+                      <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', textAlign: 'right' }}>
                         {d.delivered_at ? timeAgo(d.delivered_at) : d.created_at ? timeAgo(d.created_at) : '—'}
                       </span>
                     </div>
@@ -483,7 +483,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           })()}
 
           {showDeliveries && !deliveriesLoading && deliveries.length === 0 && (
-            <p style={{ marginTop: 8, fontSize: 12, color: 'var(--fg-4)' }}>No deliveries recorded yet</p>
+            <p className="text-xs" style={{ marginTop: 8, color: 'var(--fg-4)' }}>No deliveries recorded yet</p>
           )}
         </div>
       </div>

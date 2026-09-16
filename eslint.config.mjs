@@ -13,6 +13,10 @@ import nextTs from "eslint-config-next/typescript";
  */
 const designSystemRatchets = {
   files: ["src/**/*.ts", "src/**/*.tsx"],
+  // Email templates are exempt from both rules. Mail clients do not load the
+  // stylesheet, so inline styles are the only thing that renders, and a
+  // themed var(--token) would resolve to nothing in an inbox.
+  ignores: ["src/lib/email/**", "src/emails/**"],
   rules: {
     "no-restricted-syntax": [
       "warn",

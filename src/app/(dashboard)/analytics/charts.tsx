@@ -109,14 +109,14 @@ export default function AnalyticsCharts({
   const dayTabs = [7, 14, 30];
 
   return (
-    <div style={{ padding: '28px 32px 60px' }}>
+    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div style={{ marginBottom: '32px' }} className="animate-fade-in">
         <p className="upper" style={{ marginBottom: '6px' }}>Insights</p>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <h1 className="h1">Analytics</h1>
-            <p className="dim" style={{ marginTop: '4px', fontSize: '13px' }}>Platform activity overview</p>
+            <p className="dim text-sm" style={{ marginTop: '4px' }}>Platform activity overview</p>
           </div>
 
           {/* Day tabs — segmented control */}
@@ -136,7 +136,7 @@ export default function AnalyticsCharts({
       </div>
 
       {/* Summary Cards — Row 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '12px' }}>
         {[
           { label: 'Total Contracts', value: totalContracts, accentVar: '--peri' },
           { label: 'Messages', value: totalMessages, suffix: ` (${days}d)`, accentVar: '--mint' },
@@ -149,16 +149,16 @@ export default function AnalyticsCharts({
             style={{ padding: '18px 20px', animationDelay: `${idx * 0.05}s` }}
           >
             <p className="upper dim" style={{ marginBottom: '8px' }}>{card.label}</p>
-            <p className="mono num" style={{ fontSize: '24px', fontWeight: 700, color: `var(${card.accentVar})` }}>
+            <p className="mono num text-xl" style={{ fontWeight: 700, color: `var(${card.accentVar})` }}>
               {card.value}
-              {card.suffix && <span className="dim" style={{ fontSize: '11px', fontWeight: 400 }}>{card.suffix}</span>}
+              {card.suffix && <span className="dim text-2xs" style={{ fontWeight: 400 }}>{card.suffix}</span>}
             </p>
           </div>
         ))}
       </div>
 
       {/* Summary Cards — Row 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '32px' }}>
         {[
           { label: 'Active Projects', value: activeProjects, accentVar: '--mint' },
           { label: 'Tasks Done', value: tasksDone, suffix: ` (${days}d)`, accentVar: '--mint' },
@@ -171,19 +171,19 @@ export default function AnalyticsCharts({
             style={{ padding: '18px 20px', animationDelay: `${(idx + 4) * 0.05}s` }}
           >
             <p className="upper dim" style={{ marginBottom: '8px' }}>{card.label}</p>
-            <p className="mono num" style={{ fontSize: '24px', fontWeight: 700, color: `var(${card.accentVar})` }}>
+            <p className="mono num text-xl" style={{ fontWeight: 700, color: `var(${card.accentVar})` }}>
               {card.value}
-              {card.suffix && <span className="dim" style={{ fontSize: '11px', fontWeight: 400 }}>{card.suffix}</span>}
+              {card.suffix && <span className="dim text-2xs" style={{ fontWeight: 400 }}>{card.suffix}</span>}
             </p>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         {/* Donut Chart — Contracts by Status */}
         <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.1s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts by Status</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>All time distribution</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>All time distribution</p>
 
           <div className="row gap-6">
             {/* Donut */}
@@ -200,7 +200,7 @@ export default function AnalyticsCharts({
               />
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <span className="mono num" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-0)' }}>{totalStatusCount}</span>
+                  <span className="mono num text-lg" style={{ fontWeight: 700, color: 'var(--fg-0)' }}>{totalStatusCount}</span>
                   <p className="upper dim" style={{ marginTop: '2px' }}>Total</p>
                 </div>
               </div>
@@ -219,11 +219,11 @@ export default function AnalyticsCharts({
                       background: statusColors[status] || 'var(--fg-4)',
                     }}
                   />
-                  <span style={{ fontSize: '11px', fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
+                  <span className="text-2xs" style={{ fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
                     {status}
                   </span>
-                  <span className="mono num dim" style={{ fontSize: '11px' }}>{count}</span>
-                  <span className="mono num" style={{ fontSize: '10px', color: 'var(--fg-4)', width: '32px', textAlign: 'right' }}>
+                  <span className="mono num dim text-2xs">{count}</span>
+                  <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', width: '32px', textAlign: 'right' }}>
                     {totalStatusCount > 0 ? Math.round((count / totalStatusCount) * 100) : 0}%
                   </span>
                 </div>
@@ -235,18 +235,18 @@ export default function AnalyticsCharts({
         {/* Bar Chart — Per Agent Messages */}
         <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.15s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Agent</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Last {days} days</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
           {agentStats.length === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <p className="dim" style={{ fontSize: '13px' }}>No messages in this period</p>
+              <p className="dim text-sm">No messages in this period</p>
             </div>
           ) : (
             <div className="col gap-2">
               {agentStats.map((agent, idx) => (
                 <div key={agent.name}>
                   <div className="row gap-2" style={{ marginBottom: '4px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--fg-2)', width: '96px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span className="text-2xs" style={{ fontWeight: 500, color: 'var(--fg-2)', width: '96px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {agent.name}
                     </span>
                     <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
@@ -261,7 +261,7 @@ export default function AnalyticsCharts({
                         }}
                       />
                     </div>
-                    <span className="mono num dim" style={{ fontSize: '11px', width: '28px', textAlign: 'right' }}>{agent.count}</span>
+                    <span className="mono num dim text-2xs" style={{ width: '28px', textAlign: 'right' }}>{agent.count}</span>
                   </div>
                 </div>
               ))}
@@ -272,7 +272,7 @@ export default function AnalyticsCharts({
         {/* Bar Chart — Messages per Day */}
         <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.2s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Day</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Last {days} days</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '160px' }}>
             {dayLabels.map((label, idx) => {
@@ -286,7 +286,7 @@ export default function AnalyticsCharts({
                   className="group"
                   title={`${formatShortDate(label)}: ${count}`}
                 >
-                  <span className="mono num" style={{ fontSize: '9px', color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
+                  <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
                     {count}
                   </span>
                   <div style={{ width: '100%', position: 'relative', height: '120px' }}>
@@ -304,7 +304,7 @@ export default function AnalyticsCharts({
                     />
                   </div>
                   {showLabel && (
-                    <span className="mono num" style={{ fontSize: '8px', color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
+                    <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
                       {formatShortDate(label)}
                     </span>
                   )}
@@ -317,7 +317,7 @@ export default function AnalyticsCharts({
         {/* Bar Chart — Contracts Created per Day */}
         <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.25s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts Created per Day</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Last {days} days</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '160px' }}>
             {dayLabels.map((label, idx) => {
@@ -331,7 +331,7 @@ export default function AnalyticsCharts({
                   className="group"
                   title={`${formatShortDate(label)}: ${count}`}
                 >
-                  <span className="mono num" style={{ fontSize: '9px', color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
+                  <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
                     {count}
                   </span>
                   <div style={{ width: '100%', position: 'relative', height: '120px' }}>
@@ -349,7 +349,7 @@ export default function AnalyticsCharts({
                     />
                   </div>
                   {showLabel && (
-                    <span className="mono num" style={{ fontSize: '8px', color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
+                    <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
                       {formatShortDate(label)}
                     </span>
                   )}
@@ -362,11 +362,11 @@ export default function AnalyticsCharts({
         {/* Donut Chart — Task Status Distribution */}
         <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.3s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Task Status Distribution</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>All tasks</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>All tasks</p>
 
           {totalTaskStatusCount === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <p className="dim" style={{ fontSize: '13px' }}>No tasks yet</p>
+              <p className="dim text-sm">No tasks yet</p>
             </div>
           ) : (
             <div className="row gap-6">
@@ -383,7 +383,7 @@ export default function AnalyticsCharts({
                 />
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ textAlign: 'center' }}>
-                    <span className="mono num" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-0)' }}>{totalTaskStatusCount}</span>
+                    <span className="mono num text-lg" style={{ fontWeight: 700, color: 'var(--fg-0)' }}>{totalTaskStatusCount}</span>
                     <p className="upper dim" style={{ marginTop: '2px' }}>Total</p>
                   </div>
                 </div>
@@ -401,11 +401,11 @@ export default function AnalyticsCharts({
                         background: taskStatusColors[status] || 'var(--fg-4)',
                       }}
                     />
-                    <span style={{ fontSize: '11px', fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
+                    <span className="text-2xs" style={{ fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
                       {status}
                     </span>
-                    <span className="mono num dim" style={{ fontSize: '11px' }}>{count}</span>
-                    <span className="mono num" style={{ fontSize: '10px', color: 'var(--fg-4)', width: '32px', textAlign: 'right' }}>
+                    <span className="mono num dim text-2xs">{count}</span>
+                    <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', width: '32px', textAlign: 'right' }}>
                       {totalTaskStatusCount > 0 ? Math.round((count / totalTaskStatusCount) * 100) : 0}%
                     </span>
                   </div>
@@ -418,11 +418,11 @@ export default function AnalyticsCharts({
         {/* Horizontal Bar Chart — Top Contracts by Messages */}
         <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.35s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Top Contracts by Messages</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Top 5 in last {days} days</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Top 5 in last {days} days</p>
 
           {topContractsByMessages.length === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <p className="dim" style={{ fontSize: '13px' }}>No messages in this period</p>
+              <p className="dim text-sm">No messages in this period</p>
             </div>
           ) : (
             <div className="col gap-2">
@@ -430,7 +430,7 @@ export default function AnalyticsCharts({
                 <div key={contract.title}>
                   <div className="row gap-2">
                     <span
-                      style={{ fontSize: '11px', fontWeight: 500, color: 'var(--fg-2)', width: '112px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      className="text-2xs" style={{ fontWeight: 500, color: 'var(--fg-2)', width: '112px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                       title={contract.title}
                     >
                       {contract.title}
@@ -447,7 +447,7 @@ export default function AnalyticsCharts({
                         }}
                       />
                     </div>
-                    <span className="mono num dim" style={{ fontSize: '11px', width: '28px', textAlign: 'right' }}>{contract.count}</span>
+                    <span className="mono num dim text-2xs" style={{ width: '28px', textAlign: 'right' }}>{contract.count}</span>
                   </div>
                 </div>
               ))}
@@ -458,7 +458,7 @@ export default function AnalyticsCharts({
         {/* Hourly Activity Heatmap */}
         <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.4s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Hourly Activity Heatmap</h2>
-          <p className="dim" style={{ fontSize: '11px', marginBottom: '24px' }}>Message distribution by hour (UTC) — last {days} days</p>
+          <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Message distribution by hour (UTC) — last {days} days</p>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
             {hourlyMessageCounts.map((count, hour) => {
@@ -470,7 +470,7 @@ export default function AnalyticsCharts({
                   className="group"
                   title={`${hour}:00 UTC — ${count} messages`}
                 >
-                  <span className="mono num" style={{ fontSize: '9px', color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
+                  <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', opacity: 0, transition: 'opacity 0.2s' }}>
                     {count}
                   </span>
                   <div
@@ -484,7 +484,7 @@ export default function AnalyticsCharts({
                         : `oklch(0.82 0.14 165 / ${0.12 + intensity * 0.65})`,
                     }}
                   />
-                  <span className="mono num" style={{ fontSize: '8px', color: 'var(--fg-4)' }}>
+                  <span className="mono num text-2xs" style={{ color: 'var(--fg-4)' }}>
                     {hour.toString().padStart(2, '0')}
                   </span>
                 </div>

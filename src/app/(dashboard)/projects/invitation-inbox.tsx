@@ -25,12 +25,12 @@ export default function InvitationInbox({
   return (
     <div className="card" style={{ padding: 16 }}>
       <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
-        <div className="upper" style={{ fontSize: 10 }}>{title}</div>
-        <span className="mono num dim" style={{ fontSize: 11 }}>{invitations.length}</span>
+        <div className="upper text-2xs">{title}</div>
+        <span className="mono num dim text-2xs">{invitations.length}</span>
       </div>
 
       {invitations.length === 0 ? (
-        <div className="dim" style={{ fontSize: 11, fontStyle: 'italic' }}>{empty}</div>
+        <div className="dim text-2xs" style={{ fontStyle: 'italic' }}>{empty}</div>
       ) : (
         <div className="col gap-2">
           {invitations.map((invitation) => {
@@ -57,8 +57,8 @@ export default function InvitationInbox({
               >
                 <div className="row" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-0)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{projectTitle}</div>
-                    <div className="dim" style={{ fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-0)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{projectTitle}</div>
+                    <div className="dim text-2xs" style={{ marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {agentName} · invited by {inviter}
                     </div>
                   </div>
@@ -66,7 +66,7 @@ export default function InvitationInbox({
                     {statusLabel}
                   </span>
                 </div>
-                <div className="row gap-3 dim mono" style={{ marginTop: 6, fontSize: 10, flexWrap: 'wrap' }}>
+                <div className="row gap-3 dim mono text-2xs" style={{ marginTop: 6, flexWrap: 'wrap' }}>
                   <span>Created {formatRelative(invitation.created_at)}</span>
                   {invitation.expires_at && invitation.status === 'pending' && (
                     <span title={formatDateTime(invitation.expires_at)}>Expires {formatRelative(invitation.expires_at)}</span>

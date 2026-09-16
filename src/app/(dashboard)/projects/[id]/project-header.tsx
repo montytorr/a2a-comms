@@ -108,9 +108,9 @@ function EditableProjectTitle({
         }}
         onBlur={save}
         disabled={isSaving}
-        className="cp-input"
+        className="cp-input text-2xl"
         style={{
-          fontSize: 28,
+          
           fontWeight: 700,
           letterSpacing: '-0.02em',
           width: '100%',
@@ -194,7 +194,7 @@ function EditableProjectDescription({
             )}
           </div>
         ) : (
-          <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--fg-4)' }}>
+          <p className="text-sm" style={{ fontStyle: 'italic', color: 'var(--fg-4)' }}>
             {isOwner ? 'Click to add project description…' : 'No description'}
           </p>
         )}
@@ -217,8 +217,8 @@ function EditableProjectDescription({
         }}
         disabled={isSaving}
         placeholder="Write description (markdown supported)…"
-        className="cp-input"
-        style={{ width: '100%', resize: 'none', minHeight: 80, fontSize: 13 }}
+        className="cp-input text-sm"
+        style={{ width: '100%', resize: 'none', minHeight: 80 }}
       />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
         <button
@@ -294,14 +294,14 @@ export default function ProjectHeader({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Link
           href="/projects"
-          style={{ fontSize: 11, color: 'var(--fg-4)', textDecoration: 'none' }}
+          className="text-2xs" style={{ color: 'var(--fg-4)', textDecoration: 'none' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--peri)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--fg-4)'; }}
         >
           Projects
         </Link>
-        <span style={{ color: 'var(--fg-4)', fontSize: 10 }}>›</span>
-        <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>{project.title}</span>
+        <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>›</span>
+        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{project.title}</span>
       </div>
 
       <div
@@ -363,7 +363,7 @@ export default function ProjectHeader({
                           onClick={() => handleRemoveMember(m.id)}
                           disabled={isPending}
                           title={`Remove ${name}`}
-                          style={{
+                          className="text-2xs" style={{
                             position: 'absolute',
                             top: -4,
                             right: -4,
@@ -376,7 +376,7 @@ export default function ProjectHeader({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: 8,
+                            
                             cursor: 'pointer',
                             opacity: 0,
                             transition: 'opacity 0.15s',
@@ -392,7 +392,7 @@ export default function ProjectHeader({
                 })}
                 {members.length > 5 && (
                   <div
-                    style={{
+                    className="text-2xs" style={{
                       width: 32,
                       height: 32,
                       borderRadius: '50%',
@@ -401,7 +401,7 @@ export default function ProjectHeader({
                       alignItems: 'center',
                       justifyContent: 'center',
                       border: '2px solid var(--bg-0)',
-                      fontSize: 10,
+                      
                       fontWeight: 700,
                       color: 'var(--fg-3)',
                       marginLeft: -8,
@@ -450,10 +450,10 @@ export default function ProjectHeader({
                           borderBottom: '1px solid var(--line-1)',
                         }}
                       >
-                        <span className="upper" style={{ fontSize: 9 }}>Add Member</span>
+                        <span className="upper text-2xs">Add Member</span>
                       </div>
                       {availableAgents.length === 0 ? (
-                        <div style={{ padding: '12px', fontSize: 11, fontStyle: 'italic', color: 'var(--fg-4)' }}>
+                        <div className="text-2xs" style={{ padding: '12px', fontStyle: 'italic', color: 'var(--fg-4)' }}>
                           No agents available
                         </div>
                       ) : (
@@ -487,8 +487,8 @@ export default function ProjectHeader({
                               <Avatar name={name} size={24} />
                               <div style={{ minWidth: 0 }}>
                                 <p
-                                  style={{
-                                    fontSize: 11,
+                                  className="text-2xs" style={{
+                                    
                                     color: 'var(--fg-2)',
                                     fontWeight: 500,
                                     overflow: 'hidden',
@@ -499,8 +499,8 @@ export default function ProjectHeader({
                                   {name}
                                 </p>
                                 <p
-                                  style={{
-                                    fontSize: 9,
+                                  className="text-2xs" style={{
+                                    
                                     color: 'var(--fg-4)',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -519,7 +519,7 @@ export default function ProjectHeader({
                 </div>
               )}
 
-              <span style={{ fontSize: 11, color: 'var(--fg-4)', marginLeft: 12 }}>
+              <span className="text-2xs" style={{ color: 'var(--fg-4)', marginLeft: 12 }}>
                 {members.length} member{members.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -560,19 +560,19 @@ export default function ProjectHeader({
                 }}
               >
                 <div>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--peri)' }}>
+                  <p className="text-xs" style={{ fontWeight: 600, color: 'var(--peri)' }}>
                     Pending invitation for {agentName}
                   </p>
-                  <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+                  <p className="text-2xs" style={{ color: 'var(--fg-3)', marginTop: 4 }}>
                     Invited by {inviter}. Accept to join this project, or decline to stay out.
                   </p>
                   <div
-                    style={{
+                    className="text-2xs" style={{
                       marginTop: 8,
                       display: 'flex',
                       flexWrap: 'wrap',
                       gap: '4px 12px',
-                      fontSize: 10,
+                      
                       color: 'var(--fg-4)',
                     }}
                   >
@@ -613,13 +613,13 @@ export default function ProjectHeader({
 
           {!isOwner && canSeeObserverInvitationSummary && hiddenPendingInvitationCount > 0 && (
             <div className="card" style={{ padding: 16 }}>
-              <p className="upper" style={{ fontSize: 10, marginBottom: 8 }}>Invitation summary</p>
-              <p style={{ fontSize: 12, color: 'var(--fg-2)' }}>
+              <p className="upper text-2xs" style={{ marginBottom: 8 }}>Invitation summary</p>
+              <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
                 {hiddenPendingInvitationCount} pending invitation
                 {hiddenPendingInvitationCount !== 1 ? 's are' : ' is'} currently hidden by trust
                 policy.
               </p>
-              <p className="dim" style={{ fontSize: 11, marginTop: 8 }}>
+              <p className="dim text-2xs" style={{ marginTop: 8 }}>
                 Observer access still lets you inspect the project, but unresolved invitee metadata
                 stays restricted until your trust tier clears the invitation visibility policy.
               </p>
@@ -628,7 +628,7 @@ export default function ProjectHeader({
 
           {isOwner && invitations.length > 0 && (
             <div className="card" style={{ padding: 16 }}>
-              <p className="upper" style={{ fontSize: 10, marginBottom: 12 }}>Invitation Timeline</p>
+              <p className="upper text-2xs" style={{ marginBottom: 12 }}>Invitation Timeline</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {invitations.map((invitation) => {
                   const agentName =
@@ -655,8 +655,8 @@ export default function ProjectHeader({
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <p
-                            style={{
-                              fontSize: 12,
+                            className="text-xs" style={{
+                              
                               color: 'var(--fg-1)',
                               fontWeight: 500,
                               overflow: 'hidden',
@@ -667,11 +667,11 @@ export default function ProjectHeader({
                             {agentName}
                           </p>
                           {/* tone is a raw Tailwind class from the utility fn — map to pill */}
-                          <span className="pill pill--ghost" style={{ fontSize: 10 }}>
+                          <span className="pill pill--ghost text-2xs">
                             {label}
                           </span>
                         </div>
-                        <p style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 4 }}>
+                        <p className="text-2xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>
                           Invited by {inviter}
                           {invitation.expires_at && invitation.status === 'pending'
                             ? ` · expires ${formatRelative(invitation.expires_at)}`
@@ -690,7 +690,7 @@ export default function ProjectHeader({
                           Cancel
                         </button>
                       ) : (
-                        <span style={{ fontSize: 10, color: 'var(--fg-4)' }}>No action</span>
+                        <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>No action</span>
                       )}
                     </div>
                   );

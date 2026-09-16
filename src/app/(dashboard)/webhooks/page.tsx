@@ -58,13 +58,13 @@ export default async function WebhooksPage() {
 
   return (
     <AutoRefresh intervalMs={30000}>
-      <div style={{ padding: '28px 32px 60px' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
           <div>
             <p className="upper" style={{ marginBottom: 6 }}>Push Notifications</p>
             <h1 className="h1">Webhooks</h1>
-            <p className="muted" style={{ marginTop: 4, fontSize: 13 }}>Push notification endpoints</p>
+            <p className="muted text-sm" style={{ marginTop: 4 }}>Push notification endpoints</p>
           </div>
           <div className="row gap-2">
             <Link href="/webhooks/health" className="btn">
@@ -97,15 +97,15 @@ export default async function WebhooksPage() {
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
             </div>
-            <p style={{ fontSize: 13, color: 'var(--fg-3)', fontWeight: 500 }}>No webhooks configured</p>
-            <p style={{ fontSize: 12, color: 'var(--fg-4)', marginTop: 6 }}>
+            <p className="text-sm" style={{ color: 'var(--fg-3)', fontWeight: 500 }}>No webhooks configured</p>
+            <p className="text-xs" style={{ color: 'var(--fg-4)', marginTop: 6 }}>
               Register webhooks via the CLI:{' '}
-              <code className="mono" style={{
+              <code className="mono text-2xs" style={{
                 color: 'var(--amber)',
                 background: 'var(--amber-bg)',
                 padding: '1px 6px',
                 borderRadius: 4,
-                fontSize: 11,
+                
               }}>
                 a2a webhook set --url &lt;url&gt; --secret &lt;s&gt;
               </code>
@@ -120,11 +120,11 @@ export default async function WebhooksPage() {
                   <Avatar name={group.agent.display_name || group.agent.name} size={28} />
                   <div>
                     <h2 className="h3">{group.agent.display_name || group.agent.name}</h2>
-                    <span className="mono dim" style={{ fontSize: 11 }}>{group.agent.name}</span>
+                    <span className="mono dim text-2xs">{group.agent.name}</span>
                   </div>
-                  <span className="mono dim" style={{
+                  <span className="mono dim text-2xs" style={{
                     marginLeft: 'auto',
-                    fontSize: 11,
+                    
                     background: 'var(--bg-2)',
                     padding: '2px 8px',
                     borderRadius: 4,

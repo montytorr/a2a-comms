@@ -77,14 +77,14 @@ export default function ContractAttachmentUpload({ contractId }: { contractId: s
           style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}
         />
         <Upload size={18} style={{ color: 'var(--fg-3)', margin: '0 auto' }} />
-        <div style={{ fontSize: 12, marginTop: 6, color: 'var(--fg-1)' }}>
+        <div className="text-xs" style={{ marginTop: 6, color: 'var(--fg-1)' }}>
           {selectedFileName ? (
-            <span className="pill pill--ghost" style={{ fontSize: 10 }}>{selectedFileName}</span>
+            <span className="pill pill--ghost text-2xs">{selectedFileName}</span>
           ) : (
             'Drop an artifact or click to browse'
           )}
         </div>
-        <div className="dim" style={{ fontSize: 11, marginTop: 4 }}>
+        <div className="dim text-2xs" style={{ marginTop: 4 }}>
           Shared evidence, deliverables, and reference files for this contract.
         </div>
       </label>
@@ -109,9 +109,9 @@ export default function ContractAttachmentUpload({ contractId }: { contractId: s
 
       <div className="row" style={{ justifyContent: 'space-between' }}>
         {error ? (
-          <span style={{ fontSize: 11, color: 'var(--rose)' }}>{error}</span>
+          <span className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</span>
         ) : (
-          <span className="dim" style={{ fontSize: 10 }}>Private, signed downloads only.</span>
+          <span className="dim text-2xs">Private, signed downloads only.</span>
         )}
       </div>
     </form>

@@ -44,13 +44,13 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {message === 'password-reset' && (
-        <div className="pill pill--mint" style={{ height: 'auto', padding: '10px 14px', fontSize: 13 }}>
+        <div className="pill pill--mint text-sm" style={{ height: 'auto', padding: '10px 14px' }}>
           Password updated — sign in with your new password
         </div>
       )}
 
       <div className="col gap-1">
-        <label htmlFor="email" className="upper" style={{ fontSize: 10 }}>Email</label>
+        <label htmlFor="email" className="upper text-2xs">Email</label>
         <input
           id="email"
           type="email"
@@ -59,14 +59,14 @@ function LoginForm() {
           required
           autoComplete="email"
           autoFocus
-          className="cp-input"
-          style={{ height: 40, fontSize: 14 }}
+          className="cp-input text-sm"
+          style={{ height: 40 }}
           placeholder="you@example.com"
         />
       </div>
 
       <div className="col gap-1">
-        <label htmlFor="password" className="upper" style={{ fontSize: 10 }}>Password</label>
+        <label htmlFor="password" className="upper text-2xs">Password</label>
         <input
           id="password"
           type="password"
@@ -74,19 +74,19 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
-          className="cp-input"
-          style={{ height: 40, fontSize: 14 }}
+          className="cp-input text-sm"
+          style={{ height: 40 }}
           placeholder="••••••••"
         />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-          <Link href="/forgot-password" style={{ fontSize: 11, color: 'var(--amber)', textDecoration: 'none' }}>
+          <Link href="/forgot-password" className="text-2xs" style={{ color: 'var(--amber)', textDecoration: 'none' }}>
             Forgot password?
           </Link>
         </div>
       </div>
 
       {error && (
-        <div className="pill pill--rose" style={{ height: 'auto', padding: '10px 14px', fontSize: 13 }}>
+        <div className="pill pill--rose text-sm" style={{ height: 'auto', padding: '10px 14px' }}>
           {error}
         </div>
       )}
@@ -94,12 +94,12 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="btn btn--primary"
+        className="btn btn--primary text-sm"
         style={{
           width: '100%',
           height: 42,
           justifyContent: 'center',
-          fontSize: 14,
+          
           opacity: loading ? 0.5 : 1,
           cursor: loading ? 'not-allowed' : 'pointer',
         }}
@@ -140,7 +140,7 @@ export default function LoginPage() {
               <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
             </svg>
           </div>
-          <h1 className="h1" style={{ fontSize: 24 }}>A2A Comms</h1>
+          <h1 className="h1 text-xl">A2A Comms</h1>
           <div className="upper" style={{ marginTop: 6 }}>Control Plane</div>
         </div>
 
@@ -155,7 +155,7 @@ export default function LoginPage() {
           </Suspense>
         </div>
 
-        <p className="upper" style={{ textAlign: 'center', marginTop: 24, fontSize: 10 }}>
+        <p className="upper text-2xs" style={{ textAlign: 'center', marginTop: 24 }}>
           Authorized operators only
         </p>
       </div>

@@ -134,13 +134,13 @@ const COL_WHEN   = 80;
 function TableHeader() {
   return (
     <div
-      className="row mono upper"
+      className="row mono upper text-2xs"
       style={{
         background: 'var(--bg-2)',
         borderBottom: '1px solid var(--line-1)',
         padding: '0 16px',
         height: 32,
-        fontSize: 10,
+        
         gap: 12,
         flexShrink: 0,
       }}
@@ -187,8 +187,8 @@ function TableRow({ entry, isAlt }: { entry: AuditLogEntry; isAlt: boolean }) {
 
       {/* actor */}
       <div
-        className="mono truncate-text"
-        style={{ width: COL_ACTOR, flexShrink: 0, fontSize: 12, color: 'var(--fg-1)' }}
+        className="mono truncate-text text-xs"
+        style={{ width: COL_ACTOR, flexShrink: 0, color: 'var(--fg-1)' }}
         title={entry.actor}
       >
         {entry.actor}
@@ -215,14 +215,14 @@ function TableRow({ entry, isAlt }: { entry: AuditLogEntry; isAlt: boolean }) {
         {targetId ? (
           <HashChip value={targetId} />
         ) : (
-          <span className="dim" style={{ fontSize: 12 }}>—</span>
+          <span className="dim text-xs">—</span>
         )}
       </div>
 
       {/* when */}
       <div
-        className="mono num"
-        style={{ width: COL_WHEN, flexShrink: 0, textAlign: 'right', fontSize: 11, color: 'var(--fg-3)' }}
+        className="mono num text-2xs"
+        style={{ width: COL_WHEN, flexShrink: 0, textAlign: 'right', color: 'var(--fg-3)' }}
         title={formatDateTime(entry.created_at)}
       >
         {formatRelative(entry.created_at)}
@@ -242,8 +242,8 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
           className="col gap-2"
           style={{ alignItems: 'center', justifyContent: 'center', padding: '64px 24px', color: 'var(--fg-3)' }}
         >
-          <span style={{ fontSize: 13 }}>No audit entries recorded</span>
-          <span className="dim" style={{ fontSize: 12 }}>Events will be logged here as they occur</span>
+          <span className="text-sm">No audit entries recorded</span>
+          <span className="dim text-xs">Events will be logged here as they occur</span>
         </div>
       </div>
     );

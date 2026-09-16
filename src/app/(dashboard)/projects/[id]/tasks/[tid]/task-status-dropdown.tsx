@@ -100,14 +100,14 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
               <button
                 key={status}
                 onClick={() => handleSelect(status)}
-                style={{
+                className="text-2xs" style={{
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
                   padding: '8px 12px',
                   textAlign: 'left',
-                  fontSize: 11,
+                  
                   fontWeight: 600,
                   background: isSelected ? 'var(--bg-3)' : 'transparent',
                   color: isSelected ? opt.textColor : 'var(--fg-2)',

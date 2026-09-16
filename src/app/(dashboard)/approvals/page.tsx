@@ -49,13 +49,13 @@ export default async function ApprovalsPage({
   const { data: approvals, error: queryError } = await query;
   if (queryError) {
     return (
-      <div style={{ padding: '28px 32px 60px', maxWidth: 800, margin: '0 auto' }}>
+      <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         <div style={{ marginBottom: 32 }}>
           <h1 className="h1">Approvals</h1>
         </div>
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load approvals</div>
-          <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>A database error occurred. Please try again later.</div>
+          <div className="dim text-xs" style={{ marginTop: 6 }}>A database error occurred. Please try again later.</div>
         </div>
       </div>
     );
@@ -93,7 +93,7 @@ export default async function ApprovalsPage({
 
   return (
     <AutoRefresh intervalMs={10000}>
-      <div style={{ padding: '28px 32px 60px', maxWidth: 800, margin: '0 auto' }}>
+      <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -114,7 +114,7 @@ export default async function ApprovalsPage({
               <h1 className="h1">Approvals</h1>
             </div>
           </div>
-          <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>
+          <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
             Review and approve sensitive operations. Key rotation requires approval from another admin; admin-triggered kill switch activations are auto-approved.
             {(pendingCount ?? 0) > 0 && (
               <span className="pill pill--amber" style={{ marginLeft: 8 }}>

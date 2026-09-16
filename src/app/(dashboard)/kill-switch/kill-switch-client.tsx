@@ -177,8 +177,8 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
         </div>
 
         {/* Status text */}
-        <h1 style={{
-          fontSize: 28,
+        <h1 className="text-2xl" style={{
+          
           fontWeight: 800,
           letterSpacing: '-0.02em',
           marginBottom: 8,
@@ -187,13 +187,13 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
         }}>
           {isActive ? 'KILL SWITCH ACTIVE' : 'SYSTEM OPERATIONAL'}
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 8, maxWidth: 360, margin: '0 auto 8px', lineHeight: 1.6 }}>
+        <p className="text-sm" style={{ color: 'var(--fg-3)', marginBottom: 8, maxWidth: 360, margin: '0 auto 8px', lineHeight: 1.6 }}>
           {isActive
             ? 'All contracts are frozen. API write operations are blocked.'
             : 'System is accepting requests normally. All channels open.'}
         </p>
         {lastUpdated && (
-          <p className="mono num" style={{ fontSize: 11, color: 'var(--fg-4)', marginBottom: 40 }}>
+          <p className="mono num text-2xs" style={{ color: 'var(--fg-4)', marginBottom: 40 }}>
             Last updated: {formatDateTime(lastUpdated)}
             {updatedBy && <span style={{ color: 'var(--fg-4)' }}> · {updatedBy}</span>}
           </p>
@@ -203,8 +203,8 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
         {isSuperAdmin ? (
           confirming ? (
             <div className="card animate-fade-in" style={{ padding: 28, maxWidth: 360, margin: '0 auto' }}>
-              <p style={{
-                fontSize: 13,
+              <p className="text-sm" style={{
+                
                 fontWeight: 600,
                 marginBottom: 24,
                 color: isActive ? 'var(--mint)' : 'var(--rose)',
@@ -259,11 +259,11 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
           ) : (
             <button
               onClick={() => setConfirming(true)}
-              className="btn"
+              className="btn text-sm"
               style={{
                 height: 48,
                 padding: '0 40px',
-                fontSize: 14,
+                
                 fontWeight: 700,
                 borderRadius: 10,
                 background: isActive ? 'var(--mint-bg)' : 'var(--rose-bg)',
@@ -277,7 +277,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
           )
         ) : (
           <div className="card" style={{ padding: 20, maxWidth: 360, margin: '0 auto' }}>
-            <p style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>
+            <p className="text-xs" style={{ color: 'var(--fg-3)', fontWeight: 500 }}>
               Only administrators can control the kill switch.
             </p>
           </div>

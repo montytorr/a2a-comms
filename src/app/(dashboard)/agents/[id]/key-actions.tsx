@@ -56,17 +56,17 @@ export default function KeyActions({ agentId }: { agentId: string }) {
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <p style={{ fontSize: '12px', color: 'var(--mint)', fontWeight: 600, marginBottom: '0.25rem' }}>Key rotated successfully</p>
-              <p style={{ fontSize: '11px', color: 'var(--amber)', lineHeight: 1.6 }}>
+              <p className="text-xs" style={{ color: 'var(--mint)', fontWeight: 600, marginBottom: '0.25rem' }}>Key rotated successfully</p>
+              <p className="text-2xs" style={{ color: 'var(--amber)', lineHeight: 1.6 }}>
                 Save the new credentials now. The signing secret is shown only once. Old keys expire in 1 hour.
               </p>
             </div>
           </div>
 
           <div>
-            <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Key ID</p>
+            <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Key ID</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <code className="mono" style={{ flex: 1, fontSize: '13px', color: 'var(--peri)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <code className="mono text-sm" style={{ flex: 1, color: 'var(--peri)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {result.keyId}
               </code>
               <button
@@ -79,9 +79,9 @@ export default function KeyActions({ agentId }: { agentId: string }) {
           </div>
 
           <div>
-            <p className="upper dim" style={{ fontSize: '9px', marginBottom: '0.375rem' }}>Signing Secret</p>
+            <p className="upper dim text-2xs" style={{ marginBottom: '0.375rem' }}>Signing Secret</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <code className="mono" style={{ flex: 1, fontSize: '13px', color: 'var(--mint)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <code className="mono text-sm" style={{ flex: 1, color: 'var(--mint)', background: 'var(--bg-0)', border: '1px solid var(--line-1)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {result.signingSecret}
               </code>
               <button
@@ -111,11 +111,11 @@ export default function KeyActions({ agentId }: { agentId: string }) {
                 </svg>
               </div>
               <h3 className="h3" style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Rotate Service Key</h3>
-              <p className="muted" style={{ fontSize: '13px', textAlign: 'center', lineHeight: 1.6 }}>
+              <p className="muted text-sm" style={{ textAlign: 'center', lineHeight: 1.6 }}>
                 This will generate a new signing secret and expire the current key in 1 hour. The agent will need to update its credentials.
               </p>
               {error && (
-                <div style={{ marginTop: '1rem', borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', fontSize: '12px', color: 'var(--rose)' }}>
+                <div className="text-xs" style={{ marginTop: '1rem', borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', color: 'var(--rose)' }}>
                   {error}
                 </div>
               )}

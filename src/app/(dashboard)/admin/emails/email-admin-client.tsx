@@ -56,7 +56,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.25rem', alignItems: 'start' }}>
       <div
         style={{
           display: 'flex',
@@ -68,7 +68,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
           background: 'color-mix(in oklch, var(--bg-1) 72%, transparent)',
         }}
       >
-        <p className="upper dim" style={{ fontSize: 10, padding: '4px 8px 8px', letterSpacing: '0.12em' }}>
+        <p className="upper dim text-2xs" style={{ padding: '4px 8px 8px', letterSpacing: '0.12em' }}>
           Templates
         </p>
         {TEMPLATES.map((tpl) => {
@@ -123,10 +123,10 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                 <Icon size={15} strokeWidth={1.8} />
               </span>
               <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13, fontWeight: 650, color: 'var(--fg-0)', lineHeight: 1.2 }}>
+                <span className="text-sm" style={{ display: 'block', fontWeight: 650, color: 'var(--fg-0)', lineHeight: 1.2 }}>
                   {tpl.label}
                 </span>
-                <span className="dim" style={{ display: 'block', fontSize: 11, marginTop: 3, lineHeight: 1.25 }}>
+                <span className="dim text-2xs" style={{ display: 'block', marginTop: 3, lineHeight: 1.25 }}>
                   {tpl.description}
                 </span>
               </span>
@@ -150,10 +150,10 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--line-1)', background: 'var(--bg-1)' }}>
               <div>
-                <p className="muted" style={{ fontSize: '12px', fontWeight: 600 }}>
+                <p className="muted text-xs" style={{ fontWeight: 600 }}>
                   Preview — {TEMPLATES.find((t) => t.id === activeTemplate)?.label}
                 </p>
-                <p className="dim" style={{ fontSize: '10px', marginTop: 2 }}>
+                <p className="dim text-2xs" style={{ marginTop: 2 }}>
                   Uses preview-only payloads; test sends require explicit real props and remain disabled here for {userEmail}.
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                 href={`/api/v1/email/preview?template=${activeTemplate}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ fontSize: '11px', color: 'var(--peri)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                className="text-2xs" style={{ color: 'var(--peri)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
               >
                 Open in new tab
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -199,7 +199,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
-              <p className="muted" style={{ fontSize: '13px' }}>Select a template to preview</p>
+              <p className="muted text-sm">Select a template to preview</p>
             </div>
           </div>
         )}

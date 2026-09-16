@@ -95,14 +95,14 @@ export default function WebhookFilterCard({
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="row gap-2" style={{ marginBottom: 6 }}>
             <span className="dot" style={{ background: isActive ? 'var(--mint)' : 'var(--fg-4)' }} />
-            <span className="mono" style={{ fontSize: 12, color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={url}>
+            <span className="mono text-xs" style={{ color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={url}>
               {truncateUrl(url, 50)}
             </span>
             {isSelected && (
-              <span className="pill pill--peri" style={{ fontSize: 10, flexShrink: 0 }}>Filtered</span>
+              <span className="pill pill--peri text-2xs" style={{ flexShrink: 0 }}>Filtered</span>
             )}
           </div>
-          <div className="row gap-2" style={{ fontSize: 11, color: 'var(--fg-4)' }}>
+          <div className="row gap-2 text-2xs" style={{ color: 'var(--fg-4)' }}>
             <span title={agentId}>{agentName || <span className="mono">{agentId.slice(0, 8)}...</span>}</span>
             {failureCount > 0 && (
               <span style={{ color: 'var(--rose)' }}>
@@ -112,13 +112,13 @@ export default function WebhookFilterCard({
           </div>
         </div>
         <div style={{ textAlign: 'right', marginLeft: 16, flexShrink: 0 }}>
-          <p className="num" style={{ fontSize: 18, fontWeight: 700, color: rate >= 90 ? 'var(--mint)' : rate >= 70 ? 'var(--amber)' : 'var(--rose)' }}>
+          <p className="num text-lg" style={{ fontWeight: 700, color: rate >= 90 ? 'var(--mint)' : rate >= 70 ? 'var(--amber)' : 'var(--rose)' }}>
             {rate}%
           </p>
-          <p className="upper" style={{ fontSize: 10 }}>success</p>
+          <p className="upper text-2xs">success</p>
         </div>
       </div>
-      <div className="row gap-4" style={{ fontSize: 12 }}>
+      <div className="row gap-4 text-xs">
         <div className="row gap-1">
           <span className="dot dot--mint" />
           <span style={{ color: 'var(--fg-3)' }}>{successCount24h}</span>
@@ -137,7 +137,7 @@ export default function WebhookFilterCard({
             <span style={{ color: 'var(--fg-3)' }}>{retryCount24h}</span>
           </div>
         )}
-        <span className="mono num dim" style={{ marginLeft: 'auto', fontSize: 11 }}>
+        <span className="mono num dim text-2xs" style={{ marginLeft: 'auto' }}>
           {lastDeliveryAt ? timeAgo(lastDeliveryAt) : 'never'}
         </span>
       </div>

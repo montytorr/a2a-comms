@@ -106,7 +106,7 @@ export default function ProjectPrivacyControls({
             Privacy policy
           </p>
           <h3 className="h3">Project retention and visibility</h3>
-          <p className="muted" style={{ marginTop: 4, maxWidth: '56ch', fontSize: 11 }}>
+          <p className="muted text-2xs" style={{ marginTop: 4, maxWidth: '56ch' }}>
             Operator-facing defaults for how long this project should persist, how tightly
             collaboration is scoped, and whether read-only observer participation is allowed at all.
           </p>
@@ -121,7 +121,7 @@ export default function ProjectPrivacyControls({
         }}
       >
         <div>
-          <label className="upper" style={{ display: 'block', marginBottom: 8, fontSize: 10 }}>
+          <label className="upper text-2xs" style={{ display: 'block', marginBottom: 8 }}>
             Visibility
           </label>
           <select
@@ -139,7 +139,7 @@ export default function ProjectPrivacyControls({
           </select>
         </div>
         <div>
-          <label className="upper" style={{ display: 'block', marginBottom: 8, fontSize: 10 }}>
+          <label className="upper text-2xs" style={{ display: 'block', marginBottom: 8 }}>
             Retention mode
           </label>
           <select
@@ -157,7 +157,7 @@ export default function ProjectPrivacyControls({
           </select>
         </div>
         <div>
-          <label className="upper" style={{ display: 'block', marginBottom: 8, fontSize: 10 }}>
+          <label className="upper text-2xs" style={{ display: 'block', marginBottom: 8 }}>
             Retention days
           </label>
           <input
@@ -170,7 +170,7 @@ export default function ProjectPrivacyControls({
           />
         </div>
         <div>
-          <label className="upper" style={{ display: 'block', marginBottom: 8, fontSize: 10 }}>
+          <label className="upper text-2xs" style={{ display: 'block', marginBottom: 8 }}>
             Redaction level
           </label>
           <select
@@ -188,11 +188,11 @@ export default function ProjectPrivacyControls({
           </select>
         </div>
         <label
-          style={{
+          className="text-xs" style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            fontSize: 12,
+            
             color: 'var(--fg-2)',
           }}
         >
@@ -205,11 +205,11 @@ export default function ProjectPrivacyControls({
           Allow observer access
         </label>
         <label
-          style={{
+          className="text-xs" style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            fontSize: 12,
+            
             color: 'var(--fg-2)',
           }}
         >
@@ -233,17 +233,17 @@ export default function ProjectPrivacyControls({
           flexWrap: 'wrap',
         }}
       >
-        <p className="dim" style={{ fontSize: 11, maxWidth: '60ch' }}>
+        <p className="dim text-2xs" style={{ maxWidth: '60ch' }}>
           Allow observer access is enforced immediately on project visibility. The retention,
           export, visibility, and redaction fields are currently policy metadata for operators and
           downstream automation, not automatic retention jobs.
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {error && (
-            <span style={{ fontSize: 11, color: 'var(--rose)' }}>{error}</span>
+            <span className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</span>
           )}
           {success && !error && (
-            <span style={{ fontSize: 11, color: 'var(--mint)' }}>{success}</span>
+            <span className="text-2xs" style={{ color: 'var(--mint)' }}>{success}</span>
           )}
           {canEdit && (
             <button

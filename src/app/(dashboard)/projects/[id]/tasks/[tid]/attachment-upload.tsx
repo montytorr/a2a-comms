@@ -94,9 +94,9 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px' }}>
-              <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-1)' }}>Drop an attachment or click to browse</p>
+              <p className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>Drop an attachment or click to browse</p>
               {selectedFileName && (
-                <span style={{
+                <span className="text-2xs" style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   maxWidth: '100%',
@@ -104,14 +104,14 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
                   border: '1px solid var(--line-2)',
                   background: 'var(--bg-3)',
                   padding: '2px 8px',
-                  fontSize: 10,
+                  
                   color: 'var(--fg-2)',
                 }}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedFileName}</span>
                 </span>
               )}
             </div>
-            <p style={{ marginTop: 4, fontSize: 11, color: 'var(--fg-3)' }}>Screenshots, markdown, notes, logs, and other small task artifacts.</p>
+            <p className="text-2xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>Screenshots, markdown, notes, logs, and other small task artifacts.</p>
           </div>
         </div>
       </label>
@@ -138,8 +138,8 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         {error
-          ? <p style={{ fontSize: 11, color: 'var(--rose)' }}>{error}</p>
-          : <span style={{ fontSize: 10, color: 'var(--fg-3)' }}>Private, signed downloads only.</span>
+          ? <p className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</p>
+          : <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Private, signed downloads only.</span>
         }
       </div>
     </form>

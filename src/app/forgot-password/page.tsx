@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
               <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
             </svg>
           </div>
-          <h1 className="h1" style={{ fontSize: 24 }}>Reset Password</h1>
+          <h1 className="h1 text-xl">Reset Password</h1>
           <div className="upper" style={{ marginTop: 6 }}>We&apos;ll send you a reset link</div>
         </div>
 
@@ -63,29 +63,29 @@ export default function ForgotPasswordPage() {
                 <Mail size={24} style={{ color: 'var(--mint)' }} />
               </div>
               <div className="h3" style={{ marginBottom: 4 }}>Check your email</div>
-              <div className="dim" style={{ fontSize: 12 }}>
+              <div className="dim text-xs">
                 We sent a reset link to <span style={{ color: 'var(--amber)' }}>{email}</span>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div className="col gap-1">
-                <label htmlFor="email" className="upper" style={{ fontSize: 10 }}>Email</label>
+                <label htmlFor="email" className="upper text-2xs">Email</label>
                 <input
                   id="email" type="email" value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required autoComplete="email" autoFocus
-                  className="cp-input" style={{ height: 40, fontSize: 14 }}
+                  className="cp-input text-sm" style={{ height: 40 }}
                   placeholder="you@example.com"
                 />
               </div>
 
               {error && (
-                <div className="pill pill--rose" style={{ height: 'auto', padding: '10px 14px', fontSize: 13 }}>{error}</div>
+                <div className="pill pill--rose text-sm" style={{ height: 'auto', padding: '10px 14px' }}>{error}</div>
               )}
 
-              <button type="submit" disabled={loading} className="btn btn--primary"
-                style={{ width: '100%', height: 42, justifyContent: 'center', fontSize: 14, opacity: loading ? 0.5 : 1 }}>
+              <button type="submit" disabled={loading} className="btn btn--primary text-sm"
+                style={{ width: '100%', height: 42, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}>
                 {loading ? 'Sending…' : 'Send Reset Link'}
               </button>
             </form>
@@ -93,7 +93,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 24 }}>
-          <Link href="/login" style={{ fontSize: 11, color: 'var(--amber)', textDecoration: 'none' }}>
+          <Link href="/login" className="text-2xs" style={{ color: 'var(--amber)', textDecoration: 'none' }}>
             ← Back to login
           </Link>
         </p>

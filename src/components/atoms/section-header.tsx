@@ -10,7 +10,7 @@ export const SectionHeader = ({ eyebrow, title, sub, right }: SectionHeaderProps
     <div className="col gap-1">
       {eyebrow && <div className="upper">{eyebrow}</div>}
       <div className="h1">{title}</div>
-      {sub && <div className="muted" style={{ fontSize: 13 }}>{sub}</div>}
+      {sub && <div className="muted text-sm">{sub}</div>}
     </div>
     {right != null && <div className="row gap-2">{right}</div>}
   </div>

@@ -65,7 +65,7 @@ function CommentItem({ comment }: { comment: Comment }) {
   if (isSystem) {
     return (
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' }}>
-        <div style={{
+        <div className="text-2xs" style={{
           width: 24,
           height: 24,
           borderRadius: '50%',
@@ -73,32 +73,32 @@ function CommentItem({ comment }: { comment: Comment }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 10,
+          
           marginTop: 2,
           flexShrink: 0,
         }}>
           {config.icon}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+          <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>
             <span style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{authorName}</span>
             {' · '}
             <span>{comment.content}</span>
           </p>
-          <p className="mono num" style={{ fontSize: 9, color: 'var(--fg-4)', marginTop: 2 }}>
+          <p className="mono num text-2xs" style={{ color: 'var(--fg-4)', marginTop: 2 }}>
             {formatRelative(comment.created_at)}
           </p>
           {metadataSummary && (
-            <p style={{ fontSize: 9, color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
+            <p className="text-2xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
           )}
         </div>
-        <span style={{
+        <span className="text-2xs" style={{
           flexShrink: 0,
           display: 'inline-flex',
           alignItems: 'center',
           padding: '2px 6px',
           borderRadius: 4,
-          fontSize: 8,
+          
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '0.08em',
@@ -119,16 +119,16 @@ function CommentItem({ comment }: { comment: Comment }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-1)' }}>{authorName}</span>
-          <span className="mono num" style={{ fontSize: 9, color: 'var(--fg-4)' }}>
+          <span className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>{authorName}</span>
+          <span className="mono num text-2xs" style={{ color: 'var(--fg-4)' }}>
             {formatRelative(comment.created_at)}
           </span>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--fg-2)' }}>
+        <div className="text-sm" style={{ color: 'var(--fg-2)' }}>
           <MarkdownPreview content={comment.content} />
         </div>
         {metadataSummary && (
-          <p style={{ fontSize: 9, color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
+          <p className="text-2xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
         )}
       </div>
     </div>
@@ -176,7 +176,7 @@ export default function TaskComments({
             </span>
           )}
         </p>
-        <span style={{ fontSize: 10, color: 'var(--fg-3)' }}>Chronological feed</span>
+        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Chronological feed</span>
       </div>
 
       {visibleComments.length > 0 ? (
@@ -188,7 +188,7 @@ export default function TaskComments({
           ))}
         </div>
       ) : (
-        <p style={{ fontSize: 12, color: 'var(--fg-3)', fontStyle: 'italic', marginBottom: 16 }}>No activity yet.</p>
+        <p className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic', marginBottom: 16 }}>No activity yet.</p>
       )}
 
       <div style={{ borderTop: '1px solid var(--line-1)', paddingTop: 16 }}>
@@ -208,10 +208,10 @@ export default function TaskComments({
           }}
           placeholder="Add a comment… (markdown supported)"
           disabled={isPending}
-          style={{
+          className="text-sm" style={{
             width: '100%',
             background: 'var(--bg-2)',
-            fontSize: 13,
+            
             color: 'var(--fg-1)',
             lineHeight: 1.6,
             borderRadius: 6,
@@ -227,7 +227,7 @@ export default function TaskComments({
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-1)'; }}
         />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-          <span style={{ fontSize: 9, color: 'var(--fg-4)' }}>
+          <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>
             Markdown supported · ⌘+Enter to submit
           </span>
           <button

@@ -89,7 +89,7 @@ export default function SprintStatusDropdown({ projectId, sprintId, currentStatu
               borderBottom: '1px solid var(--line-1)',
             }}
           >
-            <span className="upper" style={{ fontSize: 9 }}>Sprint Status</span>
+            <span className="upper text-2xs">Sprint Status</span>
           </div>
           {allStatuses.map((status) => {
             const sOpt = statusConfig[status];
@@ -101,14 +101,14 @@ export default function SprintStatusDropdown({ projectId, sprintId, currentStatu
                   e.stopPropagation();
                   handleSelect(status);
                 }}
-                style={{
+                className="text-2xs" style={{
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
                   padding: '8px 12px',
                   textAlign: 'left',
-                  fontSize: 11,
+                  
                   fontWeight: 600,
                   background: isSelected ? 'var(--bg-2)' : 'transparent',
                   color: isSelected ? 'var(--fg-1)' : 'var(--fg-3)',
@@ -130,7 +130,7 @@ export default function SprintStatusDropdown({ projectId, sprintId, currentStatu
                 }}
               >
                 <span className={sOpt.dotClass} />
-                <span className="upper" style={{ fontSize: 10 }}>{status}</span>
+                <span className="upper text-2xs">{status}</span>
                 {isSelected && <Check size={12} style={{ marginLeft: 'auto' }} />}
               </button>
             );

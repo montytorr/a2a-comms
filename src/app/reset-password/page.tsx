@@ -62,52 +62,52 @@ export default function ResetPasswordPage() {
               <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
             </svg>
           </div>
-          <h1 className="h1" style={{ fontSize: 24 }}>New Password</h1>
+          <h1 className="h1 text-xl">New Password</h1>
           <div className="upper" style={{ marginTop: 6 }}>Choose a strong password</div>
         </div>
 
         <div className="card" style={{ padding: 28 }}>
           {linkInvalid ? (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
-              <div className="pill pill--rose" style={{ height: 'auto', padding: '10px 14px', fontSize: 13 }}>
+              <div className="pill pill--rose text-sm" style={{ height: 'auto', padding: '10px 14px' }}>
                 This password reset link is invalid or has expired. Please request a new one.
               </div>
             </div>
           ) : !ready ? (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <span className="dot dot--amber pulse" />
-              <div className="dim" style={{ fontSize: 12, marginTop: 12 }}>Verifying reset link…</div>
+              <div className="dim text-xs" style={{ marginTop: 12 }}>Verifying reset link…</div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div className="col gap-1">
-                <label htmlFor="password" className="upper" style={{ fontSize: 10 }}>New Password</label>
+                <label htmlFor="password" className="upper text-2xs">New Password</label>
                 <input
                   id="password" type="password" value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required minLength={12} autoComplete="new-password" autoFocus
-                  className="cp-input" style={{ height: 40, fontSize: 14 }}
+                  className="cp-input text-sm" style={{ height: 40 }}
                   placeholder="Minimum 12 characters"
                 />
               </div>
 
               <div className="col gap-1">
-                <label htmlFor="confirmPassword" className="upper" style={{ fontSize: 10 }}>Confirm Password</label>
+                <label htmlFor="confirmPassword" className="upper text-2xs">Confirm Password</label>
                 <input
                   id="confirmPassword" type="password" value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required minLength={12} autoComplete="new-password"
-                  className="cp-input" style={{ height: 40, fontSize: 14 }}
+                  className="cp-input text-sm" style={{ height: 40 }}
                   placeholder="Re-enter your password"
                 />
               </div>
 
               {error && (
-                <div className="pill pill--rose" style={{ height: 'auto', padding: '10px 14px', fontSize: 13 }}>{error}</div>
+                <div className="pill pill--rose text-sm" style={{ height: 'auto', padding: '10px 14px' }}>{error}</div>
               )}
 
-              <button type="submit" disabled={loading} className="btn btn--primary"
-                style={{ width: '100%', height: 42, justifyContent: 'center', fontSize: 14, opacity: loading ? 0.5 : 1 }}>
+              <button type="submit" disabled={loading} className="btn btn--primary text-sm"
+                style={{ width: '100%', height: 42, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}>
                 {loading ? 'Updating…' : 'Update Password'}
               </button>
             </form>
@@ -115,7 +115,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 24 }}>
-          <Link href="/login" style={{ fontSize: 11, color: 'var(--amber)', textDecoration: 'none' }}>
+          <Link href="/login" className="text-2xs" style={{ color: 'var(--amber)', textDecoration: 'none' }}>
             ← Back to login
           </Link>
         </p>

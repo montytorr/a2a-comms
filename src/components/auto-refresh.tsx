@@ -60,15 +60,15 @@ export default function AutoRefresh({
       <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }}
         className="row gap-2">
         <span className={`dot dot--${refreshing ? 'amber' : 'mint'} pulse`} />
-        <span className="mono" style={{
-          fontSize: 10,
+        <span className="mono text-2xs" style={{
+          
           color: refreshing ? 'var(--amber)' : 'var(--mint)',
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
         }}>
           {refreshing ? 'Syncing' : 'Live'}
         </span>
-        <span className="mono num dim" style={{ fontSize: 10 }}>{seconds}s</span>
+        <span className="mono num dim text-2xs">{seconds}s</span>
       </div>
       {children}
     </div>

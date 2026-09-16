@@ -12,7 +12,7 @@ export default async function EmailAdminPage() {
   if (!user.isSuperAdmin) redirect('/');
 
   return (
-    <div style={{ padding: '1.5rem 2rem' }}>
+    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
           <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'var(--amber-bg)', border: '1px solid var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -23,7 +23,7 @@ export default async function EmailAdminPage() {
           </div>
           <div>
             <h1 className="h2">Email Templates</h1>
-            <p className="dim" style={{ fontSize: '12px', marginTop: '0.125rem' }}>Preview and test transactional emails</p>
+            <p className="dim text-xs" style={{ marginTop: '0.125rem' }}>Preview and test transactional emails</p>
           </div>
         </div>
       </div>

@@ -95,13 +95,13 @@ export default async function ContractsPage({
 
   return (
     <AutoRefresh intervalMs={15000}>
-      <div style={{ padding: '28px 32px 60px' }}>
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
           <div className="col gap-1">
             <div className="upper">Communication</div>
             <div className="h1">Contracts</div>
-            <div className="muted" style={{ fontSize: 13 }}>
+            <div className="muted text-sm">
               <span className="num">{rows.length}</span> contract{rows.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -112,12 +112,12 @@ export default async function ContractsPage({
         {/* Table */}
         <div className="card" style={{ overflow: 'hidden', marginTop: 16 }}>
           {/* Header row */}
-          <div className="row" style={{
+          <div className="row text-2xs" style={{
             padding: '8px 18px',
             background: 'var(--bg-2)',
             borderBottom: '1px solid var(--line-1)',
             fontFamily: 'var(--mono)',
-            fontSize: 10,
+            
             color: 'var(--fg-3)',
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
@@ -133,7 +133,7 @@ export default async function ContractsPage({
           {rows.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center' }}>
               <div className="h3" style={{ marginTop: 14 }}>No contracts found</div>
-              <div className="dim" style={{ fontSize: 13, marginTop: 4 }}>Try adjusting your filters</div>
+              <div className="dim text-sm" style={{ marginTop: 4 }}>Try adjusting your filters</div>
             </div>
           ) : (
             rows.map((contract, i) => {
@@ -149,11 +149,11 @@ export default async function ContractsPage({
 
               return (
                 <ContractRow key={contract.id} id={contract.id}>
-                  <div className="row" style={{
+                  <div className="row text-xs" style={{
                     padding: '10px 18px',
                     borderBottom: i === rows.length - 1 ? 'none' : '1px solid oklch(0.19 0.012 250)',
                     alignItems: 'center',
-                    fontSize: 12.5,
+                    
                     cursor: 'pointer',
                     transition: 'background 0.1s',
                     width: '100%',
@@ -168,7 +168,7 @@ export default async function ContractsPage({
                           <Avatar key={j} name={p!.name} size={20} />
                         ))}
                         {participants.length > 3 && (
-                          <span className="dim mono" style={{ fontSize: 11 }}>+{participants.length - 3}</span>
+                          <span className="dim mono text-2xs">+{participants.length - 3}</span>
                         )}
                       </div>
                     </span>
@@ -181,7 +181,7 @@ export default async function ContractsPage({
                     <span className="mono num" style={{ width: '10%', color: 'var(--fg-1)' }}>
                       {contract.current_turns}/{contract.max_turns}
                     </span>
-                    <span className="mono dim num" style={{ width: '15%', textAlign: 'right', fontSize: 11 }}>
+                    <span className="mono dim num text-2xs" style={{ width: '15%', textAlign: 'right' }}>
                       {formatDate(contract.created_at)}
                     </span>
                   </div>

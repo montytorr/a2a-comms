@@ -71,10 +71,10 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
   }
 
   return (
-    <div style={{ padding: '28px 32px 60px' }}>
+    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       <div style={{ marginBottom: '32px' }}>
         <h1 className="h1">Settings</h1>
-        <p className="muted" style={{ fontSize: '13px', marginTop: '4px' }}>Manage your notification preferences.</p>
+        <p className="muted text-sm" style={{ marginTop: '4px' }}>Manage your notification preferences.</p>
       </div>
 
       <div style={{ maxWidth: '560px' }}>
@@ -82,7 +82,7 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
           {/* Section header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line-1)' }}>
             <h2 className="h3">Email Notifications</h2>
-            <p className="dim" style={{ fontSize: '11px', marginTop: '2px' }}>Choose which emails you&apos;d like to receive.</p>
+            <p className="dim text-2xs" style={{ marginTop: '2px' }}>Choose which emails you&apos;d like to receive.</p>
           </div>
 
           {/* Password Reset — always on */}
@@ -91,8 +91,8 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
             style={{ justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--line-1)' }}
           >
             <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
-              <p className="muted" style={{ fontSize: '13px', fontWeight: 500 }}>Password Reset</p>
-              <p className="dim" style={{ fontSize: '11px', marginTop: '2px' }}>Security emails are always sent and cannot be disabled.</p>
+              <p className="muted text-sm" style={{ fontWeight: 500 }}>Password Reset</p>
+              <p className="dim text-2xs" style={{ marginTop: '2px' }}>Security emails are always sent and cannot be disabled.</p>
             </div>
             <Toggle enabled={true} disabled={true} onChange={() => {}} />
           </div>
@@ -109,8 +109,8 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
               }}
             >
               <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--fg-0)' }}>{item.label}</p>
-                <p className="dim" style={{ fontSize: '11px', marginTop: '2px' }}>{item.description}</p>
+                <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{item.label}</p>
+                <p className="dim text-2xs" style={{ marginTop: '2px' }}>{item.description}</p>
               </div>
               <Toggle
                 enabled={prefs[item.key]}
@@ -124,11 +124,11 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
         {/* Feedback toast */}
         {feedback && (
           <div
-            style={{
+            className="text-sm" style={{
               marginTop: '12px',
               padding: '10px 14px',
               borderRadius: '6px',
-              fontSize: '13px',
+              
               fontWeight: 500,
               transition: 'all 0.2s',
               background: feedback.type === 'success' ? 'var(--mint-bg)' : 'var(--rose-bg)',

@@ -75,23 +75,23 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '42rem' }} className="sm:p-6 lg:p-10">
+    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
       <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-        <Link href="/projects" style={{ fontSize: '11px', color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
-        <span style={{ color: 'var(--fg-3)', fontSize: '10px' }}>›</span>
-        <span style={{ fontSize: '11px', color: 'var(--fg-2)' }}>New Project</span>
+        <Link href="/projects" className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
+        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>›</span>
+        <span className="text-2xs" style={{ color: 'var(--fg-2)' }}>New Project</span>
       </div>
 
       <div className="animate-fade-in" style={{ marginBottom: '2rem' }}>
-        <p className="upper" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--peri)', marginBottom: '0.5rem' }}>Create</p>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>New Project</h1>
+        <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--peri)', marginBottom: '0.5rem' }}>Create</p>
+        <h1 className="text-2xl" style={{ fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>New Project</h1>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Title */}
         <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.05s' }}>
-          <label style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
             Title <span style={{ color: 'var(--rose)' }}>*</span>
           </label>
           <input
@@ -99,14 +99,14 @@ export default function NewProjectPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Project title..."
-            className="cp-input"
-            style={{ width: '100%', fontSize: '14px' }}
+            className="cp-input text-sm"
+            style={{ width: '100%' }}
           />
         </div>
 
         {/* Description */}
         <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.1s' }}>
-          <label style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
             Description
           </label>
           <textarea
@@ -114,12 +114,12 @@ export default function NewProjectPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe your project (markdown supported)..."
             rows={5}
-            className="cp-input"
-            style={{ width: '100%', fontSize: '13px', resize: 'vertical', minHeight: '100px' }}
+            className="cp-input text-sm"
+            style={{ width: '100%', resize: 'vertical', minHeight: '100px' }}
           />
           {description.trim() && (
             <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line-1)' }}>
-              <p style={{ fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Preview</p>
+              <p className="text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Preview</p>
               <MarkdownPreview content={description} className="muted" />
             </div>
           )}
@@ -127,15 +127,15 @@ export default function NewProjectPage() {
 
         {/* Members */}
         <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.15s' }}>
-          <label style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
+          <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
             Initial Members
           </label>
-          <p style={{ fontSize: '11px', color: 'var(--fg-3)', marginBottom: '1rem' }}>Select agents to invite to this project. You will be added as owner automatically; others join after accepting.</p>
+          <p className="text-2xs" style={{ color: 'var(--fg-3)', marginBottom: '1rem' }}>Select agents to invite to this project. You will be added as owner automatically; others join after accepting.</p>
 
           {agents.length === 0 ? (
-            <p style={{ fontSize: '12px', color: 'var(--fg-3)', fontStyle: 'italic', padding: '1rem 0' }}>No agents registered yet</p>
+            <p className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic', padding: '1rem 0' }}>No agents registered yet</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.5rem' }}>
               {agents.map((agent) => {
                 const isSelected = selectedAgents.has(agent.id);
                 return (
@@ -159,8 +159,8 @@ export default function NewProjectPage() {
                     <Avatar name={agent.display_name || agent.name} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p
-                        style={{
-                          fontSize: '12px',
+                        className="text-xs" style={{
+                          
                           fontWeight: 500,
                           color: isSelected ? 'var(--peri)' : 'var(--fg-1)',
                           overflow: 'hidden',
@@ -170,7 +170,7 @@ export default function NewProjectPage() {
                       >
                         {agent.display_name}
                       </p>
-                      <p className="mono" style={{ fontSize: '10px', color: 'var(--fg-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.name}</p>
+                      <p className="mono text-2xs" style={{ color: 'var(--fg-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.name}</p>
                     </div>
                     {isSelected && (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--peri)', flexShrink: 0 }}>
@@ -194,7 +194,7 @@ export default function NewProjectPage() {
               padding: '0.75rem 1rem',
             }}
           >
-            <p style={{ fontSize: '12px', color: 'var(--rose)' }}>{error}</p>
+            <p className="text-xs" style={{ color: 'var(--rose)' }}>{error}</p>
           </div>
         )}
 
@@ -203,16 +203,16 @@ export default function NewProjectPage() {
           <button
             type="submit"
             disabled={loading}
-            className="btn btn--peri"
-            style={{ padding: '0.75rem 1.5rem', fontSize: '12px', fontWeight: 600, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+            className="btn btn--peri text-xs"
+            style={{ padding: '0.75rem 1.5rem', fontWeight: 600, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
             {loading ? 'Creating...' : 'Create Project'}
           </button>
           <Link
             href="/projects"
-            style={{
+            className="text-xs" style={{
               padding: '0.75rem 1.5rem',
-              fontSize: '12px',
+              
               fontWeight: 500,
               borderRadius: '0.75rem',
               border: '1px solid var(--line-1)',
