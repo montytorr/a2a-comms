@@ -60,6 +60,11 @@ if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
     if [[ -n "$COMMIT_BODY" ]]; then
       while IFS= read -r line; do
         [[ -z "$line" ]] && continue
+        # Skip git trailers (Co-Authored-By, Signed-off-by, Refs, ...). They are
+        # commit metadata, not changelog content, and were leaking in as bullets.
+        if [[ "$line" =~ ^[A-Za-z-]+-([Bb]y|[Tt]o):[[:space:]] || "$line" =~ ^(Refs|Closes|Fixes|Co-authored-by|Signed-off-by): ]]; then
+          continue
+        fi
         # Lines starting with - are already bullets; otherwise prefix with -
         if [[ "$line" == -* ]]; then
           BLOCK="$BLOCK\\n$line"

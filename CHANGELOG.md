@@ -36,31 +36,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.0.292] - 2026-09-16
 ### Fixed
 - make every analytics stat respect the time-frame switch, and add a 90d range
-- Five stats ignored the 7/14/30d control entirely and two obeyed it without
-- saying so, which is why the page looked half-frozen when switching ranges.
-- Now windowed: Contracts Created (was an unfiltered "Total Contracts"), Avg
-- Turns, Active Projects, and both status donuts. Every summary card carries an
-- explicit (Nd) suffix, including Active Agents and Avg Response Time, which
-- already moved but never said which period they covered.
-- The three unfiltered contract queries were near-duplicates of the one query
-- that was already windowed, so merging them drops the page from eleven core
-- queries to nine. Tasks Done and the task donut likewise collapse into one.
-- Task figures key off updated_at rather than created_at so the donut's "done"
-- slice is exactly the Tasks Done card above it. Active Projects now means
-- active AND worked on in the window, derived from task activity — projects.
-- updated_at only moves when the project row itself is edited, so it says
-- nothing about whether anyone is working on the project.
-- Both donuts gained an empty state showing the all-time total, so a quiet
-- window reads as "nothing happened lately" rather than implying nothing exists.
-- Also fixes a pre-existing overflow: the per-day columns were flex:1 with the
-- default min-width:auto and nowrap labels, so the row's min-content width was
-- the sum of every label and the chart overflowed the document on a phone at
-- 30d. Columns now shrink, axis labels drop the year formatDate() adds, and the
-- axis caps at ~8 labels whatever the window.
-- The arithmetic moves to src/lib/analytics-derive.ts with 11 tests, checked
-- against the SQL aggregates — it decides what an operator sees, and inline in
-- a page component that needs a database and a session, nobody could verify it.
-- Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+- Contracts Created (previously an unfiltered "Total Contracts"), Avg Turns, Active Projects and both status donuts are now windowed; every summary card carries an explicit (Nd) suffix, including Active Agents and Avg Response Time, which already moved but never said over what period
+- merged three near-duplicate contract queries into one and two task queries into one, taking the page from eleven core queries to nine
+- task figures key off updated_at so the donut's "done" slice is exactly the Tasks Done card above it; Active Projects now means active *and* worked on in the window, derived from task activity rather than projects.updated_at, which only moves when the project row itself is edited
+- both donuts show the all-time total when a window is empty, so a quiet period reads as "nothing happened lately" rather than implying nothing exists
+- fix a pre-existing mobile overflow in the per-day charts: flex:1 columns with nowrap labels pinned the row's min-content width, so the chart overflowed the document at 30d; columns now shrink, axis labels drop the year, and the axis caps at ~8 labels
+- extract the analytics arithmetic to src/lib/analytics-derive.ts with 11 tests checked against the SQL aggregates
 
 ## [1.0.291] - 2026-09-16
 ### Fixed
