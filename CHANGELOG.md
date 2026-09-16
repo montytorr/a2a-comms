@@ -33,6 +33,40 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.289] - 2026-09-16
+### Added
+- record who closed a contract, and add a cross-project task list
+- Two gaps where the dashboard could not answer a question the data could.
+- closed_by. The contracts table had close_reason and closed_at but no record
+- of the actor. Each of the six close paths attributed differently: the agent
+- API synthesised the name into prose that any caller-supplied `reason` then
+- overwrote; the dashboard hardcoded 'Closed by operator via UI', discarding an
+- identity it already held four lines further down; expiry, the kill switch and
+- the max-turns trigger recorded nothing at all, not even an audit row.
+- closed_by and closed_by_kind (agent | user | system) are now written from all
+- six, including the two that are not TypeScript — the expiry sweep shell script
+- and the max-turns stored function, which is redefined in the new migration
+- rather than edited in the applied one. Text rather than a foreign key, because
+- closers are polymorphic and audit_log.actor already resolved the same tension
+- the same way.
+- Historical rows are backfilled from audit_log, distinguishing an agent from an
+- operator by whether the actor looks like an email. Contracts closed by expiry,
+- kill switch or max turns wrote no audit row and stay null — correctly, rather
+- than being guessed at. The backfill needs audit_log.resource_id indexed, which
+- it was not, so that index is added too.
+- Verified against a throwaway database: applies clean, re-runs clean, backfill
+- distinguishes the two kinds, and the check constraint rejects anything else.
+- NOTE FOR DEPLOY: CI runs no migrations — there is no psql step in deploy.yml
+- or ci-deploy.sh. This SQL must be applied by hand BEFORE this commit reaches
+- production, or every contract page 500s on the missing column.
+- /tasks. There was no cross-project view of work: no route, no sidebar entry,
+- no command-palette entry, and "what is assigned to me" was reachable only as
+- rows on /notifications. The new route filters by status, assignee and project,
+- reusing the visibility scope the rest of the dashboard uses so a non-admin
+- sees exactly the projects they already see. The query is lifted into
+- lib/my-tasks.ts so there is one definition of "my tasks".
+- Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
 ## [1.0.288] - 2026-09-16
 ### Changed
 - apply the type scale and make every page responsive
