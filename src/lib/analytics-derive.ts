@@ -100,3 +100,25 @@ export function countActiveProjects(
 export function toDaySeries(perDay: Record<string, number>, dayLabels: string[]): number[] {
   return dayLabels.map((label) => perDay[label] || 0);
 }
+
+/**
+ * Axis helpers for the per-day bar charts.
+ *
+ * Kept here rather than in the chart component so the "is today labelled?"
+ * question has a test: it is easy to get wrong and invisible until someone
+ * looks at a specific window width.
+ */
+
+/** Cap the axis at ~8 labels whatever the window, so 90d stays legible. */
+export function axisLabelStep(days: number): number {
+  return days <= 8 ? 1 : Math.ceil(days / 8);
+}
+
+/**
+ * Step back from the end of the axis rather than forward from the start: the
+ * most recent day is the one worth reading, and forward stepping leaves it
+ * unlabelled whenever the window is not a whole multiple of the step.
+ */
+export function showAxisLabel(idx: number, total: number, days: number): boolean {
+  return (total - 1 - idx) % axisLabelStep(days) === 0;
+}

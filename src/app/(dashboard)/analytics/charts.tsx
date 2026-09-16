@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { formatDate } from '@/lib/format-date';
+import { showAxisLabel } from '@/lib/analytics-derive';
 
 interface AnalyticsChartsProps {
   contractsByStatus: Record<string, number>;
@@ -88,12 +89,6 @@ function formatShortDate(dateStr: string): string {
 function formatAxisDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
   return `${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-// Cap the axis at ~8 labels whatever the window, so 90d is legible and 30d stops
-// colliding on a phone.
-function axisLabelStep(days: number): number {
-  return days <= 8 ? 1 : Math.ceil(days / 8);
 }
 
 export default function AnalyticsCharts({
@@ -298,7 +293,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Messages per Day */}
-        <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.2s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.2s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Day</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -306,7 +301,7 @@ export default function AnalyticsCharts({
             {dayLabels.map((label, idx) => {
               const count = dayCounts[idx];
               const heightPct = maxDayCount > 0 ? (count / maxDayCount) * 100 : 0;
-              const showLabel = idx % axisLabelStep(days) === 0;
+              const showLabel = showAxisLabel(idx, dayLabels.length, days);
               return (
                 <div
                   key={label}
@@ -331,11 +326,12 @@ export default function AnalyticsCharts({
                       }}
                     />
                   </div>
-                  {showLabel && (
-                    <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
-                      {formatAxisDate(label)}
-                    </span>
-                  )}
+                  <div
+                    className="mono num text-2xs"
+                    style={{ height: '14px', lineHeight: '14px', color: 'var(--fg-4)', whiteSpace: 'nowrap' }}
+                  >
+                    {showLabel ? formatAxisDate(label) : ''}
+                  </div>
                 </div>
               );
             })}
@@ -343,7 +339,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Contracts Created per Day */}
-        <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.25s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.25s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts Created per Day</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -351,7 +347,7 @@ export default function AnalyticsCharts({
             {dayLabels.map((label, idx) => {
               const count = contractDayCounts[idx];
               const heightPct = maxContractDayCount > 0 ? (count / maxContractDayCount) * 100 : 0;
-              const showLabel = idx % axisLabelStep(days) === 0;
+              const showLabel = showAxisLabel(idx, dayLabels.length, days);
               return (
                 <div
                   key={label}
@@ -376,11 +372,12 @@ export default function AnalyticsCharts({
                       }}
                     />
                   </div>
-                  {showLabel && (
-                    <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', whiteSpace: 'nowrap' }}>
-                      {formatAxisDate(label)}
-                    </span>
-                  )}
+                  <div
+                    className="mono num text-2xs"
+                    style={{ height: '14px', lineHeight: '14px', color: 'var(--fg-4)', whiteSpace: 'nowrap' }}
+                  >
+                    {showLabel ? formatAxisDate(label) : ''}
+                  </div>
                 </div>
               );
             })}
@@ -449,7 +446,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Horizontal Bar Chart — Top Contracts by Messages */}
-        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.35s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.35s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Top Contracts by Messages</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Top 5 in last {days} days</p>
 
@@ -463,7 +460,7 @@ export default function AnalyticsCharts({
                 <div key={contract.title}>
                   <div className="row gap-2">
                     <span
-                      className="text-2xs" style={{ fontWeight: 500, color: 'var(--fg-2)', width: '112px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      className="text-2xs" style={{ fontWeight: 500, color: 'var(--fg-2)', flex: '0 1 280px', minWidth: '96px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                       title={contract.title}
                     >
                       {contract.title}
@@ -489,7 +486,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Hourly Activity Heatmap */}
-        <div className="card animate-fade-in" style={{ padding: '24px', gridColumn: 'span 2', animationDelay: '0.4s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.4s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Hourly Activity Heatmap</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Message distribution by hour (UTC) — last {days} days</p>
 

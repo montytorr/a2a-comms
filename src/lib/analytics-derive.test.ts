@@ -110,3 +110,41 @@ test('toDaySeries drops days outside the axis', () => {
   const labels = ['2026-09-15', '2026-09-16'];
   assert.deepEqual(toDaySeries({ '2026-01-01': 99, '2026-09-16': 1 }, labels), [0, 1]);
 });
+
+// --- axis labelling -------------------------------------------------------
+
+import { axisLabelStep, showAxisLabel } from './analytics-derive';
+
+function labelled(days: number, total = days): number[] {
+  return Array.from({ length: total }, (_, i) => i).filter((i) => showAxisLabel(i, total, days));
+}
+
+test('the most recent day is always labelled', () => {
+  // Stepping forward from index 0 left the last column unlabelled whenever the
+  // window was not a whole multiple of the step. Because the chart row is
+  // bottom-aligned and the label used to be conditionally rendered, that column
+  // was also shorter — so today's bar visibly sank into the axis.
+  for (const days of [7, 14, 30, 90]) {
+    const shown = labelled(days);
+    assert.equal(shown.at(-1), days - 1, `last column must be labelled at ${days}d`);
+  }
+});
+
+test('the axis stays at or under 8 labels for every window', () => {
+  for (const days of [7, 8, 9, 14, 30, 45, 90]) {
+    const n = labelled(days).length;
+    assert.ok(n <= 8, `${days}d produced ${n} labels`);
+    assert.ok(n >= 2, `${days}d produced only ${n} labels`);
+  }
+});
+
+test('short windows label every day', () => {
+  assert.equal(axisLabelStep(7), 1);
+  assert.deepEqual(labelled(7), [0, 1, 2, 3, 4, 5, 6]);
+});
+
+test('labels are evenly spaced', () => {
+  const shown = labelled(30);
+  const gaps = shown.slice(1).map((v, i) => v - shown[i]);
+  assert.deepEqual([...new Set(gaps)], [axisLabelStep(30)]);
+});
