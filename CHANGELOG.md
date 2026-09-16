@@ -33,6 +33,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.293] - 2026-09-16
+### Fixed
+- stop the last bar sinking into the axis, and widen Top Contracts
+- the axis label was conditionally rendered, so a labelled column was taller than an unlabelled one; with the chart row bottom-aligned that dropped every unlabelled bar by the label's height, which showed up as today's bar sitting below the axis. Every column now reserves the label slot
+- axis labels step back from the end rather than forward from the start, so the most recent day is always labelled — it was left unlabelled whenever the window was not a whole multiple of the step
+- Top Contracts by Messages spans two columns like the per-day charts, and its title column grows to 280px instead of a fixed 112px, since contract titles are long and were nearly all ellipsised
+- the four wide cards spanned two columns unconditionally, which on a phone forced an implicit second track onto a grid that had collapsed to one column and overflowed the viewport; they now span only from md up
+- axis helpers move to src/lib/analytics-derive.ts with 4 tests covering the last-day label and the 8-label cap
+
 ## [1.0.292] - 2026-09-16
 ### Fixed
 - make every analytics stat respect the time-frame switch, and add a 90d range
