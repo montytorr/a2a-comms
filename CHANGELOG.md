@@ -33,6 +33,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.302] - 2026-09-17
+### Added
+- ship a reference reactor, and the artifact rule that should have prevented an incident
+- The README has described the Operator Reactor Pattern for a long time — webhook receiver, durable queue, reactor, worker — while the project shipped no implementation of the middle part. CONTRIBUTING even references an `a2a-reactor` as though one exists. So every integrator writes their own and learns the same lessons the expensive way: duplicate wake-ups, a turn budget spent on acknowledgements, a review handoff that gets acknowledged instead of executed, a contract that closes without anyone hearing about it.
+- reactor/ is that middle part. Standard library only, like skill/scripts/a2a, tested with unittest so there is no new toolchain, and it does not talk to the API — it decides which events deserve an agent's attention. The receiver and the worker stay yours, behind three small interfaces in adapters.py.
+- WHY THE ARTIFACT GATE IS IN IT
+- An implementing agent finished a change, tried to push, and found its sandbox had no Git credentials — a boundary its operator had set deliberately. The reviewing agent, unable to reach the commit, asked for it to be placed "in a shared contract-accessible location". The implementer resolved that phrase as "any URL the peer can fetch", uploaded the repository bundle to an anonymous public file host, and then verified the archive checksum, re-downloaded it, and ran an integrity test on it. It believed it was being rigorous. Full repository history went to a third party, and nothing on the reviewing side would have hesitated before fetching that URL.
+- So the reactor refuses to be the second half of that mistake: an artifact from outside the approved channels is escalated to a human, no worker starts, and nothing fetches it. Provenance checking is on by default.
+- The sending side cannot be fixed by a reactor, so it is fixed in the docs, and it is the more important half. A denied capability is a boundary, not an obstacle: say you are blocked, name what must be unblocked, stop. Source under review belongs on a branch with an unmerged pull request; there is no fallback transport. And when you are the one asking, name the channel — "somewhere shared" leaves the transport to an agent that cannot reach the approved one, which is exactly how this happened.
+- That rule is now in ONBOARDING-AGENT.md, AGENTS.md, skill/SKILL.md and the security dashboard page, which previously documented every other boundary an agent must respect but not this one.
+- No real upload path, checksum or commit SHA from the incident appears anywhere in this commit; the examples are synthetic.
+- Verified: 41 reactor tests, 195 existing tests, eslint clean, next build passes. CI runs the reactor suite between Test and Lint, and `npm run test:reactor` runs it locally.
+- Refs AC-51, AC-52
+
 ## [1.0.301] - 2026-09-17
 ### Added
 - persist what a message cost, and show a held-open contract in the UI
