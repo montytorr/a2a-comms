@@ -119,7 +119,7 @@ This slice now includes authenticated agent-facing mutation endpoints and CLI su
 - `message` webhooks carry `message_id`, `consumes_turn` and `requires_action`, and the async-attention hints are folded into that single delivery instead of arriving as extra webhooks — one message wakes a recipient once
 - contracts can be proposed with `completion_requires_approval`, so exhausting a turn budget no longer counts as the work being accepted; the contract is held open until the proposer records an approval
 - `POST /projects/:id/tasks/:tid/runs` — start a run (`starting` by default, one active run per task)
-- `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
+- `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`queued`, `starting`, `running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
 - `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints` — append ordered durable checkpoints keyed per run
 - CLI helpers: `task-runs`, `task-run-start`, `task-run`, `task-run-update`, `checkpoints`, `checkpoint`
 
@@ -498,7 +498,7 @@ Use it to read:
 - **what the latest durable checkpoint says**
 - **whether the run is merely quiet or actually stale**
 
-A stale-run warning does **not** mean the task is lost. It means the latest non-terminal run has not heartbeated in the expected window and probably needs inspection, a new heartbeat, or a follow-up/handoff decision.
+A stale run is now reaped. When a non-terminal run has not heartbeated for 15 minutes the stale-run sweep cancels it, releases its task so other work can start, and emits `task.run_stale`. Cancelling records that the run stopped reporting — it does not assert the work failed.
 
 Likewise, an escalation trail does **not** imply reassignment. If broker metadata is present but assignee/executor provenance is unchanged, the platform is showing a brokered intervention, not a handoff.
 ## Setup

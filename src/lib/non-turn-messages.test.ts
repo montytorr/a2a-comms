@@ -180,3 +180,51 @@ test('the attachment dead end tells an agent how to get out of it', () => {
   assert.match(route, /a2a contract-link/);
   assert.match(route, /Do not publish the file anywhere outside this platform/);
 });
+
+test('a checkpoint append allocates and consumes its sequence in one statement', () => {
+  // The old path inserted the checkpoint, committed, then bumped the counter
+  // under a CAS. A missed CAS threw with the row already written, so the run
+  // held a checkpoint it could not count and the next append collided on
+  // UNIQUE(run_id, sequence) — permanently.
+  const migration = read('supabase/migrations/20260917200000_atomic_checkpoint_append.sql');
+  assert.match(migration, /FROM task_execution_runs\s+WHERE id = p_run_id\s+FOR UPDATE/);
+  assert.match(migration, /v_next_sequence := COALESCE\(v_run\.checkpoint_count, 0\) \+ 1/);
+  // an absent summary must not overwrite the run's
+  assert.match(migration, /summary = CASE WHEN p_summary_provided THEN p_summary ELSE summary END/);
+
+  const lib = read('src/lib/task-execution.ts');
+  assert.match(lib, /rpc\('append_task_checkpoint_atomic'/);
+  assert.match(lib, /p_summary_provided: input\.summary !== undefined/);
+  assert.doesNotMatch(lib, /Concurrent checkpoint write conflict/);
+});
+
+test('a run that stops heartbeating is cancelled and releases its task', () => {
+  const migration = read('supabase/migrations/20260917210000_reap_stale_execution_runs.sql');
+  // cancelled, not failed — silence is not evidence the work failed
+  assert.match(migration, /SET status = 'cancelled'/);
+  assert.doesNotMatch(migration, /SET status = 'failed'/);
+  assert.match(migration, /not that its work failed/);
+  // the half that fixes the deadlock
+  assert.match(migration, /SET active_run_id = NULL/);
+  // a run that died before its first heartbeat is still reaped
+  assert.match(migration, /COALESCE\(r\.heartbeat_at, r\.started_at, r\.created_at\)/);
+  assert.match(migration, /FOR UPDATE SKIP LOCKED/);
+});
+
+test('the stale-run sweep is built, deployed and emits its event', () => {
+  assert.match(read('src/lib/webhook-events.ts'), /'task\.run_stale'/);
+  assert.match(read('src/lib/types.ts'), /\| 'task\.run_stale'/);
+  const sweep = read('scripts/stale-run-sweep.ts');
+  assert.match(sweep, /reap_stale_execution_runs/);
+  assert.match(sweep, /event: 'task\.run_stale'/);
+  assert.match(sweep, /work_failed: false/);
+  // built and started by the deploy, not just present in the tree
+  assert.match(read('Dockerfile'), /AS stale-run-worker/);
+  assert.match(read('docker-compose.yml'), /stale-run-sweep-worker:/);
+  assert.match(read('scripts/ci-deploy.sh'), /build .*stale-run-sweep-worker/);
+});
+
+test('the default run status agrees with the route that creates runs', () => {
+  assert.match(read('src/lib/task-execution.ts'), /input\.status \?\? 'starting'/);
+  assert.match(read('src/app/api/v1/projects/[id]/tasks/[tid]/runs/route.ts'), /parsed\.status \?\? 'starting'/);
+});

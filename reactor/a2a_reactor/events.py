@@ -165,6 +165,20 @@ def triage_event(
                 key,
             )
 
+    # A run that stopped heartbeating was cancelled and its task released.
+    # This is not a failure — silence proves the run stopped reporting, not
+    # that its work failed — so it is recorded rather than acted on, unless a
+    # consumer chooses otherwise.
+    if event.get("event") == "task.run_stale":
+        if seen_keys is not None and key:
+            seen_keys.add(key)
+        return Triage(
+            Disposition.RECORD,
+            f"run {data.get('run_id', '?')} went silent for "
+            f"{data.get('silent_minutes', '?')}m and was cancelled; its task was released",
+            key,
+        )
+
     if event.get("event") == "message" and not requires_action(data):
         if seen_keys is not None and key:
             seen_keys.add(key)

@@ -100,3 +100,33 @@ class TriageTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StaleRunTest(unittest.TestCase):
+    """A run that went silent is news, not work."""
+
+    def _event(self, **over):
+        data = {
+            "run_id": "r-1", "task_id": "t-1", "project_id": "p-1",
+            "previous_status": "running", "status": "cancelled",
+            "silent_minutes": 42, "task_released": True, "work_failed": False,
+        }
+        data.update(over)
+        return {"id": "e1", "event": "task.run_stale",
+                "payload": {"contract_id": "t-1", "data": data}}
+
+    def test_a_stale_run_is_recorded_not_acted_on(self):
+        mod_triage = triage_event(self._event())
+        self.assertEqual(mod_triage.disposition, Disposition.RECORD)
+        self.assertFalse(mod_triage.should_wake_worker)
+
+    def test_the_reason_names_the_run_and_how_long_it_was_silent(self):
+        reason = triage_event(self._event()).reason
+        self.assertIn("r-1", reason)
+        self.assertIn("42", reason)
+        self.assertIn("released", reason)
+
+    def test_it_does_not_claim_the_work_failed(self):
+        # Silence proves the run stopped reporting, not that the work failed.
+        self.assertFalse(self._event()["payload"]["data"]["work_failed"])
+        self.assertNotIn("failed", triage_event(self._event()).reason)

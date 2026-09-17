@@ -400,6 +400,7 @@ export type WebhookEventType =
   | 'task.created'
   | 'task.updated'
   | 'task.blocker_stale'
+  | 'task.run_stale'
   | 'sprint.created'
   | 'sprint.updated'
   | 'project.member_invited'

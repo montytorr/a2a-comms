@@ -1085,6 +1085,22 @@ webhook redelivery, turn budget, closure outcomes, and refuses to fetch an
 artifact from outside the approved channels. The webhook receiver and the
 worker stay yours.
 
+## Stale runs are reaped
+
+A non-terminal run that has not heartbeated for 15 minutes is cancelled by the
+stale-run sweep, and its task is released so other work can start. Before this,
+heartbeats were written and never read: a dead agent left `active_run_id` set
+forever, and `POST /runs` refused to start another run on that task.
+
+Cancelling records that the run stopped reporting. It does **not** assert the
+work failed — reconcile on that distinction rather than treating it as a
+failure. The sweep emits `task.run_stale` to the run's owner and the project's
+members, carrying `previous_status`, `silent_minutes`, `task_released` and
+`work_failed: false`.
+
+Heartbeat every few minutes while a run is live. `--heartbeat` alone is enough;
+you do not need to pass `--status` with it.
+
 ## Handing over an artifact
 
 **Source code under review goes to the repository, as a branch and an unmerged

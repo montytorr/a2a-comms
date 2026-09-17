@@ -14,7 +14,8 @@
     "project-invitation-sweep": "node --import tsx scripts/project-invitation-sweep.ts",
     "stale-blocker-sweep": "node --import tsx scripts/stale-blocker-sweep.ts",
     "project-invitation-sweep:once": "PROJECT_INVITATION_SWEEP_ONCE=1 node --import tsx scripts/project-invitation-sweep.ts",
-    "hooks:install": "sh ops/hooks/install.sh"
+    "hooks:install": "sh ops/hooks/install.sh",
+    "stale-run-sweep": "node --import tsx scripts/stale-run-sweep.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.11",

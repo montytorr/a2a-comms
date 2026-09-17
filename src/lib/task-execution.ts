@@ -201,7 +201,11 @@ export async function createTaskExecutionRun(input: {
 }) {
   const supabase = createServerClient();
   const now = new Date().toISOString();
-  const status = input.status ?? 'queued';
+  // Matches the POST /runs route, which defaults to 'starting', and the
+  // README. This defaulted to 'queued' — harmless in practice because the
+  // route always passes a status, but it made the library disagree with the
+  // documented behaviour for anyone reading it as the spec.
+  const status = input.status ?? 'starting';
   const startedAt = status === 'queued' ? null : now;
   const completedAt = ['succeeded', 'failed', 'cancelled'].includes(status) ? now : null;
   const heartbeatAt = ['starting', 'running', 'pending-approval', 'waiting', 'blocked', 'paused', 'handoff-needed'].includes(status) ? now : null;
@@ -315,90 +319,54 @@ export async function appendTaskCheckpoint(input: {
   attachmentIds?: string[];
 }) {
   const supabase = createServerClient();
-  const { data: existingRun, error: runError } = await supabase
-    .from('task_execution_runs')
-    .select('id, checkpoint_count, status, started_at, heartbeat_at, completed_at')
-    .eq('id', input.runId)
-    .single();
-
-  if (runError || !existingRun) throw runError;
-
-  const nextSequence = (existingRun.checkpoint_count ?? 0) + 1;
   const checkpointPayload = input.payload ?? {};
-  const attachmentIds = input.attachmentIds ?? [];
 
-  let checkpoint: Record<string, unknown> | null = null;
-  let checkpointError: PostgrestError | null = null;
+  // Allocating the sequence and consuming it used to be two statements: the
+  // checkpoint was inserted and committed, then the run's checkpoint_count was
+  // bumped under a compare-and-set. A missed CAS threw with the row already
+  // written, leaving a checkpoint the run could not count — and the next append
+  // reused that sequence and died on the unique constraint, permanently. One
+  // locked statement does both now.
+  const { data: result, error } = await supabase.rpc('append_task_checkpoint_atomic', {
+    p_run_id: input.runId,
+    p_task_id: input.taskId,
+    p_project_id: input.projectId,
+    p_agent_id: input.agentId,
+    p_checkpoint_key: input.checkpointKey,
+    p_summary: input.summary ?? null,
+    // Distinguishes "no summary given" from "explicitly cleared", so a
+    // checkpoint without one no longer erases the run's summary.
+    p_summary_provided: input.summary !== undefined,
+    p_payload: checkpointPayload,
+    p_attachment_ids: input.attachmentIds ?? [],
+  });
 
-  const insertWithAttachments = await supabase
-    .from('task_execution_checkpoints')
-    .insert({
-      run_id: input.runId,
-      task_id: input.taskId,
-      project_id: input.projectId,
-      agent_id: input.agentId,
-      sequence: nextSequence,
-      checkpoint_key: input.checkpointKey,
-      summary: input.summary ?? null,
-      payload: checkpointPayload,
-      attachment_ids: attachmentIds,
-    })
-    .select()
-    .single();
-
-  checkpoint = insertWithAttachments.data;
-  checkpointError = insertWithAttachments.error;
-
-  if (isMissingAttachmentIdsColumn(checkpointError)) {
-    const fallbackInsert = await supabase
-      .from('task_execution_checkpoints')
-      .insert({
-        run_id: input.runId,
-        task_id: input.taskId,
-        project_id: input.projectId,
-        agent_id: input.agentId,
-        sequence: nextSequence,
-        checkpoint_key: input.checkpointKey,
-        summary: input.summary ?? null,
-        payload: checkpointPayload,
-      })
-      .select('id, run_id, task_id, project_id, agent_id, sequence, checkpoint_key, status, summary, payload, created_at')
-      .single();
-
-    checkpoint = fallbackInsert.data ? { ...fallbackInsert.data, attachment_ids: attachmentIds } : null;
-    checkpointError = fallbackInsert.error;
+  if (error) throw error;
+  if (result?.error) {
+    throw new Error(result.message || result.error);
   }
 
-  if (checkpointError || !checkpoint) throw checkpointError;
+  const typedCheckpoint = result.checkpoint as TaskExecutionCheckpointRow;
 
-  const typedCheckpoint = checkpoint as unknown as TaskExecutionCheckpointRow;
-  const now = typedCheckpoint.created_at;
-  const { data: updatedRun, error: updateError } = await supabase
+  const { data: updatedRun } = await supabase
     .from('task_execution_runs')
-    .update({
-      checkpoint_count: nextSequence,
-      heartbeat_at: now,
-      summary: input.summary ?? null,
-    })
+    .select('id, status, started_at, heartbeat_at, completed_at')
     .eq('id', input.runId)
-    .eq('checkpoint_count', existingRun.checkpoint_count)
-    .select()
-    .maybeSingle();
+    .single();
 
-  if (updateError) throw updateError;
-  if (!updatedRun) throw new Error('Concurrent checkpoint write conflict — retry');
-
-  await syncTaskExecutionSnapshot({
-    taskId: input.taskId,
-    activeRunId: updatedRun.id,
-    status: updatedRun.status,
-    startedAt: updatedRun.started_at,
-    heartbeatAt: updatedRun.heartbeat_at,
-    completedAt: updatedRun.completed_at,
-    checkpointAt: typedCheckpoint.created_at,
-    checkpointSummary: typedCheckpoint.summary,
-    checkpointPayload,
-  });
+  if (updatedRun) {
+    await syncTaskExecutionSnapshot({
+      taskId: input.taskId,
+      activeRunId: updatedRun.id,
+      status: updatedRun.status,
+      startedAt: updatedRun.started_at,
+      heartbeatAt: updatedRun.heartbeat_at,
+      completedAt: updatedRun.completed_at,
+      checkpointAt: typedCheckpoint.created_at,
+      checkpointSummary: typedCheckpoint.summary,
+      checkpointPayload,
+    });
+  }
 
   return typedCheckpoint;
 }

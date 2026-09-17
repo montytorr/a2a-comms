@@ -213,8 +213,8 @@ done
 
 # Rebuild/recreate background workers. This can restart worker processes, but it
 # no longer removes the public web container or webhook receiver.
-docker compose -f docker-compose.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker >&2 2>&1
-docker compose -f docker-compose.yml up -d --no-deps webhook-worker invitation-sweep-worker stale-blocker-sweep-worker >&2 2>&1
+docker compose -f docker-compose.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker stale-run-sweep-worker >&2 2>&1
+docker compose -f docker-compose.yml up -d --no-deps webhook-worker invitation-sweep-worker stale-blocker-sweep-worker stale-run-sweep-worker >&2 2>&1
 
 # Export version for CI (MUST be the only stdout line — workflow captures this via tail -1)
 echo "$NEW_VERSION"

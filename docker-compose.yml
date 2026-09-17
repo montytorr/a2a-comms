@@ -66,6 +66,21 @@ services:
     depends_on:
       - a2a-comms
     networks:
+
+  stale-run-sweep-worker:
+    build:
+      context: .
+      target: stale-run-worker
+    container_name: a2a-stale-run-sweep-worker
+    env_file:
+      - .env
+    environment:
+      STALE_RUN_SWEEP_INTERVAL_SECONDS: ${STALE_RUN_SWEEP_INTERVAL_SECONDS:-300}
+      STALE_RUN_AFTER_MINUTES: ${STALE_RUN_AFTER_MINUTES:-15}
+    restart: unless-stopped
+    depends_on:
+      - a2a-comms
+    networks:
       - default
       - clawdius-data
 

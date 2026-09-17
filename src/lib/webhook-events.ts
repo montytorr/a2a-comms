@@ -14,6 +14,11 @@ export const CANONICAL_WEBHOOK_EVENTS = [
   'task.created',
   'task.updated',
   'task.blocker_stale',
+  // A run stopped heartbeating and was cancelled, releasing its task. Runs were
+  // previously invisible to every consumer: nothing about execution was ever
+  // emitted, so a peer or reactor could only learn a run had died by polling,
+  // and in practice never did.
+  'task.run_stale',
   'sprint.created',
   'sprint.updated',
   'project.member_invited',

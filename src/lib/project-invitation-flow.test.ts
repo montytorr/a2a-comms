@@ -132,6 +132,7 @@ test('canonical webhook event list stays aligned with implemented event producer
     'task.created',
     'task.updated',
     'task.blocker_stale',
+    'task.run_stale',
     'sprint.created',
     'sprint.updated',
     'project.member_invited',

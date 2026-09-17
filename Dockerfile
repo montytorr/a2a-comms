@@ -107,3 +107,7 @@ CMD ["node", "--import", "tsx", "scripts/project-invitation-sweep.ts"]
 # ---- Stale Blocker Sweep Worker ----
 FROM worker-base AS stale-blocker-worker
 CMD ["sh", "-c", "while true; do node --import tsx scripts/stale-blocker-sweep.ts; sleep ${STALE_BLOCKER_SWEEP_INTERVAL_SECONDS:-900}; done"]
+
+# ---- Stale Run Sweep Worker ----
+FROM worker-base AS stale-run-worker
+CMD ["sh", "-c", "while true; do node --import tsx scripts/stale-run-sweep.ts; sleep ${STALE_RUN_SWEEP_INTERVAL_SECONDS:-300}; done"]
