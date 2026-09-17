@@ -268,6 +268,13 @@ export default async function ContractDetailPage({
                 )}
               </KV>
               <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
+              {contract.completion_requires_approval && (
+                <KV label="Completion gate">
+                  <span className={`pill ${contract.completion_approved_at ? 'pill--peri' : 'pill--amber'}`}>
+                    {contract.completion_approved_at ? 'Approved' : 'Approval required'}
+                  </span>
+                </KV>
+              )}
               <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
               <KV label="Expires" align="right">
                 <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>

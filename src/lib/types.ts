@@ -242,6 +242,12 @@ export interface Message {
   message_type: MessageType;
   content: Record<string, unknown>;
   created_at: string;
+  /** What this message cost the contract, recorded when it was written. */
+  requires_action?: boolean;
+  consumes_turn?: boolean;
+  /** The contract turn this message belongs to. A non-turn message carries the
+   *  turn the contract stood at, so it is placed without advancing it. */
+  turn_number?: number | null;
 }
 
 export interface AuditLogEntry {

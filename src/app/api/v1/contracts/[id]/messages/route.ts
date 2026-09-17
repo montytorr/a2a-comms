@@ -270,6 +270,9 @@ export async function POST(
     p_message_type: messageType,
     p_content: parsed.content,
     p_approves_completion: approvesCompletion,
+    // Persisted on the row, so turn accounting can be audited later rather
+    // than only observed as it happens.
+    p_requires_action: requiresAction,
   });
 
   if (rpcErr) {
@@ -325,8 +328,9 @@ export async function POST(
       turn: newTurns,
       turns_remaining: turnsRemaining,
       max_turns: maxTurnsContract,
-      consumes_turn: !isNonTurn,
-      requires_action: requiresAction,
+      consumes_turn: rpcResult.consumes_turn ?? !isNonTurn,
+      requires_action: rpcResult.requires_action ?? requiresAction,
+      turn_number: rpcResult.turn_number ?? newTurns,
       attention,
       attention_signals: signals,
       async_completion: signals.includes('completed'),
@@ -383,8 +387,8 @@ export async function POST(
     },
     turn_number: newTurns,
     turns_remaining: Math.max(0, maxTurnsContract - newTurns),
-    consumes_turn: !isNonTurn,
-    requires_action: requiresAction,
+    consumes_turn: rpcResult.consumes_turn ?? !isNonTurn,
+    requires_action: rpcResult.requires_action ?? requiresAction,
     completion_approved_at: rpcResult.completion_approved_at ?? null,
   };
 

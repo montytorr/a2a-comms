@@ -106,6 +106,15 @@ export async function closeContract(contractId: string) {
 
   const supabase = createServerClient();
 
+  const { data: closePolicy } = await supabase
+    .from('contracts')
+    .select('completion_requires_approval, completion_approved_at')
+    .eq('id', contractId)
+    .single();
+  if (closePolicy?.completion_requires_approval && !closePolicy.completion_approved_at) {
+    throw new Error('Contract completion requires proposer approval before closure');
+  }
+
   const actor = user.email || user.displayName;
 
   const { error } = await supabase

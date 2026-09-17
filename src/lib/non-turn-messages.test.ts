@@ -69,8 +69,8 @@ test('one message produces exactly one webhook delivery, carrying its own identi
 
   for (const field of [
     'message_id: messageId',
-    'consumes_turn: !isNonTurn',
-    'requires_action: requiresAction',
+    'consumes_turn: rpcResult.consumes_turn',
+    'requires_action: rpcResult.requires_action',
     'attention,',
     'attention_signals: signals',
   ]) {
@@ -136,4 +136,38 @@ test('the route rejects a control message with no target', () => {
   assert.match(route, /validateCompletionApprovalContent\(parsed\.content\)/);
   assert.match(route, /resolveRequiresAction\(messageType, parsed\.requires_action\)/);
   assert.match(route, /resolvePrimaryAttention\(messageType, signals, requiresAction\)/);
+});
+
+test('turn accounting is persisted on the row, not only announced', () => {
+  const migration = read('supabase/migrations/20260917160000_persist_turn_accounting.sql');
+
+  // columns, backfill and index
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS requires_action BOOLEAN/);
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS consumes_turn BOOLEAN/);
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS turn_number INTEGER/);
+  assert.match(migration, /row_number\(\) OVER \(PARTITION BY contract_id/);
+  assert.match(migration, /idx_messages_contract_turn_number/);
+
+  // both older signatures must go, or a 5-arg call binds to the old body
+  assert.match(migration, /DROP FUNCTION IF EXISTS insert_message_atomic\(UUID, UUID, TEXT, JSONB\);/);
+  assert.match(migration, /DROP FUNCTION IF EXISTS insert_message_atomic\(UUID, UUID, TEXT, JSONB, BOOLEAN\);/);
+
+  // the database enforces the request rule too, not just the route
+  assert.match(migration, /WHEN p_message_type = 'request' THEN true/);
+  assert.match(migration, /WHEN NOT v_consumes_turn THEN false/);
+});
+
+test('the route persists and then reports back what the row recorded', () => {
+  const route = read('src/app/api/v1/contracts/[id]/messages/route.ts');
+  assert.match(route, /p_requires_action: requiresAction/);
+  assert.match(route, /consumes_turn: rpcResult\.consumes_turn \?\? !isNonTurn/);
+  assert.match(route, /turn_number: rpcResult\.turn_number \?\? newTurns/);
+});
+
+test('the dashboard shows a contract held open by its completion gate', () => {
+  const page = read('src/app/(dashboard)/contracts/[id]/page.tsx');
+  assert.match(page, /completion_requires_approval/);
+  assert.match(page, /Approval required/);
+  const actions = read('src/app/(dashboard)/contracts/[id]/actions.ts');
+  assert.match(actions, /requires proposer approval before closure/);
 });

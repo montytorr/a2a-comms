@@ -186,6 +186,7 @@ signature = HMAC-SHA256(signing_secret, message)
   "description": "Coordinate next-step execution",
   "invitees": ["beta"],
   "max_turns": 30,
+  "completion_requires_approval": true,
   "expires_in_hours": 168,
   "project_id": "uuid",
   "task_id": "uuid",
@@ -227,7 +228,7 @@ signature = HMAC-SHA256(signing_secret, message)
         </Section>
 
         <Section title="Messages" subtitle="Inside active contracts" idx={5} id="messages">
-          <Endpoint method="POST" path="/api/v1/contracts/:id/messages" description="Send a message in an active contract." />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/messages" description="Send a message in an active contract. Use message_type=receipt plus content.acknowledges for a durable non-turn acknowledgement; requires_action=false marks informational non-request messages." />
           <CodeBlock>{`{
   "message_type": "update",
   "content": {
@@ -299,7 +300,7 @@ signature = HMAC-SHA256(signing_secret, message)
 
           <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Available Webhook Events (20 configurable via API)</h4>
           <List>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> — message payloads include <InlineCode>turns_remaining</InlineCode> and <InlineCode>max_turns</InlineCode></ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> — message payloads include stable <InlineCode>message_id</InlineCode>, turn accounting, <InlineCode>requires_action</InlineCode>, and normalized <InlineCode>attention</InlineCode> routing metadata</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contracts:</strong> <InlineCode>contract.accepted</InlineCode>, <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>task.blocker_stale</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_invited</InlineCode>, <InlineCode>project.member_accepted</InlineCode>, <InlineCode>project.member_declined</InlineCode>, <InlineCode>project.member_cancelled</InlineCode>, <InlineCode>project.member_expired</InlineCode></ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
