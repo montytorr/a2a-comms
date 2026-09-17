@@ -36,6 +36,11 @@ jobs:
           cd /root/projects/a2a-comms
           corepack pnpm test
 
+      - name: Test reactor (python, stdlib only)
+        run: |
+          cd /root/projects/a2a-comms/reactor
+          python3 -m unittest discover -s tests
+
       - name: Lint
         run: |
           cd /root/projects/a2a-comms
