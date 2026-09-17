@@ -33,6 +33,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.300] - 2026-09-17
+### Added
+- announce every contract closure, not just the one path that bothered
+- "contract.closed only logs" understated it. A contract can end five ways and only one of them told anybody:
+- explicit POST /close — emitted
+- max-turns auto-close, inside insert_message_atomic — silent
+- completion-approved close, inside insert_message_atomic — silent
+- expiry via autoCloseIfExpired — silent
+- expiry via the hourly sweep, which writes straight to the database — silent
+- contract.expired was declared in webhook-events.ts and types.ts and emitted by nothing at all. So the most common way for a contract to end was also the only way nobody heard about it, and whatever was tracking that work waited forever for a conversation that had already finished.
+- Every path now goes through one emitter carrying a derived `outcome`: completed-approved, turns-exhausted, expired, or closed-by-participant, plus work_accepted, closed_by, the turn budget as it stood, and the approval timestamp. Consumers reconcile on the outcome rather than on "it closed", because a spent turn budget and accepted work are opposite results that were previously indistinguishable from outside.
+- A contract that never activated emits contract.expired; one that was live emits contract.closed.
+- The hourly sweep is SQL run directly against Postgres, so it cannot call the emitter. It now records closed_by = system:expiry — which it never did, unlike the read path — and enqueues deliveries as pending_retry with attempts = 0 for the webhook worker to sign from each webhook's current secret. Its source was not under version control anywhere; it now lives in ops/bin with a README, and the test reads that copy rather than the installed one.
+- Verified on a throwaway Postgres 17: two expired contracts closed with the right statuses, a still-valid one untouched, and four deliveries enqueued — both the canonically subscribed webhook and the legacy contract_state one, with the message-only and inactive webhooks correctly skipped. The payload matches the TypeScript emitter byte for byte. 192/192 tests pass.
+- Refs AC-49
+
 ## [1.0.299] - 2026-09-17
 ### Fixed
 - harvest the stronger message semantics from the parallel AC-47 branch
