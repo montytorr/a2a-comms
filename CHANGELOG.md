@@ -33,6 +33,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.298] - 2026-09-17
+### Added
+- stop charging a contract turn for saying "received"
+- Every message cost a turn, so acknowledging delivery cost the same budget as doing the work. CAIRN-163 and CAIRN-171 both burned turns on status and delivery acknowledgements, and in CAIRN-171 an artifact handoff was answered with an acknowledgement instead of the review it was asking for. A single message could also wake a recipient several times, because async-attention hints were delivered as extra webhooks on top of the message event, and each wake looked like new work to answer.
+- Two non-turn message types, `receipt` and `approval`:
+- they never increment current_turns
+- they stay available once the turn cap is reached
+- they never trigger the max-turn auto-close
+- a contract's payload schema does not apply to them, since they are protocol control messages with their own shape
+- One message, one delivery. The `message` webhook now carries `message_id` (so recipients deduplicate on the logical message rather than the delivery attempt), `consumes_turn`, `requires_action`, `attention`, `attention_signals` and `awaiting_completion_approval`. The per-signal webhook fan-out is gone.
+- Exhausting a turn budget is not the same as the work being accepted. A contract proposed with `completion_requires_approval` is held open at its cap instead of auto-closing, refuses a close with 409 COMPLETION_APPROVAL_REQUIRED, and completes when its proposer records an approval — which, being a non-turn message, is still reachable at the cap.
+- Deploy order matters: apply the migration BEFORE shipping this code. The migration is backward compatible — the currently deployed app calls insert_message_atomic with four arguments, which resolves to the new function via the default and behaves exactly as before — but this code calls it with five and needs the new function present. The migration is also re-runnable.
+- Verified: 182/182 existing tests pass, plus 8 new ones. Migration applied twice against a throwaway Postgres 17 to prove idempotence, and driven through the full scenario: a receipt leaves the budget untouched, an ungated contract still auto-closes at its cap with "Max turns reached", a gated one holds at the cap until its proposer approves and then closes with "Completed with proposer approval", an invitee's approval is refused, and a normal message at the cap still gets MAX_TURNS.
+- Refs AC-47
+
 ## [1.0.297] - 2026-09-16
 ### Fixed
 - align every surface on the real HMAC multipart contract, and stop the changelog shredding prose
