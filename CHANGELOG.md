@@ -33,6 +33,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.305] - 2026-09-17
+### Changed
+- version control the pre-push hook, and make it catch what it missed
+- The hook CONTRIBUTING describes was not running. It lived only in .git/hooks/, uncommitted, with a note saying to "copy it from the repo wiki" — so a fresh clone had no doc-sync enforcement at all. That is why the artifact rule could land in ONBOARDING-AGENT.md and not in its dashboard page without anything objecting: a dashboard reader got different guidance from a repo reader, which is the same ambiguity that caused the incident behind the rule.
+- It now lives in ops/hooks/, installed with `npm run hooks:install`.
+- Extended while it was being moved:
+- Mirror pairs. ONBOARDING-AGENT.md and its dashboard page must move together, likewise ONBOARDING-HUMAN.md, in either direction. This is the check that would have caught the drift.
+- skill/scripts/a2a now requires skill/SKILL.md. The old hook computed `has_skill` and then never read it — the CLI could change without its documentation and nothing noticed.
+- reactor/a2a_reactor/ requires reactor/README.md.
+- ops/bin/ requires some doc, since those scripts run outside the app and are otherwise invisible.
+- Verified against real history rather than hypotheticals: it warns on afcc1ce, the commit that actually caused the drift; stays silent on 10e2907, the commit that fixed it; exits 1 under A2A_STRICT_DOCS=1 and 0 without it; and a synthetic clone confirms the CLI and reactor checks fire on their own.
+- Hooks are per-clone and nothing forces the install, so this is a prompt rather than a guarantee. Enforcing it properly means a CI check, which this does not add.
+- Refs AC-53
+
 ## [1.0.304] - 2026-09-17
 ### Changed
 - ci: run the reactor suite so it cannot rot
