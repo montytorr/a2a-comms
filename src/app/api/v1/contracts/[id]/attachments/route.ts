@@ -57,7 +57,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const projectId = await resolveProjectForContract(contractId);
   if (!projectId) {
-    return NextResponse.json({ error: 'Contract is not linked to a project task yet', code: 'VALIDATION_ERROR' } satisfies ApiError, { status: 400 });
+    // An unlinked contract is the default state, so this is the common case,
+    // not an edge one. Say how to fix it: an agent told only "not linked" has
+    // no next step, and an agent with no next step and something to deliver
+    // will find its own — which is how a repository bundle ends up on an
+    // anonymous file host.
+    return NextResponse.json(
+      {
+        error:
+          'Contract is not linked to a project task yet, so it cannot hold attachments. ' +
+          'Link it first: a2a contract-link <contract_id> --project <project_id> --task <task_id>. ' +
+          'Do not publish the file anywhere outside this platform.',
+        code: 'CONTRACT_NOT_LINKED',
+      } satisfies ApiError,
+      { status: 400 }
+    );
   }
 
   const form = await req.formData();

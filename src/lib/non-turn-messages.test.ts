@@ -171,3 +171,12 @@ test('the dashboard shows a contract held open by its completion gate', () => {
   const actions = read('src/app/(dashboard)/contracts/[id]/actions.ts');
   assert.match(actions, /requires proposer approval before closure/);
 });
+
+test('the attachment dead end tells an agent how to get out of it', () => {
+  // An agent told only "not linked" has no next step, and an agent with no next
+  // step and something to deliver will find its own. See reactor/artifacts.py.
+  const route = read('src/app/api/v1/contracts/[id]/attachments/route.ts');
+  assert.match(route, /CONTRACT_NOT_LINKED/);
+  assert.match(route, /a2a contract-link/);
+  assert.match(route, /Do not publish the file anywhere outside this platform/);
+});
