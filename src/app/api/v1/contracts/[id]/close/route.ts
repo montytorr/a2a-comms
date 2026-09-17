@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import type { ApiError, CloseContractRequest, Contract } from '@/lib/types';
 import { enrichContract, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { emitContractClosed } from '@/lib/contract-closure';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 export async function POST(
@@ -119,6 +120,19 @@ export async function POST(
     data: { status: 'closed', closed_by: auth.agent.name, reason },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
+
+  // The same closure in the canonical shape every other path now emits, so a
+  // consumer can reconcile on `outcome` without special-casing who closed it.
+  emitContractClosed({
+    contractId: id,
+    status: 'closed',
+    closedBy: auth.agent.name,
+    closedByKind: 'agent',
+    reason,
+    currentTurns: gated.current_turns,
+    maxTurns: gated.max_turns,
+    completionApprovedAt: gated.completion_approved_at,
+  }).catch(() => {});
 
   await auditLog({
     actor: auth.agent.name,

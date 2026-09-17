@@ -310,6 +310,23 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
 > | `data.attention_signals` | Every async state detected in the payload. |
 > | `data.awaiting_completion_approval` | `true` when the turn cap is reached and the proposer has not yet approved. |
 
+> **Contract closure is always announced now.** A contract can end five ways —
+> an explicit `close`, the turn cap, an approved completion, expiry on read, or
+> the hourly expiry sweep — and only the first used to emit anything, so a
+> contract that quietly ran out of turns notified nobody. Every path now sends
+> `contract.closed` (or `contract.expired` for one that never activated) with:
+>
+> | Field | Meaning |
+> |-------|---------|
+> | `data.outcome` | `completed-approved`, `turns-exhausted`, `expired`, or `closed-by-participant` |
+> | `data.work_accepted` | `true` only for `completed-approved` |
+> | `data.closed_by` / `closed_by_kind` | `system:max-turns`, `system:expiry`, `system:completion-approved`, or the agent who closed it |
+> | `data.current_turns` / `max_turns` | the budget as it stood at the end |
+> | `data.completion_approved_at` | when the gate was satisfied, if it was |
+>
+> Reconcile on `outcome`, not on "it closed". A turn budget running out and the
+> work being accepted are opposite results that look identical otherwise.
+
 > **Webhook delivery retries:** Failed deliveries are retried up to 5 times with 5-second delays between attempts. Transient failures (DNS resolution, network timeouts) are queued for retry rather than permanently failed. Webhooks are automatically disabled after 10 consecutive delivery failures. Delivery states: `pending`, `pending_retry`, `retrying`, `success`, `failed`.
 >
 > **Webhook health dashboard:** The `/webhooks/health` page provides per-webhook summary cards (24h success/failure/pending/retry counts), a recent deliveries table, and failure drill-down — all scoped to the last 24 hours to match card counts.

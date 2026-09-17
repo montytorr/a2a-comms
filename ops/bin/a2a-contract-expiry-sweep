@@ -1,0 +1,103 @@
+#!/bin/sh
+set -eu
+
+database_container="${A2A_DB_CONTAINER:-clawdius-postgres}"
+database_name="${A2A_DB_NAME:-a2a}"
+
+docker exec -i "$database_container" psql \
+  -U postgres \
+  -d "$database_name" \
+  -v ON_ERROR_STOP=1 \
+  -P pager=off <<'SQL'
+WITH candidates AS (
+  SELECT id, status AS previous_status
+  FROM public.contracts
+  WHERE expires_at < now()
+    AND status IN ('proposed', 'active')
+  FOR UPDATE
+), expired AS (
+  UPDATE public.contracts AS contract
+  SET status = CASE
+        WHEN candidate.previous_status = 'proposed' THEN 'expired'
+        ELSE 'closed'
+      END,
+      close_reason = 'Expired — no activity within time limit',
+      -- Recorded so a contract closed here is distinguishable from one a
+      -- participant closed. The read-path expiry in _helpers.ts already did
+      -- this; this sweep did not, and it closes the contracts nobody reads.
+      closed_by = 'system:expiry',
+      closed_by_kind = 'system',
+      closed_at = now(),
+      updated_at = now()
+  FROM candidates AS candidate
+  WHERE contract.id = candidate.id
+  RETURNING contract.id, contract.status, contract.close_reason,
+            contract.current_turns, contract.max_turns,
+            contract.completion_approved_at, candidate.previous_status
+), audited AS (
+  INSERT INTO public.audit_log (
+    actor,
+    action,
+    resource_type,
+    resource_id,
+    details
+  )
+  SELECT
+    'system:expiry-sweep',
+    'contract.' || status,
+    'contract',
+    id,
+    jsonb_build_object(
+      'reason', 'Expired — no activity within time limit',
+      'previous_status', previous_status
+    )
+  FROM expired
+  RETURNING id
+), notified AS (
+  -- This sweep writes straight to the database, so nothing in the application
+  -- ever emitted for the contracts it closed — and those are precisely the
+  -- contracts nobody was reading. Deliveries are enqueued as 'pending_retry'
+  -- with attempts = 0 so the existing webhook worker picks them up and signs
+  -- them from the webhook's current secret; duplicating HMAC logic in SQL
+  -- would be one more thing to drift.
+  INSERT INTO public.webhook_deliveries (webhook_id, event, status, attempts, payload)
+  SELECT
+    hook.id,
+    event_name.value,
+    'pending_retry',
+    0,
+    jsonb_build_object(
+      'event', jsonb_build_object(
+        'event', event_name.value,
+        'contract_id', expired.id,
+        'data', jsonb_build_object(
+          'status', expired.status,
+          'outcome', 'expired',
+          'work_accepted', false,
+          'closed_by', 'system:expiry',
+          'closed_by_kind', 'system',
+          'reason', expired.close_reason,
+          'current_turns', expired.current_turns,
+          'max_turns', expired.max_turns,
+          'completion_approved_at', expired.completion_approved_at
+        ),
+        'timestamp', to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+      )
+    )
+  FROM expired
+  CROSS JOIN LATERAL (
+    SELECT CASE WHEN expired.status = 'expired' THEN 'contract.expired' ELSE 'contract.closed' END AS value
+  ) AS event_name
+  JOIN public.contract_participants AS participant ON participant.contract_id = expired.id
+  JOIN public.webhooks AS hook
+    ON hook.agent_id = participant.agent_id
+   AND hook.is_active
+   -- 'contract_state' is the legacy alias the application still honours.
+   AND (hook.events @> ARRAY[event_name.value] OR hook.events @> ARRAY['contract_state'])
+  RETURNING id
+)
+SELECT
+  (SELECT count(*) FROM expired) AS contracts_closed,
+  (SELECT count(*) FROM audited) AS audit_events_written,
+  (SELECT count(*) FROM notified) AS closure_webhooks_enqueued;
+SQL

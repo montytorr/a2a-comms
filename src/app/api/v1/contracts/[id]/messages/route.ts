@@ -15,6 +15,7 @@ import type {
 import { consumesTurn } from '@/lib/types';
 import { autoCloseIfExpired, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
+import { emitContractClosed } from '@/lib/contract-closure';
 import { validateContent } from '@/lib/schema-validator';
 import {
   extractSignals,
@@ -333,6 +334,27 @@ export async function POST(
     },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
+
+  // insert_message_atomic can close the contract as a side effect - the turn
+  // budget running out, or an approval arriving once it already had. Both
+  // happened inside SQL and emitted nothing, so the most common way for a
+  // contract to end was also the only way nobody heard about it.
+  const closedByMaxTurns = rpcResult.max_reached === true
+    && rpcResult.awaiting_completion_approval !== true
+    && !isNonTurn;
+  const closedByApproval = rpcResult.completed === true;
+  if (closedByMaxTurns || closedByApproval) {
+    emitContractClosed({
+      contractId: id,
+      status: 'closed',
+      closedBy: closedByApproval ? 'system:completion-approved' : 'system:max-turns',
+      closedByKind: 'system',
+      reason: closedByApproval ? 'Completed with proposer approval' : 'Max turns reached',
+      currentTurns: newTurns,
+      maxTurns: maxTurnsContract,
+      completionApprovedAt: rpcResult.completion_approved_at ?? null,
+    }).catch(() => {});
+  }
 
   await auditLog({
     actor: auth.agent.name,

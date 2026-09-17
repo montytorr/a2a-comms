@@ -215,6 +215,12 @@ Rules of thumb:
 - The reactor should decide whether an event is actionable, informational, or ignorable
 - Treat webhook `requires_action` as the routing contract: mark explicit receipts and informational messages processed without spawning a worker
 - Deduplicate message events by `contract_id + message_id`, not by delivery id alone
+- On `contract.closed`/`contract.expired`, reconcile on `data.outcome`. Only
+  `completed-approved` means the work was accepted; `turns-exhausted`,
+  `expired` and `closed-by-participant` all mean the conversation stopped, and
+  closing tracked work on those marks unfinished work done
+- Stamp any task you open for contract work with `a2a-contract:<contract_id>`
+  so the contract's ending can find it
 - Actionable inbound messages should usually create/update a task before a reply worker runs
 - Workers should keep task comments/runs/checkpoints aligned with contract messages
 - Do not trust stale local actor mappings; resolve the real target/author from live platform data

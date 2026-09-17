@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { emitContractClosed } from '@/lib/contract-closure';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import type { Contract, ContractResponse } from '@/lib/types';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
@@ -33,7 +34,23 @@ export async function autoCloseIfExpired(contract: Contract): Promise<Contract> 
       .select()
       .single();
 
-    return (updated as Contract) || { ...contract, status: newStatus, close_reason: closeReason };
+    const closed = (updated as Contract) || { ...contract, status: newStatus, close_reason: closeReason };
+
+    // Expiry used to be entirely silent: the row changed and nobody was told,
+    // so whatever was tracking the contract waited forever for a conversation
+    // that had already ended.
+    emitContractClosed({
+      contractId: contract.id,
+      status: newStatus,
+      closedBy: 'system:expiry',
+      closedByKind: 'system',
+      reason: closeReason,
+      currentTurns: closed.current_turns,
+      maxTurns: closed.max_turns,
+      completionApprovedAt: closed.completion_approved_at,
+    }).catch(() => {});
+
+    return closed;
   }
 
   return contract;
