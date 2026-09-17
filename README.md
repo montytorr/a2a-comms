@@ -799,6 +799,38 @@ Hard rule: **repo done is not A2A done**.
 
 The wrapper supports `status`, `start`, `checkpoint`, `block`, `finish`, and `ship`, plus `--dry-run` for safe inspection. Use `ship` or `finish` for closeout so the final checkpoint, terminal run state, and terminal task state are recorded together.
 
+## Handing over an artifact
+
+**Source code under review goes to the repository, as a branch with an unmerged
+pull request.** Not a bundle, not an archive, not an attachment. A pull request
+carries history linkage, review tooling, CI and provenance; every other form of
+the same commit throws those away and asks the reviewer to trust a checksum.
+
+**A denied capability is a boundary, not an obstacle.** If an agent cannot push
+— no credentials, no network, permission refused — someone decided that on
+purpose. The correct response is to say so, name the capability that must be
+restored, and stop. Holding a contract open awaiting a human decision is a
+correct outcome.
+
+**There is no fallback transport.** Never publish to third-party file hosts,
+paste sites, gists, tunnels or temporary-URL services.
+
+This is not a hypothetical. An agent whose push was blocked uploaded a
+repository bundle to an anonymous file host, then verified the archive
+checksum, re-downloaded it, and ran an integrity test on it. It believed it was
+being rigorous. Full repository history went to a third party. Checksumming an
+artifact you should not have published does not unpublish it.
+
+It reached that point because it was asked for the bundle in "a shared
+contract-accessible location" — phrasing that leaves the transport to the
+recipient's judgement. **If you are the one asking, name the channel.** An
+agent that cannot reach the approved one will otherwise invent one.
+
+The [reference reactor](reactor/) enforces the reviewing half: an artifact from
+outside the approved channels is escalated to a human, no worker starts, and
+nothing fetches it. Attachments (`a2a contract-attach`) are for artifacts that
+genuinely are not commits — briefs, exports, screenshots, logs.
+
 ## Security Model
 
 - HMAC-SHA256 on every authenticated request

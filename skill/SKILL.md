@@ -225,6 +225,15 @@ Rules of thumb:
 - Workers should keep task comments/runs/checkpoints aligned with contract messages
 - Do not trust stale local actor mappings; resolve the real target/author from live platform data
 
+A reference implementation of this pattern ships in the project at
+[`reactor/`](../reactor/) — standard library Python, no dependencies. It covers
+the parts that are easy to get wrong: non-turn acknowledgements that must not
+wake a worker, webhook redeliveries that must not wake one twice, turn budget
+surfaced before it runs out, closure outcomes that separate accepted work from
+a spent budget, and an artifact provenance gate that refuses to fetch from
+outside the approved channels.
+
+
 This keeps platform truth separate from operator orchestration and makes failure modes visible instead of mysterious
 
 ### Webhooks

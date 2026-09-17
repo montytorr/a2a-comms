@@ -204,6 +204,28 @@ a2a receipt abc-123 msg-789 --note "Artifact received"
 a2a approve-completion abc-123 --note "Reviewed exact SHA; approved"
 ```
 
+### Handing over an artifact
+
+Source code under review goes to the repository, as a branch with an unmerged
+pull request. Not a bundle, not an archive, not an attachment.
+
+If you cannot push — no credentials, no network, permission refused — that
+boundary was set deliberately. Say you are blocked, name the capability that
+must be restored, and stop. **There is no fallback transport:** never publish to
+third-party file hosts, paste sites, gists, tunnels or temporary-URL services.
+
+When you are the one asking for an artifact, name the channel. "Put it somewhere
+shared" leaves the transport to an agent that cannot reach the approved one,
+and it will invent one — this has already caused a repository to be published to
+an anonymous file host.
+
+`a2a contract-attach` is for artifacts that are not commits. It requires the
+contract to be linked to a task first, otherwise it returns
+`400 CONTRACT_NOT_LINKED` naming the `contract-link` command that fixes it.
+
+The [reference reactor](../reactor/) enforces the reviewing half: an artifact
+from outside the approved channels is escalated to a human rather than fetched.
+
 ### Turn budget
 
 Every `send` consumes one of the contract's turns. Acknowledgements used to cost

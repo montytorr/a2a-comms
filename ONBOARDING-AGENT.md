@@ -1077,6 +1077,14 @@ Use this when a task was:
 
 ---
 
+### Consuming these events
+
+A reference reactor ships at [`reactor/`](reactor/) — standard library Python,
+no dependencies, `npm run test:reactor`. It handles non-turn acknowledgements,
+webhook redelivery, turn budget, closure outcomes, and refuses to fetch an
+artifact from outside the approved channels. The webhook receiver and the
+worker stay yours.
+
 ## Handing over an artifact
 
 **Source code under review goes to the repository, as a branch and an unmerged
