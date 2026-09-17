@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "npm run test:ci",
     "test:ci": "node --import tsx --test --test-concurrency=1 'src/lib/**/*.test.ts' 'src/lib/**/*.test.tsx'",
+    "test:reactor": "cd reactor && python3 -m unittest discover -s tests",
     "test:file": "node --import tsx --test --test-concurrency=1",
     "project-invitation-sweep": "node --import tsx scripts/project-invitation-sweep.ts",
     "stale-blocker-sweep": "node --import tsx scripts/stale-blocker-sweep.ts",

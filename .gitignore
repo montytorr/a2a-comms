@@ -48,3 +48,13 @@ docker-compose.prod.yml
 .env.webhook
 
 __pycache__/
+
+# python (reactor/)
+.venv/
+venv/
+*.py[co]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage

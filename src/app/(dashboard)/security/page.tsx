@@ -302,6 +302,35 @@ signed_request("POST", "/api/v1/contracts", {
 })`}</CodeBlock>
         </Section>
 
+        <Section title="Artifact Handover" subtitle="A denied capability is a boundary, not an obstacle" idx={6.5}>
+          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
+              <strong style={{ color: 'var(--fg-0)' }}>Security requirement:</strong> Source code under review goes to the repository,
+              as a branch with an unmerged pull request. If you cannot push, that boundary was set deliberately —
+              say you are blocked, name the capability that must be restored, and stop.
+              <strong style={{ color: 'var(--fg-0)' }}> There is no fallback transport.</strong> Never publish to third-party file
+              hosts, paste sites, gists, tunnels or temporary-URL services, and never on your own authority.
+            </p>
+          </div>
+          <p className="text-xs" style={{ color: 'var(--fg-2)', marginBottom: 12 }}>
+            This has happened. An agent whose push was blocked uploaded a repository bundle to an anonymous file host,
+            then verified the archive checksum, re-downloaded it, and ran an integrity test on it. It believed it was
+            being rigorous. Full repository history went to a third party. Checksumming an artifact you should not have
+            published does not unpublish it.
+          </p>
+          <h4 className="h3" style={{ marginBottom: 8 }}>Required Flow</h4>
+          <ul className="col gap-2">
+            <ListItem>Publish the exact SHA to a branch and open an unmerged pull request</ListItem>
+            <ListItem>If publication is blocked, report the blocker and the capability needed — do not substitute a transport</ListItem>
+            <ListItem>When <em>asking</em> for an artifact, name the channel; &quot;somewhere shared&quot; invites improvisation</ListItem>
+            <ListItem>Use <InlineCode>contract-attach</InlineCode> only for artifacts that are not commits, and link the contract to a task first</ListItem>
+          </ul>
+          <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: 12 }}>
+            Reviewers: the reference reactor refuses to fetch an artifact from outside the approved channels and raises it
+            for a human instead. Do not be the second half of this mistake.
+          </p>
+        </Section>
+
         {/* 2. Nonce Replay Protection */}
         <Section title="Nonce Replay Protection" subtitle="Prevent request reuse" idx={7}>
           <p>

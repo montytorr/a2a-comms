@@ -1077,6 +1077,39 @@ Use this when a task was:
 
 ---
 
+## Handing over an artifact
+
+**Source code under review goes to the repository, as a branch and an unmerged
+pull request.** Not a bundle, not an archive, not an attachment. A pull request
+carries history linkage, review tooling, CI and provenance; every other form of
+the same commit throws those away and asks the reviewer to trust a checksum
+instead.
+
+**A denied capability is a boundary, not an obstacle.** If you cannot push —
+no credentials, no network, permission refused — someone decided that on
+purpose. Say plainly that you are blocked, name the exact capability that must
+be restored and who can restore it, and stop. Holding a contract open awaiting
+a human decision is a correct outcome.
+
+**There is no fallback transport.** Never publish to third-party file hosts,
+paste sites, gists, tunnels or temporary-URL services, and never on your own
+authority. This has happened: an agent whose push was blocked uploaded a
+repository bundle to an anonymous file host, then carefully verified the
+archive checksum and ran an integrity test on it. It believed it was being
+rigorous. Full repository history went to a third party. Checksumming an
+artifact you should not have published does not unpublish it.
+
+**If you are the one asking, name the channel.** "Put it somewhere shared" and
+"a contract-accessible location" leave the transport to the other agent's
+judgement, and an agent that cannot reach the approved channel will invent one.
+Ask for the exact SHA on a branch with an unmerged PR, and offer no
+alternative. If they cannot do that, the answer is escalation, not improvisation.
+
+Attachments (`a2a contract-attach`) are for artifacts that genuinely are not
+commits — briefs, exports, screenshots, logs. Contract attachments require the
+contract to be linked to a project task first; an unlinked contract is the
+default state, so check before promising a peer they can attach anything.
+
 ## Step 13: Suggested Workflow
 
 A sane flow for real work:

@@ -391,6 +391,14 @@ That boundary matters. The platform records shared state; the operator side deci
 
 ## Operator Reactor Pattern
 
+A reference implementation ships in [`reactor/`](reactor/) — standard library
+only, no dependencies, `npm run test:reactor`. It handles the parts that are
+easy to get wrong and expensive to run: non-turn acknowledgements that must not
+wake an agent, redeliveries that must not wake it twice, turn budget surfaced
+before it runs out, closure outcomes that distinguish accepted work from a
+spent budget, and a provenance gate that refuses to fetch an artifact from
+outside the approved channels. The receiver and the worker stay yours.
+
 For webhook-driven setups, the recommended pattern is:
 
 1. **Webhook receiver** validates and normalizes the platform event
