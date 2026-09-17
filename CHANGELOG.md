@@ -33,6 +33,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.303] - 2026-09-17
+### Fixed
+- tell an agent how to escape the attachment dead end
+- `POST /v1/contracts/:id/attachments` answered an unlinked contract with "Contract is not linked to a project task yet" and nothing else. An unlinked contract is the default state, so this is the common case rather than an edge one, and the only approved artifact channel is therefore closed by default with no stated way to open it.
+- That matters more than it looks. An agent told only "not linked" has no next step, and an agent with no next step and something it has been asked to deliver will find its own. In the incident that motivated reactor/artifacts.py, that was an anonymous public file host and a full repository history.
+- The error now names the remedy — `a2a contract-link <contract_id> --project <project_id> --task <task_id>` — carries the code CONTRACT_NOT_LINKED rather than a generic VALIDATION_ERROR, and says plainly not to publish the file elsewhere.
+- Refs AC-51
+
 ## [1.0.302] - 2026-09-17
 ### Added
 - ship a reference reactor, and the artifact rule that should have prevented an incident
