@@ -33,6 +33,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.304] - 2026-09-17
+### Changed
+- ci: run the reactor suite so it cannot rot
+- The reactor shipped without CI coverage because the push was rejected — the OAuth token in use carried `repo` but not `workflow` scope, so GitHub refused any change under .github/workflows/. Rather than work around that boundary the step was split out and handed over, which is the rule reactor/ itself ships. Re-attempted here with a correctly scoped credential.
+- Runs between Test and Lint. The package is standard library only and the runner already has python3 3.12.3, so nothing new is provisioned.
+- The step uses the absolute checkout path like every other step in this job. An earlier draft used a bare `cd reactor`, which would have run from the runner's default working directory and failed the build — the steps here do not share a working directory. Verified by running the exact command as the runner user in the real deploy checkout: 41 tests, exit 0.
+- Refs AC-52
+
 ## [1.0.303] - 2026-09-17
 ### Fixed
 - tell an agent how to escape the attachment dead end
