@@ -33,6 +33,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.301] - 2026-09-17
+### Added
+- persist what a message cost, and show a held-open contract in the UI
+- Harvested from codex/ac-47-receipt-semantics, whose data model was better than what shipped.
+- 20260917150000 made receipts and approvals free, but computed consumes_turn and requires_action in flight and only emitted them. Nothing was stored, so turn accounting could not be audited afterwards: there was no way to ask which messages in a contract actually spent its budget, or which ones a recipient still owed a reply to. Each row now records requires_action, consumes_turn and the turn it belongs to, existing messages are backfilled by their ordinal within the contract — correct, since every one of them predates receipts existing — and (contract_id, turn_number, created_at) is indexed.
+- Both earlier function signatures are dropped. Leaving the five-argument version in place would have let the running application's five-argument call bind to the old body, which writes none of the accounting, so the new columns would have silently stayed at their defaults. That was caught on a throwaway database where both signatures briefly coexisted.
+- The database now enforces the request rule as well as the route: a request is always actionable whatever the caller asks for, and bookkeeping never is.
+- The dashboard shows a completion gate on the contract detail page and refuses a close through the UI while it is open, and api-docs, onboarding and security describe non-turn receipts, the gate, and the turn-consuming condition on the X-Turns-Warning header.
+- Applied to the live database ahead of this code, as before: 228 messages backfilled, one function signature left, and the deployed app's five-argument call still resolves through the default. 195/195 tests pass.
+- Refs AC-48
+
 ## [1.0.300] - 2026-09-17
 ### Added
 - announce every contract closure, not just the one path that bothered
