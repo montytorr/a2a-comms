@@ -66,6 +66,8 @@ services:
     depends_on:
       - a2a-comms
     networks:
+      - default
+      - clawdius-data
 
   stale-run-sweep-worker:
     build:
