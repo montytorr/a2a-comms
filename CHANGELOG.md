@@ -33,6 +33,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.307] - 2026-09-17
+### Fixed
+- restore the networks list I truncated adding the stale-run worker
+- The previous commit broke the deploy. Adding the stale-run-sweep-worker service was done by copying the stale-blocker one programmatically, and the slice that picked up the block ended at the wrong boundary — it cut the networks list off the service it was copying from, leaving `networks:` with nothing under it.
+- `docker compose build` refused the file with "services.stale-blocker-sweep-worker.networks must be a array" and the build step failed, so nothing deployed.
+- Validated this time the way the runner does, with `docker compose config`, rather than by parsing the YAML in Python. The Python parse succeeded on the broken file — `networks:` with no children is valid YAML and an invalid compose service, which is exactly the gap between the two checks.
+- Refs AC-55
+
 ## [1.0.305] - 2026-09-17
 ### Changed
 - version control the pre-push hook, and make it catch what it missed
