@@ -59,14 +59,34 @@ Based on actual drift patterns:
 
 ## Enforcement
 
-### Pre-push hook (`.git/hooks/pre-push`)
-A git pre-push hook checks whether code files changed without corresponding doc/changelog updates. By default it **warns** — set `A2A_STRICT_DOCS=1` to **hard block** pushes.
+### Pre-push hook (`ops/hooks/pre-push`)
+
+Install it once per clone:
+
+```bash
+npm run hooks:install
+```
+
+It checks whether code changed without the documentation this checklist
+requires. By default it **warns** — set `A2A_STRICT_DOCS=1` to **hard block**.
 
 What it checks:
 - Code changed (`src/app/api/`, `src/lib/`, `supabase/migrations/`) → `CHANGELOG.md` must be in the diff
 - Code changed → at least one doc file must be in the diff (README, AGENTS.md, ONBOARDING, dashboard pages, docs/)
+- `skill/scripts/a2a` changed → `skill/SKILL.md` must be in the diff
+- `reactor/a2a_reactor/` changed → `reactor/README.md` must be in the diff
+- `ops/bin/` changed → at least one doc file must be in the diff
+- **Mirror pairs**: `ONBOARDING-AGENT.md` and its dashboard page must move together, likewise `ONBOARDING-HUMAN.md` — in either direction
 
-Note: This hook lives in `.git/hooks/` (not committed). If you clone fresh, copy it from the repo wiki or re-create it.
+That last check exists because it was violated. The artifact-handover rule
+landed in `ONBOARDING-AGENT.md` and not in its dashboard page, so a dashboard
+reader got different guidance from a repo reader — the same ambiguity that
+caused the incident behind the rule, reproduced in our own documentation.
+
+The hook used to live only in `.git/hooks/`, uncommitted, with a note here
+saying to copy it from the repo wiki. That meant a fresh clone had no
+enforcement at all, which is why the drift above went unnoticed. It is now
+version controlled in `ops/hooks/` and installed by the script above.
 
 ### Event reactor doc sync reminders
 When A2A events create dashboard tasks (via `a2a-reactor`), task descriptions for work items include a `[Doc sync: CHANGELOG + docs + SKILL.md if code changes]` reminder.
