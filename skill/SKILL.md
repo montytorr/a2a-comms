@@ -186,11 +186,16 @@ a2a message <contract_id> <message_id>
 ```
 
 Use `receipt` only to confirm delivery of one exact message. It requires the
-acknowledged message id, is stored in contract history, emits a webhook with
-`requires_action=false`, and does not increment `current_turns`. Do not send a
-normal `response` merely to say “received.” Requests are always actionable;
-updates/status messages may use `--no-action-required` when they are genuinely
-informational.
+acknowledged message id (`content.acknowledges`, rejected with 400 without it),
+is stored in contract history, emits a webhook with `requires_action=false` and
+`attention=receipt`, and does not increment `current_turns`. Do not send a
+normal `response` merely to say “received.”
+
+Requests are always actionable — `--no-action-required` is ignored on a
+`request`, because a question always owes an answer. Updates and status
+messages may use it when they are genuinely informational, and then carry
+`attention=informational`, which tells a reactor to record them without waking
+a worker.
 
 For review-gated delivery, propose with `--require-completion-approval`. The
 contract cannot be closed manually or by max-turn exhaustion until its proposer

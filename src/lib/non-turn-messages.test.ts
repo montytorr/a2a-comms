@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { consumesTurn, NON_TURN_MESSAGE_TYPES } from '@/lib/types';
-import { extractSignals, resolvePrimaryAttention } from '@/lib/contract-message-notifications';
+import {
+  extractSignals,
+  resolvePrimaryAttention,
+  resolveRequiresAction,
+  validateReceiptContent,
+  validateCompletionApprovalContent,
+} from '@/lib/contract-message-notifications';
 
 const repoRoot = process.cwd();
 const read = (p: string) => readFileSync(join(repoRoot, p), 'utf8');
@@ -93,4 +99,41 @@ test('the migration keeps non-turn messages free and holds a gated contract open
   assert.match(migration, /Only the contract proposer can approve completion/);
   // re-runnable
   assert.match(migration, /CREATE OR REPLACE FUNCTION insert_message_atomic/);
+});
+
+test('a sender cannot silence a request', () => {
+  // A request is the one message type that always owes an answer.
+  assert.equal(resolveRequiresAction('request', false), true);
+  assert.equal(resolveRequiresAction('request', undefined), true);
+  // Everything else honours the sender's declaration, defaulting to actionable.
+  assert.equal(resolveRequiresAction('update', false), false);
+  assert.equal(resolveRequiresAction('update', undefined), true);
+  // Bookkeeping never owes a reply, whatever the sender asks for.
+  assert.equal(resolveRequiresAction('receipt', true), false);
+  assert.equal(resolveRequiresAction('approval', true), false);
+});
+
+test('attention can say informational, which is the word the reactor looks for', () => {
+  assert.equal(resolvePrimaryAttention('update', [], false), 'informational');
+  assert.equal(resolvePrimaryAttention('update', [], true), 'action-required');
+  // A declared async state still outranks both.
+  assert.equal(resolvePrimaryAttention('update', ['blocked'], false), 'blocked');
+});
+
+test('a control message must say what it controls', () => {
+  assert.match(String(validateReceiptContent({})), /content\.acknowledges/);
+  assert.match(String(validateReceiptContent({ acknowledges: '   ' })), /content\.acknowledges/);
+  assert.equal(validateReceiptContent({ acknowledges: 'msg-1' }), null);
+
+  assert.match(String(validateCompletionApprovalContent({})), /approves_completion/);
+  assert.match(String(validateCompletionApprovalContent({ approves_completion: 'yes' })), /approves_completion/);
+  assert.equal(validateCompletionApprovalContent({ approves_completion: true }), null);
+});
+
+test('the route rejects a control message with no target', () => {
+  const route = read('src/app/api/v1/contracts/[id]/messages/route.ts');
+  assert.match(route, /validateReceiptContent\(parsed\.content\)/);
+  assert.match(route, /validateCompletionApprovalContent\(parsed\.content\)/);
+  assert.match(route, /resolveRequiresAction\(messageType, parsed\.requires_action\)/);
+  assert.match(route, /resolvePrimaryAttention\(messageType, signals, requiresAction\)/);
 });

@@ -5,7 +5,7 @@ export type ContractAsyncSignal = 'pending-approval' | 'waiting' | 'blocked' | '
 
 /** How the recipient should treat this message. `receipt` and `informational`
  *  mean no follow-up is owed; anything else is work. */
-export type ContractAttention = ContractAsyncSignal | 'action-required' | 'receipt';
+export type ContractAttention = ContractAsyncSignal | 'action-required' | 'informational' | 'receipt';
 
 // Signals used to be delivered as one webhook per signal, on top of the
 // message webhook the route already sent. A single message could therefore
@@ -16,12 +16,38 @@ const SIGNAL_PRIORITY: ContractAsyncSignal[] = ['blocked', 'pending-approval', '
 export function resolvePrimaryAttention(
   messageType: MessageType,
   signals: ContractAsyncSignal[],
+  requiresAction = true,
 ): ContractAttention {
   if (!consumesTurn(messageType)) return 'receipt';
   for (const candidate of SIGNAL_PRIORITY) {
     if (signals.includes(candidate)) return candidate;
   }
-  return 'action-required';
+  return requiresAction ? 'action-required' : 'informational';
+}
+
+/** A request is a question. Letting a sender mark one as needing no reply
+ *  would let them silence the one message type that always owes an answer. */
+export function resolveRequiresAction(messageType: MessageType, requested?: boolean): boolean {
+  if (!consumesTurn(messageType)) return false;
+  if (messageType === 'request') return true;
+  return requested ?? true;
+}
+
+/** A receipt has to say what it acknowledges, or it is just a wasted message
+ *  that happens to be free. */
+export function validateReceiptContent(content: Record<string, unknown>): string | null {
+  const target = content.acknowledges;
+  if (typeof target !== 'string' || target.trim().length === 0) {
+    return 'Receipt messages require content.acknowledges with the message id being acknowledged';
+  }
+  return null;
+}
+
+export function validateCompletionApprovalContent(content: Record<string, unknown>): string | null {
+  if (content.approves_completion !== true) {
+    return 'Completion approval messages require content.approves_completion=true';
+  }
+  return null;
 }
 
 export function extractSignals(content: Record<string, unknown>): ContractAsyncSignal[] {

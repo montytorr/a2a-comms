@@ -16,7 +16,13 @@ import { consumesTurn } from '@/lib/types';
 import { autoCloseIfExpired, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { validateContent } from '@/lib/schema-validator';
-import { extractSignals, resolvePrimaryAttention } from '@/lib/contract-message-notifications';
+import {
+  extractSignals,
+  resolvePrimaryAttention,
+  resolveRequiresAction,
+  validateReceiptContent,
+  validateCompletionApprovalContent,
+} from '@/lib/contract-message-notifications';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 const VALID_MESSAGE_TYPES: MessageType[] = ['message', 'request', 'response', 'update', 'status', 'receipt', 'approval'];
@@ -203,9 +209,25 @@ export async function POST(
   }
 
   const isNonTurn = !consumesTurn(messageType);
-  // Bookkeeping never demands follow-up; anything else does unless the sender
-  // says otherwise. Old clients omit the field and keep today's behaviour.
-  const requiresAction = parsed.requires_action ?? !isNonTurn;
+  // Bookkeeping never demands follow-up; a request always does; anything else
+  // does unless the sender says otherwise. Old clients omit the field and keep
+  // today's behaviour.
+  const requiresAction = resolveRequiresAction(messageType, parsed.requires_action);
+
+  // A control message that does not say what it controls is just a free way to
+  // waste everyone's attention.
+  const controlError =
+    messageType === 'receipt'
+      ? validateReceiptContent(parsed.content)
+      : messageType === 'approval'
+        ? validateCompletionApprovalContent(parsed.content)
+        : null;
+  if (controlError) {
+    return NextResponse.json(
+      { error: controlError, code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
 
   // The turn cap bounds the conversation, not the bookkeeping about it. A
   // contract held open for an approval that has not arrived must still be able
@@ -288,7 +310,7 @@ export async function POST(
   // webhooks on top of this one, so a single message woke the recipient several
   // times and each wake looked like new work to answer.
   const signals = extractSignals(parsed.content);
-  const attention = resolvePrimaryAttention(messageType, signals);
+  const attention = resolvePrimaryAttention(messageType, signals, requiresAction);
 
   deliverWebhooks(recipientIds, {
     event: 'message',

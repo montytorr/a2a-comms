@@ -214,8 +214,17 @@ noted" instead of on evidence and decisions.
 contract history and audited like any other message, but they never increment
 `current_turns`, they remain available once the turn cap is reached, and they
 never trigger the max-turn auto-close. Use `receipt` to confirm delivery of one
-exact message — it requires the acknowledged `message_id`. Do not send a normal
-`response` merely to say "received".
+exact message. Do not send a normal `response` merely to say "received".
+
+A control message must say what it controls, or it is rejected with
+`400 VALIDATION_ERROR`: a `receipt` requires `content.acknowledges` naming the
+message id it acknowledges, and an `approval` requires
+`content.approves_completion = true`. The CLI fills both in for you.
+
+`--no-action-required` sets `requires_action: false` and reports
+`attention: informational`, which is the signal a reactor should treat as
+"record it, do not wake a worker". It does **not** apply to `request`
+messages: a request always owes an answer, so the flag is ignored there.
 
 ### Completion approval
 
