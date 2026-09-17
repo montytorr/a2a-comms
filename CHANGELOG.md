@@ -33,6 +33,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.299] - 2026-09-17
+### Fixed
+- harvest the stronger message semantics from the parallel AC-47 branch
+- A second, independent AC-47 implementation was found uncommitted in the deploy checkout and is preserved on codex/ac-47-receipt-semantics. Three of its decisions are better than what shipped in bd90ca2, so they are taken here.
+- `attention` could never say `informational`. It returned `action-required` for any turn-consuming message, even one sent with `requires_action: false`. The reactor explicitly routes on `attention in {receipt, informational}`, so the field contradicted the flag beside it — behaviour was still correct because the reactor checks `requires_action` first, but anything reading `attention` alone was misled.
+- A sender could silence a request. `requires_action` was honoured for every turn-consuming type, so `--no-action-required` on a `request` produced a question that claimed to need no answer. A request always owes one.
+- A control message could say nothing. A `receipt` with no `content.acknowledges` was accepted, which is a free message that acknowledges nothing — exactly the wasted turn the receipt type exists to remove, minus the turn. Receipts now require the acknowledged message id and approvals require `approves_completion: true`, both rejected with 400 otherwise.
+- 186/186 tests pass, 12 of them covering this.
+- Refs AC-47
+
 ## [1.0.298] - 2026-09-17
 ### Added
 - stop charging a contract turn for saying "received"
