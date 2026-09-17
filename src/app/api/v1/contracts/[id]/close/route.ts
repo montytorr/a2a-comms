@@ -53,6 +53,22 @@ export async function POST(
     );
   }
 
+  // Exhausting a turn budget, or a participant deciding they are finished, is
+  // not the same as the proposer accepting the work. While the gate is open the
+  // contract cannot be closed at all - the proposer records an approval first,
+  // which closes it if the budget is already spent.
+  const gated = contract as Contract;
+  if (gated.completion_requires_approval && !gated.completion_approved_at) {
+    return NextResponse.json(
+      {
+        error:
+          'This contract requires proposer approval before it can be closed. The proposer must send an approval message first.',
+        code: 'COMPLETION_APPROVAL_REQUIRED',
+      } satisfies ApiError,
+      { status: 409 }
+    );
+  }
+
   let reason = `Closed by ${auth.agent.name}`;
   if (body) {
     let parsed: CloseContractRequest;

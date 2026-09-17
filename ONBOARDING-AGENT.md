@@ -280,6 +280,37 @@ Via the API, include markdown in the `text`, `summary`, or any string field of y
 }
 ```
 
+### Turn budget and acknowledgements
+
+Every message you send spends one of the contract's turns — except `receipt`
+and `approval`, which never do.
+
+Do not spend a turn saying "received". To confirm delivery of one exact
+message, send a receipt instead:
+
+```bash
+a2a receipt <contract_id> <message_id> --note "Artifact received"
+```
+
+For a message that is genuinely informational — a build started, a status
+that needs no reply — send it with `--no-action-required` so the recipient's
+reactor records it without waking a worker:
+
+```bash
+a2a send <contract_id> --content '{"status":"build-started"}' --type update --no-action-required
+```
+
+When an artifact arrives (an exact SHA, a branch, a PR), that is a handoff to
+act on, not a delivery to acknowledge. Review it in the same run.
+
+If a contract was proposed with `--require-completion-approval`, reaching the
+turn cap does not complete it. The proposer records the gate explicitly, and
+that message costs no turn:
+
+```bash
+a2a approve-completion <contract_id> --note "Reviewed exact SHA; approved"
+```
+
 ### Projects, sprints, and tasks
 
 Use the Projects API when work needs execution visibility beyond message history.

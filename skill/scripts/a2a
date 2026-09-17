@@ -5,14 +5,16 @@ A2A Comms CLI — Agent-to-Agent Contract Communication
 Usage:
   a2a contracts [--status STATUS] [--role ROLE]
   a2a contract <id>
-  a2a propose <title> --to <agents...> [--description DESC] [--max-turns N] [--expires-hours H] [--schema JSON]
+  a2a propose <title> --to <agents...> [--description DESC] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
   a2a accept <contract_id>
   a2a reject <contract_id>
   a2a cancel <contract_id>
   a2a close <contract_id> [--reason REASON]
   a2a messages <contract_id> [--page N] [--per-page N]
   a2a message <contract_id> <message_id>
-  a2a send <contract_id> --content JSON [--type TYPE]   (supports Markdown)
+  a2a send <contract_id> --content JSON [--type TYPE] [--no-action-required]   (supports Markdown)
+  a2a receipt <contract_id> <message_id> [--note TEXT]
+  a2a approve-completion <contract_id> [--note TEXT]
   a2a agents
   a2a agent <id_or_name>
   a2a status
@@ -312,6 +314,9 @@ def format_contract(c: dict, verbose: bool = False) -> str:
     line = f"{icon} [{c['status'].upper()}] {c['title']}"
     line += f"\n   ID: {c['id']}"
     line += f"\n   Participants: {agents} | Turns: {turns}"
+    if c.get("completion_requires_approval"):
+        approval = "approved" if c.get("completion_approved_at") else "required"
+        line += f" | Completion approval: {approval}"
     if linked:
         project = linked.get("project_title") or linked.get("project_id")
         task = linked.get("task_title") or linked.get("task_id")
@@ -639,6 +644,8 @@ def cmd_propose(args):
         body["description"] = args.description
     if args.max_turns:
         body["max_turns"] = args.max_turns
+    if args.require_completion_approval:
+        body["completion_requires_approval"] = True
     if args.expires_hours:
         body["expires_in_hours"] = args.expires_hours
     if args.schema:
@@ -734,9 +741,38 @@ def cmd_send(args):
     }
     if args.type:
         body["message_type"] = args.type
+    if args.requires_action is not None:
+        body["requires_action"] = args.requires_action
 
     data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", body)
-    print(f"✅ Message sent (turn {data.get('turn_number', '?')}, {data.get('turns_remaining', '?')} remaining)")
+    accounting = "non-turn receipt" if not data.get("consumes_turn", True) else f"turn {data.get('turn_number', '?')}"
+    print(f"✅ Message sent ({accounting}, {data.get('turns_remaining', '?')} remaining)")
+
+
+def cmd_receipt(args):
+    """Acknowledge one exact message without consuming a contract turn."""
+    content = {"acknowledges": args.message_id}
+    if args.note:
+        content["note"] = args.note
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", {
+        "message_type": "receipt",
+        "requires_action": False,
+        "content": content,
+    })
+    print(f"✅ Receipt recorded (turn budget unchanged: {data.get('turns_remaining', '?')} remaining)")
+
+
+def cmd_approve_completion(args):
+    """Record proposer approval required to close a gated contract."""
+    content = {"approves_completion": True}
+    if args.note:
+        content["note"] = args.note
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", {
+        "message_type": "approval",
+        "requires_action": False,
+        "content": content,
+    })
+    print(f"✅ Completion approved (turn budget unchanged: {data.get('turns_remaining', '?')} remaining)")
 
 
 def cmd_rotate_keys(_args):
@@ -1659,6 +1695,7 @@ def main():
     p.add_argument("--to", nargs="+", required=True, help="Agent names to invite")
     p.add_argument("--description", help="Contract description")
     p.add_argument("--max-turns", type=int, help="Max turns (default: 50)")
+    p.add_argument("--require-completion-approval", action="store_true", help="Prevent close/max-turn completion until the proposer records approval")
     p.add_argument("--expires-hours", type=int, help="Expiry in hours (default: 168)")
     p.add_argument("--schema", help="Message schema (inline JSON or path to JSON file)")
     p.add_argument("--project", help="Link the new contract to this project (use with --task)")
@@ -1696,7 +1733,17 @@ def main():
     p = sub.add_parser("send", help="Send a message")
     p.add_argument("id", help="Contract ID")
     p.add_argument("--content", required=True, help="Message content (JSON or plain text; Markdown rendered in dashboard)")
-    p.add_argument("--type", choices=["message", "request", "response", "update", "status"], help="Message type")
+    p.add_argument("--type", choices=["message", "request", "response", "update", "status", "receipt", "approval"], help="Message type")
+    p.add_argument("--no-action-required", dest="requires_action", action="store_false", default=None, help="Mark a non-request message as informational so reactors need not spawn a worker")
+
+    p = sub.add_parser("receipt", help="Acknowledge an exact message without consuming a turn")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("message_id", help="Message ID being acknowledged")
+    p.add_argument("--note", help="Optional human-readable receipt note")
+
+    p = sub.add_parser("approve-completion", help="Record proposer approval for gated contract completion without consuming a turn")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--note", help="Optional approval note")
 
     # pending
     sub.add_parser("pending", help="List pending invitations")
@@ -2053,6 +2100,8 @@ def main():
         "messages": cmd_messages,
         "message": cmd_message,
         "send": cmd_send,
+        "receipt": cmd_receipt,
+        "approve-completion": cmd_approve_completion,
         "pending": cmd_pending,
         "inbox": cmd_inbox,
         "webhook": cmd_webhook,

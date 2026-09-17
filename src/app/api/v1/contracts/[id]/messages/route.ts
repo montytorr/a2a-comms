@@ -12,13 +12,14 @@ import type {
   Contract,
   MessageType,
 } from '@/lib/types';
+import { consumesTurn } from '@/lib/types';
 import { autoCloseIfExpired, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { validateContent } from '@/lib/schema-validator';
-import { notifyContractMessageSignals } from '@/lib/contract-message-notifications';
+import { extractSignals, resolvePrimaryAttention } from '@/lib/contract-message-notifications';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
-const VALID_MESSAGE_TYPES: MessageType[] = ['message', 'request', 'response', 'update', 'status'];
+const VALID_MESSAGE_TYPES: MessageType[] = ['message', 'request', 'response', 'update', 'status', 'receipt', 'approval'];
 
 export async function GET(
   req: NextRequest,
@@ -159,14 +160,6 @@ export async function POST(
     return NextResponse.json(policy.body satisfies ApiError, { status: policy.status });
   }
 
-  // Check max turns
-  if (checked.current_turns >= checked.max_turns) {
-    return NextResponse.json(
-      { error: 'Max turns reached', code: 'MAX_TURNS' } satisfies ApiError,
-      { status: 409 }
-    );
-  }
-
   let parsed: SendMessageRequest;
   try {
     parsed = JSON.parse(body);
@@ -209,8 +202,35 @@ export async function POST(
     );
   }
 
-  // Validate content against contract schema (if defined)
-  if (checked.message_schema) {
+  const isNonTurn = !consumesTurn(messageType);
+  // Bookkeeping never demands follow-up; anything else does unless the sender
+  // says otherwise. Old clients omit the field and keep today's behaviour.
+  const requiresAction = parsed.requires_action ?? !isNonTurn;
+
+  // The turn cap bounds the conversation, not the bookkeeping about it. A
+  // contract held open for an approval that has not arrived must still be able
+  // to receive that approval, and a receipt is never worth a turn.
+  if (!isNonTurn && checked.current_turns >= checked.max_turns) {
+    return NextResponse.json(
+      { error: 'Max turns reached', code: 'MAX_TURNS' } satisfies ApiError,
+      { status: 409 }
+    );
+  }
+
+  // Only the proposer can satisfy a completion gate. The database re-checks
+  // this against proposer_id; this is the friendlier error.
+  const approvesCompletion = messageType === 'approval';
+  if (approvesCompletion && auth.agent.id !== checked.proposer_id) {
+    return NextResponse.json(
+      { error: 'Only the contract proposer can approve completion', code: 'FORBIDDEN' } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
+  // Validate content against contract schema (if defined). Receipts and
+  // approvals are protocol control messages with their own shape, so a
+  // contract's payload schema must not reject them.
+  if (checked.message_schema && !isNonTurn) {
     const validation = validateContent(checked.message_schema, parsed.content);
     if (!validation.success) {
       return NextResponse.json(
@@ -226,6 +246,7 @@ export async function POST(
     p_sender_id: auth.agent.id,
     p_message_type: messageType,
     p_content: parsed.content,
+    p_approves_completion: approvesCompletion,
   });
 
   if (rpcErr) {
@@ -241,6 +262,7 @@ export async function POST(
       CONTRACT_NOT_FOUND: 404,
       INVALID_STATE: 409,
       MAX_TURNS: 409,
+      FORBIDDEN: 403,
     };
     return NextResponse.json(
       { error: rpcResult.message, code: rpcResult.error } satisfies ApiError,
@@ -262,29 +284,33 @@ export async function POST(
   const recipientIds = (allParticipants || []).map(p => p.agent_id);
   const turnsRemaining = Math.max(0, maxTurnsContract - newTurns);
 
+  // One message, one delivery. Async signals used to be delivered as extra
+  // webhooks on top of this one, so a single message woke the recipient several
+  // times and each wake looked like new work to answer.
+  const signals = extractSignals(parsed.content);
+  const attention = resolvePrimaryAttention(messageType, signals);
+
   deliverWebhooks(recipientIds, {
     event: 'message',
     contract_id: id,
     data: {
+      // message_id lets a recipient recognise redelivery of the same logical
+      // message rather than deduplicating on the delivery attempt.
+      message_id: messageId,
       sender: auth.agent.name,
       message_type: messageType,
       turn: newTurns,
       turns_remaining: turnsRemaining,
       max_turns: maxTurnsContract,
+      consumes_turn: !isNonTurn,
+      requires_action: requiresAction,
+      attention,
+      attention_signals: signals,
+      async_completion: signals.includes('completed'),
+      awaiting_completion_approval: rpcResult.awaiting_completion_approval === true,
     },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
-
-  notifyContractMessageSignals({
-    contractId: id,
-    senderId: auth.agent.id,
-    senderName: auth.agent.name,
-    messageType,
-    content: parsed.content,
-    turn: newTurns,
-    turnsRemaining,
-    maxTurns: maxTurnsContract,
-  }).catch(() => {});
 
   await auditLog({
     actor: auth.agent.name,
@@ -313,6 +339,9 @@ export async function POST(
     },
     turn_number: newTurns,
     turns_remaining: Math.max(0, maxTurnsContract - newTurns),
+    consumes_turn: !isNonTurn,
+    requires_action: requiresAction,
+    completion_approved_at: rpcResult.completion_approved_at ?? null,
   };
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/contracts/${id}/messages`, 201, response);

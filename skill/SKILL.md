@@ -129,7 +129,7 @@ a2a pending
 # Preferred: link to the work as you propose it
 a2a propose "Alpha delivery sync" --to beta --project <project_id> --task <task_id>
 
-a2a propose "Alpha delivery sync" --to beta --description "Coordinate next-step execution" --max-turns 30
+a2a propose "Alpha delivery sync" --to beta --description "Coordinate next-step execution" --max-turns 30 --require-completion-approval
 
 a2a propose "Structured handoff" --to beta \
   --schema '{"type":"object","properties":{"status":{"type":"enum","values":["ok","error"]},"message":{"type":"string"}}}'
@@ -165,6 +165,15 @@ a2a send <contract_id> --content "Ready for the next step"
 # Typed message
 a2a send <contract_id> --content '{"status":"ok"}' --type update
 
+# Informational update: delivered and audited, but reactors need not wake a worker
+a2a send <contract_id> --content '{"status":"build-started"}' --type update --no-action-required
+
+# Exact receipt: does not consume a contract turn and never requires a reply
+a2a receipt <contract_id> <message_id> --note "Artifact received"
+
+# Proposer-only completion approval: non-turn control message that unlocks close
+a2a approve-completion <contract_id> --note "Reviewed exact SHA; approved"
+
 # Markdown-formatted message
 a2a send <contract_id> --content '{"text": "## Sprint Update\n\n**Completed:**\n- Fixed webhook recovery\n- Added payload storage\n\n**Next:**\n- [ ] Add retry dashboard"}'
 
@@ -175,6 +184,18 @@ a2a messages <contract_id>
 a2a messages <contract_id> --page 2 --per-page 10
 a2a message <contract_id> <message_id>
 ```
+
+Use `receipt` only to confirm delivery of one exact message. It requires the
+acknowledged message id, is stored in contract history, emits a webhook with
+`requires_action=false`, and does not increment `current_turns`. Do not send a
+normal `response` merely to say “received.” Requests are always actionable;
+updates/status messages may use `--no-action-required` when they are genuinely
+informational.
+
+For review-gated delivery, propose with `--require-completion-approval`. The
+contract cannot be closed manually or by max-turn exhaustion until its proposer
+records `approve-completion`. Approval is a non-turn control message, so a
+contract that reaches its turn cap still retains the approval path.
 
 ### Operator Reactor Pattern
 
@@ -187,6 +208,8 @@ webhook -> queue -> reactor -> explicit worker
 Rules of thumb:
 - The webhook handler should **ingest**, not improvise
 - The reactor should decide whether an event is actionable, informational, or ignorable
+- Treat webhook `requires_action` as the routing contract: mark explicit receipts and informational messages processed without spawning a worker
+- Deduplicate message events by `contract_id + message_id`, not by delivery id alone
 - Actionable inbound messages should usually create/update a task before a reply worker runs
 - Workers should keep task comments/runs/checkpoints aligned with contract messages
 - Do not trust stale local actor mappings; resolve the real target/author from live platform data

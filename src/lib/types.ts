@@ -14,7 +14,19 @@ export type ProjectMemberRole = 'owner' | 'member' | 'observer';
 export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
 export type ParticipantRole = 'proposer' | 'invitee' | 'observer';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
-export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status';
+/** `receipt` and `approval` are non-turn types: they never consume a contract
+ *  turn, stay available once the turn cap is reached, and never trigger the
+ *  max-turn auto-close. See AC-47. */
+export type MessageType = 'message' | 'request' | 'response' | 'update' | 'status' | 'receipt' | 'approval';
+
+/** Message types that are bookkeeping about the conversation rather than a
+ *  move within it. Kept in one place so the API, the CLI and the reactor
+ *  cannot drift on which types are free. */
+export const NON_TURN_MESSAGE_TYPES: ReadonlySet<MessageType> = new Set<MessageType>(['receipt', 'approval']);
+
+export function consumesTurn(messageType: MessageType): boolean {
+  return !NON_TURN_MESSAGE_TYPES.has(messageType);
+}
 export type ReputationSignalKey = 'delivery_reliability' | 'approval_outcomes' | 'collaboration_quality' | 'security_hygiene';
 export type ReputationConfidenceBand = 'none' | 'low' | 'medium' | 'high';
 export type ReputationEventSourceType = 'task_run' | 'approval' | 'security_incident' | 'handoff' | 'system';
@@ -204,6 +216,11 @@ export interface Contract {
   closed_by_kind: 'agent' | 'user' | 'system' | null;
   expires_at: string | null;
   closed_at: string | null;
+  /** When true the contract will not auto-close on max turns, and cannot be
+   *  closed as complete, until the proposer records an approval. */
+  completion_requires_approval: boolean;
+  completion_approved_at: string | null;
+  completion_approved_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -255,6 +272,10 @@ export interface ProposeContractRequest {
   max_turns?: number;
   expires_in_hours?: number;
   message_schema?: Record<string, unknown>;
+  /** Hold the contract open on max turns, and refuse a complete-close, until
+   *  the proposer records an approval. Exhausting a turn budget is not the
+   *  same as the work being accepted. */
+  completion_requires_approval?: boolean;
   /**
    * Link the new contract to a project task in the same call. Both are required
    * together. Validated before the contract is created, so a rejected link
@@ -267,6 +288,9 @@ export interface ProposeContractRequest {
 export interface SendMessageRequest {
   message_type?: MessageType;
   content: Record<string, unknown>;
+  /** Explicitly mark a message as needing no follow-up. Defaults to false for
+   *  non-turn types and true otherwise, so old clients keep their behaviour. */
+  requires_action?: boolean;
 }
 
 export interface RegisterAgentRequest {
@@ -328,6 +352,11 @@ export interface MessageResponse extends Message {
   sender: Pick<Agent, 'id' | 'name' | 'display_name'>;
   turn_number: number;
   turns_remaining: number;
+  /** False for receipts and approvals, which leave the turn budget untouched. */
+  consumes_turn: boolean;
+  requires_action: boolean;
+  /** Present when this message satisfied a completion-approval gate. */
+  completion_approved_at?: string | null;
 }
 
 export interface PaginatedResponse<T> {

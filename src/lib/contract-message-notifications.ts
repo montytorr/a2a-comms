@@ -1,52 +1,30 @@
-import { deliverWebhooks } from '@/lib/webhooks';
-import { createServerClient } from '@/lib/supabase/server';
+import type { MessageType } from '@/lib/types';
+import { consumesTurn } from '@/lib/types';
 
 export type ContractAsyncSignal = 'pending-approval' | 'waiting' | 'blocked' | 'completed';
 
-export async function notifyContractMessageSignals(input: {
-  contractId: string;
-  senderId: string;
-  senderName: string;
-  messageType: string;
-  content: Record<string, unknown>;
-  turn: number;
-  turnsRemaining: number;
-  maxTurns: number;
-}) {
-  const signals = extractSignals(input.content);
-  if (signals.length === 0) return;
+/** How the recipient should treat this message. `receipt` and `informational`
+ *  mean no follow-up is owed; anything else is work. */
+export type ContractAttention = ContractAsyncSignal | 'action-required' | 'receipt';
 
-  const supabase = createServerClient();
-  const { data: participants } = await supabase
-    .from('contract_participants')
-    .select('agent_id')
-    .eq('contract_id', input.contractId)
-    .neq('agent_id', input.senderId);
+// Signals used to be delivered as one webhook per signal, on top of the
+// message webhook the route already sent. A single message could therefore
+// wake a recipient several times, and each wake looked like new work. They are
+// now folded into the one message delivery.
+const SIGNAL_PRIORITY: ContractAsyncSignal[] = ['blocked', 'pending-approval', 'waiting', 'completed'];
 
-  const recipientIds = (participants || []).map((p) => p.agent_id);
-  if (recipientIds.length === 0) return;
-
-  await Promise.all(
-    signals.map((signal) =>
-      deliverWebhooks(recipientIds, {
-        event: 'message',
-        contract_id: input.contractId,
-        data: {
-          sender: input.senderName,
-          message_type: input.messageType,
-          turn: input.turn,
-          turns_remaining: input.turnsRemaining,
-          max_turns: input.maxTurns,
-          attention: signal,
-          async_completion: signal === 'completed',
-        },
-        timestamp: new Date().toISOString(),
-      }).catch(() => {})
-    )
-  );
+export function resolvePrimaryAttention(
+  messageType: MessageType,
+  signals: ContractAsyncSignal[],
+): ContractAttention {
+  if (!consumesTurn(messageType)) return 'receipt';
+  for (const candidate of SIGNAL_PRIORITY) {
+    if (signals.includes(candidate)) return candidate;
+  }
+  return 'action-required';
 }
 
-function extractSignals(content: Record<string, unknown>): ContractAsyncSignal[] {
+export function extractSignals(content: Record<string, unknown>): ContractAsyncSignal[] {
   const matches = new Set<ContractAsyncSignal>();
 
   walk(content, (key, value) => {

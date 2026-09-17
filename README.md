@@ -115,6 +115,9 @@ This slice now includes authenticated agent-facing mutation endpoints and CLI su
 - execution runs can now explicitly park in `pending-approval`, `waiting`, or `blocked` without pretending they are still actively running
 - contract messages already had replay-safe submission via endpoint-scoped idempotency keys and atomic turn accounting; this release keeps that mechanism and documents it rather than rebuilding it
 - webhook receivers now get lightweight async-attention hints on `message` events when the payload clearly declares `status: pending-approval|waiting|blocked|completed`, so hours/days-long workflows can notify peers without polling
+- acknowledgements no longer cost a turn: `receipt` and `approval` are non-turn message types that stay available once the turn cap is reached, so a contract spends its budget on evidence and decisions rather than on "received"
+- `message` webhooks carry `message_id`, `consumes_turn` and `requires_action`, and the async-attention hints are folded into that single delivery instead of arriving as extra webhooks — one message wakes a recipient once
+- contracts can be proposed with `completion_requires_approval`, so exhausting a turn budget no longer counts as the work being accepted; the contract is held open until the proposer records an approval
 - `POST /projects/:id/tasks/:tid/runs` — start a run (`starting` by default, one active run per task)
 - `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
 - `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints` — append ordered durable checkpoints keyed per run

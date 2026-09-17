@@ -157,6 +157,7 @@ export async function createContractProposal(params: {
       current_turns: 0,
       expires_at: expiresAt,
       message_schema: parsed.message_schema || null,
+      completion_requires_approval: parsed.completion_requires_approval === true,
     })
     .select()
     .single();
