@@ -213,8 +213,52 @@ const LINK_SELECT =
   'from_contract:contracts!from_contract_id(id, title, status), ' +
   'to_contract:contracts!to_contract_id(id, title, status)';
 
+async function participantRoles(
+  contractIds: string[],
+  agentId: string
+): Promise<Map<string, string>> {
+  const supabase = createServerClient();
+  const { data: rows } = await supabase
+    .from('contract_participants')
+    .select('contract_id, role')
+    .eq('agent_id', agentId)
+    .in('contract_id', contractIds);
+
+  return new Map((rows || []).map((row) => [row.contract_id, row.role as string]));
+}
+
+function notAParticipant(contractId: string, forWriting: boolean): LinkRefusal {
+  return refuse(
+    404,
+    forWriting
+      ? `Contract ${contractId} not found, or you are not a participant in it. Linking two contracts requires being a participant in both.`
+      : `Contract ${contractId} not found, or you are not a participant in it.`,
+    'NOT_FOUND'
+  );
+}
+
 /**
- * Can this agent record a link between these two contracts?
+ * Can this agent READ a contract's links?
+ *
+ * Participation in that one contract, and nothing more. Observers are
+ * deliberately included: observing is reading, and the far end of each link is
+ * only ever summarised - a title and a status the observer can already see on
+ * the contract itself.
+ *
+ * This used to call the write check with the same id twice, which refused an
+ * observer 403 with the message "Observers may read contract links but cannot
+ * record them" - a refusal that asserted the opposite of what it was doing.
+ */
+export async function checkContractLinkReadAccess(
+  contractId: string,
+  agentId: string
+): Promise<LinkRefusal | null> {
+  const roles = await participantRoles([contractId], agentId);
+  return roles.has(contractId) ? null : notAParticipant(contractId, false);
+}
+
+/**
+ * Can this agent RECORD a link between these two contracts?
  *
  * Both ends, because asserting that one contract continues another is a claim
  * about both, and a pointer out of a contract you cannot read is not something
@@ -225,26 +269,15 @@ export async function checkContractLinkPermission(
   contractIds: [string, string],
   agentId: string
 ): Promise<LinkRefusal | null> {
-  const supabase = createServerClient();
-  const { data: rows } = await supabase
-    .from('contract_participants')
-    .select('contract_id, role')
-    .eq('agent_id', agentId)
-    .in('contract_id', contractIds);
+  const roles = await participantRoles(contractIds, agentId);
 
   for (const contractId of contractIds) {
-    const row = (rows || []).find((r) => r.contract_id === contractId);
-    if (!row) {
-      return refuse(
-        404,
-        `Contract ${contractId} not found, or you are not a participant in it. Linking two contracts requires being a participant in both.`,
-        'NOT_FOUND'
-      );
-    }
-    if (row.role === 'observer') {
+    const role = roles.get(contractId);
+    if (role === undefined) return notAParticipant(contractId, true);
+    if (role === 'observer') {
       return refuse(
         403,
-        'Observers may read contract links but cannot record them.',
+        'Observers may read contract links but cannot record or remove them.',
         'FORBIDDEN'
       );
     }
@@ -289,21 +322,30 @@ export async function createContractLink(params: {
   return refuse(500, 'Failed to link contracts', 'DB_ERROR');
 }
 
+/**
+ * Remove a link, and say whether one was actually there.
+ *
+ * `removed: false` is not an error - the caller asked for the two contracts not
+ * to be related that way, and they are not. But reporting it as a removal would
+ * be announcing an outcome that did not happen, and a typo'd id would read as
+ * success.
+ */
 export async function deleteContractLink(params: {
   fromContractId: string;
   toContractId: string;
   linkType: ContractLinkType;
-}): Promise<LinkRefusal | null> {
+}): Promise<{ ok: true; removed: boolean } | ({ ok: false } & LinkRefusal)> {
   const supabase = createServerClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('contract_links')
     .delete()
     .eq('from_contract_id', params.fromContractId)
     .eq('to_contract_id', params.toContractId)
-    .eq('link_type', params.linkType);
+    .eq('link_type', params.linkType)
+    .select('id');
 
-  if (error) return refuse(500, 'Failed to unlink contracts', 'DB_ERROR');
-  return null;
+  if (error) return { ok: false, ...refuse(500, 'Failed to unlink contracts', 'DB_ERROR') };
+  return { ok: true, removed: (data || []).length > 0 };
 }
 
 /** Both directions for one contract, newest link first. */

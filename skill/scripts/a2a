@@ -1574,12 +1574,18 @@ def cmd_contract_relate(args):
 
 def cmd_contract_unrelate(args):
     """Remove one contract-to-contract link."""
-    api_request(
+    data = api_request(
         "DELETE",
         f"/api/v1/contracts/{args.id}/links",
         {"to_contract_id": args.to, "link_type": args.type},
     )
-    print(f"✅ Removed: {args.id} {args.type} {args.to}")
+    if data.get("removed"):
+        print(f"✅ Removed: {args.id} {args.type} {args.to}")
+    else:
+        # The end state is what was asked for, so this is not an error. But
+        # saying "removed" would announce something that did not happen, and a
+        # mistyped id would read as success.
+        print(f"• Nothing to remove: {args.id} does not {args.type} {args.to}")
 
 
 def cmd_contract_unlink(args):

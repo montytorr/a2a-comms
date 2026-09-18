@@ -246,6 +246,25 @@ check "unrelate removes it" \
   "$(a2a contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Removed"
 check "and it is gone from both ends" \
   "$(a2a contract-relations "$LINKED_ID")" "No related contracts"
+# Removing a link that was never there is the asked-for end state, not an error
+# — but reporting it as a removal would make a mistyped id read as success.
+check "removing a link that was never there says so" \
+  "$(a2a contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Nothing to remove"
+
+say "13. Observers read links but do not record them"
+# The read path used to call the write check, so an observer was refused the
+# read by a message promising them the read. No fixture has an observer, so
+# borrow one: demote the key's own participant row, then put it back.
+psql_q -c "update contract_participants set role='observer' where contract_id='$LINKED_ID';" >/dev/null
+check "an observer can read the link list" \
+  "$(a2a contract-relations "$LINKED_ID")" "No related contracts"
+check "an observer cannot record a link" \
+  "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "Observers may read"
+check "an observer cannot remove one either" \
+  "$(a2a contract-unrelate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "Observers may read"
+psql_q -c "update contract_participants set role='proposer' where contract_id='$LINKED_ID';" >/dev/null
+check "and recording works again once they are not" \
+  "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "continues"
 
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"

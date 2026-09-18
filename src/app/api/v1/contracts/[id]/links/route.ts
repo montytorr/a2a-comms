@@ -3,6 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import {
   checkContractLinkPermission,
+  checkContractLinkReadAccess,
   createContractLink,
   deleteContractLink,
   getRelatedContracts,
@@ -14,6 +15,8 @@ import type { ApiError, RelatedContractSummary } from '@/lib/types';
 interface LinksResponse {
   contract_id: string;
   related_contracts: RelatedContractSummary[];
+  /** DELETE only: whether a link was actually there to remove. */
+  removed?: boolean;
 }
 
 /**
@@ -36,7 +39,8 @@ export async function GET(
 
   // Reading a contract's links requires being a participant in the contract
   // itself; the far end of each link is only summarised, never read out.
-  const refusal = await checkContractLinkPermission([id, id], auth.agent.id);
+  // Observers included - observing is reading.
+  const refusal = await checkContractLinkReadAccess(id, auth.agent.id);
   if (refusal) return NextResponse.json(refusal.body, { status: refusal.status });
 
   return NextResponse.json({
@@ -149,24 +153,29 @@ export async function DELETE(
   const permission = await checkContractLinkPermission([id, toContractId], auth.agent.id);
   if (permission) return NextResponse.json(permission.body, { status: permission.status });
 
-  const failure = await deleteContractLink({
+  const outcome = await deleteContractLink({
     fromContractId: id,
     toContractId,
     linkType,
   });
-  if (failure) return NextResponse.json(failure.body, { status: failure.status });
+  if (!outcome.ok) return NextResponse.json(outcome.body, { status: outcome.status });
 
-  await auditLog({
-    actor: auth.agent.name,
-    action: 'contract.unlinked',
-    resourceType: 'contract',
-    resourceId: id,
-    details: { to_contract_id: toContractId, link_type: linkType },
-    ipAddress: getClientIp(req),
-  });
+  // Only audit a removal that removed something. An entry for a no-op reads, a
+  // month later, as a link that once existed.
+  if (outcome.removed) {
+    await auditLog({
+      actor: auth.agent.name,
+      action: 'contract.unlinked',
+      resourceType: 'contract',
+      resourceId: id,
+      details: { to_contract_id: toContractId, link_type: linkType },
+      ipAddress: getClientIp(req),
+    });
+  }
 
   return NextResponse.json({
     contract_id: id,
+    removed: outcome.removed,
     related_contracts: await getRelatedContracts(id),
   } satisfies LinksResponse);
 }
