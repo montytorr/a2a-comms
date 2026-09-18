@@ -6,6 +6,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.327] - 2026-09-18
+### Fixed
+- let the responsive utilities actually apply, and give the drawer the viewport
+- Cal reported a hamburger that showed where it should not and a mobile drawer that opened over the page in pieces. Two unrelated causes, both measured in a real browser before and after.
+- Tailwind v4 emits utilities into `@layer utilities`, and unlayered CSS beats every layer regardless of specificity or source order. globals.css was in no layer, so each of its classes silently won against any utility touching the same property: 47 dead declarations, 9 of them `display`. `btn … md:hidden` kept the hamburger at every width; `kbd hidden sm:inline-flex` put the ⌘K chip on a phone. Naming the layer puts the component rules back under the utilities. Twelve places that mixed a class with a size utility now render at the size their author wrote — smaller auth titles, 16px onboarding sub-headings, a 16px markdown h2.
+- Separately, MobileNav is the topbar's `leading` slot and the topbar carries `backdrop-filter: blur(12px)`. A filter makes an element the containing block for its `position: fixed` descendants, so `fixed inset-0` resolved against the 52px header: the scrim covered the header strip and the nav list spilled down the page unbacked. Measured at 375px, the drawer was 375x52; portalled to document.body it is 375x800. The drawer also closes itself at the `md` breakpoint now, so widening the window cannot strand the body scroll lock.
+- A guard test holds both: every class rule must live inside the layer, and while the topbar creates a containing block the drawer must portal out of it.
+- AC-69
+- let an approval be marked consumed, which the database has always refused
+- pending_approvals_status_check allowed pending|approved|denied and nothing had widened it, but consumeApproval() writes 'consumed', the type declares it and the dashboard filters on it. The db client turns a constraint violation into {data: null, error} rather than throwing, so the write failed silently and the caller saw only a null.
+- In activateKillSwitch() that null arrives after system_config.kill_switch is already on and before the open contracts are closed, where it becomes a throw. The platform would be left half-killed — switch on, contracts open, approval stuck at 'approved' — and every retry fails identically.
+- It has never fired only because no approval has ever been approved in production: status counts there are denied | 2.
+- Proven against the production database in a rolled-back transaction before and after: INSERT status='approved' then UPDATE SET status='consumed' raised pending_approvals_status_check, and now succeeds. Migration applied by hand.
+- The guard test compares what approvals.ts writes against the last CHECK any migration defines, so the two cannot drift again in either direction.
+- AC-73
+
 ## [1.0.326] - 2026-09-18
 ### Added
 - tell pages when something moved, instead of re-rendering them on a timer
