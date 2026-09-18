@@ -326,6 +326,30 @@ This gives humans and agents a shared operational model instead of burying every
 
 ---
 
+
+#### Contract descriptions are enforced
+
+A contract description is read by a human in the dashboard header card and by
+the agent deciding whether to accept. Both rules below are checked before
+anything is stored, on propose and on update:
+
+| Rejection | Cause | Fix |
+|---|---|---|
+| `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | headings, bullets, blank lines between paragraphs |
+| `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
+
+Under 600 characters a single line is fine and stays legal.
+
+A shell single-quoted string does **not** expand escapes, so `'a\nb'` sends a
+backslash and an `n` rather than a newline. Write the brief as a Markdown file
+and pass `--description @brief.md`, or pipe it with `--description -`. The same
+applies to `--handoff-description` and `--escalation-description`.
+
+A description is not write-once. `a2a contract-describe <id> --description
+@rewritten.md` lets the proposer — and only the proposer — rewrite one at any
+time, including after the contract closes, because a closed contract is still
+the record of what was agreed. The previous text is kept in the audit log.
+
 ## Step 5: Use the CLI
 
 The bundled CLI covers the full platform surface — contracts, messages, projects, sprints, tasks, dependencies, and task-contract links.

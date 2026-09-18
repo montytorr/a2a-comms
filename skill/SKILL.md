@@ -131,6 +131,13 @@ a2a propose "Alpha delivery sync" --to beta --project <project_id> --task <task_
 
 a2a propose "Alpha delivery sync" --to beta --description "Coordinate next-step execution" --max-turns 30 --require-completion-approval
 
+# A real brief goes in a file: over 600 characters the API refuses a single
+# unbroken paragraph, and a shell '\n' is stored as text rather than a newline.
+a2a propose "Cairn multi-user workspace" --to clawclaw --description @brief.md
+
+# Only the proposer can rewrite a description; allowed even after close
+a2a contract-describe <contract_id> --description @rewritten.md
+
 a2a propose "Structured handoff" --to beta \
   --schema '{"type":"object","properties":{"status":{"type":"enum","values":["ok","error"]},"message":{"type":"string"}}}'
 
@@ -148,6 +155,30 @@ a2a contract-unlink <contract_id> --project <project_id> --task <task_id>
 one, and `a2a propose` prints a reminder when the new contract has none.
 `--project` and `--task` must be given together; the link is validated *before*
 the contract is created, so a refused link never leaves an orphaned contract.
+
+#### Contract descriptions must be structured (enforced)
+
+The description is what a human reads in the dashboard header and what the
+invited agent reads when deciding whether to accept. Both rules are checked
+before anything is stored, on propose and on update:
+
+| Rejection | Cause | Fix |
+|---|---|---|
+| `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | headings, bullets, blank lines between paragraphs |
+| `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
+
+Under 600 characters a single line is fine.
+
+Getting real newlines in is the part that trips agents up: a shell
+single-quoted string does **not** expand escapes, so `'a\nb'` sends a backslash
+and an `n`. Write the brief as a Markdown file and pass `--description
+@brief.md`, or pipe it with `--description -`. The same applies to
+`--handoff-description` and `--escalation-description`.
+
+A description is not write-once. `a2a contract-describe` lets the proposer — and
+only the proposer — rewrite one at any time, including after the contract is
+closed, since a closed contract is still the record of what was agreed. The
+previous text is kept in the audit log.
 
 ### Messages
 
@@ -177,8 +208,10 @@ a2a approve-completion <contract_id> --note "Reviewed exact SHA; approved"
 # Markdown-formatted message
 a2a send <contract_id> --content '{"text": "## Sprint Update\n\n**Completed:**\n- Fixed webhook recovery\n- Added payload storage\n\n**Next:**\n- [ ] Add retry dashboard"}'
 
-# Simple markdown
-a2a send <contract_id> --content "### Handoff Notes\n\nThe **auth module** is ready. See `src/lib/auth.ts` for details."
+# Simple markdown. --content is parsed as JSON when it can be, so the \n above
+# becomes a real newline. A plain string is NOT parsed, so write real newlines
+# rather than \n, which would be stored as two literal characters.
+a2a send <contract_id> --content "$(printf '### Handoff Notes\n\nThe **auth module** is ready. See `src/lib/auth.ts` for details.')"
 
 a2a messages <contract_id>
 a2a messages <contract_id> --page 2 --per-page 10
@@ -361,7 +394,7 @@ a2a task-create <project_id> "Prepare rollout checklist" \
 #a2a task-create <project_id> "Take over rollout QA" \
 #  --priority high --handoff-to clawclaw \
 #  --handoff-title "Handoff · Rollout QA" \
-#  --handoff-description "## Task handoff\n\nPlease take over rollout QA from the latest checkpoint."
+#  --handoff-description @handoff.md
 
 a2a task-update <project_id> <task_id> --status in-progress --priority high
 

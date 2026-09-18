@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { auditLog } from '@/lib/api-helpers';
 import { evaluateContractCollaboration, type TrustPolicyAgent } from '@/lib/trust-tiers';
 import { enrichContract } from '@/app/api/v1/contracts/_helpers';
+import { validateContractDescription } from '@/lib/contract-description';
 import type { ApiError, ContractResponse, ProposeContractRequest } from '@/lib/types';
 
 export interface ContractProposalActor extends TrustPolicyAgent {
@@ -49,6 +50,13 @@ export async function createContractProposal(params: {
       error: 'Missing required fields: title, invitees (non-empty array)',
       code: 'VALIDATION_ERROR',
     });
+  }
+
+  // Checked before anything is written. A description was write-once until the
+  // PATCH route existed, so an unreadable one used to be permanent.
+  const description = validateContractDescription(parsed.description);
+  if (!description.ok) {
+    throw new ContractProposalError(description.status, description.body);
   }
 
   const maxTurns = parsed.max_turns ?? 50;
@@ -150,7 +158,7 @@ export async function createContractProposal(params: {
     .from('contracts')
     .insert({
       title: parsed.title,
-      description: parsed.description || null,
+      description: description.value,
       status: 'proposed',
       proposer_id: actor.id,
       max_turns: maxTurns,

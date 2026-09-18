@@ -94,6 +94,31 @@ TASK_PRIORITIES = {"urgent", "critical", "high", "medium", "low"}
 RUN_STATUSES = {"queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"}
 
 
+def read_text_argument(value: str | None, label: str) -> str | None:
+    """Resolve prose that is too long or too structured to sit on a command line.
+
+    '@path' reads a file and '-' reads stdin; anything else is used verbatim.
+
+    Markdown needs real newlines, and a shell single-quoted string does not
+    expand '\\n' - it stores a literal backslash and an n, which the API now
+    refuses. Passing a file is the only comfortable way to write a heading, a
+    bullet list and a blank line, so every prose argument accepts one.
+    """
+    if value is None:
+        return None
+    if value == "-":
+        return sys.stdin.read()
+    if value.startswith("@"):
+        path = value[1:]
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                return handle.read()
+        except OSError as exc:
+            print(f"Error: cannot read {label} from {path}: {exc}", file=sys.stderr)
+            sys.exit(1)
+    return value
+
+
 def normalize_task_status(value: str | None) -> str | None:
     """Normalize task status input for API compatibility while accepting legacy aliases."""
     if not value:
@@ -634,14 +659,27 @@ def cmd_contract(args):
     print(format_contract(data, verbose=True))
 
 
+def cmd_contract_describe(args):
+    """Rewrite a contract's description."""
+    description = read_text_argument(args.description, "description")
+    data = api_request(
+        "PATCH",
+        f"/api/v1/contracts/{args.id}",
+        {"description": description},
+    )
+    print(f"✓ Description updated for contract {args.id}")
+    print(format_contract(data, verbose=True))
+
+
 def cmd_propose(args):
     """Propose a new contract."""
     body = {
         "title": args.title,
         "invitees": args.to,
     }
-    if args.description:
-        body["description"] = args.description
+    description = read_text_argument(args.description, "description")
+    if description:
+        body["description"] = description
     if args.max_turns:
         body["max_turns"] = args.max_turns
     if args.require_completion_approval:
@@ -1122,8 +1160,9 @@ def cmd_task_create(args):
             handoff = {"invitees": invitees}
             if args.handoff_title:
                 handoff["title"] = args.handoff_title
-            if args.handoff_description:
-                handoff["description"] = args.handoff_description
+            handoff_description = read_text_argument(args.handoff_description, "handoff description")
+            if handoff_description:
+                handoff["description"] = handoff_description
             if args.handoff_max_turns is not None:
                 handoff["max_turns"] = args.handoff_max_turns
             if args.handoff_expires_hours is not None:
@@ -1139,8 +1178,9 @@ def cmd_task_create(args):
                 escalation["requested_intervention"] = args.requested_intervention
             if args.escalation_title:
                 escalation["title"] = args.escalation_title
-            if args.escalation_description:
-                escalation["description"] = args.escalation_description
+            escalation_description = read_text_argument(args.escalation_description, "escalation description")
+            if escalation_description:
+                escalation["description"] = escalation_description
             if args.escalation_max_turns is not None:
                 escalation["max_turns"] = args.escalation_max_turns
             if args.escalation_expires_hours is not None:
@@ -1176,8 +1216,9 @@ def cmd_task_update(args):
             handoff = {"invitees": invitees}
             if args.handoff_title:
                 handoff["title"] = args.handoff_title
-            if args.handoff_description:
-                handoff["description"] = args.handoff_description
+            handoff_description = read_text_argument(args.handoff_description, "handoff description")
+            if handoff_description:
+                handoff["description"] = handoff_description
             if args.handoff_max_turns is not None:
                 handoff["max_turns"] = args.handoff_max_turns
             if args.handoff_expires_hours is not None:
@@ -1193,8 +1234,9 @@ def cmd_task_update(args):
                 escalation["requested_intervention"] = args.requested_intervention
             if args.escalation_title:
                 escalation["title"] = args.escalation_title
-            if args.escalation_description:
-                escalation["description"] = args.escalation_description
+            escalation_description = read_text_argument(args.escalation_description, "escalation description")
+            if escalation_description:
+                escalation["description"] = escalation_description
             if args.escalation_max_turns is not None:
                 escalation["max_turns"] = args.escalation_max_turns
             if args.escalation_expires_hours is not None:
@@ -1689,11 +1731,16 @@ def main():
     p = sub.add_parser("contract", help="Get contract details")
     p.add_argument("id", help="Contract ID")
 
+    # contract-describe
+    p = sub.add_parser("contract-describe", help="Rewrite a contract description (proposer only)")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--description", required=True, help="Replacement Markdown; @file.md reads a file, - reads stdin")
+
     # propose
     p = sub.add_parser("propose", help="Propose a new contract")
     p.add_argument("title", help="Contract title")
     p.add_argument("--to", nargs="+", required=True, help="Agent names to invite")
-    p.add_argument("--description", help="Contract description")
+    p.add_argument("--description", help="Contract description as Markdown; @file.md reads a file, - reads stdin. Over 600 characters it must contain real line breaks")
     p.add_argument("--max-turns", type=int, help="Max turns (default: 50)")
     p.add_argument("--require-completion-approval", action="store_true", help="Prevent close/max-turn completion until the proposer records approval")
     p.add_argument("--expires-hours", type=int, help="Expiry in hours (default: 168)")
@@ -1893,14 +1940,14 @@ def main():
     p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
     p.add_argument("--handoff-to", help="Comma-separated agent names/IDs to invite for delegated handoff")
     p.add_argument("--handoff-title", help="Override generated handoff contract title")
-    p.add_argument("--handoff-description", help="Override generated handoff contract description")
+    p.add_argument("--handoff-description", help="Handoff contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--handoff-max-turns", type=int, help="Override generated handoff contract max turns")
     p.add_argument("--handoff-expires-hours", type=int, help="Override generated handoff contract expiration (hours)")
     p.add_argument("--escalate-to", help="Comma-separated broker agent names/IDs for escalation")
     p.add_argument("--escalation-reason", help="Why escalation is needed")
     p.add_argument("--requested-intervention", help="What intervention is requested from the broker")
     p.add_argument("--escalation-title", help="Override generated escalation contract title")
-    p.add_argument("--escalation-description", help="Override generated escalation contract description")
+    p.add_argument("--escalation-description", help="Escalation contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
     p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 
@@ -1922,14 +1969,14 @@ def main():
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
     p.add_argument("--handoff-to", help="Comma-separated agent names/IDs to invite for delegated handoff")
     p.add_argument("--handoff-title", help="Override generated handoff contract title")
-    p.add_argument("--handoff-description", help="Override generated handoff contract description")
+    p.add_argument("--handoff-description", help="Handoff contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--handoff-max-turns", type=int, help="Override generated handoff contract max turns")
     p.add_argument("--handoff-expires-hours", type=int, help="Override generated handoff contract expiration (hours)")
     p.add_argument("--escalate-to", help="Comma-separated broker agent names/IDs for escalation")
     p.add_argument("--escalation-reason", help="Why escalation is needed")
     p.add_argument("--requested-intervention", help="What intervention is requested from the broker")
     p.add_argument("--escalation-title", help="Override generated escalation contract title")
-    p.add_argument("--escalation-description", help="Override generated escalation contract description")
+    p.add_argument("--escalation-description", help="Escalation contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
     p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 
@@ -2092,6 +2139,7 @@ def main():
         "agent": cmd_agent,
         "contracts": cmd_contracts,
         "contract": cmd_contract,
+        "contract-describe": cmd_contract_describe,
         "propose": cmd_propose,
         "accept": cmd_accept,
         "reject": cmd_reject,

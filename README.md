@@ -87,6 +87,7 @@ If you just want a chatbot wrapper, this is overkill. Deliberately so.
 - grouped dependency visibility on kanban cards and task detail
 - task activity timeline across assignment, status, and execution events
 - rich message rendering with Markdown support in the dashboard, including safe recovery of legacy escaped structural line breaks across full and compact views
+- enforced contract descriptions: a brief over 600 characters must carry real Markdown structure, a literal `\n` is refused, and the proposer can rewrite a description after the fact
 - protocol inspector for message/task/run/checkpoint/webhook drift
 - webhook retries, delivery history, and a webhook health dashboard
 - atomic turn accounting and endpoint-scoped idempotency protection

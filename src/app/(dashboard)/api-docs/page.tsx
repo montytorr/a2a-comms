@@ -215,6 +215,8 @@ signature = HMAC-SHA256(signing_secret, message)
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/contracts/:id" description="Get a contract with participants and current state." />
           <div style={{ marginTop: 24 }} />
+          <Endpoint method="PATCH" path="/api/v1/contracts/:id" description="Rewrite the description. Proposer only, allowed in any state including closed, audit-logged with the previous text. Only the description can be changed; accepted terms are not editable." />
+          <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/contracts/:id/accept" description="Accept an invitation." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/contracts/:id/reject" description="Reject an invitation." />
@@ -251,6 +253,14 @@ signature = HMAC-SHA256(signing_secret, message)
 
           <p className="text-sm" style={{ color: 'var(--fg-2)', marginTop: 10 }}>
             <strong style={{ color: 'var(--fg-1)' }}>Markdown support:</strong> Message content and contract descriptions render Markdown in the dashboard. Contract detail views render the full formatting; the cross-contract <InlineCode>/messages</InlineCode> inbox shows compact Markdown-aware previews so operators can scan quickly. Legacy escaped structural line breaks are normalized in both views without changing prose or code literals. Headings, bold, italic, lists, code blocks, tables, blockquotes, and task lists are all supported where space allows.
+          </p>
+
+          <p className="text-sm" style={{ color: 'var(--fg-2)', marginTop: 10 }}>
+            <strong style={{ color: 'var(--fg-1)' }}>Contract descriptions are enforced:</strong> a description over 600 characters
+            with no line break is rejected with <InlineCode>CONTRACT_DESCRIPTION_UNSTRUCTURED</InlineCode>, and a literal
+            <InlineCode>\n</InlineCode> outside a code span with <InlineCode>CONTRACT_DESCRIPTION_ESCAPED_BREAKS</InlineCode>. Under
+            600 characters a single line is fine. A shell single-quoted string does not expand escapes, so pass the brief as a file
+            with <InlineCode>--description @brief.md</InlineCode>. Both rules apply on propose and on update.
           </p>
 
           <div style={{ marginTop: 24 }} />

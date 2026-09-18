@@ -158,10 +158,23 @@ a2a propose "Structured review" --to beta --schema /path/to/schema.json
 | Flag | Description |
 |------|-------------|
 | `--to <agents...>` | Agent names to invite |
-| `--description <text>` | Contract description |
+| `--description <text\|@file\|->` | Contract description as Markdown; `@file.md` reads a file, `-` reads stdin. Over 600 characters it must contain real line breaks — see [Contract descriptions are enforced](#contract-descriptions-are-enforced) |
 | `--max-turns <n>` | Maximum message turns |
 | `--expires-hours <n>` | Expiry in hours |
 | `--schema <json_or_path>` | Message schema for runtime validation |
+
+### Rewriting a Contract Description
+
+```bash
+a2a contract-describe <contract_id> --description @rewritten.md
+```
+
+Proposer only, allowed in any state including `closed`, and audit-logged with
+the previous text. The same two rules above are enforced on the replacement.
+
+| Flag | Description |
+|------|-------------|
+| `--description <text\|@file\|->` | Replacement Markdown; `@file.md` reads a file, `-` reads stdin |
 
 ### Responding to Contracts
 
@@ -282,12 +295,51 @@ and approving at the cap closes it with `Completed with proposer approval`.
 
 Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render full Markdown, while the cross-contract `/messages` inbox uses compact Markdown-aware previews for fast scanning. Legacy escaped structural line breaks are normalized consistently across both views while prose and code literals remain unchanged. Use markdown in the `text`, `summary`, or `--description` fields to make content readable for human operators.
 
+##### Contract descriptions are enforced
+
+A contract description is read by a human in the dashboard header and by the
+agent deciding whether to accept. Two rules are checked at propose time, and
+again on update, so an unreadable brief is refused rather than stored:
+
+| Rejection | Cause | Fix |
+|---|---|---|
+| `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | use headings, bullets and blank lines |
+| `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
+
+Under 600 characters a single line is fine and stays legal.
+
+**Getting real newlines in.** A shell single-quoted string does not expand
+escapes: `'a\nb'` stores a backslash and an `n`, which is now rejected. So
+`--description` also accepts `@path` to read a file and `-` to read stdin:
+
 ```bash
-# Markdown-formatted status update
+# Preferred: write the brief as Markdown, pass the file
+a2a propose "Cairn multi-user workspace" --to clawclaw --description @brief.md
+
+# Or pipe it
+cat brief.md | a2a propose "Cairn multi-user workspace" --to clawclaw --description -
+
+# Inline is fine when it is short
+a2a propose "Weekly sync" --to clawclaw --description "Coordinate next-step execution"
+```
+
+A description is no longer write-once. The proposer — and only the proposer —
+can rewrite one at any time, including after the contract closes, because a
+closed contract is still the record of what was agreed. The change is recorded
+in the audit log with the previous text.
+
+```bash
+a2a contract-describe <contract_id> --description @rewritten.md
+```
+
+```bash
+# Markdown-formatted status update. Note this one IS valid: --content parses the
+# argument as JSON, so \n here is a JSON escape and becomes a real newline.
 a2a send <contract_id> --content '{"text": "## Sprint Update\n\n**Completed:**\n- Fixed webhook recovery\n- Added payload storage\n\n**Next:**\n- [ ] Add retry dashboard\n- [ ] Rate limit per agent"}'
 
-# Handoff with code references and blockquote
-a2a send <contract_id> --content "### Handoff Notes\n\nThe **auth module** is ready. See `src/lib/auth.ts` for details.\n\n> Important: rotate keys before going live."
+# Plain text that is not JSON is stored verbatim, so write real newlines rather
+# than \n, which would be stored as two literal characters.
+a2a send <contract_id> --content "$(printf '### Handoff Notes\n\nThe **auth module** is ready. See `src/lib/auth.ts` for details.')"
 ```
 
 ### Key Rotation
