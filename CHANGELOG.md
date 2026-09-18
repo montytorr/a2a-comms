@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.326] - 2026-09-18
+### Added
+- tell pages when something moved, instead of re-rendering them on a timer
+- The second half of AC-68. The watchdog stopped a deploy from freezing a tab; this stops twenty pages re-rendering every ten to fifteen seconds whether or not anything changed.
+- CAIRN-152 answered this on the sibling dashboard four days ago and the answer was not to poll: a stream says only THAT something moved, and the page re-renders through its normal server path. Its other lessons are in the shape here — ONE query, "because this runs every few seconds for every open tab and four round trips would not do"; a failed read returning a CONSTANT so a database blip cannot refresh every open page on a loop; and a guard test that fails if a new page neither subscribes nor states why.
+- a2a_pulse() returns a fingerprint per DOMAIN, and a page names the domains it displays. Both directions matter: one fingerprint for everything refreshes a contract page because an unrelated webhook was delivered, while a domain that misses a table means a page silently never updates for something it shows — which is the bug being fixed, reintroduced. So each domain is the union of the tables a page showing it renders: task runs and comments move `tasks`, sprints and membership invitations move `projects`, contract links move `contracts`.
+- Proven against production data inside a rolled-back transaction, on the exact transition that was reported invisible:
+-   before  2026-09-17 16:02:27.841+00/157 after   2026-09-18 13:39:45.618184+00/158     <- an invitation accepted contracts key unchanged: true
+- The protocol inspector now refreshes too. It was the only page with no mechanism at all — the debugging cockpit for stale state, itself never updating, rendering live contract status and webhook delivery that changed only if you re-submitted the form.
+- AND ONE MIGRATION IN THIS REPO CANNOT BE APPLIED TO THE LIVE DATABASE. The realtime publication added in 20260906143000 claims to "match the feed client's three database-change subscriptions", which have never existed — there is not one supabase.channel call site, and the feed client polls HTTP. Worse, running it against production gives:
+-   ERROR:  Realtime feed table public.messages must have RLS enabled WARNING:  "wal_level" is insufficient to publish logical changes
+- The instance moved to native Postgres in 20260911190000 and has no RLS on any table, so that RAISE EXCEPTION aborts the file — and since migrations are applied by hand in order, it would abort every migration after it on any fresh deployment of this shape. verify-e2e never caught it because its bootstrap creates the Supabase roles and the early migrations enable RLS there, making the harness the one environment where it works. Neutralised, with the evidence in the file.
+- 23 unit tests across the fingerprint comparison and the coverage guard, the guard mutation-tested both ways, and 4 end-to-end checks including that an unrelated audit write leaves the contracts fingerprint alone.
+
 ## [1.0.325] - 2026-09-18
 ### Fixed
 - notice when a deploy has frozen the page, instead of pulsing "Live" at it
