@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.320] - 2026-09-18
+### Added
+- teach the protocol inspector to see the contract chain, and to notice when it is missing
+- The inspector calls itself one operator-facing view for contract state, message timeline, task linkage, execution evidence, webhook delivery and obvious conformance drift. It checked "Task linkage exists" and read nothing at all about contract_links, so an operator inspecting a successor contract, or any handoff chain, saw no sign of either.
+- The panel is the small half. The interesting half is drift the page was already in a position to detect and did not:
+- A contract that ENDED WITHOUT THE WORK BEING ACCEPTED and records no successor. Four of the five ways a contract ends do not mean it finished — resolveCloseOutcome already knows which — and when the work carries on elsewhere with nothing saying where, the next reader starts from nothing. That is the exact gap contract links exist to close, and this is where an operator would look for it. The flag names which ending it was rather than lumping them together, because "its turn budget ran out" and "it was cancelled" call for different things.
+- A contract that `continues` or `supersedes` one that is still active or proposed. A successor to a live contract is a contradiction. `delegates_to` is deliberately exempt: a handoff is proposed precisely while the delegating contract is still open.
+- Several contracts sharing one task with no edge between them — the shape every pre-links handoff chain has, because a title heuristic held it together.
+- The derivation is a pure exported function with 13 tests, because a drift rule nothing exercises is a rule that quietly stops firing. The query half was then smoke-tested against a real Postgres with a real chain: silent while the successor link exists, and raising exactly one flag once it is deleted.
+- Each related contract links to the inspector's own view of the other end, so a chain can be walked without retyping ids.
+
 ## [1.0.319] - 2026-09-18
 ### Fixed
 - let observers read contract links, and stop claiming removals that did not happen
