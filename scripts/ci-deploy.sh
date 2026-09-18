@@ -31,84 +31,98 @@ NEW_PATCH=$((PATCH + 1))
 NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" package.json
 
-# Auto-update CHANGELOG.md from the last commit message (subject + body)
-COMMIT_MSG=$(git log -1 --format='%s' HEAD)
-COMMIT_BODY=$(git log -1 --format='%b' HEAD)
-# Skip version bump commits
-if [[ "$COMMIT_MSG" != chore:\ bump* ]]; then
-  TODAY=$(date -u +%Y-%m-%d)
+# Auto-update CHANGELOG.md from every commit this release actually contains.
+#
+# This used to read `git log -1 HEAD` after the pull above, which is not the
+# commit that triggered the run. Two pushes minutes apart therefore raced: the
+# first run pulled, saw the SECOND commit as HEAD, and filed it under the first
+# run's version; the second run then pulled, saw only a bump commit, skipped,
+# and produced a version with no entry at all. That is how 1.0.305 described
+# the wrong commit and 1.0.306 described nothing. A run that dies before this
+# point (a failed build, say) lost its commit's entry the same way.
+#
+# So: describe every non-bump commit since the last bump instead of guessing a
+# single one. A dropped or batched commit is picked up by the next deploy
+# rather than being lost, and each release documents what it really contains.
+python3 - "$NEW_VERSION" <<'PY'
+import re, subprocess, sys
+from datetime import datetime, timezone
 
-  # Determine section from conventional commit prefix
-  SECTION="Changed"
-  case "$COMMIT_MSG" in
-    fix:*|fix\(*) SECTION="Fixed" ;;
-    feat:*|feat\(*) SECTION="Added" ;;
-    docs:*) SECTION="Docs" ;;
-    refactor:*) SECTION="Changed" ;;
-    security:*|sec:*) SECTION="Security" ;;
-  esac
+version = sys.argv[1]
+path = "CHANGELOG.md"
 
-  # Strip conventional commit prefix for cleaner entry
-  ENTRY=$(echo "$COMMIT_MSG" | sed -E 's/^(fix|feat|docs|refactor|chore|security|sec)(\([^)]*\))?:\s*//')
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
 
-  # Only add if this version isn't already in the changelog
-  if ! grep -q "## \[$NEW_VERSION\]" CHANGELOG.md; then
-    # Build the changelog block
-    BLOCK="\\n## [$NEW_VERSION] - $TODAY\\n### $SECTION\\n- $ENTRY"
+changelog = open(path, encoding="utf-8").read()
+if f"## [{version}]" in changelog:
+    sys.exit(0)
 
-    # Append the commit body as bullets.
-    #
-    # Git convention wraps commit bodies at ~72 characters, so a line is NOT a
-    # unit of meaning — emitting one bullet per line shreds ordinary prose
-    # mid-sentence. Instead, accumulate continuation lines into the bullet or
-    # paragraph they belong to, and flush on a blank line or a new "- " bullet.
-    if [[ -n "$COMMIT_BODY" ]]; then
-      PENDING=""
+# Everything since the last version bump is undescribed by definition.
+history = [l.split(" ", 1) for l in git("log", "--format=%H %s", "-n", "200").splitlines()]
+base = next((h for h, s in history if s.startswith("chore: bump")), None)
+rng = [f"{base}..HEAD"] if base else ["-n", "1", "HEAD"]
+shas = git("log", "--format=%H", "--reverse", *rng).split()
+if not shas:
+    sys.exit(0)
 
-      flush_pending() {
-        if [[ -n "$PENDING" ]]; then
-          BLOCK="$BLOCK\\n- $PENDING"
-          PENDING=""
-        fi
-      }
+SECTION = [(r"^(fix)(\(|:)", "Fixed"), (r"^(feat)(\(|:)", "Added"),
+           (r"^(docs)(\(|:)", "Docs"), (r"^(security|sec)(\(|:)", "Security")]
+ORDER = ["Added", "Changed", "Fixed", "Docs", "Security"]
+PREFIX = re.compile(r"^(fix|feat|docs|refactor|chore|security|sec|ci)(\([^)]*\))?:\s*")
+TRAILER = re.compile(r"^[A-Za-z-]+-([Bb]y|[Tt]o):\s|^(Refs|Closes|Fixes|Co-authored-by|Signed-off-by)\b")
+BULLET = re.compile(r"^\s*[-*]\s+")
 
-      while IFS= read -r line; do
-        # Trim trailing whitespace
-        line="${line%"${line##*[![:space:]]}"}"
+def bullets(body):
+    # Git wraps bodies at ~72 chars, so a line is not a unit of meaning:
+    # accumulate continuation lines and flush on a blank line or a new bullet.
+    out, pending = [], ""
+    def flush():
+        nonlocal pending
+        if pending:
+            out.append("- " + pending)
+            pending = ""
+    for line in body.split("\n"):
+        line = line.rstrip()
+        if not line or TRAILER.search(line):
+            flush()
+        elif BULLET.match(line):
+            flush()
+            pending = BULLET.sub("", line)
+        elif pending:
+            pending += " " + line.lstrip()
+        else:
+            pending = line
+    flush()
+    return out
 
-        # A blank line ends the current bullet or paragraph.
-        if [[ -z "$line" ]]; then
-          flush_pending
-          continue
-        fi
+groups = {}
+for sha in shas:
+    subject = git("log", "-1", "--format=%s", sha).strip()
+    if subject.startswith("chore: bump"):
+        continue
+    section = next((n for p, n in SECTION if re.match(p, subject)), "Changed")
+    entry = ["- " + PREFIX.sub("", subject)] + bullets(git("log", "-1", "--format=%b", sha))
+    groups.setdefault(section, []).extend(entry)
 
-        # Skip git trailers (Co-Authored-By, Signed-off-by, Refs, ...). They are
-        # commit metadata, not changelog content.
-        if [[ "$line" =~ ^[A-Za-z-]+-([Bb]y|[Tt]o):[[:space:]] || "$line" =~ ^(Refs|Closes|Fixes|Co-authored-by|Signed-off-by): ]]; then
-          flush_pending
-          continue
-        fi
+if not groups:
+    sys.exit(0)
 
-        # An explicit bullet starts a new one; anything else continues the
-        # current bullet or paragraph.
-        if [[ "$line" =~ ^[[:space:]]*[-*][[:space:]]+ ]]; then
-          flush_pending
-          PENDING="$(printf '%s' "$line" | sed -E 's/^[[:space:]]*[-*][[:space:]]+//')"
-        elif [[ -n "$PENDING" ]]; then
-          PENDING="$PENDING $(printf '%s' "$line" | sed -E 's/^[[:space:]]+//')"
-        else
-          PENDING="$line"
-        fi
-      done <<< "$COMMIT_BODY"
+block = [f"## [{version}] - " + datetime.now(timezone.utc).strftime("%Y-%m-%d")]
+for section in ORDER:
+    if section in groups:
+        block += [f"### {section}"] + groups[section]
 
-      flush_pending
-    fi
-
-    # Insert new version block after the FIRST "---" separator line only
-    sed -i "0,/^---$/{/^---$/a\\$BLOCK
-    }" CHANGELOG.md
-  fi
-fi
+# Insert after the first "---" separator, which sits under the file header.
+marker = "\n---\n"
+head, sep, tail = changelog.partition(marker)
+if not sep:
+    # Warn, do not abort: the caller runs under `set -e`, and a malformed
+    # changelog is not a reason to fail a production deploy.
+    print("CHANGELOG.md: missing '---' insertion marker, skipping", file=sys.stderr)
+    sys.exit(0)
+open(path, "w", encoding="utf-8").write(head + sep + "\n" + "\n".join(block) + "\n" + tail)
+PY
 
 # This script runs under sudo (see .github/workflows/deploy.yml), so every
 # object and ref git writes here lands owned by root — inside a checkout the

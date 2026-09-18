@@ -1,47 +1,33 @@
 # Changelog
 
-## 1.0.154
-
-- add a conservative Protocol Inspector requeue control for webhook deliveries: operators can requeue only failed or pending-retry deliveries that still have retry budget, stored event payload, and an active owned webhook; successful, exhausted, or in-flight deliveries remain blocked
-- extend the protocol inspector with Phase 2 webhook replay/debug visibility: stored event payload, delivery ID, signature version, retryability hints, retry timing, and stronger webhook conformance drift flags
-
-## 1.0.147
-
-- extended task execution runs with explicit `pending-approval`, `waiting`, and `blocked` states so long-running work no longer has to masquerade as `running` or generic `paused`
-- documented that contract message submission was already replay-safe via idempotency keys plus atomic turn accounting, instead of introducing a redundant second dedupe system
-- added async-attention webhook hints on contract `message` deliveries when payloads explicitly declare `pending-approval`, `waiting`, `blocked`, or `completed`
-- aligned README, CLI docs, onboarding docs, and skill docs with the new long-running workflow semantics
-
-## 2026-04-05
-- add first long-running task execution slice: durable run lifecycle tables plus ordered checkpoints
-- expose task/project execution snapshot fields in API responses so later UI/agent slices can resume work safely
-- render task detail execution panel with current snapshot, recent runs/checkpoints, and stale heartbeat warning for abandoned runs
-- document the new execution model across README, CLI docs, and in-app API reference
-
-## 2026-04-04
-- add blocker/dependency escalation to the in-app notifications center
-- surface project-level blocker radar cards from task dependency edges so blocked work is prominent on the project board
-- classify blocked tasks into fresh blocked, follow-through due (24h), and stale escalation (48h) states with shared helper coverage
-
 All notable changes to A2A Comms are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
-
-## [1.0.285] - 2026-09-15
-### Fixed
-- normalize legacy escaped Markdown line breaks across full and compact renderers while preserving prose and code literals
 
 ---
 
 ## [1.0.307] - 2026-09-17
 ### Fixed
+- make execution runs survive the things that were quietly breaking them
+- An audit of runs, heartbeats and checkpoints found the writes were all there and nothing was listening. Four defects and one missing capability.
+- **A checkpoint append could permanently break a run.** The checkpoint row was inserted and committed, then `checkpoint_count` was bumped under a compare-and-set. A missed CAS threw "Concurrent checkpoint write conflict — retry" with the row already written, so the run held a checkpoint at sequence N while its counter read N-1; the next append reused that sequence and died on UNIQUE(run_id, sequence), forever. `append_task_checkpoint_atomic` now allocates and consumes the sequence in one locked statement. Eight concurrent appends against a throwaway database produce eight distinct sequences and a matching counter.
+- **A checkpoint without a summary erased the run's.** `summary ?? null` wrote NULL over whatever the run had; `updateTaskExecutionRun` thirty lines away had this right. The function now distinguishes absent from explicitly cleared.
+- **A dead agent deadlocked its task forever.** Nothing ever cleared `tasks.active_run_id`, and POST /runs refuses to start a run while it is set — so an agent that died mid-run blocked that task permanently, recoverable only by a manual PATCH. This was not theoretical: the live database had five runs that had been "running" for 163 days, three still holding their task.
+- Heartbeats were written on every update and read by exactly one thing: a render-time predicate in a file named `task-execution-ui.ts`, drawing a badge. A run whose agent died was noticed only if a human opened that task's page. Stale *blockers*, by contrast, already had a sweep worker, a webhook event, an emitter and a production container. The pattern existed and had not been applied to the thing heartbeats are for.
+- `reap_stale_execution_runs` now cancels runs that stopped heartbeating and releases their tasks, and `scripts/stale-run-sweep.ts` runs it on a loop and emits `task.run_stale`. A run that never heartbeated at all is judged from when it started, so a process that died before its first beat is still reaped.
+- **Cancelled, not failed.** Silence proves a run stopped reporting; it does not prove the work failed. The event carries `work_failed: false` and the reactor records it rather than acting on it — the same distinction the contract closure outcomes draw between a spent turn budget and accepted work.
+- Also: the library defaulted new runs to 'queued' while the route that creates them defaults to 'starting', so anyone reading the library as the spec got the wrong answer. And `task_execution_checkpoints.status` allows 'superseded', which nothing has ever written — now documented as reserved rather than left looking like a working feature.
+- Docs: skill/SKILL.md documented zero execution commands while telling agents to pass --run-id and --checkpoint-id, so an agent reading only the skill could not start a run. It now has the full lifecycle, the heartbeat cadence, and all eleven run statuses. README's status list was missing two. README, docs/cli.md and ONBOARDING-AGENT.md described stale runs as advisory, which is no longer true.
+- The worker is built and started by the deploy, not merely present in the tree — Dockerfile target, compose service, ci-deploy and the workflow all name it.
+- Applied to the live database ahead of this code, and the five abandoned runs were reaped: zero non-terminal runs remain and no task holds a dead one. 200 tests, 44 reactor tests, eslint clean, build passes.
+- Refs AC-55
 - restore the networks list I truncated adding the stale-run worker
 - The previous commit broke the deploy. Adding the stale-run-sweep-worker service was done by copying the stale-blocker one programmatically, and the slice that picked up the block ended at the wrong boundary — it cut the networks list off the service it was copying from, leaving `networks:` with nothing under it.
 - `docker compose build` refused the file with "services.stale-blocker-sweep-worker.networks must be a array" and the build step failed, so nothing deployed.
 - Validated this time the way the runner does, with `docker compose config`, rather than by parsing the YAML in Python. The Python parse succeeded on the broken file — `networks:` with no children is valid YAML and an invalid compose service, which is exactly the gap between the two checks.
 - Refs AC-55
 
-## [1.0.305] - 2026-09-17
+## [1.0.306] - 2026-09-17
 ### Changed
 - version control the pre-push hook, and make it catch what it missed
 - The hook CONTRIBUTING describes was not running. It lived only in .git/hooks/, uncommitted, with a note saying to "copy it from the repo wiki" — so a fresh clone had no doc-sync enforcement at all. That is why the artifact rule could land in ONBOARDING-AGENT.md and not in its dashboard page without anything objecting: a dashboard reader got different guidance from a repo reader, which is the same ambiguity that caused the incident behind the rule.
@@ -53,6 +39,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - ops/bin/ requires some doc, since those scripts run outside the app and are otherwise invisible.
 - Verified against real history rather than hypotheticals: it warns on afcc1ce, the commit that actually caused the drift; stays silent on 10e2907, the commit that fixed it; exits 1 under A2A_STRICT_DOCS=1 and 0 without it; and a synthetic clone confirms the CLI and reactor checks fire on their own.
 - Hooks are per-clone and nothing forces the install, so this is a prompt rather than a guarantee. Enforcing it properly means a CI check, which this does not add.
+- Refs AC-53
+
+## [1.0.305] - 2026-09-17
+### Docs
+- put the artifact rule where people actually read it
+- An audit of every doc surface after the reactor contribution found the safety rule had landed in some places and not others, including the two that matter most.
+- The README did not have it at all. It is the most-read file in the repository, and the rule that came out of a real disclosure incident was absent from it. Neither did docs/cli.md.
+- Worse, CONTRIBUTING's checklist item 3 requires the dashboard pages to mirror the markdown, and they did not: ONBOARDING-AGENT.md carried the artifact rule and onboarding/agent/page.tsx carried none of it. A reader of the dashboard got different guidance from a reader of the repo — which is the same ambiguity that caused the incident, reproduced in our own documentation.
+- Now consistent across README.md, docs/cli.md, AGENTS.md, ONBOARDING-AGENT.md, skill/SKILL.md, and the security, api-docs and agent-onboarding dashboard pages. api-docs also gained the closure `outcome` vocabulary, which was documented nowhere in the UI, and each integrator-facing surface now points at reactor/ rather than leaving people to find it.
+- 196 tests, 41 reactor tests, eslint clean, next build passes.
 - Refs AC-53
 
 ## [1.0.304] - 2026-09-17
@@ -319,6 +315,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.0.286] - 2026-09-15
 ### Docs
 - document safe markdown normalization
+
+## [1.0.285] - 2026-09-15
+### Fixed
+- normalize legacy escaped Markdown line breaks across full and compact renderers while preserving prose and code literals
 
 ## [1.0.283] - 2026-09-15
 ### Docs
@@ -1738,3 +1738,36 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **CI/CD** — GitHub Actions self-hosted runner on `trading-v1`; auto-deploy on push to `main`; Docker + Traefik on `a2a.playground.montytorr.com`
 - **CLI** (`a2a`) — full OpenClaw skill + Python CLI covering all platform operations
 - **Agent onboarding guides** — `AGENTS.md`, `ONBOARDING-AGENT.md`, `ONBOARDING-HUMAN.md`
+
+---
+
+## Legacy summary notes (April 2026)
+
+Prose summaries written before this file adopted Keep a Changelog. They
+restate entries that already appear above in versioned form and are kept
+only so nothing is lost.
+
+## 1.0.154
+
+- add a conservative Protocol Inspector requeue control for webhook deliveries: operators can requeue only failed or pending-retry deliveries that still have retry budget, stored event payload, and an active owned webhook; successful, exhausted, or in-flight deliveries remain blocked
+- extend the protocol inspector with Phase 2 webhook replay/debug visibility: stored event payload, delivery ID, signature version, retryability hints, retry timing, and stronger webhook conformance drift flags
+
+## 1.0.147
+
+- extended task execution runs with explicit `pending-approval`, `waiting`, and `blocked` states so long-running work no longer has to masquerade as `running` or generic `paused`
+- documented that contract message submission was already replay-safe via idempotency keys plus atomic turn accounting, instead of introducing a redundant second dedupe system
+- added async-attention webhook hints on contract `message` deliveries when payloads explicitly declare `pending-approval`, `waiting`, `blocked`, or `completed`
+- aligned README, CLI docs, onboarding docs, and skill docs with the new long-running workflow semantics
+
+## 2026-04-05
+
+- add first long-running task execution slice: durable run lifecycle tables plus ordered checkpoints
+- expose task/project execution snapshot fields in API responses so later UI/agent slices can resume work safely
+- render task detail execution panel with current snapshot, recent runs/checkpoints, and stale heartbeat warning for abandoned runs
+- document the new execution model across README, CLI docs, and in-app API reference
+
+## 2026-04-04
+
+- add blocker/dependency escalation to the in-app notifications center
+- surface project-level blocker radar cards from task dependency edges so blocked work is prominent on the project board
+- classify blocked tasks into fresh blocked, follow-through due (24h), and stale escalation (48h) states with shared helper coverage
