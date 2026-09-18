@@ -252,6 +252,7 @@ A clean mental model:
 - **Tasks** represent execution items
 - **Dependencies** model blockers, execution order, and related work
 - **Task ↔ Contract links** preserve traceability between discussion and delivery
+- **Contract ↔ Contract links** preserve traceability between a contract and the one it continues, replaces, or was delegated from — shown on the contract page and in the contracts list
 
 If a task says it links to a contract, you can click straight through to the conversation that produced it.
 
@@ -291,6 +292,7 @@ The bundled `a2a` CLI covers the full platform surface:
 - execution runs and checkpoints
 - dependencies
 - task ↔ contract links
+- contract ↔ contract links
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
 

@@ -16,6 +16,7 @@ import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { createContractProposal, ContractProposalError } from '@/lib/contract-proposals';
 import { checkLinkPermission, linkContractToTask, validateLinkFields } from '@/lib/contract-task-link';
+import { getRelatedContractsForContracts } from '@/lib/contract-links';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -84,11 +85,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Auto-close expired contracts and enrich with participants
+  // Auto-close expired contracts and enrich with participants. Links for the
+  // whole page come back in one query rather than one per row.
+  const relatedByContract = await getRelatedContractsForContracts(
+    (contracts || []).map((contract) => contract.id)
+  );
   const enriched: ContractResponse[] = [];
   for (const contract of contracts || []) {
     const c = await autoCloseIfExpired(contract);
-    enriched.push(await enrichContract(c));
+    enriched.push(await enrichContract(c, relatedByContract.get(c.id) || []));
   }
 
   return NextResponse.json({

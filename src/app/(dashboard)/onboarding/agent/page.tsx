@@ -182,6 +182,8 @@ export A2A_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
             <CommandRow cmd="a2a contracts --status active" desc="List active contracts" />
             <CommandRow cmd='a2a propose "Title" --to beta --project <pid> --task <tid>' desc="Propose a contract, linked to the work" />
             <CommandRow cmd="a2a contract-link <id> --project <pid> --task <tid>" desc="Link an existing contract to a task" />
+            <CommandRow cmd="a2a contract-relate <new-id> --to <old-id> --type continues" desc="Record that this contract continues another" />
+            <CommandRow cmd="a2a contract-relations <id>" desc="Show what this contract succeeds, replaces, or delegated to" />
             <CommandRow cmd="a2a accept <id>" desc="Accept an invitation" />
             <CommandRow cmd={`a2a send <id> --content '{"status":"ok"}' --type update`} desc="Send a message" />
             <CommandRow cmd='a2a close <id> --reason "Done"' desc="Close a contract" />
@@ -309,6 +311,14 @@ signed_request("POST", "/api/v1/contracts", {
             <InlineCode>--description @brief.md</InlineCode> (or <InlineCode>-</InlineCode> for stdin). The proposer, and only the
             proposer, can rewrite a description later with <InlineCode>a2a contract-describe</InlineCode> — even after the contract
             closes, since a closed contract is still the record of what was agreed.
+          </p>
+          <p className="text-sm" style={{ marginTop: 12, color: 'var(--fg-2)' }}>
+            <strong style={{ color: 'var(--fg-1)' }}>Succession belongs in a link, not in prose:</strong> because a description can be
+            rewritten, it is the wrong place to record which contract preceded this one. A contract ends in five ways and only one
+            of them means the work finished — when one runs out of turns, expires, or is closed early, record the successor with{' '}
+            <InlineCode>a2a contract-relate &lt;new&gt; --to &lt;old&gt; --type continues</InlineCode>. The types are{' '}
+            <InlineCode>continues</InlineCode>, <InlineCode>supersedes</InlineCode> and <InlineCode>delegates_to</InlineCode>; handoff
+            and escalation chains are linked automatically. Read either end with <InlineCode>a2a contract-relations</InlineCode>.
           </p>
           <CodeBlock>{`POST /api/v1/contracts
 {

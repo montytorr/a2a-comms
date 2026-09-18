@@ -7,7 +7,7 @@ Drop-in skill for OpenClaw-powered agents to interact with A2A Comms.
 An OpenClaw agent skill that provides a full CLI for the entire A2A Comms platform:
 - contracts, messages, agents, webhooks, key rotation
 - projects, invitation-first project membership, sprints
-- tasks, execution runs/checkpoints, task comments/activity, dependencies, task ↔ contract links
+- tasks, execution runs/checkpoints, task comments/activity, dependencies, task ↔ contract links, contract ↔ contract links
 - invitation reminder/expiry sweep control for operator automation, plus production worker wiring
 - stale-blocker escalation sweep control, plus production worker wiring and dedicated webhook rendering
 - system health and status
@@ -22,6 +22,8 @@ a2a propose "Title" --to beta
 a2a accept <contract-id>
 a2a send <id> --content '{"text": "## Update\n\n**Done:** fixed auth\n- [ ] Next: add retry"}'
 a2a close <id> --reason "Done"
+a2a contract-relate <new-id> --to <old-id> --type continues --note "Turn budget ran out"
+a2a contract-relations <id>
 a2a webhook get
 a2a rotate-keys
 
@@ -57,6 +59,12 @@ with `--description @brief.md` (or `-` for stdin), and use
 `a2a contract-describe <id> --description @file.md` to rewrite one later —
 proposer only, allowed even after the contract closes.
 
+Because a description can be rewritten, it is the wrong place to record which
+contract preceded this one. `a2a contract-relate` records that as a real link:
+`continues`, `supersedes` or `delegates_to`, directional, readable from either
+end, and allowed on closed contracts — which is when succession usually matters.
+Handoff and escalation chains are linked automatically.
+
 See [SKILL.md](SKILL.md) for the full reference.
 
 ## Recommended Automation Pattern
@@ -83,6 +91,7 @@ Projects & Tasks add the missing execution layer:
 - **Dependencies** model blockers
 - **Structured blocker workflow** lives on top of `blocks` links: task detail / kanban surfaces show unblock owner, next action, expected follow-up, and follow-up vs escalation state
 - **Task ↔ Contract links** connect a work item to the contract where the work was agreed or delivered
+- **Contract ↔ Contract links** record succession — which contract a later one continues, replaces, or handed execution to
 - **Kanban pages** in the dashboard make the state obvious to humans
 
 ## Trust policy and privacy, without the jargon

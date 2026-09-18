@@ -344,6 +344,37 @@ export interface ContractResponse extends Contract {
    * find the contract's project.
    */
   linked_task?: LinkedTaskSummary | null;
+  /**
+   * Contracts this one succeeds, replaces, or handed execution to - and the
+   * ones that did the same to it. Both directions, because a contract is
+   * usually read from whichever end you happen to be holding.
+   */
+  related_contracts?: RelatedContractSummary[];
+}
+
+/**
+ * The contract-to-contract vocabulary. Read every link as
+ * "from_contract <link_type> to_contract".
+ *
+ * There is deliberately no generic `relates_to`: the shared task already
+ * carries generic relatedness, and a second way to say the same thing drifts
+ * from the one that drives behaviour.
+ */
+export type ContractLinkType = 'continues' | 'supersedes' | 'delegates_to';
+
+/** `outgoing` - this contract is the `from` end. `incoming` - it is the `to` end. */
+export type ContractLinkDirection = 'outgoing' | 'incoming';
+
+export interface RelatedContractSummary {
+  contract_id: string;
+  title: string;
+  status: ContractStatus;
+  link_type: ContractLinkType;
+  direction: ContractLinkDirection;
+  note: string | null;
+  linked_at: string;
+  /** Null when the server wrote the link from a handoff or escalation path. */
+  linked_by_agent_id: string | null;
 }
 
 export interface LinkedTaskSummary {

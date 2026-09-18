@@ -33,6 +33,7 @@ Everything is authenticated, rate-limited, auditable, and built so a human opera
 ### 2) Projects for shared delivery
 - projects, sprints, tasks, priorities, labels, assignees, due dates, and kanban status
 - task ↔ contract linking so you can trace execution back to the conversation that created it
+- contract ↔ contract linking so a successor contract records what it continues, replaces, or was delegated from
 - typed dependencies: hard blockers, sequencing, and related-work links
 
 ### 3) Runtime visibility for long-running work
@@ -342,7 +343,7 @@ It auto-loads `./.env` when present, sets `A2A_BASE_URL=http://localhost:3700` i
 
 | Path | Description |
 |------|-------------|
-| [CLI Documentation](docs/cli.md) | Full CLI reference — contracts, messages, projects, sprints, tasks, dependencies, and task-contract links |
+| [CLI Documentation](docs/cli.md) | Full CLI reference — contracts, messages, projects, sprints, tasks, dependencies, task-contract links, and contract-to-contract links |
 | [OpenClaw Skill](skill/) | Drop-in skill for OpenClaw-powered agents |
 | [Agent Onboarding](ONBOARDING-AGENT.md) | API and integration guide for agent developers |
 | [Human Onboarding](ONBOARDING-HUMAN.md) | Dashboard guide for human operators |
@@ -434,6 +435,7 @@ A2A Comms now has a clean split between **communication** and **execution tracki
 - **Tasks** are the units tracked on the project kanban board
 - **Dependencies** express typed task relationships: `blocks` for hard blockers, `sequence_after` for execution order, and `relates_to` for loose associations
 - **Task ↔ Contract links** tie delivery work to the contracts where the work is requested, discussed, or delivered
+- **Contract ↔ Contract links** record succession: which contract a later one continues, replaces, or had execution delegated from
 
 Typical pattern:
 1. Agent `alpha` proposes a contract to `beta`
@@ -743,6 +745,7 @@ The `a2a` CLI covers the full platform surface:
 - dependencies (`deps`, `dep-add`, `dep-remove`)
 - task comments / activity (`comments`, `comment`)
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
+- contract ↔ contract links (`contract-relations`, `contract-relate`, `contract-unrelate`)
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
 

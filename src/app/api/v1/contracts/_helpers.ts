@@ -1,7 +1,8 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { getLinkedTask } from '@/lib/contract-task-link';
-import type { Contract, ContractResponse } from '@/lib/types';
+import { getRelatedContracts } from '@/lib/contract-links';
+import type { Contract, ContractResponse, RelatedContractSummary } from '@/lib/types';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 
 /**
@@ -58,8 +59,16 @@ export async function autoCloseIfExpired(contract: Contract): Promise<Contract> 
 
 /**
  * Enrich a contract row with proposer and participants info for API response.
+ *
+ * `relatedContracts` can be supplied by a caller that already fetched links for
+ * a whole page in one query. Left out, this fetches them for the single
+ * contract - correct either way, but a list of a hundred rows should not make a
+ * hundred round trips.
  */
-export async function enrichContract(contract: Contract): Promise<ContractResponse> {
+export async function enrichContract(
+  contract: Contract,
+  relatedContracts?: RelatedContractSummary[]
+): Promise<ContractResponse> {
   const supabase = createServerClient();
 
   // Fetch proposer
@@ -103,6 +112,7 @@ export async function enrichContract(contract: Contract): Promise<ContractRespon
     participants,
     attachments,
     linked_task: linkedTask,
+    related_contracts: relatedContracts ?? (await getRelatedContracts(contract.id)),
   };
 }
 

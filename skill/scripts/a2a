@@ -59,6 +59,9 @@ Usage:
   a2a contract-attach <contract_id> --file PATH [--note TEXT]
   a2a contract-link <contract_id> --project PID --task TID
   a2a contract-unlink <contract_id> --project PID --task TID
+  a2a contract-relations <contract_id>
+  a2a contract-relate <contract_id> --to OTHER_ID --type continues|supersedes|delegates_to [--note TEXT]
+  a2a contract-unrelate <contract_id> --to OTHER_ID --type TYPE
 
   Dependencies:
   a2a deps <project_id> <task_id>
@@ -312,6 +315,26 @@ def link_hint(contract_id: str) -> str:
     )
 
 
+LINK_PHRASING = {
+    ("continues", "outgoing"): "Continues",
+    ("continues", "incoming"): "Continued by",
+    ("supersedes", "outgoing"): "Supersedes",
+    ("supersedes", "incoming"): "Superseded by",
+    ("delegates_to", "outgoing"): "Delegates to",
+    ("delegates_to", "incoming"): "Delegated from",
+}
+
+
+def format_related_contract(link: dict) -> str:
+    """One related contract, read from the end you are standing on."""
+    phrase = LINK_PHRASING.get((link.get("link_type"), link.get("direction")), link.get("link_type", "?"))
+    line = f"{phrase}: {link.get('title', '?')} [{str(link.get('status', '?')).upper()}]"
+    line += f"\n      {link.get('contract_id')}"
+    if link.get("note"):
+        line += f"\n      {link['note']}"
+    return line
+
+
 def format_contract(c: dict, verbose: bool = False) -> str:
     """Format a contract for display."""
     status_icons = {
@@ -350,7 +373,15 @@ def format_contract(c: dict, verbose: bool = False) -> str:
         if linked.get("task_status"):
             line += f" [{linked['task_status']}]"
 
+    related = [link for link in (c.get("related_contracts") or []) if isinstance(link, dict)]
+    if related:
+        line += f"\n   Related contracts: {len(related)}"
+        if not verbose:
+            line += " (a2a contract-relations <id>)"
+
     if verbose:
+        for link in related:
+            line += f"\n   ↔ {format_related_contract(link)}"
         if c.get("description"):
             line += f"\n   Description: {c['description']}"
         if c.get("expires_at"):
@@ -1517,6 +1548,40 @@ def cmd_contract_link(args):
     print("   It now has a board, execution tracking, and can take attachments.")
 
 
+def cmd_contract_relations(args):
+    """Show the contracts this one succeeds, replaces, or handed execution to."""
+    data = api_request("GET", f"/api/v1/contracts/{args.id}/links")
+    links = data.get("related_contracts") or []
+    if not links:
+        print(f"No related contracts for {args.id}")
+        print("   contract-relate records succession between contracts; contract-link attaches one to a project task.")
+        return
+    print(f"Related contracts for {args.id} ({len(links)}):\n")
+    for link in links:
+        print(f"   {format_related_contract(link)}\n")
+
+
+def cmd_contract_relate(args):
+    """Record that this contract continues, supersedes, or delegates to another."""
+    body = {"to_contract_id": args.to, "link_type": args.type}
+    if args.note:
+        body["note"] = args.note
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/links", body)
+    print(f"✅ {args.id} {args.type} {args.to}")
+    for link in data.get("related_contracts") or []:
+        print(f"   {format_related_contract(link)}")
+
+
+def cmd_contract_unrelate(args):
+    """Remove one contract-to-contract link."""
+    api_request(
+        "DELETE",
+        f"/api/v1/contracts/{args.id}/links",
+        {"to_contract_id": args.to, "link_type": args.type},
+    )
+    print(f"✅ Removed: {args.id} {args.type} {args.to}")
+
+
 def cmd_contract_unlink(args):
     """Unlink this contract from a project task."""
     api_request(
@@ -2103,6 +2168,37 @@ def main():
     p.add_argument("--project", required=True, help="Project ID")
     p.add_argument("--task", required=True, help="Task ID")
 
+    # contract-relate / contract-unrelate / contract-relations (contract <-> contract)
+    # Distinct from contract-link, which attaches a contract to a project TASK.
+    p = sub.add_parser(
+        "contract-relations",
+        help="Show contracts this one continues, supersedes, or delegated to",
+    )
+    p.add_argument("id", help="Contract ID")
+
+    p = sub.add_parser(
+        "contract-relate",
+        help="Record that this contract continues/supersedes/delegates to another contract",
+    )
+    p.add_argument("id", help="Contract ID this link starts from")
+    p.add_argument("--to", required=True, help="The other contract's ID")
+    p.add_argument(
+        "--type",
+        required=True,
+        choices=["continues", "supersedes", "delegates_to"],
+        help=(
+            "continues: this one carries on work the other left unfinished. "
+            "supersedes: this one replaces the other. "
+            "delegates_to: this one handed execution onward to the other"
+        ),
+    )
+    p.add_argument("--note", help="One line on why, 500 characters max")
+
+    p = sub.add_parser("contract-unrelate", help="Remove a contract-to-contract link")
+    p.add_argument("id", help="Contract ID the link starts from")
+    p.add_argument("--to", required=True, help="The other contract's ID")
+    p.add_argument("--type", required=True, choices=["continues", "supersedes", "delegates_to"], help="Which link to remove")
+
     # task-link
     p = sub.add_parser("task-link", help="Link a contract to a task")
     p.add_argument("project_id", help="Project ID")
@@ -2195,6 +2291,9 @@ def main():
         "task-contracts": cmd_task_contracts,
         "contract-link": cmd_contract_link,
         "contract-unlink": cmd_contract_unlink,
+        "contract-relations": cmd_contract_relations,
+        "contract-relate": cmd_contract_relate,
+        "contract-unrelate": cmd_contract_unrelate,
         "task-link": cmd_task_link,
         "task-unlink": cmd_task_unlink,
         # Task comments

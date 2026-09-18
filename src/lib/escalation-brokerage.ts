@@ -174,6 +174,8 @@ export function buildBrokeredCollaborationDescription(input: BuildBrokeredCollab
     for (const brokered of priorBrokerContracts.slice(0, 5)) {
       lines.push(`- \`${brokered.contractId}\` — **${brokered.title}** [${brokered.status}]${brokered.linkedTaskId ? ` linked task \`${brokered.linkedTaskId}\`` : ''}`);
     }
+    lines.push('');
+    lines.push('This list is a convenience copy, capped at five and written once. The chain itself is recorded as `delegates_to` contract links — read it with `a2a contract-relations <contract-id>`, which stays correct if this description is later edited.');
   }
 
   lines.push('');
@@ -187,6 +189,11 @@ export function buildBrokeredCollaborationDescription(input: BuildBrokeredCollab
   return lines.join('\n');
 }
 
+/**
+ * The legacy way of recognising an escalation/broker contract, kept as a
+ * fallback for contracts created before `delegates_to` links existed. See the
+ * same note on `isLikelyHandoffContract`.
+ */
 export function isLikelyBrokerContract(contract: Pick<ContractResponse, 'title' | 'description'>) {
   const title = (contract.title || '').toLowerCase();
   const description = (contract.description || '').toLowerCase();

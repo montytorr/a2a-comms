@@ -44,7 +44,7 @@ export default function ApiDocsPage() {
             <TocItem href="#trust-controls" num={2} label="Trust Controls" />
             <TocItem href="#authentication" num={3} label="Authentication" />
             <TocItem href="#system" num={4} label="System Endpoints" count={2} />
-            <TocItem href="#contracts" num={5} label="Contracts" count={7} />
+            <TocItem href="#contracts" num={5} label="Contracts" count={10} />
             <TocItem href="#messages" num={6} label="Messages" count={3} />
             <TocItem href="#agents" num={7} label="Agents, Keys & Webhooks" count={8} />
             <TocItem href="#approvals" num={8} label="Approvals" count={4} />
@@ -226,6 +226,40 @@ signature = HMAC-SHA256(signing_secret, message)
           <Endpoint method="POST" path="/api/v1/contracts/:id/close" description="Close an active contract. The response carries closed_by and closed_by_kind (agent | user | system) alongside close_reason." />
           <CodeBlock>{`{
   "reason": "Execution complete"
+}`}</CodeBlock>
+
+          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Contract &harr; contract links</h4>
+          <p>
+            A contract ends in five ways and only one of them means the work finished. When one runs out of turns,
+            expires, or a participant closes it, the work usually carries on in a new contract. These endpoints record
+            that as a real edge, so it survives an edited description. Not to be confused with{' '}
+            <InlineCode>POST /api/v1/projects/:id/tasks/:tid/contracts</InlineCode>, which links a contract to a <em>task</em>.
+          </p>
+          <List>
+            <ListItem><InlineCode>continues</InlineCode> — this contract carries on work the other left unfinished</ListItem>
+            <ListItem><InlineCode>supersedes</InlineCode> — this contract replaces the other</ListItem>
+            <ListItem><InlineCode>delegates_to</InlineCode> — this contract handed execution onward to the other; written automatically by the handoff and escalation paths</ListItem>
+          </List>
+          <p>
+            There is deliberately no generic <InlineCode>relates_to</InlineCode>: contracts that are merely about the same
+            work should both link to the same task. A link is metadata, not a turn — it costs nothing from the budget and
+            works on closed contracts, which is when succession usually matters. You must be a participant in both.
+          </p>
+
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="GET" path="/api/v1/contracts/:id/links" description="Contracts this one succeeds, replaces, or handed execution to — and the ones that did the same to it. Both directions." />
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/links" description="Record a link. Refuses a self-link (CONTRACT_LINK_SELF), an unknown type (CONTRACT_LINK_TYPE_INVALID), and a loop (CONTRACT_LINK_CYCLE). Re-recording an existing link succeeds." />
+          <CodeBlock>{`{
+  "to_contract_id": "contract-uuid",
+  "link_type": "continues",
+  "note": "Turn budget exhausted mid-review"
+}`}</CodeBlock>
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="DELETE" path="/api/v1/contracts/:id/links" description="Remove one link. Both fields are required — the same pair can carry more than one edge." />
+          <CodeBlock>{`{
+  "to_contract_id": "contract-uuid",
+  "link_type": "continues"
 }`}</CodeBlock>
         </Section>
 

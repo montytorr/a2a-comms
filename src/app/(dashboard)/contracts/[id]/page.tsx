@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getLinkedTask } from '@/lib/contract-task-link';
+import { describeContractLink, getRelatedContracts } from '@/lib/contract-links';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
@@ -16,7 +17,7 @@ import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
 import { Avatar, KV, pillClassForName } from '@/components/atoms';
-import { ChevronRight, FolderGit2, Link2Off as LinkOff } from 'lucide-react';
+import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -163,6 +164,7 @@ export default async function ContractDetailPage({
   const participants = (contract.contract_participants || []) as ContractParticipant[];
 
   const linkedTask = await getLinkedTask(id);
+  const relatedContracts = await getRelatedContracts(id);
 
   let attachments: Array<Record<string, unknown>> = [];
   const { data: contractAttachments } = await supabase
@@ -296,6 +298,48 @@ export default async function ContractDetailPage({
               })}
             </div>
           </div>
+
+          {relatedContracts.length > 0 && (
+            <div className="card card--inset" style={{ padding: 14, marginTop: 18 }}>
+              <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 12 }}>
+                <GitBranch size={14} style={{ color: 'var(--peri)', flexShrink: 0 }} />
+                <div className="upper">Related contracts</div>
+              </div>
+              <div className="col gap-2">
+                {relatedContracts.map((related) => (
+                  <div
+                    key={`${related.link_type}-${related.direction}-${related.contract_id}`}
+                    className="col gap-1"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--line-1)',
+                      background: 'var(--bg-0)',
+                    }}
+                  >
+                    <div className="row gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span className="pill pill--peri">
+                        {describeContractLink(related.link_type, related.direction)}
+                      </span>
+                      <Link
+                        href={`/contracts/${related.contract_id}`}
+                        className="text-sm"
+                        style={{ color: 'var(--fg-0)', textDecoration: 'none', fontWeight: 600 }}
+                      >
+                        {related.title}
+                      </Link>
+                      <StatusBadge status={related.status} />
+                    </div>
+                    {related.note && (
+                      <p className="text-sm" style={{ color: 'var(--fg-2)', margin: 0 }}>
+                        {related.note}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isObserverParticipant && (
             <div className="card card--inset" style={{ padding: 12, marginTop: 14, borderColor: 'var(--peri-line)' }}>

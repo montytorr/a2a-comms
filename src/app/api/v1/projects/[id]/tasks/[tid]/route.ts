@@ -13,6 +13,7 @@ import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract, type HandoffContractSummary } from '@/lib/handoff-contracts';
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle, getEscalationBrokerageProvenance, isLikelyBrokerContract, type BrokerContractSummary } from '@/lib/escalation-brokerage';
 import { appendTaskActivityEvent, listTaskActivityEvents } from '@/lib/task-activity';
+import { recordDelegation, resolveChainPredecessors, type ChainCandidate } from '@/lib/contract-links';
 import type { UpdateTaskRequest, ApiError, TaskStatus } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
@@ -657,7 +658,7 @@ export async function PATCH(
       listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
       supabase
         .from('task_contracts')
-        .select('contract_id, contract:contracts(id, title, status, description)')
+        .select('contract_id, contract:contracts(id, title, status, description, created_at)')
         .eq('task_id', tid),
     ]);
 
@@ -666,17 +667,19 @@ export async function PATCH(
       ? await listTaskExecutionCheckpoints(activeRun.id).catch(() => [])
       : [];
 
-    const priorHandoffs: HandoffContractSummary[] = ((taskContracts.data || []) as Array<Record<string, unknown>>)
-      .map((row) => row.contract as { id: string; title: string; status: string; description?: string | null } | null)
-      .filter((contract): contract is { id: string; title: string; status: string; description?: string | null } => !!contract)
-      .filter((contract) => isLikelyHandoffContract({ title: contract.title, description: contract.description || null } as never))
-      .map((contract) => ({
-        contractId: contract.id,
-        title: contract.title,
-        status: contract.status,
-        linkedTaskId: tid,
-        linkedTaskTitle: task.title,
-      }));
+    const chainPredecessors = await resolveChainPredecessors(
+      ((taskContracts.data || []) as Array<Record<string, unknown>>)
+        .map((row) => row.contract as ChainCandidate | null)
+        .filter((contract): contract is ChainCandidate => !!contract),
+      isLikelyHandoffContract
+    );
+    const priorHandoffs: HandoffContractSummary[] = chainPredecessors.map((contract) => ({
+      contractId: contract.id,
+      title: contract.title,
+      status: contract.status,
+      linkedTaskId: tid,
+      linkedTaskTitle: task.title,
+    }));
 
     const expiresInHours = parsed.handoff_contract.expires_in_hours ?? 168;
     const maxTurns = parsed.handoff_contract.max_turns ?? 30;
@@ -750,6 +753,15 @@ export async function PATCH(
 
     handoffContract = createdContract;
 
+    // The chain used to exist only as a '## Prior handoff contracts' section in
+    // the description - text, in a field the caller can replace. Record it.
+    const delegatedFromContractId = await recordDelegation({
+      predecessor: chainPredecessors[chainPredecessors.length - 1] ?? null,
+      newContractId: createdContract.id,
+      taskId: tid,
+      agentId: auth.agent.id,
+    });
+
     async function appendTaskCommentForHandoff() {
       await supabase.from('task_comments').insert({
         task_id: tid,
@@ -758,7 +770,7 @@ export async function PATCH(
         author_name: auth.agent.display_name || auth.agent.name,
         content: `Proposed handoff contract \`${createdContract.id}\` for ${normalizedInvitees.join(', ')}.`,
         comment_type: 'system',
-        metadata: { handoff_contract_id: createdContract.id, invitees: normalizedInvitees },
+        metadata: { handoff_contract_id: createdContract.id, invitees: normalizedInvitees, delegated_from_contract_id: delegatedFromContractId },
       });
     }
 
@@ -782,6 +794,7 @@ export async function PATCH(
           handoff_contract_id: createdContract.id,
           invitees: normalizedInvitees,
           contract_title: createdContract.title,
+          delegated_from_contract_id: delegatedFromContractId,
         },
       }).catch(() => {});
     }
@@ -843,7 +856,7 @@ export async function PATCH(
       listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
       supabase
         .from('task_contracts')
-        .select('contract_id, contract:contracts(id, title, status, description)')
+        .select('contract_id, contract:contracts(id, title, status, description, created_at)')
         .eq('task_id', tid),
     ]);
 
@@ -852,17 +865,19 @@ export async function PATCH(
       ? await listTaskExecutionCheckpoints(activeRun.id).catch(() => [])
       : [];
 
-    const priorBrokerContracts: BrokerContractSummary[] = ((taskContracts.data || []) as Array<Record<string, unknown>>)
-      .map((row) => row.contract as { id: string; title: string; status: string; description?: string | null } | null)
-      .filter((contract): contract is { id: string; title: string; status: string; description?: string | null } => !!contract)
-      .filter((contract) => isLikelyBrokerContract({ title: contract.title, description: contract.description || null } as never))
-      .map((contract) => ({
-        contractId: contract.id,
-        title: contract.title,
-        status: contract.status,
-        linkedTaskId: tid,
-        linkedTaskTitle: task.title,
-      }));
+    const chainPredecessors = await resolveChainPredecessors(
+      ((taskContracts.data || []) as Array<Record<string, unknown>>)
+        .map((row) => row.contract as ChainCandidate | null)
+        .filter((contract): contract is ChainCandidate => !!contract),
+      isLikelyBrokerContract
+    );
+    const priorBrokerContracts: BrokerContractSummary[] = chainPredecessors.map((contract) => ({
+      contractId: contract.id,
+      title: contract.title,
+      status: contract.status,
+      linkedTaskId: tid,
+      linkedTaskTitle: task.title,
+    }));
 
     const expiresInHours = parsed.escalation_contract.expires_in_hours ?? 168;
     const maxTurns = parsed.escalation_contract.max_turns ?? 30;
@@ -939,6 +954,15 @@ export async function PATCH(
 
     escalationContract = createdContract;
 
+    // Same chain, same reason: an escalation that follows an earlier one is a
+    // fact about two contracts, not a paragraph in the second one's brief.
+    const delegatedFromContractId = await recordDelegation({
+      predecessor: chainPredecessors[chainPredecessors.length - 1] ?? null,
+      newContractId: createdContract.id,
+      taskId: tid,
+      agentId: auth.agent.id,
+    });
+
     const escalationReason = parsed.escalation_contract.escalation_reason ?? task.last_checkpoint_summary ?? activeRun?.summary ?? 'Escalation requested';
     const requestedIntervention = parsed.escalation_contract.requested_intervention ?? 'Broker intervention requested';
 
@@ -951,6 +975,7 @@ export async function PATCH(
         metadata: {
           ...activeRun.metadata,
           escalation_contract_id: createdContract.id,
+          delegated_from_contract_id: delegatedFromContractId,
           broker_agent_id: (brokerAgents || [])[0]?.id ?? null,
           broker_agent_ids: normalizedBrokers,
           escalation_requested_by_agent_id: auth.agent.id,
@@ -971,6 +996,7 @@ export async function PATCH(
         summary: `Escalation contract ${createdContract.id} proposed`,
         payload: {
           escalation_contract_id: createdContract.id,
+          delegated_from_contract_id: delegatedFromContractId,
           broker_agent_id: (brokerAgents || [])[0]?.id ?? null,
           broker_agent_ids: normalizedBrokers,
           escalation_requested_by_agent_id: auth.agent.id,

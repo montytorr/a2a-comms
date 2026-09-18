@@ -143,6 +143,8 @@ export function buildHandoffContractDescription(input: BuildHandoffContractInput
     for (const handoff of priorHandoffs.slice(0, 5)) {
       lines.push(`- \`${handoff.contractId}\` — **${handoff.title}** [${handoff.status}]${handoff.linkedTaskId ? ` linked task \`${handoff.linkedTaskId}\`` : ''}`);
     }
+    lines.push('');
+    lines.push('This list is a convenience copy, capped at five and written once. The chain itself is recorded as `delegates_to` contract links — read it with `a2a contract-relations <contract-id>`, which stays correct if this description is later edited.');
   }
 
   lines.push('');
@@ -155,6 +157,15 @@ export function buildHandoffContractDescription(input: BuildHandoffContractInput
   return lines.join('\n');
 }
 
+/**
+ * The legacy way of recognising a handoff contract, kept as a fallback.
+ *
+ * It matches on title and description, which are both caller-supplied
+ * (`--handoff-title`, `--handoff-description`) and the description is editable
+ * afterwards - so a chain identified this way could be broken by renaming.
+ * `delegates_to` contract links are the mechanism now; this only catches
+ * contracts created before those links existed.
+ */
 export function isLikelyHandoffContract(contract: Pick<ContractResponse, 'title' | 'description'>) {
   const title = (contract.title || '').toLowerCase();
   const description = (contract.description || '').toLowerCase();

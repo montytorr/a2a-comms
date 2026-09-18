@@ -9,7 +9,8 @@ import ContractRow from './contract-row';
 import { formatDate } from '@/lib/format-date';
 import { Avatar } from '@/components/atoms';
 import { getLinkedTasksForContracts } from '@/lib/contract-task-link';
-import { FolderGit2, Link2Off } from 'lucide-react';
+import { describeContractLink, getRelatedContractsForContracts } from '@/lib/contract-links';
+import { FolderGit2, GitBranch, Link2Off } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,7 @@ export default async function ContractsPage({
   const rows = (contracts || []) as ContractWithRelations[];
   // One query for the whole page rather than one per row.
   const linkedTasks = await getLinkedTasksForContracts(rows.map((r) => r.id));
+  const relatedContracts = await getRelatedContractsForContracts(rows.map((r) => r.id));
 
   return (
     <AutoRefresh intervalMs={15000}>
@@ -151,6 +153,7 @@ export default async function ContractsPage({
                 .filter(Boolean);
               const tone = statusTone[contract.status] || 'ghost';
               const linked = linkedTasks.get(contract.id);
+              const related = relatedContracts.get(contract.id) || [];
 
               return (
                 <ContractRow key={contract.id} id={contract.id}>
@@ -187,6 +190,27 @@ export default async function ContractsPage({
                             : 'No project — not tracked on any board'}
                         </span>
                       </span>
+                      {/* A contract that succeeds, replaces or delegated to
+                          another is half of a chain, and the chain is the part
+                          a reader cannot reconstruct from this row alone. */}
+                      {related.length > 0 && (
+                        <span
+                          className="row gap-1 text-2xs"
+                          style={{
+                            marginTop: 3,
+                            alignItems: 'center',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                            color: 'var(--peri)',
+                          }}
+                        >
+                          <GitBranch size={12} style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {describeContractLink(related[0].link_type, related[0].direction)} {related[0].title}
+                            {related.length > 1 ? ` +${related.length - 1}` : ''}
+                          </span>
+                        </span>
+                      )}
                     </span>
                     <span className="mono" style={{ width: '15%', color: 'var(--fg-2)' }}>{proposerName}</span>
                     <span style={{ width: '20%' }}>
