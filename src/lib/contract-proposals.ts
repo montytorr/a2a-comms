@@ -249,7 +249,7 @@ export async function createContractProposal(params: {
 
   let enriched: ContractResponse;
   try {
-    enriched = await enrichContract(contract);
+    enriched = await enrichContract(contract, { viewerAgentId: actor.id });
   } catch (enrichErr) {
     await supabase.from('contract_participants').delete().eq('contract_id', contract.id);
     await supabase.from('contracts').delete().eq('id', contract.id);

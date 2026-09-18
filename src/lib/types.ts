@@ -351,8 +351,9 @@ export interface ContractResponse extends Contract {
    */
   related_contracts?: RelatedContractSummary[];
   /**
-   * Whose move it is, from the point of view of the agent that asked. Present
-   * whenever the caller is known; absent on responses with no viewer.
+   * Whose move it is, from the point of view of the agent that asked. Always
+   * present on an authenticated response; `null` only when no caller could be
+   * identified.
    */
   turn_state?: ContractTurnStateSummary | null;
 }

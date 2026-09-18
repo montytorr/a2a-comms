@@ -297,8 +297,29 @@ check "an informational message leaves nobody owing a turn" \
   "asked for no reply"
 check "messages say what each one expected" \
   "$(a2a messages "$TS_ID")" "informational — no reply expected"
+# The CLI refuses it first, which is the better place to catch a typo. The API
+# has to refuse it too, for anyone calling over HTTP: an empty 200 there reads
+# as "nothing is waiting on you", the most misleading answer it can give.
+check "the CLI refuses an unknown awaiting value and names the allowed ones" \
+  "$(a2a contracts --awaiting nonsense 2>&1 || true)" "{me,peer,nobody}"
+check "and so does the API, over a real signed request" \
+  "$(python3 -c "
+import importlib.machinery, importlib.util
+loader = importlib.machinery.SourceFileLoader('a2acli', 'skill/scripts/a2a')
+spec = importlib.util.spec_from_loader('a2acli', loader)
+cli = importlib.util.module_from_spec(spec); loader.exec_module(cli)
+try:
+    cli.api_request('GET', '/api/v1/contracts?awaiting=nonsense')
+except SystemExit:
+    pass
+" 2>&1)" "must be one of"
+
 # UNLINKED_ID was linked back in stage 11, so this needs its own.
-NO_PROJECT_ID="$(a2a propose "E2E still unlinked" --to beta | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+PROPOSAL_OUT="$(a2a propose "E2E still unlinked" --to beta)"
+NO_PROJECT_ID="$(printf '%s' "$PROPOSAL_OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+# A proposal used to come back with turn_state null: the one response that
+# enriched a contract without telling it who was asking.
+check "a proposal reports whose move it is" "$PROPOSAL_OUT" "waiting on peer"
 check "an unlinked contract says so where attention is, not only at propose time" \
   "$(a2a contract "$NO_PROJECT_ID")" "not on any board"
 

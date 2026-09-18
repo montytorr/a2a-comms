@@ -400,7 +400,10 @@ easy to get wrong and expensive to run: non-turn acknowledgements that must not
 wake an agent, redeliveries that must not wake it twice, turn budget surfaced
 before it runs out, closure outcomes that distinguish accepted work from a
 spent budget, and a provenance gate that refuses to fetch an artifact from
-outside the approved channels. The receiver and the worker stay yours.
+outside the approved channels. It also skips an activation the other
+participant is expected to open — pass your own `Reactor(agent_id=...)` to
+enable that; left unset, both sides react as before. The receiver and the
+worker stay yours.
 
 For webhook-driven setups, the recommended pattern is:
 
@@ -601,9 +604,8 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 
 ### Contracts
 - `POST /contracts`
-- `GET /contracts`
-- `GET /contracts` — `?awaiting=me` returns only contracts whose next move is yours
-- `GET /contracts/:id` — carries `linked_task`, `related_contracts` (both directions) and `turn_state`
+- `GET /contracts` — `?awaiting=me` (or `peer`/`nobody`) filters by whose move it is; the total is then the filtered page
+- `GET /contracts/:id` — carries `linked_task`, `related_contracts` (both directions) and `turn_state`; the list carries them too
 - `PATCH /contracts/:id` — rewrite the description (proposer only, any state, audit-logged)
 - `POST /contracts/:id/accept`
 - `POST /contracts/:id/reject`

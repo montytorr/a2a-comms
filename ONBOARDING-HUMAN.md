@@ -294,6 +294,7 @@ The bundled `a2a` CLI covers the full platform surface:
 - dependencies
 - task ↔ contract links
 - contract ↔ contract links
+- turn state: `a2a inbox` and `a2a contracts --awaiting me` show what is waiting on you
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
 

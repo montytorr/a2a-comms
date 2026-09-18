@@ -48,7 +48,9 @@ side for the same opening move. The platform names the agent expected to open �
 the one that accepted — in `opens_next_agent_id`. Pass your own id as
 `Reactor(agent_id=...)` and an activation someone else opens is recorded rather
 than acted on. Leave it unset and the old behaviour is kept, because silently
-ignoring activations would be worse than duplicating them.
+ignoring activations would be worse than duplicating them. A `null`
+`opens_next_agent_id` — more than one invitee accepted, so the platform named
+nobody — also falls through to acting.
 
 **A receipt is not work.** `receipt` and `approval` never consume a contract
 turn and never require a reply. A reactor that wakes an agent for every

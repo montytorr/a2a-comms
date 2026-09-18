@@ -1916,7 +1916,7 @@ def main():
     sub.add_parser("pending", help="List pending invitations")
 
     # inbox
-    p = sub.add_parser("inbox", help="Show invitation inbox across contracts and projects")
+    p = sub.add_parser("inbox", help="What is waiting on YOU, then contract and project invitations")
     p.add_argument("--project", dest="project_id", help="Optional project id to include project invitations")
 
     # webhook

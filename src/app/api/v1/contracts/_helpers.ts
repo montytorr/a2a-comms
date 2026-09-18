@@ -146,8 +146,11 @@ export async function enrichContract(
     ? await listAttachmentsForScope({ projectId: linkedTask.project_id, contractId: contract.id, includeSignedUrl: true }).catch(() => [])
     : [];
 
-  // Whose move it is, from the asker's point of view. Without a viewer there is
-  // no "you" to report, so the field is omitted rather than guessed at.
+  // Whose move it is, from the asker's point of view. The field is always
+  // present; it is null only when the caller could not be identified, which no
+  // authenticated route should hit. The comment here used to claim the field
+  // was omitted in that case - it never was, and a client written to test for
+  // its presence would have been wrong.
   let turnState = null;
   if (options.viewerAgentId) {
     const lastMessage = options.lastMessageResolved

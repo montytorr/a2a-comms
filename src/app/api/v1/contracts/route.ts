@@ -30,6 +30,17 @@ export async function GET(req: NextRequest) {
   // holding? Without it the only inbox was for invitations, so an active
   // contract where you owed a reply appeared on no list anywhere.
   const awaiting = url.searchParams.get('awaiting');
+  if (awaiting && !['me', 'peer', 'nobody'].includes(awaiting)) {
+    // An empty 200 for a typo'd filter reads as "nothing is waiting on you",
+    // which is the most misleading answer this endpoint can give.
+    return NextResponse.json(
+      {
+        error: `awaiting must be one of: me, peer, nobody. Got "${awaiting}".`,
+        code: 'VALIDATION_ERROR',
+      } satisfies ApiError,
+      { status: 400 }
+    );
+  }
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || url.searchParams.get('per_page') || '20', 10)));
 
