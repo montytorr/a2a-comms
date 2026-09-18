@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.312] - 2026-09-18
+### Changed
+- test: cover the two Markdown normalization cases AC-32 required and nobody tested
+- AC-32 lists six coverage requirements. Five had tests: escaped structural breaks, real breaks preserved, literal \n \r \r\n in prose, inline and fenced code, and parity across all three renderers. The sixth - mixed real and escaped line breaks in one document - had none, and neither did structural \r / \r\n, which escapedBreakLength handles explicitly and only prose-preservation exercised.
+- Both pass unchanged, so this adds evidence rather than fixing a defect. That is the point: the implementation was already correct and the task could not be closed on it, because a requirement with no test is a claim, not a result.
+- The mixed case is the one that would actually occur - a document part-written by a client that escaped its newlines and part by one that did not - and it is where an accumulate-and-flush scanner is most likely to double up or swallow a break.
+- 215 tests, eslint clean.
+
 ## [1.0.310] - 2026-09-18
 ### Docs
 - align every skill and doc surface with the description rules, and stop the runtime skill drifting
