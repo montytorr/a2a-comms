@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.313] - 2026-09-18
+### Added
+- close the design-system ratchets, and make the e2e check honest about failing
+- eslint.config.mjs said the warning count was the progress counter and to flip each rule to error once it reached zero. It stood at 19 and both rules were still warn, so the invariant the whole refactor exists to establish was a matter of discipline rather than something enforced.
+- Seventeen were oklch() literals welded to the dark palette. Each became a token defined in BOTH themes rather than a substitution that only looks right in one: --on-mint/--on-peri/--on-rose complete the on-tone set --on-amber had started; --brand-mark is the square mark, which was the same gradient copy-pasted across the sidebar and all three auth pages; --bg-stripe is the dense-table zebra; --mint-deep and --rose-deep are the kill-switch dial; --rose-line-strong its active border. Two variable-alpha cases became color-mix on the token rather than a literal with a computed alpha, so those follow the theme too.
+- Two were inline fontSize and they are not the same defect. The kanban due-date chip was 8px - below the 12px floor 4d384b0 established, and exactly what that floor exists to catch - and is now text-2xs. The avatar glyph scales with a `size` prop, so it cannot be a fixed step from the scale; it carries the only suppression in the codebase, with the reason written next to it.
+- Both rules are now error at a count of zero, so regression is mechanically impossible rather than remembered.
+- Separately, scripts/verify-e2e.sh lied when it failed. Its readiness loop fell through to `ok` on exhaustion, so a cold image pull was announced as "postgres up" and then surfaced as a baffling migration error: psql inside a container whose server was not listening yet. I hit exactly that running it for the first time. It now fails loudly and names its own cause, which matters much more once CI runs it, because a red build has to explain itself.
+- Verified: 16/16 e2e against a throwaway postgres, twice; 215 tests; 44 reactor tests; eslint 0 errors with both ratchets as error; tsc at the pre-existing baseline of 8; next build passes.
+### Fixed
+- let checkboxes and radios follow the theme
+- The last of the operator's "unstyled controls" complaint. Buttons and text inputs have had classes for a while (282 uses of .btn, 72 of the .cp-* set), and a precise parse of every input/select/textarea in the tree finds only three elements with no class at all: two hidden type="file" inputs behind styled dropzones, and one checkbox.
+- Checkboxes and radios are the case a class cannot fix, because the colour comes from the browser, not the stylesheet. They were rendering in the default blue in a UI with no blue in it. accent-color points them at the theme token, so they follow light and dark like everything else.
+
 ## [1.0.312] - 2026-09-18
 ### Changed
 - test: cover the two Markdown normalization cases AC-32 required and nobody tested
