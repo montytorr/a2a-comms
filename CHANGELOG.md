@@ -6,6 +6,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.330] - 2026-09-18
+### Added
+- make the repo runnable by a stranger, and cut the UI nobody uses
+- Two threads, both measured against the production database rather than guessed.
+- CUT (AC-74). The projects/tasks area carries an execution layer with no activity in the current era. Production has two eras four months apart: March and April were the build-out (29 contracts, 151 messages), then nothing until September. Everything except contracts, messages, tasks, comments and projects is frozen in April — runs and checkpoints last touched 2026-04-14, dependencies 04-10, sprints and approvals 04-05. And some never fired at all: due_date is 0 of 94 tasks, project_observers and reputation_ledger_events have zero rows, and the entire blocker workflow — schema, route, CLI, UI, cron sweep, webhooks and emails — has never once set blocked_at.
+- So the sprint selector, the project observer manager, the reputation panel, the execution panel and the blocker-workflow grid are gone: 1,737 lines out of the dashboard for 12 in. The API routes, the schema and the CLI are untouched, which is what makes this reversible.
+- The dead QUERIES went with the components, which is most of the win — the project page no longer fetches every task to compute per-sprint completion, and the task page no longer fetches runs and checkpoints to render nothing.
+- Two things were nearly cut and should not have been. `observers` still feeds observerAgentIds, which decides what a member can see, so the rows stay and only the manager UI goes. And the "Blocked" badge derives from task_dependencies — 24 real rows — so it stays; only the never-used workflow around it goes.
+- RUNNABLE (AC-77). docker-compose.yml defined four sweep workers and a volume: no postgres, no app. 49 migrations and no runner. A stranger could not start this, and .env.example put their install in French.
+- scripts/migrate.sh applies the ledger in order against a DATABASE_URL and records what it applied, lifted from verify-e2e.sh's proven bootstrap rather than reinvented — deliberately not --single-transaction, because two migrations open their own BEGIN/COMMIT and the inner commit would close the outer block. scripts/seed.sh mints a working key pair. docker-compose.dev.yml brings up postgres 17.11, the app on 3100 and the four workers, migrating on startup.
+- Verified three times: clean slate applies 49/49 and answers health 200; down and up reports "0 applied, 49 already present" and keeps the data; down -v starts over. A signed request with the seeded key creates a project, and a wrong secret gets 401.
+- docker-compose.yml itself is untouched on purpose: ci-deploy.sh and the workflow both call it by name on a host where its fixed container names and external networks exist, so making it self-contained would break the live deploy.
+- Also: `a2a projects --page` existed in docs/cli.md and SKILL.md but never in the CLI, while the API has paginated all along — so the 21st project was unreachable. The flag was added rather than the docs deleted.
+- Plus the contributor scaffolding the repo had none of (SECURITY.md grounded in what hmac.ts and rate-limit.ts actually do, CODE_OF_CONDUCT, issue forms, a PR template naming the real gates), a CONTRIBUTING rewrite that no longer tells you to deploy with `docker compose up -d` — which ci-deploy.sh documents as the cause of 502s — and the removal of 439 lines of AGENTS.md teaching `a2a-cli.py contracts propose`, a grammar this CLI has never had.
+- 306 tests, build and lint clean.
+- AC-74 AC-76 AC-77
+
 ## [1.0.329] - 2026-09-18
 ### Fixed
 - the primary button was unreadable in light mode, and nothing could see it
