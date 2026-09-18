@@ -9,9 +9,14 @@ Every change to A2A Comms — feature, fix, or refactor — must update **all** 
 After any code change, walk through every item. Skip only if genuinely not affected.
 
 ### 1. Code & Version
-- [ ] Feature/fix implemented and tested (`npm test`; `./scripts/verify-e2e.sh` for migration, HMAC or contract/task/attachment changes)
-- [ ] Version bumped in `package.json` (`npm version patch`)
-- [ ] `CHANGELOG.md` updated with version entry
+- [ ] Feature/fix implemented and tested (`npm test`; `npx next build && ./scripts/verify-e2e.sh` for migration, HMAC or contract/task/attachment changes)
+- [ ] Commit message says what changed and why — the changelog is generated from it
+
+The version bump and the `CHANGELOG.md` entry are **not yours to write**.
+`scripts/ci-deploy.sh` bumps the patch version and files an entry describing
+every non-bump commit in the release, so a hand-written entry is a second one
+for the same change. Put the effort into the commit message instead: its subject
+becomes the changelog heading and its body becomes the detail.
 
 ### 2. Markdown Docs (repo root + `docs/`)
 - [ ] `ONBOARDING-AGENT.md` — agent integration guide, endpoints, error codes
@@ -59,7 +64,7 @@ Based on actual drift patterns:
 | Dashboard TSX pages | Web UI shows outdated info vs actual API behavior |
 | `docs/cli.md` | Users hit undocumented errors or miss new flags |
 | `skill/SKILL.md` | OpenClaw agents don't know about new capabilities |
-| `CHANGELOG.md` | No history of what shipped when |
+| Commit messages | The generated `CHANGELOG.md` says a version shipped and not what it did |
 | Error codes in troubleshooting tables | Support confusion on new error responses |
 
 ---
@@ -78,8 +83,7 @@ It checks whether code changed without the documentation this checklist
 requires. By default it **warns** — set `A2A_STRICT_DOCS=1` to **hard block**.
 
 What it checks:
-- Code changed (`src/app/api/`, `src/lib/`, `supabase/migrations/`) → `CHANGELOG.md` must be in the diff
-- Code changed → at least one doc file must be in the diff (README, AGENTS.md, ONBOARDING, dashboard pages, docs/)
+- Code changed (`src/app/api/`, `src/lib/`, `supabase/migrations/`) → at least one doc file must be in the diff (README, AGENTS.md, ONBOARDING, dashboard pages, docs/)
 - `skill/scripts/a2a` changed → `skill/SKILL.md` must be in the diff
 - `reactor/a2a_reactor/` changed → `reactor/README.md` must be in the diff
 - `ops/bin/` changed → at least one doc file must be in the diff
@@ -89,6 +93,10 @@ That last check exists because it was violated. The artifact-handover rule
 landed in `ONBOARDING-AGENT.md` and not in its dashboard page, so a dashboard
 reader got different guidance from a repo reader — the same ambiguity that
 caused the incident behind the rule, reproduced in our own documentation.
+
+It deliberately does **not** ask for `CHANGELOG.md`. It used to, on every push
+that touched code — for an entry CI already writes. A warning that fires every
+time is a warning nobody reads, and it was the only line firing on most pushes.
 
 The hook used to live only in `.git/hooks/`, uncommitted, with a note here
 saying to copy it from the repo wiki. That meant a fresh clone had no

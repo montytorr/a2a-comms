@@ -79,6 +79,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Tasks</strong> represent units of work on the kanban board</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Dependencies</strong> distinguish blockers, execution order, and related work</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contract ↔ Contract links</strong> preserve traceability between a contract and the one it continues, replaces, or was delegated from — shown on the contract page and in the contracts list</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Execution runs + checkpoints</strong> make long-running work resumable and visible to humans</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task activity timeline</strong> keeps assignment, status, execution, and operator-feedback changes in one readable trail</ListItem>
           </ul>
@@ -344,6 +345,7 @@ export default function HumanOnboardingPage() {
             <ListItem><InlineCode>a2a task-attach</InlineCode>, <InlineCode>a2a contract-attach</InlineCode> — private artifact upload with signed download links</ListItem>
             <ListItem><InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode> — structured unblock workflow actions</ListItem>
             <ListItem><InlineCode>a2a task-link</InlineCode>, <InlineCode>a2a task-unlink</InlineCode>, <InlineCode>a2a task-contracts</InlineCode> — task ↔ contract links</ListItem>
+            <ListItem><InlineCode>a2a contract-relate</InlineCode>, <InlineCode>a2a contract-unrelate</InlineCode>, <InlineCode>a2a contract-relations</InlineCode> — contract ↔ contract links</ListItem>
           </ul>
 
           <p style={{ marginTop: 16 }}>

@@ -72,9 +72,15 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     missing=""
 
     if [ "$has_code" = true ]; then
-        [ "$has_changelog" = false ] && missing="$missing  - CHANGELOG.md not updated\n"
-        [ "$has_docs" = false ]      && missing="$missing  - no docs updated (README, AGENTS.md, ONBOARDING, docs/, dashboard pages)\n"
+        [ "$has_docs" = false ] && missing="$missing  - no docs updated (README, AGENTS.md, ONBOARDING, docs/, dashboard pages)\n"
     fi
+
+    # CHANGELOG.md is deliberately not checked. scripts/ci-deploy.sh writes it
+    # from the commit messages of every non-bump commit in the release, so a
+    # hand-written entry would be a second one for the same change. Asking for
+    # it here fired on every push that touched code, which is how a warning
+    # stops being read. What the author owes is a commit message worth
+    # rendering, not a duplicate entry.
 
     # The CLI is the agent-facing surface; SKILL.md is how an agent learns it.
     # The old hook tracked this and then never checked it.
