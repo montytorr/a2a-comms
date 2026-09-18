@@ -5,9 +5,10 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import { getExecutionStatusLabel, getExecutionStatusTone, isExecutionStale } from '@/lib/task-execution-ui';
 import { loadProtocolInspector } from '@/lib/protocol-inspector';
+import { describeContractLink } from '@/lib/contract-links';
 import { requeueWebhookDelivery } from './actions';
 import type { TaskExecutionCheckpoint, TaskExecutionRun } from '@/lib/types';
-import { Search, RotateCcw } from 'lucide-react';
+import { Search, RotateCcw, GitBranch } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -224,6 +225,7 @@ export default async function ProtocolInspectorPage({
             <StatCard label="Linked Tasks" value={data.conformance.linkedTaskCount} />
             <StatCard label="Runs" value={data.conformance.runCount} />
             <StatCard label="Checkpoints" value={data.conformance.checkpointCount} />
+            <StatCard label="Related Contracts" value={data.conformance.relatedContractCount} />
             <StatCard label="Webhook Events" value={data.conformance.webhookEventCount} />
             <StatCard
               label="Webhook Failures"
@@ -267,6 +269,22 @@ export default async function ProtocolInspectorPage({
                       label: 'Task linkage exists',
                       ok: data.conformance.hasTaskLink,
                       detail: data.conformance.hasTaskLink ? `${data.conformance.linkedTaskCount} linked task(s)` : 'No contract ↔ task link found',
+                    },
+                    {
+                      // Four of the five ways a contract ends do not mean the
+                      // work finished. This is the check that asks where it
+                      // went, and the one the chain exists to answer.
+                      label: 'Succession recorded',
+                      ok: !data.conformance.endedWithoutCompleting || data.conformance.hasSuccessor,
+                      detail: !data.conformance.contractFound
+                        ? 'No contract in scope'
+                        : !data.conformance.endedWithoutCompleting
+                          ? data.conformance.relatedContractCount
+                            ? `${data.conformance.relatedContractCount} linked contract(s)`
+                            : 'Contract has not ended unfinished'
+                          : data.conformance.hasSuccessor
+                            ? 'A successor contract is recorded'
+                            : 'Ended without the work accepted, and nothing says where it went',
                     },
                     {
                       label: 'Execution evidence exists',
@@ -401,6 +419,59 @@ export default async function ProtocolInspectorPage({
 
             {/* Right column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {/* Contract chain section */}
+              <section className="card" style={{ padding: 24 }}>
+                <div style={{ marginBottom: 16 }}>
+                  <p className="upper" style={{ marginBottom: 4 }}>Chain</p>
+                  <h2 className="h2">Related contracts</h2>
+                </div>
+
+                {!data.conformance.contractFound ? (
+                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No contract in scope.</p>
+                ) : data.relatedContracts.length === 0 ? (
+                  <>
+                    <p className="text-sm" style={{ color: 'var(--fg-3)' }}>
+                      No contract-to-contract link recorded.
+                    </p>
+                    <p className="text-xs" style={{ marginTop: 6, color: 'var(--fg-4)' }}>
+                      {data.conformance.endedWithoutCompleting
+                        ? 'This contract ended without the work being accepted. If it carried on elsewhere, a2a contract-relate <new> --to <this> --type continues records where.'
+                        : 'Succession, replacement and delegation are recorded here when they happen.'}
+                    </p>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {data.relatedContracts.map((related) => (
+                      <div
+                        key={`${related.link_type}-${related.direction}-${related.contract_id}`}
+                        className="card"
+                        style={{ padding: 16 }}
+                      >
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                          <GitBranch size={13} style={{ color: 'var(--peri)', flexShrink: 0 }} />
+                          <span className="pill pill--peri">
+                            {describeContractLink(related.link_type, related.direction)}
+                          </span>
+                          <Link
+                            href={`/protocol-inspector?contract=${related.contract_id}`}
+                            className="text-sm"
+                            style={{ fontWeight: 600, color: 'var(--fg-0)', textDecoration: 'none' }}
+                          >
+                            {related.title}
+                          </Link>
+                          <span className="pill">{related.status}</span>
+                        </div>
+                        <div className="text-xs" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--fg-3)' }}>
+                          <p className="mono" style={{ color: 'var(--fg-2)' }}>{related.contract_id}</p>
+                          {related.note && <p>{related.note}</p>}
+                          <p>Recorded {formatRelative(related.linked_at)}{related.linked_by_agent_id ? '' : ' by the platform'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
               {/* Tasks section */}
               <section className="card" style={{ padding: 24 }}>
                 <div style={{ marginBottom: 16 }}>

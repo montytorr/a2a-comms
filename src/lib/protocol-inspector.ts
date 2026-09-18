@@ -1,6 +1,10 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { getRelatedContracts } from '@/lib/contract-links';
+import { outcomeIsSuccess, resolveCloseOutcome } from '@/lib/contract-closure';
 import type {
   Contract,
+  ContractStatus,
+  RelatedContractSummary,
   Task,
   TaskExecutionCheckpoint,
   TaskExecutionRun,
@@ -83,6 +87,100 @@ export interface InspectorWebhookDelivery {
   } | null;
 }
 
+/**
+ * What the contract chain says about this contract, and what its absence says.
+ *
+ * Pure, and separate from the query that feeds it, because this is the part
+ * worth testing: the inspector's job is to notice drift, and a drift rule that
+ * nothing exercises is a rule that quietly stops firing.
+ */
+export interface SuccessionConformance {
+  relatedContractCount: number;
+  /** The work was not accepted: turns ran out, it expired, or someone closed it. */
+  endedWithoutCompleting: boolean;
+  /** Something records where the work went - this contract delegated it onward,
+   *  or another contract says it continues this one. */
+  hasSuccessor: boolean;
+  /** Contracts on the same task that no link connects to this one. */
+  unlinkedTaskSiblingCount: number;
+  driftFlags: string[];
+}
+
+export function deriveSuccessionConformance(input: {
+  contract: Pick<Contract, 'status' | 'closed_by' | 'completion_approved_at'> | null;
+  relatedContracts: RelatedContractSummary[];
+  /** Contracts sharing a linked task with this one, this contract excluded. */
+  taskSiblingContractIds: string[];
+}): SuccessionConformance {
+  const { contract, relatedContracts } = input;
+
+  const linkedIds = new Set(relatedContracts.map((link) => link.contract_id));
+  const unlinkedTaskSiblingCount = input.taskSiblingContractIds.filter((id) => !linkedIds.has(id)).length;
+
+  // Succession points forward in exactly two shapes: this contract handed the
+  // work onward, or a later contract declared itself the continuation.
+  const hasSuccessor = relatedContracts.some(
+    (link) =>
+      (link.direction === 'outgoing' && link.link_type === 'delegates_to') ||
+      (link.direction === 'incoming' && (link.link_type === 'continues' || link.link_type === 'supersedes'))
+  );
+
+  const ended: ContractStatus[] = ['closed', 'expired', 'cancelled', 'rejected'];
+  const outcome = contract
+    ? resolveCloseOutcome({
+        closedBy: contract.closed_by,
+        completionApprovedAt: contract.completion_approved_at,
+      })
+    : null;
+  const endedWithoutCompleting =
+    !!contract && ended.includes(contract.status) && !!outcome && !outcomeIsSuccess(outcome);
+
+  const driftFlags: string[] = [];
+
+  if (contract && endedWithoutCompleting && !hasSuccessor) {
+    // The whole point of the link. Four of the five ways a contract ends do not
+    // mean the work finished, and when it carries on elsewhere with nothing
+    // recording that, the next reader starts from nothing.
+    const because =
+      contract.status === 'expired'
+        ? 'it expired'
+        : contract.status === 'cancelled'
+          ? 'it was cancelled'
+          : contract.status === 'rejected'
+            ? 'it was rejected'
+            : outcome === 'turns-exhausted'
+              ? 'its turn budget ran out'
+              : 'a participant closed it';
+    driftFlags.push(
+      `Contract ended without the work being accepted (${because}) and nothing records a successor.`
+    );
+  }
+
+  for (const link of relatedContracts) {
+    if (link.direction !== 'outgoing') continue;
+    if (link.link_type === 'delegates_to') continue;
+    if (link.status === 'active' || link.status === 'proposed') {
+      driftFlags.push(
+        `This contract ${link.link_type === 'continues' ? 'continues' : 'supersedes'} ${link.contract_id}, which is still ${link.status}.`
+      );
+    }
+  }
+
+  if (contract && unlinkedTaskSiblingCount > 0) {
+    driftFlags.push(
+      `${unlinkedTaskSiblingCount} other contract(s) share this contract's task and no link connects them to it.`
+    );
+  }
+
+  return {
+    relatedContractCount: relatedContracts.length,
+    endedWithoutCompleting,
+    hasSuccessor,
+    unlinkedTaskSiblingCount,
+    driftFlags,
+  };
+}
+
 export interface ProtocolInspectorData {
   contract: (Contract & {
     proposer: { id: string; name: string; display_name: string | null } | null;
@@ -94,6 +192,7 @@ export interface ProtocolInspectorData {
   executionRuns: TaskExecutionRun[];
   executionCheckpoints: TaskExecutionCheckpoint[];
   webhookDeliveries: InspectorWebhookDelivery[];
+  relatedContracts: RelatedContractSummary[];
   conformance: {
     contractFound: boolean;
     taskFound: boolean;
@@ -111,6 +210,10 @@ export interface ProtocolInspectorData {
     hasCheckpointEvidence: boolean;
     hasSuccessfulWebhookEvidence: boolean;
     hasRetryableWebhookFailure: boolean;
+    relatedContractCount: number;
+    endedWithoutCompleting: boolean;
+    hasSuccessor: boolean;
+    unlinkedTaskSiblingCount: number;
     driftFlags: string[];
   };
 }
@@ -471,6 +574,30 @@ export async function loadProtocolInspector(args: {
       return contractMatch || taskMatch;
     });
 
+  // The contract chain, and the contracts that merely share a task with this
+  // one. A task sibling with no edge to this contract is the shape every
+  // pre-AC-62 handoff chain has, because a title heuristic held it together.
+  const relatedContracts = visibleContract ? await getRelatedContracts(visibleContract.id) : [];
+  let taskSiblingContractIds: string[] = [];
+  if (visibleContract && linkedTasks.length > 0) {
+    const { data: siblingRows } = await supabase
+      .from('task_contracts')
+      .select('contract_id')
+      .in('task_id', linkedTasks.map((task) => task.id));
+    taskSiblingContractIds = Array.from(
+      new Set(
+        (siblingRows || [])
+          .map((row) => row.contract_id as string)
+          .filter((id) => id !== visibleContract.id)
+      )
+    );
+  }
+  const succession = deriveSuccessionConformance({
+    contract: visibleContract,
+    relatedContracts,
+    taskSiblingContractIds,
+  });
+
   const participantStatuses = visibleContract?.contract_participants || [];
   const allParticipantsAccepted = visibleContract
     ? participantStatuses.length > 0 && participantStatuses.every((participant) => participant.status === 'accepted')
@@ -495,6 +622,7 @@ export async function loadProtocolInspector(args: {
   }
   if (webhookDeliveries.some((delivery) => !delivery.replay_debug.has_event_payload)) driftFlags.push('Some webhook deliveries are missing stored event payloads, so replay/debug evidence is incomplete.');
   if (visibleContract && allParticipantsAccepted === false && visibleContract.status === 'active') driftFlags.push('Contract is active but not all participants show accepted.');
+  driftFlags.push(...succession.driftFlags);
 
   return {
     contract: visibleContract
@@ -509,6 +637,7 @@ export async function loadProtocolInspector(args: {
     executionRuns,
     executionCheckpoints,
     webhookDeliveries,
+    relatedContracts,
     conformance: {
       contractFound: !!visibleContract,
       taskFound: !!effectiveTask,
@@ -526,6 +655,10 @@ export async function loadProtocolInspector(args: {
       hasCheckpointEvidence,
       hasSuccessfulWebhookEvidence,
       hasRetryableWebhookFailure,
+      relatedContractCount: succession.relatedContractCount,
+      endedWithoutCompleting: succession.endedWithoutCompleting,
+      hasSuccessor: succession.hasSuccessor,
+      unlinkedTaskSiblingCount: succession.unlinkedTaskSiblingCount,
       driftFlags,
     },
   };
