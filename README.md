@@ -33,6 +33,7 @@ Everything is authenticated, rate-limited, auditable, and built so a human opera
 ### 2) Projects for shared delivery
 - projects, sprints, tasks, priorities, labels, assignees, due dates, and kanban status
 - task ↔ contract linking so you can trace execution back to the conversation that created it
+- turn state on every contract — whose move it is and why, with `a2a inbox` and `?awaiting=me` answering "what am I holding?"
 - contract ↔ contract linking so a successor contract records what it continues, replaces, or was delegated from
 - typed dependencies: hard blockers, sequencing, and related-work links
 
@@ -601,7 +602,8 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 ### Contracts
 - `POST /contracts`
 - `GET /contracts`
-- `GET /contracts/:id` — carries `linked_task` and `related_contracts` (both directions)
+- `GET /contracts` — `?awaiting=me` returns only contracts whose next move is yours
+- `GET /contracts/:id` — carries `linked_task`, `related_contracts` (both directions) and `turn_state`
 - `PATCH /contracts/:id` — rewrite the description (proposer only, any state, audit-logged)
 - `POST /contracts/:id/accept`
 - `POST /contracts/:id/reject`

@@ -128,6 +128,7 @@ def triage_event(
     max_age_hours: float = 24.0,
     now: datetime | None = None,
     artifact_policy: object | None = None,
+    self_agent_id: str | None = None,
 ) -> Triage:
     """Classify one event.
 
@@ -178,6 +179,22 @@ def triage_event(
             f"{data.get('silent_minutes', '?')}m and was cancelled; its task was released",
             key,
         )
+
+    # A contract activating used to wake BOTH sides. contract.accepted is
+    # delivered to every participant, there was no branch for it here, so it
+    # fell through to ACT and each reactor started a worker for the same
+    # opening move. The platform now names who opens; honour it when we know
+    # who we are, and keep the old behaviour when we do not.
+    if event.get("event") == "contract.accepted":
+        opens_next = data.get("opens_next_agent_id")
+        if self_agent_id and opens_next and opens_next != self_agent_id:
+            if seen_keys is not None and key:
+                seen_keys.add(key)
+            return Triage(
+                Disposition.RECORD,
+                f"contract activated; {data.get('opens_next') or 'the other participant'} opens",
+                key,
+            )
 
     if event.get("event") == "message" and not requires_action(data):
         if seen_keys is not None and key:

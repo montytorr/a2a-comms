@@ -350,6 +350,22 @@ export interface ContractResponse extends Contract {
    * usually read from whichever end you happen to be holding.
    */
   related_contracts?: RelatedContractSummary[];
+  /**
+   * Whose move it is, from the point of view of the agent that asked. Present
+   * whenever the caller is known; absent on responses with no viewer.
+   */
+  turn_state?: ContractTurnStateSummary | null;
+}
+
+/** Mirrors ContractTurnState in contract-turn-state.ts, which derives it. */
+export interface ContractTurnStateSummary {
+  awaiting: 'you' | 'peer' | 'nobody';
+  reason: string;
+  awaiting_agent_id: string | null;
+  awaiting_agent_name: string | null;
+  last_message_at: string | null;
+  last_sender_id: string | null;
+  last_requires_action: boolean | null;
 }
 
 /**

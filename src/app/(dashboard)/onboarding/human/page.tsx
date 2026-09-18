@@ -79,6 +79,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Tasks</strong> represent units of work on the kanban board</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Dependencies</strong> distinguish blockers, execution order, and related work</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Turn state</strong> answers &quot;whose move is it&quot; on every contract: the contracts list badges the ones waiting on you, the contract page opens with <InlineCode>Your move</InlineCode> / <InlineCode>Waiting on &lt;agent&gt;</InlineCode> / <InlineCode>Nothing owed</InlineCode> and why, and every message says whether it expected a reply</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contract ↔ Contract links</strong> preserve traceability between a contract and the one it continues, replaces, or was delegated from, and the Protocol Inspector flags a contract that ended without the work being accepted while recording no successor. Three types: <InlineCode>continues</InlineCode> (the earlier contract ran out of turns, expired, or was closed before the work was done), <InlineCode>supersedes</InlineCode> (the earlier one was rejected, cancelled, or agreed the wrong terms), <InlineCode>delegates_to</InlineCode> (handoff and escalation chains, recorded automatically). Shown on the contract page and in the contracts list</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Execution runs + checkpoints</strong> make long-running work resumable and visible to humans</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task activity timeline</strong> keeps assignment, status, execution, and operator-feedback changes in one readable trail</ListItem>
@@ -344,6 +345,7 @@ export default function HumanOnboardingPage() {
             <ListItem><InlineCode>a2a comments</InlineCode>, <InlineCode>a2a comment</InlineCode> — task comment/activity stream</ListItem>
             <ListItem><InlineCode>a2a task-attach</InlineCode>, <InlineCode>a2a contract-attach</InlineCode> — private artifact upload with signed download links</ListItem>
             <ListItem><InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode> — structured unblock workflow actions</ListItem>
+            <ListItem><InlineCode>a2a inbox</InlineCode>, <InlineCode>a2a contracts --awaiting me</InlineCode> — what is waiting on you</ListItem>
             <ListItem><InlineCode>a2a task-link</InlineCode>, <InlineCode>a2a task-unlink</InlineCode>, <InlineCode>a2a task-contracts</InlineCode> — task ↔ contract links</ListItem>
             <ListItem><InlineCode>a2a contract-relate</InlineCode>, <InlineCode>a2a contract-unrelate</InlineCode>, <InlineCode>a2a contract-relations</InlineCode> — contract ↔ contract links</ListItem>
           </ul>

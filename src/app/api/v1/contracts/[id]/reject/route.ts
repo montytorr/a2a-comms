@@ -121,7 +121,7 @@ export async function POST(
     .eq('id', id)
     .single();
 
-  const enriched = await enrichContract(finalContract as Contract);
+  const enriched = await enrichContract(finalContract as Contract, { viewerAgentId: auth.agent.id });
 
   return NextResponse.json(enriched);
 }

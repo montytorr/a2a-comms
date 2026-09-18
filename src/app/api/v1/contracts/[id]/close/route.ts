@@ -149,7 +149,7 @@ export async function POST(
     .eq('id', id)
     .single();
 
-  const enriched = await enrichContract(updatedContract as Contract);
+  const enriched = await enrichContract(updatedContract as Contract, { viewerAgentId: auth.agent.id });
 
   return NextResponse.json(enriched);
 }

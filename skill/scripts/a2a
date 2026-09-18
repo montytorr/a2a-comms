@@ -3,7 +3,7 @@
 A2A Comms CLI — Agent-to-Agent Contract Communication
 
 Usage:
-  a2a contracts [--status STATUS] [--role ROLE]
+  a2a contracts [--status STATUS] [--role ROLE] [--awaiting me|peer|nobody]
   a2a contract <id>
   a2a propose <title> --to <agents...> [--description DESC|@file|-] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
   a2a contract-describe <contract_id> --description DESC|@file|-
@@ -20,7 +20,7 @@ Usage:
   a2a agent <id_or_name>
   a2a status
   a2a pending
-  a2a inbox [--project <id>]
+  a2a inbox [--project <id>]      # what is waiting on YOU, then invitations
   a2a health
 
   Projects:
@@ -373,6 +373,13 @@ def format_contract(c: dict, verbose: bool = False) -> str:
         if linked.get("task_status"):
             line += f" [{linked['task_status']}]"
 
+    turn_state = c.get("turn_state") if isinstance(c.get("turn_state"), dict) else None
+    if turn_state:
+        marker = {"you": "➜ YOUR MOVE", "peer": "waiting on peer", "nobody": "nothing owed"}.get(
+            turn_state.get("awaiting"), "?"
+        )
+        line += f"\n   {marker} — {turn_state.get('reason', '')}"
+
     related = [link for link in (c.get("related_contracts") or []) if isinstance(link, dict)]
     if related:
         line += f"\n   Related contracts: {len(related)}"
@@ -402,6 +409,17 @@ def format_contract(c: dict, verbose: bool = False) -> str:
     return line
 
 
+def describe_expectation(m: dict) -> str:
+    """What this message asks of whoever receives it."""
+    if m.get("consumes_turn") is False:
+        return "no turn, no reply expected"
+    if m.get("requires_action") is False:
+        return "informational — no reply expected"
+    if m.get("message_type") == "request":
+        return "REPLY EXPECTED"
+    return "reply expected"
+
+
 def format_message(m: dict) -> str:
     """Format a message for display."""
     sender = m.get("sender", {}).get("display_name", m.get("sender_id", "?"))
@@ -410,7 +428,7 @@ def format_message(m: dict) -> str:
     content_str = json.dumps(m["content"], indent=2)
     return (
         f"--- Turn {turn} (remaining: {remaining}) ---\n"
-        f"From: {sender} | Type: {m['message_type']} | {m['created_at']}\n"
+        f"From: {sender} | Type: {m['message_type']} | {describe_expectation(m)} | {m['created_at']}\n"
         f"{content_str}"
     )
 
@@ -673,6 +691,8 @@ def cmd_contracts(args):
         params.append(f"status={args.status}")
     if args.role:
         params.append(f"role={args.role}")
+    if getattr(args, "awaiting", None):
+        params.append(f"awaiting={args.awaiting}")
     if args.page:
         params.append(f"page={args.page}")
     query = f"?{'&'.join(params)}" if params else ""
@@ -817,6 +837,9 @@ def cmd_send(args):
     data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", body)
     accounting = "non-turn receipt" if not data.get("consumes_turn", True) else f"turn {data.get('turn_number', '?')}"
     print(f"✅ Message sent ({accounting}, {data.get('turns_remaining', '?')} remaining)")
+    if data.get("consumes_turn", True) and data.get("requires_action", True):
+        print("   The peer is now expected to reply. If it was informational, --no-action-required")
+        print("   says so; a bare acknowledgement belongs in `a2a receipt` and costs no turn.")
 
 
 def cmd_receipt(args):
@@ -1728,17 +1751,31 @@ def cmd_pending(_args):
         print("No pending invitations.")
         return
     print(f"Pending invitations ({len(contracts)}):\n")
+    print("   (invitations only — `a2a inbox` also lists active contracts awaiting your move)\n")
     for c in contracts:
         print(format_contract(c, verbose=True))
         print()
 
 
 def cmd_inbox(args):
-    """Show invitation inbox across contracts and optional project invitations."""
+    """Everything waiting on you: active contracts you owe a move, then invitations."""
+    # The active half used to be missing entirely. `pending` and `inbox` both
+    # asked only for status=proposed, so a contract where a peer had asked you a
+    # question appeared on no list anywhere.
+    owed = api_request("GET", "/api/v1/contracts?status=active&awaiting=me").get("data", [])
     data = api_request("GET", "/api/v1/contracts?status=proposed&role=invitee")
     contracts = data.get("data", [])
 
-    print("Invitation inbox\n")
+    print("Inbox\n")
+    print(f"Your move ({len(owed)}):")
+    if owed:
+        print()
+        for c in owed:
+            print(format_contract(c, verbose=True))
+            print()
+    else:
+        print("  Nothing is waiting on you.\n")
+
     print(f"Contract invitations: {len(contracts)}")
     if contracts:
         print()
@@ -1797,6 +1834,11 @@ def main():
     p = sub.add_parser("contracts", help="List contracts")
     p.add_argument("--status", help="Filter by status")
     p.add_argument("--role", help="Filter by role (proposer|invitee)")
+    p.add_argument(
+        "--awaiting",
+        choices=["me", "peer", "nobody"],
+        help="Only contracts whose next move is yours, the peer's, or nobody's",
+    )
     p.add_argument("--page", type=int, help="Page number")
 
     # contract

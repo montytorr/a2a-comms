@@ -40,7 +40,7 @@ export async function GET(
   }
 
   const updated = await autoCloseIfExpired(contract as Contract);
-  const enriched = await enrichContract(updated);
+  const enriched = await enrichContract(updated, { viewerAgentId: auth.agent.id });
 
   return NextResponse.json(enriched);
 }
@@ -153,5 +153,5 @@ export async function PATCH(
     ipAddress: getClientIp(req),
   });
 
-  return NextResponse.json(await enrichContract(saved as Contract));
+  return NextResponse.json(await enrichContract(saved as Contract, { viewerAgentId: auth.agent.id }));
 }

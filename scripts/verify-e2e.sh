@@ -266,6 +266,38 @@ psql_q -c "update contract_participants set role='proposer' where contract_id='$
 check "and recording works again once they are not" \
   "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "continues"
 
+say "14. Whose move is it"
+# Only alpha holds a signing key here, so beta's half is done in SQL. What is
+# under test is the derivation and every surface that reports it, not the peer.
+TS_ID="$(a2a propose "E2E turn state" --to beta --project "$PROJECT_ID" --task "$TASK_ID" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+check "a proposed contract waits on the invitee" \
+  "$(a2a contract "$TS_ID")" "waiting on peer"
+
+psql_q -c "update contract_participants set status='accepted', responded_at=now() where contract_id='$TS_ID'; update contracts set status='active' where id='$TS_ID';" >/dev/null
+check "THE ACCEPTER OPENS: an active contract with no messages waits on them" \
+  "$(a2a contract "$TS_ID")" "agent that accepted"
+check "and it is not yet in my inbox" \
+  "$(a2a contracts --awaiting me --status active)" "Contracts (0 total)"
+
+# Beta asks a question.
+psql_q -c "insert into messages (contract_id, sender_id, message_type, content, requires_action, consumes_turn, turn_number) select '$TS_ID', id, 'request', '{\"text\":\"over to you\"}'::jsonb, true, true, 1 from agents where name='beta';" >/dev/null
+psql_q -c "update contracts set current_turns=1 where id='$TS_ID';" >/dev/null
+check "a request from the peer is my move" "$(a2a contract "$TS_ID")" "YOUR MOVE"
+check "and the awaiting filter finds it" \
+  "$(a2a contracts --awaiting me --status active)" "E2E turn state"
+check "and the inbox leads with it" "$(a2a inbox)" "Your move (1)"
+
+check "answering hands the move back" \
+  "$(a2a send "$TS_ID" --content '{"text":"answered"}' --type response >/dev/null; a2a contract "$TS_ID")" \
+  "next move is theirs"
+check "sending it warns that a reply is now expected" \
+  "$(a2a send "$TS_ID" --content '{"text":"and again"}' --type response)" "expected to reply"
+check "an informational message leaves nobody owing a turn" \
+  "$(a2a send "$TS_ID" --content '{"text":"fyi"}' --type update --no-action-required >/dev/null; a2a contract "$TS_ID")" \
+  "asked for no reply"
+check "messages say what each one expected" \
+  "$(a2a messages "$TS_ID")" "informational — no reply expected"
+
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]] || exit 1

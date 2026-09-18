@@ -18,6 +18,37 @@ def message_event(event_id="e1", **data):
     return {"id": event_id, "event": "message", "payload": {"contract_id": "c-1", "data": base}}
 
 
+def accepted_event(event_id="a1", **data):
+    base = {"status": "active", "accepted_by": "beta", "opens_next": "beta", "opens_next_agent_id": "agent-beta"}
+    base.update(data)
+    return {"id": event_id, "event": "contract.accepted", "payload": {"contract_id": "c-1", "data": base}}
+
+
+class ActivationOpenerTest(unittest.TestCase):
+    """A contract activating is delivered to everyone; only one side opens."""
+
+    def test_the_opener_acts(self):
+        triage = triage_event(accepted_event(), self_agent_id="agent-beta")
+        self.assertEqual(triage.disposition, Disposition.ACT)
+
+    def test_the_other_side_records_instead_of_starting_a_worker(self):
+        triage = triage_event(accepted_event(), self_agent_id="agent-alpha")
+        self.assertEqual(triage.disposition, Disposition.RECORD)
+        self.assertIn("beta", triage.reason)
+
+    def test_not_knowing_who_we_are_keeps_the_old_behaviour(self):
+        # An integrator who has not supplied an agent id must not silently
+        # stop reacting to activations.
+        self.assertEqual(triage_event(accepted_event()).disposition, Disposition.ACT)
+
+    def test_an_activation_with_no_named_opener_still_acts(self):
+        # More than one invitee accepted, so the platform names nobody.
+        triage = triage_event(
+            accepted_event(opens_next=None, opens_next_agent_id=None), self_agent_id="agent-alpha"
+        )
+        self.assertEqual(triage.disposition, Disposition.ACT)
+
+
 class ActionabilityTest(unittest.TestCase):
     def test_a_substantive_message_is_work(self):
         self.assertTrue(requires_action(message_event()["payload"]["data"]))

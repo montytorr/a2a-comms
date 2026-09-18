@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContracts } from '@/lib/contract-links';
+import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
@@ -17,7 +18,7 @@ import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
 import { Avatar, KV, pillClassForName } from '@/components/atoms';
-import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff } from 'lucide-react';
+import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,19 @@ interface ContractMessage {
   content: unknown;
   message_type: string;
   created_at: string;
+  sender_id: string;
+  /** Persisted per message; the UI used to fetch these and never show them. */
+  requires_action: boolean | null;
+  consumes_turn: boolean | null;
   sender: { id: string; name: string; display_name: string } | null;
+}
+
+/** What a message asks of whoever receives it. */
+function expectationOf(msg: Pick<ContractMessage, 'message_type' | 'requires_action' | 'consumes_turn'>) {
+  if (msg.consumes_turn === false) return { label: 'no reply needed', tone: 'ghost' as const };
+  if (msg.requires_action === false) return { label: 'informational', tone: 'ghost' as const };
+  if (msg.message_type === 'request') return { label: 'reply expected', tone: 'amber' as const };
+  return { label: 'reply expected', tone: 'peri' as const };
 }
 
 /**
@@ -166,6 +179,32 @@ export default async function ContractDetailPage({
   const linkedTask = await getLinkedTask(id);
   const relatedContracts = await getRelatedContracts(id);
 
+  // Whose move it is, for whichever of this user's agents is in the contract.
+  const viewerAgentId =
+    participants.find((p) => p.agent?.id && auth.agentScope.includes(p.agent.id))?.agent?.id ?? null;
+  const latestMessage = messageList[0] ?? null;
+  const turnState = viewerAgentId
+    ? deriveContractTurnState({
+        contract,
+        viewerAgentId,
+        participants: participants.map((p) => ({
+          agent_id: p.agent?.id ?? '',
+          role: p.role as 'proposer' | 'invitee' | 'observer',
+          status: p.status as 'pending' | 'accepted' | 'rejected',
+          name: p.agent?.display_name || p.agent?.name || null,
+        })),
+        lastMessage: latestMessage
+          ? {
+              sender_id: latestMessage.sender_id,
+              message_type: latestMessage.message_type,
+              requires_action: latestMessage.requires_action,
+              consumes_turn: latestMessage.consumes_turn,
+              created_at: latestMessage.created_at,
+            }
+          : null,
+      })
+    : null;
+
   let attachments: Array<Record<string, unknown>> = [];
   const { data: contractAttachments } = await supabase
     .from('task_attachments')
@@ -206,6 +245,34 @@ export default async function ContractDetailPage({
               <CloseContractButton contractId={contract.id} />
             )}
           </div>
+
+          {turnState && (
+            <div
+              className="row gap-2"
+              style={{
+                marginTop: 16,
+                padding: '12px 16px',
+                borderRadius: 10,
+                alignItems: 'center',
+                border: `1px solid ${turnState.awaiting === 'you' ? 'var(--amber-line)' : 'var(--line-1)'}`,
+                background: turnState.awaiting === 'you' ? 'var(--amber-bg)' : 'var(--bg-2)',
+              }}
+            >
+              {turnState.awaiting === 'you' ? (
+                <CornerUpLeft size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+              ) : (
+                <CheckCheck size={15} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
+              )}
+              <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
+                {turnState.awaiting === 'you'
+                  ? 'Your move'
+                  : turnState.awaiting === 'peer'
+                    ? `Waiting on ${turnState.awaiting_agent_name || 'the other participant'}`
+                    : 'Nothing owed'}
+              </span>
+              <span className="text-sm" style={{ color: 'var(--fg-2)' }}>{turnState.reason}</span>
+            </div>
+          )}
 
           {!linkedTask && (
             <div
@@ -447,6 +514,9 @@ export default async function ContractDetailPage({
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
                         <StatusBadge status={msg.message_type} variant="message" />
+                        <span className={`pill pill--${expectationOf(msg).tone} text-2xs`} style={{ height: 16 }}>
+                          {expectationOf(msg).label}
+                        </span>
                         <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
                       </div>
                       <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>

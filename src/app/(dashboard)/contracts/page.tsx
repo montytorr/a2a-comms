@@ -10,14 +10,16 @@ import { formatDate } from '@/lib/format-date';
 import { Avatar } from '@/components/atoms';
 import { getLinkedTasksForContracts } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContractsForContracts } from '@/lib/contract-links';
-import { FolderGit2, GitBranch, Link2Off } from 'lucide-react';
+import { deriveContractTurnState } from '@/lib/contract-turn-state';
+import { getLastMessages } from '@/app/api/v1/contracts/_helpers';
+import { CornerUpLeft, FolderGit2, GitBranch, Link2Off } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 interface ContractWithRelations extends Contract {
   proposer: { name: string; display_name: string } | null;
   contract_participants: Array<{
-    agent: { name: string; display_name: string } | null;
+    agent: { id: string; name: string; display_name: string } | null;
     role: string;
     status: string;
   }>;
@@ -63,7 +65,7 @@ export default async function ContractsPage({
       *,
       proposer:agents!contracts_proposer_id_fkey(name, display_name),
       contract_participants(
-        agent:agents(name, display_name),
+        agent:agents(id, name, display_name),
         role,
         status
       )
@@ -98,6 +100,8 @@ export default async function ContractsPage({
   // One query for the whole page rather than one per row.
   const linkedTasks = await getLinkedTasksForContracts(rows.map((r) => r.id));
   const relatedContracts = await getRelatedContractsForContracts(rows.map((r) => r.id));
+  // One query for the page, same as the links above.
+  const lastMessages = await getLastMessages(rows.map((r) => r.id));
 
   return (
     <AutoRefresh intervalMs={15000}>
@@ -154,6 +158,22 @@ export default async function ContractsPage({
               const tone = statusTone[contract.status] || 'ghost';
               const linked = linkedTasks.get(contract.id);
               const related = relatedContracts.get(contract.id) || [];
+              const viewerAgentId =
+                contract.contract_participants.find((p) => p.agent?.id && auth.agentScope.includes(p.agent.id))
+                  ?.agent?.id ?? null;
+              const turnState = viewerAgentId
+                ? deriveContractTurnState({
+                    contract,
+                    viewerAgentId,
+                    participants: contract.contract_participants.map((p) => ({
+                      agent_id: p.agent?.id ?? '',
+                      role: p.role as 'proposer' | 'invitee' | 'observer',
+                      status: p.status as 'pending' | 'accepted' | 'rejected',
+                      name: p.agent?.display_name || p.agent?.name || null,
+                    })),
+                    lastMessage: lastMessages.get(contract.id) ?? null,
+                  })
+                : null;
 
               return (
                 <ContractRow key={contract.id} id={contract.id}>
@@ -167,8 +187,18 @@ export default async function ContractsPage({
                     width: '100%',
                   }}>
                     <span style={{ width: '30%', minWidth: 0, paddingRight: 12 }}>
-                      <span style={{ display: 'block', color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {contract.title}
+                      <span className="row gap-2" style={{ alignItems: 'center', minWidth: 0 }}>
+                        <span style={{ color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {contract.title}
+                        </span>
+                        {/* The one thing a list of contracts could never tell
+                            you: which of them are waiting on you. */}
+                        {turnState?.awaiting === 'you' && (
+                          <span className="pill pill--amber text-2xs" style={{ height: 17, flexShrink: 0 }} title={turnState.reason}>
+                            <CornerUpLeft size={10} />
+                            your move
+                          </span>
+                        )}
                       </span>
                       {/* The project this contract tracks work in. Shown even when
                           absent, because an unlinked contract has no board and no

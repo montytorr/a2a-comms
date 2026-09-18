@@ -72,6 +72,7 @@ class Reactor:
         alerts: AlertSink | None = None,
         artifact_policy: ArtifactPolicy | None = None,
         max_age_hours: float = 24.0,
+        agent_id: str | None = None,
         log: Callable[[str], None] | None = None,
     ) -> None:
         self.tracker: TaskTracker = tracker or NullTaskTracker()
@@ -81,6 +82,10 @@ class Reactor:
         #: to auto-fetch from anywhere has to say so.
         self.artifact_policy = artifact_policy or ArtifactPolicy()
         self.max_age_hours = max_age_hours
+        #: Your own agent id. Supplying it lets the reactor skip an activation
+        #: the other participant is expected to open, instead of both sides
+        #: starting a worker for the same first move.
+        self.agent_id = agent_id
         self._log = log or (lambda message: None)
 
     # -- one pass ---------------------------------------------------------
@@ -104,6 +109,7 @@ class Reactor:
                 max_age_hours=self.max_age_hours,
                 now=now,
                 artifact_policy=self.artifact_policy,
+                self_agent_id=self.agent_id,
             )
             handled = self._apply(event, triage, result, dry_run=dry_run)
             if not handled:

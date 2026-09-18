@@ -8,6 +8,7 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { claimAcceptedHandoff } from '@/lib/handoff-resume';
 import { getEscalationBrokerageProvenance, isLikelyBrokerContract } from '@/lib/escalation-brokerage';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
+import { deriveContractTurnState } from '@/lib/contract-turn-state';
 
 export async function POST(
   req: NextRequest,
@@ -159,9 +160,28 @@ export async function POST(
 
     const { data: allParticipants } = await supabase
       .from('contract_participants')
-      .select('agent_id')
+      .select('agent_id, role, status')
       .eq('contract_id', id);
     const participantIds = (allParticipants || []).map(p => p.agent_id);
+
+    // Who opens. Activation used to say nothing at all, so both sides received
+    // an identical contract.accepted and both reference reactors spawned a
+    // worker - a symmetric wake-up with no tiebreaker. The accepter opens: the
+    // proposer already spoke by writing the brief.
+    const opensNextAgentId = deriveContractTurnState({
+      contract: { ...(contract as Contract), status: 'active' },
+      viewerAgentId: auth.agent.id,
+      participants: (allParticipants || []).map((p) => ({
+        agent_id: p.agent_id,
+        role: p.role as 'proposer' | 'invitee' | 'observer',
+        status: p.status as 'pending' | 'accepted' | 'rejected',
+      })),
+      lastMessage: null,
+    }).awaiting_agent_id;
+    const { data: opener } = opensNextAgentId
+      ? await supabase.from('agents').select('name').eq('id', opensNextAgentId).maybeSingle()
+      : { data: null };
+
     deliverWebhooks(participantIds, {
       event: 'contract.accepted',
       contract_id: id,
@@ -170,6 +190,11 @@ export async function POST(
       data: {
         status: 'active',
         accepted_by: auth.agent.name,
+        // The recipient compares this to its own agent id. Null means no single
+        // opener could be identified - more than one invitee accepted - and
+        // whoever holds the context should start.
+        opens_next_agent_id: opensNextAgentId,
+        opens_next: opener?.name ?? null,
         handoff_claimed: !!handoffClaim,
         broker_engaged: !!brokerActivation,
         resumed_run_id: handoffClaim?.newRun.id ?? brokerActivation?.runId ?? null,
@@ -203,7 +228,7 @@ export async function POST(
     .eq('id', id)
     .single();
 
-  const enriched = await enrichContract(updatedContract as Contract);
+  const enriched = await enrichContract(updatedContract as Contract, { viewerAgentId: auth.agent.id });
 
   return NextResponse.json(enriched);
 }

@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import { getRelatedContracts } from '@/lib/contract-links';
+import { deriveContractTurnState, type TurnStateLastMessage } from '@/lib/contract-turn-state';
 import type { Contract, ContractResponse, RelatedContractSummary } from '@/lib/types';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 
@@ -58,16 +59,55 @@ export async function autoCloseIfExpired(contract: Contract): Promise<Contract> 
 }
 
 /**
+ * The last message of each of these contracts, keyed by contract id.
+ *
+ * One row per contract in a single pass. Doing it in the query builder would be
+ * either a query per contract or a fetch of every message on the page, so the
+ * DISTINCT ON lives in SQL (latest_contract_messages).
+ */
+export async function getLastMessages(
+  contractIds: string[]
+): Promise<Map<string, TurnStateLastMessage>> {
+  const out = new Map<string, TurnStateLastMessage>();
+  if (contractIds.length === 0) return out;
+
+  const supabase = createServerClient();
+  const { data } = await supabase.rpc('latest_contract_messages', { p_contract_ids: contractIds });
+
+  for (const row of (data || []) as Array<Record<string, unknown>>) {
+    out.set(row.contract_id as string, {
+      sender_id: row.sender_id as string,
+      message_type: row.message_type as string,
+      requires_action: (row.requires_action as boolean | null) ?? null,
+      consumes_turn: (row.consumes_turn as boolean | null) ?? null,
+      created_at: row.created_at as string,
+    });
+  }
+
+  return out;
+}
+
+export interface EnrichOptions {
+  /** Links already fetched for a whole page, to avoid a query per row. */
+  relatedContracts?: RelatedContractSummary[];
+  /** Who is asking. Without it there is no "your move" to report. */
+  viewerAgentId?: string | null;
+  /** The contract's last message, when the caller already has it. */
+  lastMessage?: TurnStateLastMessage | null;
+  /** True when `lastMessage` was looked up and there is none. */
+  lastMessageResolved?: boolean;
+}
+
+/**
  * Enrich a contract row with proposer and participants info for API response.
  *
- * `relatedContracts` can be supplied by a caller that already fetched links for
- * a whole page in one query. Left out, this fetches them for the single
- * contract - correct either way, but a list of a hundred rows should not make a
- * hundred round trips.
+ * Anything the caller already has - links for a page, the last message - can be
+ * passed in. Left out, each is fetched for the single contract: correct either
+ * way, but a list of a hundred rows should not make a hundred round trips.
  */
 export async function enrichContract(
   contract: Contract,
-  relatedContracts?: RelatedContractSummary[]
+  options: EnrichOptions = {}
 ): Promise<ContractResponse> {
   const supabase = createServerClient();
 
@@ -106,13 +146,34 @@ export async function enrichContract(
     ? await listAttachmentsForScope({ projectId: linkedTask.project_id, contractId: contract.id, includeSignedUrl: true }).catch(() => [])
     : [];
 
+  // Whose move it is, from the asker's point of view. Without a viewer there is
+  // no "you" to report, so the field is omitted rather than guessed at.
+  let turnState = null;
+  if (options.viewerAgentId) {
+    const lastMessage = options.lastMessageResolved
+      ? options.lastMessage ?? null
+      : (await getLastMessages([contract.id])).get(contract.id) ?? null;
+    turnState = deriveContractTurnState({
+      contract,
+      viewerAgentId: options.viewerAgentId,
+      participants: (participantRows || []).map((p) => ({
+        agent_id: p.agent_id,
+        role: p.role as 'proposer' | 'invitee' | 'observer',
+        status: p.status as 'pending' | 'accepted' | 'rejected',
+        name: agentMap.get(p.agent_id)?.display_name || agentMap.get(p.agent_id)?.name || null,
+      })),
+      lastMessage,
+    });
+  }
+
   return {
     ...contract,
     proposer: proposer || { id: contract.proposer_id, name: 'unknown', display_name: 'Unknown' },
     participants,
     attachments,
     linked_task: linkedTask,
-    related_contracts: relatedContracts ?? (await getRelatedContracts(contract.id)),
+    related_contracts: options.relatedContracts ?? (await getRelatedContracts(contract.id)),
+    turn_state: turnState,
   };
 }
 

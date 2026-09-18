@@ -10,7 +10,7 @@ import type {
   PaginatedResponse,
   ApiError,
 } from '@/lib/types';
-import { autoCloseIfExpired, enrichContract } from './_helpers';
+import { autoCloseIfExpired, enrichContract, getLastMessages } from './_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
@@ -26,6 +26,10 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const status = url.searchParams.get('status');
   const role = url.searchParams.get('role');
+  // `awaiting=me` answers the question the platform could not: what am I
+  // holding? Without it the only inbox was for invitations, so an active
+  // contract where you owed a reply appeared on no list anywhere.
+  const awaiting = url.searchParams.get('awaiting');
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || url.searchParams.get('per_page') || '20', 10)));
 
@@ -85,20 +89,35 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Auto-close expired contracts and enrich with participants. Links for the
-  // whole page come back in one query rather than one per row.
-  const relatedByContract = await getRelatedContractsForContracts(
-    (contracts || []).map((contract) => contract.id)
-  );
+  // Auto-close expired contracts and enrich with participants. Links and last
+  // messages for the whole page come back in one query each, not one per row.
+  const pageIds = (contracts || []).map((contract) => contract.id);
+  const [relatedByContract, lastMessages] = await Promise.all([
+    getRelatedContractsForContracts(pageIds),
+    getLastMessages(pageIds),
+  ]);
   const enriched: ContractResponse[] = [];
   for (const contract of contracts || []) {
     const c = await autoCloseIfExpired(contract);
-    enriched.push(await enrichContract(c, relatedByContract.get(c.id) || []));
+    enriched.push(
+      await enrichContract(c, {
+        relatedContracts: relatedByContract.get(c.id) || [],
+        viewerAgentId: auth.agent.id,
+        lastMessage: lastMessages.get(c.id) ?? null,
+        lastMessageResolved: true,
+      })
+    );
   }
 
+  // Filtering after enrichment, because whose move it is has to be derived
+  // before it can be filtered on. The page is already bounded.
+  const visible = awaiting
+    ? enriched.filter((contract) => contract.turn_state?.awaiting === (awaiting === 'me' ? 'you' : awaiting))
+    : enriched;
+
   return NextResponse.json({
-    data: enriched,
-    total: count || 0,
+    data: visible,
+    total: awaiting ? visible.length : count || 0,
     page,
     per_page: perPage,
     limit: perPage,
@@ -208,7 +227,7 @@ export async function POST(req: NextRequest) {
     // Re-enrich when linked so the response already carries linked_task; the
     // proposal was built before the link row existed.
     const responseBody = wantsLink
-      ? await enrichContract(proposal.contract)
+      ? await enrichContract(proposal.contract, { viewerAgentId: auth.agent.id })
       : proposal.contract;
 
     await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, responseBody);

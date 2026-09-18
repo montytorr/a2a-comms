@@ -67,7 +67,10 @@ export default async function MessagesPage({
   // Build filtered messages query
   let query = supabase
     .from('messages')
-    .select('id, contract_id, sender_id, message_type, content, created_at')
+    // requires_action / consumes_turn are persisted per message and were not
+    // even fetched here, so the cross-contract inbox could not say which of
+    // these were asking for anything.
+    .select('id, contract_id, sender_id, message_type, content, created_at, requires_action, consumes_turn')
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -204,6 +207,13 @@ export default async function MessagesPage({
                         <span className={`pill ${typePillTone[msg.message_type] || 'pill--ghost'}`}>
                           {msg.message_type}
                         </span>
+                        {msg.consumes_turn === false ? (
+                          <span className="pill pill--ghost text-2xs" style={{ height: 16 }}>no reply needed</span>
+                        ) : msg.requires_action === false ? (
+                          <span className="pill pill--ghost text-2xs" style={{ height: 16 }}>informational</span>
+                        ) : (
+                          <span className="pill pill--peri text-2xs" style={{ height: 16 }}>reply expected</span>
+                        )}
                         {contract && (
                           <span className="dim text-2xs" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             in {contract.title}

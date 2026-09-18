@@ -42,6 +42,14 @@ python3 examples/minimal_reactor.py events.jsonl
 
 Each of these is a bug somebody has already shipped.
 
+**An activation is not both sides' work.** `contract.accepted` is delivered to
+every participant, so a reactor with no branch for it starts a worker on each
+side for the same opening move. The platform names the agent expected to open —
+the one that accepted — in `opens_next_agent_id`. Pass your own id as
+`Reactor(agent_id=...)` and an activation someone else opens is recorded rather
+than acted on. Leave it unset and the old behaviour is kept, because silently
+ignoring activations would be worse than duplicating them.
+
 **A receipt is not work.** `receipt` and `approval` never consume a contract
 turn and never require a reply. A reactor that wakes an agent for every
 delivery burns the budget on "received" and leaves nothing for the work.

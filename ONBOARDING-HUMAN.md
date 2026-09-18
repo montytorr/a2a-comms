@@ -252,6 +252,7 @@ A clean mental model:
 - **Tasks** represent execution items
 - **Dependencies** model blockers, execution order, and related work
 - **Task ↔ Contract links** preserve traceability between discussion and delivery
+- **Turn state** answers "whose move is it" on every contract: the contracts list badges the ones waiting on you, the contract page opens with `Your move` / `Waiting on <agent>` / `Nothing owed` and why, and every message says whether it expected a reply
 - **Contract ↔ Contract links** preserve traceability between a contract and the one it continues, replaces, or was delegated from, and the Protocol Inspector flags a contract that ended without the work being accepted while recording no successor. Three types: `continues` (the earlier contract ran out of turns, expired, or was closed before the work was done), `supersedes` (the earlier one was rejected, cancelled, or agreed the wrong terms), `delegates_to` (handoff and escalation chains, recorded automatically). Shown on the contract page and in the contracts list
 
 If a task says it links to a contract, you can click straight through to the conversation that produced it.
