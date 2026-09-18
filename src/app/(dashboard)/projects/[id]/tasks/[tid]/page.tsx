@@ -17,11 +17,9 @@ import {
   DeleteTaskButton,
 } from './task-editor';
 import TaskComments from './task-comments';
-import BlockerActions from './blocker-actions';
-import ExecutionPanel from './execution-panel';
 import AttachmentList from '@/components/attachment-list';
 import AttachmentUpload from './attachment-upload';
-import type { TaskStatus, TaskPriority, TaskExecutionRun, TaskExecutionCheckpoint, TaskAttachment, TaskActivityEvent } from '@/lib/types';
+import type { TaskStatus, TaskPriority, TaskAttachment, TaskActivityEvent } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { listTaskActivityEvents } from '@/lib/task-activity';
@@ -132,7 +130,7 @@ export default async function TaskDetailPage({
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
     membersRes, sprintsRes, commentsRes,
-    executionRunsRes, executionCheckpointsRes, attachmentsRes, activityRes,
+    attachmentsRes, activityRes,
   ] = await Promise.all([
     supabase.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -172,18 +170,6 @@ export default async function TaskDetailPage({
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
       .limit(100),
-    supabase
-      .from('task_execution_runs')
-      .select('*')
-      .eq('task_id', tid)
-      .order('created_at', { ascending: false })
-      .limit(5),
-    supabase
-      .from('task_execution_checkpoints')
-      .select('*')
-      .eq('task_id', tid)
-      .order('created_at', { ascending: false })
-      .limit(5),
     listAttachmentsForScope({
       projectId,
       taskId: tid,
@@ -264,8 +250,6 @@ export default async function TaskDetailPage({
     metadata: Record<string, unknown>;
     created_at: string;
   }>;
-  const executionRuns = (executionRunsRes.data || []) as TaskExecutionRun[];
-  const executionCheckpoints = (executionCheckpointsRes.data || []) as TaskExecutionCheckpoint[];
   const attachments = (attachmentsRes || []) as TaskAttachment[];
   const taskActivity = (activityRes || []) as TaskActivityEvent[];
 
@@ -486,8 +470,6 @@ export default async function TaskDetailPage({
             )}
 
             <div className="space-y-6">
-              <ExecutionPanel task={task} runs={executionRuns} checkpoints={executionCheckpoints} attachments={attachments} />
-
               {/* Dependencies */}
               {dependencySections.length > 0 && (
                 <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.12s' }}>
@@ -519,28 +501,6 @@ export default async function TaskDetailPage({
                       )}
                     </div>
                   </div>
-
-                  {blockerState && (
-                    <>
-                      <div className="text-2xs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-                        {[
-                          { label: 'Blocked since', value: formatDateTime(blockerState.blockedSince) },
-                          { label: 'Unblock owner', value: blockerState.blockerResolutionOwner || 'Unassigned' },
-                          { label: 'Expected follow-up', value: blockerState.blockerResolutionDueAt ? formatDateTime(blockerState.blockerResolutionDueAt) : 'Not scheduled' },
-                          { label: 'Next action', value: blockerState.blockerResolutionAction || 'No unblock plan logged yet', wide: true },
-                          { label: 'Last follow-up', value: blockerState.blockerFollowedThroughAt ? formatDateTime(blockerState.blockerFollowedThroughAt) : 'None logged' },
-                          { label: 'Escalation', value: blockerState.blockerEscalatedAt ? formatDateTime(blockerState.blockerEscalatedAt) : 'Not escalated' },
-                          { label: 'Workflow state', value: blockerState.blockerResolutionStatus || 'Blocked' },
-                        ].map((item) => (
-                          <div key={item.label} className="card--inset" style={{ padding: '0.5rem 0.75rem', gridColumn: item.wide ? '1 / -1' : undefined }}>
-                            <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.25rem' }}>{item.label}</p>
-                            <p style={{ color: 'var(--fg-1)', lineHeight: 1.5 }}>{item.value}</p>
-                          </div>
-                        ))}
-                      </div>
-                      {!hasReadOnlyObserverAccess && <BlockerActions projectId={projectId} taskId={tid} canEscalate={blockerState.stale} currentAction={blockerState.blockerResolutionAction} currentOwner={blockerState.blockerResolutionOwner} currentDueAt={blockerState.blockerResolutionDueAt} />}
-                    </>
-                  )}
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                     {dependencySections.map((section) => (

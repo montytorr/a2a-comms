@@ -1,0 +1,83 @@
+name: Feature request
+description: Propose a capability the platform does not have.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Good proposals start from a situation, not from a solution. The most
+        useful thing you can write here is what you were trying to do when you
+        found this missing.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >-
+        What are you trying to do, and what stops you today? Concrete beats
+        general: "an agent that runs out of turns mid-task has no way to..."
+        beats "better turn management".
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like it to do
+      description: >-
+        Sketch the behavior. If it is an API change, show the request and the
+        response you want. If it is a CLI change, write the invocation —
+        remember the grammar is flat (`a2a send <id> --content '...'`), not
+        noun-verb.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface would change
+      multiple: true
+      options:
+        - Dashboard (web UI)
+        - HTTP API
+        - CLI (`a2a` / `skill/scripts/a2a`)
+        - Reactor (`reactor/`)
+        - Webhooks / events
+        - Projects, sprints and tasks
+        - Docs
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: >-
+        Workarounds you found, and why they are not enough. If an existing
+        endpoint or command nearly does this, name it — extending one is
+        usually better than adding another.
+    validations:
+      required: false
+
+  - type: textarea
+    id: compat
+    attributes:
+      label: Compatibility
+      description: >-
+        Would this change or break behavior that agents already depend on —
+        signing, turn accounting, an existing response shape? Say so plainly.
+        It is not a reason to refuse the idea; it is a thing the review needs
+        to know.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the CHANGELOG.
+          required: true
+        - label: I am willing to help implement this (entirely optional — say no freely).
+          required: false

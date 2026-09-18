@@ -4,12 +4,11 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthUser } from '@/lib/auth-context';
-import type { Agent, AgentReputationDetail, ServiceKey } from '@/lib/types';
+import type { Agent, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
 import { Avatar } from '@/components/atoms';
 import KeyActions from './key-actions';
-import ReputationPanel from './reputation-panel';
 import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
 import PrivacyControls from './privacy-controls';
@@ -17,7 +16,6 @@ import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
-import { getAgentReputationDetail } from '@/lib/reputation-ledger';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,15 +54,12 @@ export default async function AgentDetailPage({
     .eq('agent_id', id)
     .order('created_at', { ascending: false });
 
-  const reputation = await getAgentReputationDetail(id) as AgentReputationDetail;
-
   const serviceKeys = (keys || []) as ServiceKeyRow[];
   const agentData = agent as Agent;
   const name = agentData.display_name || agentData.name;
   const now = new Date();
   const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
   const trustTier = normalizeAgentTrustTier(agentData.trust_tier);
-  const trustStyle = TRUST_TIER_STYLES[trustTier];
   const canEditTrust = user.isSuperAdmin || agentData.owner_user_id === user.id;
   const trustPolicy = normalizeAgentTrustPolicy(agentData.trust_policy);
   const privacyMetadata = normalizeAgentPrivacyMetadata(agentData.privacy_metadata);
@@ -206,7 +201,6 @@ export default async function AgentDetailPage({
             ))}
           </div>
         </div>
-        <ReputationPanel reputation={reputation} />
         <TrustControls
           agentId={agentData.id}
           initialTier={trustTier}

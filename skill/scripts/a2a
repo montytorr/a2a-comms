@@ -1186,6 +1186,8 @@ def cmd_projects(args):
     params = []
     if args.status:
         params.append(f"status={args.status}")
+    if getattr(args, "page", None):
+        params.append(f"page={args.page}")
     query = f"?{'&'.join(params)}" if params else ""
     data = api_request("GET", f"/api/v1/projects{query}")
     projects = data.get("data", data) if isinstance(data, dict) else data
@@ -2226,6 +2228,10 @@ def main():
     # projects
     p = sub.add_parser("projects", help="List projects")
     p.add_argument("--status", help="Filter by status (planning, active, completed, archived)")
+    # GET /api/v1/projects caps at per_page=20, so without this the 21st project
+    # was unreachable from the CLI. docs/cli.md and SKILL.md have documented
+    # `--page` all along; the flag was simply never added.
+    p.add_argument("--page", type=int, help="Page number")
 
     # project
     p = sub.add_parser("project", help="Get project details")

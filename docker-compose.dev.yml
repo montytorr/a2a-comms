@@ -1,0 +1,200 @@
+# A whole A2A Comms install, from nothing, in one command:
+#
+#   docker compose -f docker-compose.dev.yml up -d --build
+#
+# Postgres, all 49 migrations, a seeded agent with a working key pair, the
+# Next.js app on http://localhost:3100, and the four sweep workers. No .env
+# needed — every value below has a working default. Copy .env.example to .env
+# when you want real email or your own secrets.
+#
+# Why this is a separate file from docker-compose.yml: that one is the
+# production deployment, and scripts/ci-deploy.sh calls it by name
+# (`docker compose -f docker-compose.yml up -d --no-deps <workers>`) on a host
+# where its fixed container names and its two external networks
+# (trading-v2-network, clawdius-data) already exist. Neither exists on a laptop,
+# and the fixed names collide with the running production containers. Rewriting
+# it in place would have made the repo startable for a stranger by breaking it
+# for the deploy that is live right now.
+#
+# Ports: change APP_PORT or POSTGRES_PORT in the environment if 3100/55432 are taken.
+
+name: a2a-comms-dev
+
+# Shared by the app and all four workers. The workers send email and build
+# blocker links, so they need NEXT_PUBLIC_APP_URL too — without it they log
+# "falling back to playground domain" and mail a stranger links to somebody
+# else's deployment.
+x-runtime-env: &runtime-env
+  DATABASE_URL: postgresql://a2a_app:${POSTGRES_PASSWORD:-a2a-dev-password}@postgres:5432/a2a
+  NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3100}
+
+x-db-url: &db-url
+  DATABASE_URL: postgresql://a2a_app:${POSTGRES_PASSWORD:-a2a-dev-password}@postgres:5432/a2a
+
+# The migrate/seed/init one-shots all run out of the postgres image, which
+# already has psql and is already being pulled. Building a second image just to
+# carry a database client would double the cold-start for nothing.
+x-psql-tools: &psql-tools
+  image: postgres:17.11-alpine
+  restart: "no"
+  volumes:
+    - ./scripts:/opt/scripts:ro
+    - ./supabase/migrations:/migrations:ro
+
+services:
+  # ------------------------------------------------------------- database ---
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: a2a_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-a2a-dev-password}
+      POSTGRES_DB: a2a
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Bound to loopback so a dev box does not quietly publish its database.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    healthcheck:
+      # -h 127.0.0.1 forces TCP. On the unix socket pg_isready also answers yes
+      # to the temporary server initdb runs while it applies POSTGRES_* — work
+      # done against that one is thrown away when it shuts down, so gating on it
+      # starts the migrations against a database that is about to disappear.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U a2a_app -d a2a"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+    restart: unless-stopped
+
+  # ------------------------------------------------------------ one-shots ---
+  # Creates the attachment volume and hands it to the image's uid 1001. Docker
+  # creates a named volume root-owned; the app runs as `nextjs` and would fail
+  # its first upload with EACCES, days after a green health check.
+  init:
+    <<: *psql-tools
+    command: ["sh", "-c", "mkdir -p /data/attachments && chown -R 1001:1001 /data/attachments"]
+    volumes:
+      - attachments:/data/attachments
+
+  migrate:
+    <<: *psql-tools
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *db-url
+      MIGRATIONS_DIR: /migrations
+    command: ["sh", "/opt/scripts/migrate.sh"]
+
+  seed:
+    <<: *psql-tools
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *db-url
+      A2A_BASE_URL: http://localhost:${APP_PORT:-3100}
+      SEED_AGENT_NAME: ${SEED_AGENT_NAME:-local}
+    command: ["sh", "/opt/scripts/seed.sh"]
+
+  # ------------------------------------------------------------------ app ---
+  app:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3100}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      init:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *runtime-env
+      A2A_ATTACHMENT_DIR: /data/attachments
+      A2A_ATTACHMENT_SIGNING_KEY: ${A2A_ATTACHMENT_SIGNING_KEY:-dev-only-attachment-key-change-me-32b}
+    ports:
+      - "${APP_PORT:-3100}:3000"
+    volumes:
+      - attachments:/data/attachments
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    restart: unless-stopped
+
+  # -------------------------------------------------------------- workers ---
+  # Same four targets and the same env contract as docker-compose.yml; only the
+  # fixed container_name and the two external networks are dropped, so these can
+  # run beside a production stack without colliding with it.
+  webhook-worker:
+    build:
+      context: .
+      target: worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *runtime-env
+    restart: unless-stopped
+
+  invitation-sweep-worker:
+    build:
+      context: .
+      target: invitation-worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *runtime-env
+      PROJECT_INVITATION_SWEEP_INTERVAL_MS: ${PROJECT_INVITATION_SWEEP_INTERVAL_MS:-600000}
+      PROJECT_INVITATION_SWEEP_BATCH_SIZE: ${PROJECT_INVITATION_SWEEP_BATCH_SIZE:-100}
+    restart: unless-stopped
+
+  stale-blocker-sweep-worker:
+    build:
+      context: .
+      target: stale-blocker-worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *runtime-env
+      STALE_BLOCKER_SWEEP_INTERVAL_SECONDS: ${STALE_BLOCKER_SWEEP_INTERVAL_SECONDS:-900}
+    restart: unless-stopped
+
+  stale-run-sweep-worker:
+    build:
+      context: .
+      target: stale-run-worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *runtime-env
+      STALE_RUN_SWEEP_INTERVAL_SECONDS: ${STALE_RUN_SWEEP_INTERVAL_SECONDS:-300}
+      STALE_RUN_AFTER_MINUTES: ${STALE_RUN_AFTER_MINUTES:-15}
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  attachments:

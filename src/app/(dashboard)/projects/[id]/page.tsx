@@ -4,7 +4,6 @@ import { createServerClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import KanbanBoard, { type TaskRow } from './kanban-board';
-import SprintSelector from './sprint-selector';
 import ProjectHeader from './project-header';
 import AutoRefresh from '@/components/auto-refresh';
 import type { ProjectInvitationStatus } from '@/lib/types';
@@ -17,17 +16,15 @@ export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ sprint?: string }>;
 }) {
   const auth = await getAuthActorContext();
   const user = auth?.user ?? null;
   if (!user || !auth) redirect('/login');
 
   const { id } = await params;
-  const { sprint: sprintFilter } = await searchParams;
+
   const supabase = createServerClient();
   noStore();
 
@@ -91,8 +88,8 @@ export default async function ProjectDetailPage({
     isOwner = !!(ownerCheck && ownerCheck.length > 0);
   }
 
-  // Fetch members, invitations, observers, sprints, ALL tasks (for completion %), filtered tasks, dependencies, and available agents in parallel
-  const [membersRes, invitationsRes, observersRes, sprintsRes, allTasksRes, tasksRes, depsRes, allAgentsRes] = await Promise.all([
+  // Fetch members, invitations, observers, ALL tasks (for completion %), filtered tasks, dependencies, and available agents in parallel
+  const [membersRes, invitationsRes, observersRes, tasksRes, depsRes, allAgentsRes] = await Promise.all([
     supabase
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
@@ -103,34 +100,19 @@ export default async function ProjectDetailPage({
       .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
+    // The observer MANAGER is gone (project_observers has never had a row), but
+    // these still drive visibility: observerAgentIds below decides what a
+    // member can see.
     supabase
       .from('project_observers')
-      .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
+      .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
     supabase
-      .from('sprints')
-      .select('*')
+      .from('tasks')
+      .select('id, project_id, title, status, priority, labels, assignee_agent_id, position, created_at, updated_at, blocked_at, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('position', { ascending: true }),
-    supabase
-      .from('tasks')
-      .select('id, sprint_id, status')
-      .eq('project_id', id),
-    (() => {
-      let q = supabase
-        .from('tasks')
-        .select('id, project_id, title, status, priority, labels, assignee_agent_id, due_date, position, sprint_id, created_at, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
-        .eq('project_id', id);
-
-      if (sprintFilter && sprintFilter !== 'backlog') {
-        q = q.eq('sprint_id', sprintFilter);
-      } else if (sprintFilter === 'backlog') {
-        q = q.is('sprint_id', null);
-      }
-
-      return q.order('position', { ascending: true });
-    })(),
     (async () => {
       const taskIdsRes = await supabase
         .from('tasks')
@@ -158,8 +140,6 @@ export default async function ProjectDetailPage({
   });
   const invitations = invitationVisibility.visibleInvitations;
   const observers = observersRes.data || [];
-  const sprints = sprintsRes.data || [];
-  const allTasks = allTasksRes.data || [];
   const tasks = ((tasksRes.data || []) as Array<Record<string, unknown>>).map((task) => ({
     ...task,
     assignee: Array.isArray(task.assignee) ? (task.assignee[0] ?? null) : task.assignee,
@@ -189,23 +169,6 @@ export default async function ProjectDetailPage({
   ));
 
   if (isObserver && !projectPrivacy.allow_observer_access) redirect('/projects');
-
-  // Compute completion stats per sprint (excluding cancelled tasks)
-  const sprintStats: Record<string, { total: number; done: number }> = {};
-  for (const t of allTasks) {
-    if (t.status === 'cancelled') continue; // Exclude cancelled from progress
-    const key = t.sprint_id || 'backlog';
-    if (!sprintStats[key]) sprintStats[key] = { total: 0, done: 0 };
-    sprintStats[key].total++;
-    if (t.status === 'done') sprintStats[key].done++;
-  }
-  // "all" = sum of everything (excluding cancelled)
-  const nonCancelledTasks = allTasks.filter(t => t.status !== 'cancelled');
-  sprintStats['all'] = { total: nonCancelledTasks.length, done: nonCancelledTasks.filter(t => t.status === 'done').length };
-
-  // Get active sprint
-  const activeSprint = sprints.find(s => s.status === 'active') || null;
-  const currentSprintId = sprintFilter || (activeSprint?.id ?? 'all');
 
   const projectDependencySummary = dependencyRows
     .map((dep) => ({
@@ -320,7 +283,6 @@ export default async function ProjectDetailPage({
           invitations={invitations}
           myPendingInvitations={myPendingInvitations}
           availableAgents={availableAgents}
-          observers={observers as never[]}
           isOwner={isOwner}
           hiddenPendingInvitationCount={invitationVisibility.hiddenPendingCount}
           canSeeObserverInvitationSummary={invitationVisibility.canSeeSummary}
@@ -333,14 +295,6 @@ export default async function ProjectDetailPage({
             canEdit={isOwner}
           />
         </div>
-
-        {/* Sprint Selector */}
-        <SprintSelector
-          sprints={sprints}
-          currentSprintId={currentSprintId}
-          projectId={id}
-          sprintStats={sprintStats}
-        />
 
         {blockedTaskCards.length > 0 && (
           <div
@@ -454,7 +408,6 @@ export default async function ProjectDetailPage({
         <KanbanBoard
           tasks={tasksWithDependencySummary}
           projectId={id}
-          sprintId={sprintFilter && sprintFilter !== 'all' && sprintFilter !== 'backlog' ? sprintFilter : undefined}
           members={members}
         />
       </div>

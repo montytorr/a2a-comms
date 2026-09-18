@@ -35,14 +35,6 @@ const statusColors: Record<string, string> = {
   cancelled: 'var(--fg-4)',
 };
 
-const statusPillTone: Record<string, string> = {
-  active: 'pill--mint',
-  proposed: 'pill--amber',
-  closed: 'pill--ghost',
-  rejected: 'pill--rose',
-  expired: 'pill--amber',
-  cancelled: 'pill--ghost',
-};
 
 const taskStatusColors: Record<string, string> = {
   backlog: 'var(--fg-4)',

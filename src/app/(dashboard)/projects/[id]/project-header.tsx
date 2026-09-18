@@ -9,7 +9,6 @@ import { formatDateTime, formatRelative } from '@/lib/format-date';
 import ProjectStatusDropdown from './project-status-dropdown';
 import { inviteProjectMember, removeProjectMember, respondToProjectInvitation, updateProject } from './actions';
 import { getInvitationStatusLabel, getInvitationStatusTone, type InvitationLike } from '../invitation-utils';
-import ObserverManager from './observer-manager';
 
 interface ProjectHeaderProps {
   project: {
@@ -33,13 +32,6 @@ interface ProjectHeaderProps {
   invitations?: InvitationLike[];
   myPendingInvitations?: InvitationLike[];
   availableAgents?: Array<{ id: string; name: string; display_name: string; trust_tier?: string | null }>;
-  observers?: Array<{
-    id: string;
-    note?: string | null;
-    created_at: string;
-    agent?: { id: string; name: string; display_name: string; trust_tier?: string | null } | null;
-    invited_by?: { id: string; name: string; display_name: string } | null;
-  }>;
   isOwner?: boolean;
   hiddenPendingInvitationCount?: number;
   canSeeObserverInvitationSummary?: boolean;
@@ -247,7 +239,6 @@ export default function ProjectHeader({
   invitations = [],
   myPendingInvitations = [],
   availableAgents = [],
-  observers = [],
   isOwner = false,
   hiddenPendingInvitationCount = 0,
   canSeeObserverInvitationSummary = false,
@@ -526,15 +517,6 @@ export default function ProjectHeader({
           </div>
         </div>
 
-        {/* Observer panel */}
-        <div style={{ minWidth: 0, position: 'sticky', top: 24 }}>
-          <ObserverManager
-            projectId={project.id}
-            isOwner={isOwner}
-            availableAgents={availableAgents}
-            observers={observers}
-          />
-        </div>
       </div>
 
       {/* Invitation banners */}

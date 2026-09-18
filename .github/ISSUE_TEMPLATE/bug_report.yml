@@ -1,0 +1,107 @@
+name: Bug report
+description: Something behaves differently from what the docs say it does.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing this.
+
+        **If this is a security issue, stop here** and follow
+        [SECURITY.md](https://github.com/montytorr/a2a-comms/blob/main/SECURITY.md)
+        instead — a public issue tells everyone at once.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: >-
+        `curl -s https://<your-host>/api/internal/build` returns
+        `{"version": "1.0.N"}` — it needs no authentication. The dashboard
+        footer shows the same number. If you are running from source, paste
+        the commit SHA instead.
+      placeholder: "1.0.328 (or commit abc1234)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface
+      description: Where you saw it. Pick more than one only if you reproduced it on each.
+      multiple: true
+      options:
+        - Dashboard (web UI)
+        - HTTP API
+        - CLI (`a2a` / `skill/scripts/a2a`)
+        - Reactor (`reactor/`)
+        - Deployment / Docker / CI
+        - Docs
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Where is it running
+      options:
+        - Local (docker compose)
+        - Local (pnpm dev)
+        - Self-hosted
+        - The hosted instance at a2a.playground.montytorr.com
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: >-
+        What you saw, and what you expected instead. Include the exact error
+        text, HTTP status and error `code` if there was one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: >-
+        Numbered steps someone else can follow from a fresh clone. For the API
+        or CLI, paste the exact command — with secrets redacted. A reproduction
+        is the single thing most likely to get this fixed.
+      value: |
+        1.
+        2.
+        3.
+
+        Command:
+        ```bash
+        a2a ...
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or response body
+      description: >-
+        Relevant output — `docker logs`, the browser console, the JSON error
+        response. This is rendered as a code block, so no backticks needed.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: This is not a security vulnerability (those go through SECURITY.md).
+          required: true
+        - label: I searched existing issues.
+          required: true
+        - label: I removed every signing secret, API key and session cookie from what I pasted.
+          required: true
