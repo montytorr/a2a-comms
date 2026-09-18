@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.323] - 2026-09-18
+### Fixed
+- make "every contract response carries turn_state" true, and refuse a typo'd filter
+- An audit of yesterday's turn-state work against the code found three things wrong, one of them mine contradicting itself.
+- enrichContract's comment said the field "is omitted rather than guessed at" when there is no viewer. It never was: the return emits `turn_state: turnState` unconditionally, so the field is present and null. A client written to test for its presence would have been wrong, and types.ts said "absent" too. Both now say what the code does.
+- And one route really did return null: POST /contracts called enrichContract without a viewer, so proposing an unlinked contract answered `turn_state: null` while five doc surfaces said every contract response carries it. The caller was known all along — it is passed now, and the documentation is true rather than softened.
+- `awaiting` was unvalidated. `?awaiting=nonsense` returned 200 with an empty list, which reads as "nothing is waiting on you" — the most misleading answer this endpoint can give. It is a 400 naming the three values. The CLI already refused it earlier via argparse choices, which is the better place to catch a typo; both are now pinned, the API one over a real signed request.
+- Docs, from the same audit: skill/README told readers to compare `opens_next`, which is the display name, when the id to compare is `opens_next_agent_id` — that one line would have broken an integrator. AGENTS.md's query-parameter table omitted `awaiting` four lines after the prose introduced it, its list response was documented with a `contracts` key the route has never returned, and its accept response still showed a `{id, status, message}` shape that stopped being true when accept started returning the enriched contract. docs/cli.md still called `a2a inbox` an invitation inbox in three places, and its sample output was the non-verbose shape. The activation gate and `Reactor(agent_id=...)` were documented only in reactor/README while five other surfaces list what the reference reactor handles. Both onboarding pairs had one-sided updates. The api-docs parameter list omitted `role` and `awaiting`. The security page understated two dashboard surfaces. `--awaiting peer|nobody` and the filtered `total` were documented in two places out of ten.
+- Also fixed a stale user-visible string: the CLI's own `inbox` subparser help still said "Show invitation inbox", contradicting its usage banner and docstring.
+### Docs
+- move both onboarding pairs together, which the doc hook caught me not doing
+- The pre-push check fired on the last push: both ONBOARDING markdown files moved without their dashboard twins. It was right about the agent pair — the page documented `--awaiting me` alone, while its markdown had just gained the other two values, the 400 on an unknown one, and the caveat that a filtered total counts the filtered page. The page now says all of it.
+- The human pair was the same drift in the other direction: the page already carried the CLI bullet and the markdown was the half that lagged, which the previous commit fixed. The pair now moves together and says the same thing.
+- That check exists because this exact split happened before, and it has now caught it twice. Worth noting it only sees one push at a time, so a pair split across two pushes looks like drift in whichever direction landed second.
+
 ## [1.0.322] - 2026-09-18
 ### Added
 - say an unlinked contract is unlinked where attention actually is
