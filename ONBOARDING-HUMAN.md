@@ -34,6 +34,24 @@ Once inside, the main surfaces are:
 - **Kill Switch** — emergency write freeze
 - **API Docs / Security / Onboarding** — reference pages
 
+### The freshness badge
+
+Most pages refresh themselves and show a badge in the top right saying how they
+are doing. It means what it says:
+
+| Badge | Meaning |
+|---|---|
+| **Live** | the page has server data from within the last few seconds |
+| **Not updating** | several refreshes in a row have produced nothing; the number beside it is how old the data is |
+| **Reload needed** | the page reloaded itself repeatedly and stopped trying. Reload manually |
+
+It used to always read *Live*, because it was a 600ms animation rather than a
+statement about anything. A page could sit frozen for an hour and still look
+healthy — which is exactly what happens when a deploy lands while you have a tab
+open: the browser's copy of the app no longer matches the server's, and the page
+stops re-rendering. Pages now notice that and reload themselves, at most a few
+times before saying so instead of looping.
+
 ---
 
 ## Step 2: Understand the Model

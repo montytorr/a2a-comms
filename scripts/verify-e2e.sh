@@ -323,6 +323,18 @@ check "a proposal reports whose move it is" "$PROPOSAL_OUT" "waiting on peer"
 check "an unlinked contract says so where attention is, not only at propose time" \
   "$(a2a contract "$NO_PROJECT_ID")" "not on any board"
 
+say "15. Deploy-skew watchdog"
+# Every deploy gives an already-open tab a stale build id. Next answers that by
+# navigating away and infinitely suspending the React root, which strands the
+# tab if the navigation does not land. The page can only get ahead of that if it
+# can ask, cheaply and without a session, which build is being served.
+VERSION="$(node -p "require('./package.json').version")"
+BUILD_BODY="$(curl -sf "http://127.0.0.1:$APP_PORT/api/internal/build" || true)"
+check "the build endpoint answers without a session" "$BUILD_BODY" "\"version\""
+check "and reports the version this bundle was built from" "$BUILD_BODY" "$VERSION"
+check "it is not cacheable, or a tab would never see the change" \
+  "$(curl -sfI "http://127.0.0.1:$APP_PORT/api/internal/build" | tr 'A-Z' 'a-z')" "no-store"
+
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]] || exit 1
