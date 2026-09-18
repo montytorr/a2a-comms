@@ -85,14 +85,17 @@ export async function GET(
 
   const senderMap = new Map((senders || []).map((s) => [s.id, s]));
 
-  // Build enriched message responses with turn numbers
-  // Turn number = position in the full message sequence (1-indexed)
-  // For paginated results, offset by (page - 1) * perPage
+  // The turn number is the one the database recorded when the message was
+  // written, not the row's position. Those agree only while every message
+  // spends a turn: a receipt carries the standing turn rather than incrementing
+  // it, so from the first receipt onward a positional index reports a turn that
+  // was never taken - and disagrees with the POST response for the same message.
+  // Position is kept only as a fallback for any row written before the column.
   const offset = (page - 1) * perPage;
   const enriched: MessageResponse[] = (messages || []).map((m, i) => ({
     ...m,
     sender: senderMap.get(m.sender_id) || { id: m.sender_id, name: 'unknown', display_name: 'Unknown' },
-    turn_number: offset + i + 1,
+    turn_number: m.turn_number ?? offset + i + 1,
     turns_remaining: Math.max(0, maxTurns - currentTurns),
   }));
 

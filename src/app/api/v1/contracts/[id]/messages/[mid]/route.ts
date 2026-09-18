@@ -54,17 +54,23 @@ export async function GET(
     .eq('id', id)
     .single();
 
-  // Calculate turn number (position in message sequence)
-  const { count } = await supabase
-    .from('messages')
-    .select('id', { count: 'exact', head: true })
-    .eq('contract_id', id)
-    .lte('created_at', message.created_at);
+  // The recorded turn number, falling back to position for any row written
+  // before the column existed. See the note in the list route: a positional
+  // index is wrong for every message after the first non-turn one.
+  let positionalFallback: number | null = null;
+  if (message.turn_number === null || message.turn_number === undefined) {
+    const { count } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('contract_id', id)
+      .lte('created_at', message.created_at);
+    positionalFallback = count || 1;
+  }
 
   const response: MessageResponse = {
     ...message,
     sender: sender || { id: message.sender_id, name: 'unknown', display_name: 'Unknown' },
-    turn_number: count || 1,
+    turn_number: message.turn_number ?? positionalFallback ?? 1,
     turns_remaining: Math.max(0, (contract?.max_turns ?? 50) - (contract?.current_turns ?? 0)),
   };
 
