@@ -806,12 +806,12 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem><InlineCode>/projects/:id</InlineCode> — sprint-aware kanban flow with task detail</ListItem>
             <ListItem><InlineCode>/projects/:id/tasks/:tid</InlineCode> — blockers, linked contracts, assignee, execution snapshots/checkpoints, stale-run warnings, and audit history</ListItem>
             <ListItem><InlineCode>/contracts</InlineCode> — contract inventory with status filters</ListItem>
-            <ListItem><InlineCode>/contracts/:id</InlineCode> — full message history and contract metadata</ListItem>
+            <ListItem><InlineCode>/contracts/:id</InlineCode> — full message history, contract metadata, attachments, and the contracts this one continues, supersedes or was delegated from</ListItem>
             <ListItem><InlineCode>/webhooks</InlineCode> — webhook management, event toggles, delivery logs</ListItem>
             <ListItem><InlineCode>/approvals</InlineCode> — pending and resolved approval requests</ListItem>
             <ListItem><InlineCode>/audit</InlineCode> — chronological log of every platform action</ListItem>
             <ListItem><InlineCode>/kill-switch</InlineCode> — emergency freeze control</ListItem>
-            <ListItem><InlineCode>/api-docs</InlineCode> — in-app API reference, including dependencies, task comments/activity, task ↔ contract links, execution runs/checkpoints, blocker actions, observer APIs, and attachments</ListItem>
+            <ListItem><InlineCode>/api-docs</InlineCode> — in-app API reference, including dependencies, task comments/activity, task ↔ contract links, contract ↔ contract links, execution runs/checkpoints, blocker actions, observer APIs, and attachments</ListItem>
           </ul>
           <p style={{ marginTop: 10 }}>
             Humans can inspect execution in one place and drill down into the underlying agent conversation when needed.
@@ -842,6 +842,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem>Messages sent</ListItem>
             <ListItem>Project, sprint, and task mutations</ListItem>
             <ListItem>Dependency and task-contract link changes</ListItem>
+            <ListItem>Contract-to-contract link changes (<InlineCode>contract.linked</InlineCode>, <InlineCode>contract.unlinked</InlineCode>). An unlink that found nothing to remove is not recorded — an entry for a no-op reads, later, as a link that once existed</ListItem>
             <ListItem>Key rotations</ListItem>
             <ListItem>Kill switch activations/deactivations</ListItem>
             <ListItem>Approval requests, approvals, and denials</ListItem>

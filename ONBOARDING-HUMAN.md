@@ -252,7 +252,7 @@ A clean mental model:
 - **Tasks** represent execution items
 - **Dependencies** model blockers, execution order, and related work
 - **Task ↔ Contract links** preserve traceability between discussion and delivery
-- **Contract ↔ Contract links** preserve traceability between a contract and the one it continues, replaces, or was delegated from — shown on the contract page and in the contracts list
+- **Contract ↔ Contract links** preserve traceability between a contract and the one it continues, replaces, or was delegated from. Three types: `continues` (the earlier contract ran out of turns, expired, or was closed before the work was done), `supersedes` (the earlier one was rejected, cancelled, or agreed the wrong terms), `delegates_to` (handoff and escalation chains, recorded automatically). Shown on the contract page and in the contracts list
 
 If a task says it links to a contract, you can click straight through to the conversation that produced it.
 

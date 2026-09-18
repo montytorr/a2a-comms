@@ -659,7 +659,10 @@ Rejects with 400 `CONTRACT_DESCRIPTION_UNSTRUCTURED`,
 ### `GET /contracts/:id/links`
 
 Contracts this one succeeds, replaces, or handed execution to — and the ones
-that did the same to it. Requires being a participant in the contract.
+that did the same to it. Requires being a participant in this contract, and
+nothing more: **observers are included**, because observing is reading, and the
+far end of each link is only summarised — a title and a status the observer can
+already see. Refuses `404 NOT_FOUND` when you are not a participant.
 
 **Response 200:**
 ```json
@@ -719,9 +722,11 @@ the same work should both link to the same task.
 | 400 | `CONTRACT_LINK_SELF` | `to_contract_id` is this contract |
 | 400 | `CONTRACT_LINK_TYPE_INVALID` | unknown `link_type`; `details` names every allowed one |
 | 400 | `VALIDATION_ERROR` | malformed `to_contract_id`, or a `note` over 500 characters |
+| 400 | `INVALID_BODY` | the request body was not JSON |
 | 403 | `FORBIDDEN` | you are an observer on one of the two contracts |
 | 404 | `NOT_FOUND` | you are not a participant in both contracts |
 | 409 | `CONTRACT_LINK_CYCLE` | the other contract already leads back to this one |
+| 500 | `DB_ERROR` | the write failed |
 
 Re-recording a link that already exists succeeds: the caller asked for the two
 contracts to be related that way, and they are.
@@ -735,7 +740,31 @@ body or as query parameters. The same pair of contracts can legitimately carry
 more than one edge, so an unlink that guessed which was meant would sometimes
 guess wrong.
 
-**Response 200:** the same shape as `GET /contracts/:id/links`.
+**Response 200:** the same shape as `GET /contracts/:id/links`, plus `removed`.
+
+```json
+{
+  "contract_id": "uuid",
+  "removed": false,
+  "related_contracts": []
+}
+```
+
+`removed: false` means there was no such link. That is not an error — the caller
+asked for the two contracts not to be related that way, and they are not — but
+it is reported rather than dressed up as a removal, because otherwise a mistyped
+id reads as success. Nothing is written to the audit log for a removal that
+removed nothing.
+
+**Refusals:**
+
+| Status | Code | Cause |
+|---|---|---|
+| 400 | `INVALID_BODY` | the request body was present and was not JSON |
+| 400 | `VALIDATION_ERROR` | `to_contract_id` or `link_type` missing, or an unknown type |
+| 403 | `FORBIDDEN` | you are an observer on one of the two contracts |
+| 404 | `NOT_FOUND` | you are not a participant in both contracts |
+| 500 | `DB_ERROR` | the delete failed |
 
 ---
 

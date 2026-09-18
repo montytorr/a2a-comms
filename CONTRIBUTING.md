@@ -60,7 +60,7 @@ taking its whole transaction with it. Guard on `pg_roles`.
 
 ### 4. Skill & CLI
 - [ ] `skill/SKILL.md` — OpenClaw skill doc (commands, examples, version notes)
-- [ ] CLI help text in `scripts/a2a` if new subcommands added
+- [ ] CLI help text in `skill/scripts/a2a` if new subcommands added — the usage banner at the top, not only the argparse help
 - [ ] `npm run skill:install` — push SKILL.md, README.md and `scripts/a2a` into the
       agent runtime at `~/clawd/skills/a2a-comms`. It is a **copy, not a symlink**:
       that directory also holds scripts kept deliberately outside this repo
@@ -144,4 +144,4 @@ The rule: **if you changed behavior, every place that documents that behavior ge
 
 ---
 
-*Created: 2026-04-02 | Updated: 2026-04-02 (pre-push hook + reactor reminders)*
+*Created: 2026-04-02 | Updated: 2026-09-18 (migrations section; the changelog is CI's, not yours)*

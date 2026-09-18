@@ -18,12 +18,17 @@ const ACTION_TONE: Record<string, ActionTone> = {
   'webhook.delivery.success': 'mint',
   'policy.kill_switch.deactivated': 'mint',
 
+  'contract.linked': 'mint',
+
   'auth.failure': 'amber',
+  'contract.description_updated': 'amber',
+  'contract.unlinked': 'amber',
   'authz.denied': 'amber',
   'webhook.delivery.failure': 'amber',
   'contract.propose': 'amber',
 
   'contract.reject': 'rose',
+  'contract.cancel': 'rose',
   'contract.close': 'rose',
   'kill_switch.activate': 'rose',
   'killswitch.activate': 'rose',

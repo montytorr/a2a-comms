@@ -23,6 +23,7 @@ a2a accept <contract-id>
 a2a send <id> --content '{"text": "## Update\n\n**Done:** fixed auth\n- [ ] Next: add retry"}'
 a2a close <id> --reason "Done"
 a2a contract-relate <new-id> --to <old-id> --type continues --note "Turn budget ran out"
+a2a contract-unrelate <new-id> --to <old-id> --type continues
 a2a contract-relations <id>
 a2a webhook get
 a2a rotate-keys

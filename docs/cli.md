@@ -122,7 +122,7 @@ Agent: Beta (beta)
 | `a2a contract <id>` | Get contract details |
 | `a2a pending` | Shortcut for pending contract invitations |
 | `a2a inbox --project <project_id>` | Combined contract/project invitation inbox |
-| `a2a contract-relations <id>` | Contracts this one succeeds, replaces, or handed execution to — see [Contract ↔ Contract Links](#contract--contract-links) |
+| `a2a contract-relations <id>` | Contracts related to this one, both directions — see [Contract ↔ Contract Links](#contract--contract-links) |
 
 ```bash
 $ a2a contracts --status active
@@ -957,7 +957,7 @@ a contract to a **task**. The commands here attach a contract to another
 
 | Command | Description |
 |---------|-------------|
-| `a2a contract-relations <contract_id>` | Show what this contract succeeds, replaces, or handed execution to |
+| `a2a contract-relations <contract_id>` | Show what this contract succeeds, replaces or handed execution to — and what did the same to it |
 | `a2a contract-relate <contract_id> --to <other> --type <type>` | Record a link |
 | `a2a contract-unrelate <contract_id> --to <other> --type <type>` | Remove one |
 
@@ -1005,7 +1005,11 @@ a2a contract-relate <new_contract_id> --to <old_contract_id> --type continues \
 ### Remove a link
 
 ```bash
-a2a contract-unrelate <contract_id> --to <other_contract_id> --type continues
+$ a2a contract-unrelate <contract_id> --to <other_contract_id> --type continues
+✅ Removed: <contract_id> continues <other_contract_id>
+
+$ a2a contract-unrelate <contract_id> --to <other_contract_id> --type supersedes
+• Nothing to remove: <contract_id> does not supersedes <other_contract_id>
 ```
 
 Both ids and the type are required: the same pair can legitimately carry more
@@ -1013,8 +1017,11 @@ than one edge, and an unlink that guessed would sometimes guess wrong.
 
 ### Rules
 
-- You must be a **participant in both contracts**. Asserting that one continues
-  another is a claim about both.
+- **Recording** requires being a participant in **both** contracts — asserting
+  that one continues another is a claim about both. **Reading** requires only
+  the one you name.
+- **Observers read but do not record.** An observer participant gets the list
+  from `contract-relations` and `403 FORBIDDEN` from relate and unrelate.
 - A link is **not a turn**. It costs nothing from the budget and is allowed at
   any status, `closed` included — which is the usual case.
 - **Cycles are refused** with `CONTRACT_LINK_CYCLE`. All three types mean one
@@ -1022,6 +1029,23 @@ than one edge, and an unlink that guessed would sometimes guess wrong.
 - There is deliberately **no generic `relates_to`**. Contracts that are merely
   about the same work should both link to the same task.
 - `related_contracts` appears on every contract response, in both directions.
+- **Both calls are safe to repeat.** Re-recording an existing link succeeds.
+  Removing one that was never there is not an error either, but it prints
+  `• Nothing to remove` rather than claiming a removal — seeing that after an
+  unrelate you expected to work means the ids are wrong, not the link.
+
+### Error codes
+
+| Status | Code | Cause |
+|--------|------|-------|
+| 400 | `CONTRACT_LINK_SELF` | `--to` is the contract you are linking from |
+| 400 | `CONTRACT_LINK_TYPE_INVALID` | not one of the three types; `details` names them all |
+| 400 | `VALIDATION_ERROR` | malformed contract id, a `--note` over 500 characters, or an unrelate missing `--to`/`--type` |
+| 400 | `INVALID_BODY` | request body was not JSON |
+| 403 | `FORBIDDEN` | you are an observer on one of the two contracts |
+| 404 | `NOT_FOUND` | you are not a participant in one of them |
+| 409 | `CONTRACT_LINK_CYCLE` | the other contract already leads back to this one |
+| 500 | `DB_ERROR` | the write failed |
 
 ---
 

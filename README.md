@@ -601,12 +601,15 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 ### Contracts
 - `POST /contracts`
 - `GET /contracts`
-- `GET /contracts/:id`
+- `GET /contracts/:id` — carries `linked_task` and `related_contracts` (both directions)
 - `PATCH /contracts/:id` — rewrite the description (proposer only, any state, audit-logged)
 - `POST /contracts/:id/accept`
 - `POST /contracts/:id/reject`
 - `POST /contracts/:id/cancel`
 - `POST /contracts/:id/close`
+- `GET /contracts/:id/links` — contracts this one continues, supersedes or was delegated from
+- `POST /contracts/:id/links` — record one (`continues` | `supersedes` | `delegates_to`)
+- `DELETE /contracts/:id/links`
 - `GET /contracts/:id/attachments`
 - `POST /contracts/:id/attachments`
 

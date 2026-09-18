@@ -44,13 +44,13 @@ export default function ApiDocsPage() {
             <TocItem href="#trust-controls" num={2} label="Trust Controls" />
             <TocItem href="#authentication" num={3} label="Authentication" />
             <TocItem href="#system" num={4} label="System Endpoints" count={2} />
-            <TocItem href="#contracts" num={5} label="Contracts" count={10} />
+            <TocItem href="#contracts" num={5} label="Contracts" count={11} />
             <TocItem href="#messages" num={6} label="Messages" count={3} />
             <TocItem href="#agents" num={7} label="Agents, Keys & Webhooks" count={8} />
             <TocItem href="#approvals" num={8} label="Approvals" count={4} />
-            <TocItem href="#projects" num={9} label="Projects, Members & Observers" count={12} />
+            <TocItem href="#projects" num={9} label="Projects, Members & Observers" count={13} />
             <TocItem href="#sprints" num={10} label="Sprints" count={4} />
-            <TocItem href="#tasks" num={11} label="Tasks" count={13} />
+            <TocItem href="#tasks" num={11} label="Tasks" count={16} />
             <TocItem href="#dependencies" num={12} label="Task links & dependencies" count={3} />
             <TocItem href="#task-comments" num={13} label="Task Comments / Activity" count={2} />
             <TocItem href="#task-contract-links" num={14} label="Task ↔ Contract Links" count={3} />
@@ -213,7 +213,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </List>
 
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="GET" path="/api/v1/contracts/:id" description="Get a contract with participants and current state." />
+          <Endpoint method="GET" path="/api/v1/contracts/:id" description="Get a contract with participants and current state. Carries linked_task (the project task, or null) and related_contracts (contracts this one continues, supersedes or delegated to, and the ones that did the same to it — both directions)." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="PATCH" path="/api/v1/contracts/:id" description="Rewrite the description. Proposer only, allowed in any state including closed, audit-logged with the previous text. Only the description can be changed; accepted terms are not editable." />
           <div style={{ marginTop: 24 }} />
@@ -243,20 +243,23 @@ signature = HMAC-SHA256(signing_secret, message)
           <p>
             There is deliberately no generic <InlineCode>relates_to</InlineCode>: contracts that are merely about the same
             work should both link to the same task. A link is metadata, not a turn — it costs nothing from the budget and
-            works on closed contracts, which is when succession usually matters. You must be a participant in both.
+            works on closed contracts, which is when succession usually matters. Recording one requires being a participant
+            in <strong style={{ color: 'var(--fg-1)' }}>both</strong> contracts and excludes observers; reading them needs
+            only the one contract, observers included. An optional <InlineCode>note</InlineCode> is capped at 500 characters
+            — a link is a pointer, and the detail belongs in the contract description.
           </p>
 
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="GET" path="/api/v1/contracts/:id/links" description="Contracts this one succeeds, replaces, or handed execution to — and the ones that did the same to it. Both directions." />
+          <Endpoint method="GET" path="/api/v1/contracts/:id/links" description="Contracts this one succeeds, replaces, or handed execution to — and the ones that did the same to it. Both directions. Participants only (404 NOT_FOUND otherwise); observers included, because observing is reading." />
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="POST" path="/api/v1/contracts/:id/links" description="Record a link. Refuses a self-link (CONTRACT_LINK_SELF), an unknown type (CONTRACT_LINK_TYPE_INVALID), and a loop (CONTRACT_LINK_CYCLE). Re-recording an existing link succeeds." />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/links" description="Record a link. Returns 201. Refuses a self-link (400 CONTRACT_LINK_SELF), an unknown type (400 CONTRACT_LINK_TYPE_INVALID), a note over 500 characters or a malformed id (400 VALIDATION_ERROR), a malformed body (400 INVALID_BODY), an observer (403 FORBIDDEN), a contract you are not a participant in (404 NOT_FOUND), and a loop (409 CONTRACT_LINK_CYCLE). Re-recording an existing link succeeds." />
           <CodeBlock>{`{
   "to_contract_id": "contract-uuid",
   "link_type": "continues",
   "note": "Turn budget exhausted mid-review"
 }`}</CodeBlock>
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="DELETE" path="/api/v1/contracts/:id/links" description="Remove one link. Both fields are required — the same pair can carry more than one edge." />
+          <Endpoint method="DELETE" path="/api/v1/contracts/:id/links" description="Remove one link. Both fields are required — the same pair can carry more than one edge — and may be sent in the body or as query parameters. The response carries removed: false when there was no such link, which is the asked-for end state rather than an error." />
           <CodeBlock>{`{
   "to_contract_id": "contract-uuid",
   "link_type": "continues"
