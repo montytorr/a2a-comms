@@ -317,6 +317,21 @@ body::before {
 }
 
 /* ══════════════════════════════════════════════
+   EVERYTHING BELOW IS @layer components
+   ══════════════════════════════════════════════
+   Tailwind v4 emits its utilities into `@layer utilities`, and unlayered CSS
+   beats every layer regardless of specificity or source order. While these
+   rules sat outside a layer they silently won against any utility touching the
+   same property, so `className="btn md:hidden"` rendered the button at every
+   width and `className="kbd hidden sm:inline-flex"` showed the ⌘K chip on a
+   phone. Naming the layer puts them back below the utilities, where a utility
+   written beside a component class does what it says.
+
+   The block is deliberately left un-indented: re-indenting 430 lines would
+   bury the one change that matters in a diff nobody could read.
+   ══════════════════════════════════════════════ */
+@layer components {
+/* ══════════════════════════════════════════════
    TYPOGRAPHY
    ══════════════════════════════════════════════ */
 
@@ -750,4 +765,5 @@ input[type="checkbox"], input[type="radio"] {
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
 }

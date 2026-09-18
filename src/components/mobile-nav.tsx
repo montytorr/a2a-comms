@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { SidebarContent } from '@/components/sidebar';
@@ -11,6 +12,9 @@ interface MobileNavProps {
   displayName?: string;
   notificationCounts?: DashboardNotificationCounts;
 }
+
+/** Matches the `md` breakpoint the rail and the drawer switch on. */
+const DESKTOP_QUERY = '(min-width: 48rem)';
 
 /**
  * The whole of navigation below `md`. Until this existed the sidebar was a
@@ -38,6 +42,52 @@ export const MobileNav = (props: MobileNavProps) => {
     };
   }, [open]);
 
+  // Widening past `md` hides the drawer by CSS but would leave this component
+  // holding `open` — and with it the body scroll lock — until something
+  // thought to close it. Close it on the breakpoint itself instead.
+  useEffect(() => {
+    if (!open) return;
+    const mq = window.matchMedia(DESKTOP_QUERY);
+    const onChange = () => { if (mq.matches) setOpen(false); };
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [open]);
+
+  const drawer = (
+    <div className="fixed inset-0 z-50 flex md:hidden">
+      <div
+        className="absolute inset-0"
+        style={{ background: 'var(--scrim)' }}
+        onClick={() => setOpen(false)}
+        role="presentation"
+      />
+      <aside
+        // Keyed on the path so navigating rebuilds the drawer closed,
+        // rather than leaving it open over the page just navigated to.
+        key={pathname}
+        className="relative flex flex-col"
+        style={{
+          width: 'min(17rem, 82vw)',
+          height: '100%',
+          background: 'var(--bg-inset)',
+          borderRight: '1px solid var(--line-1)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close navigation"
+          className="btn btn--ghost btn--sm btn--icon"
+          style={{ position: 'absolute', top: 9, right: 10, width: 26, height: 26, zIndex: 1 }}
+        >
+          <X size={14} aria-hidden />
+        </button>
+        <SidebarContent {...props} onNavigate={() => setOpen(false)} />
+      </aside>
+    </div>
+  );
+
   return (
     <>
       <button
@@ -51,38 +101,18 @@ export const MobileNav = (props: MobileNavProps) => {
         <Menu size={16} aria-hidden />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div
-            className="absolute inset-0"
-            style={{ background: 'var(--scrim)' }}
-            onClick={() => setOpen(false)}
-            role="presentation"
-          />
-          <aside
-            // Keyed on the path so navigating rebuilds the drawer closed,
-            // rather than leaving it open over the page just navigated to.
-            key={pathname}
-            className="relative flex flex-col"
-            style={{
-              width: 'min(17rem, 82vw)',
-              background: 'var(--bg-inset)',
-              borderRight: '1px solid var(--line-1)',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close navigation"
-              className="btn btn--ghost btn--sm btn--icon"
-              style={{ position: 'absolute', top: 9, right: 10, width: 26, height: 26, zIndex: 1 }}
-            >
-              <X size={14} aria-hidden />
-            </button>
-            <SidebarContent {...props} onNavigate={() => setOpen(false)} />
-          </aside>
-        </div>
-      )}
+      {/* Portalled to <body> deliberately. The trigger is rendered inside the
+          topbar, and the topbar carries `backdrop-filter: blur(12px)` — a
+          filter makes an element the containing block for its `position:
+          fixed` descendants. Rendered in place, `fixed inset-0` resolved
+          against the 52px topbar instead of the viewport: the scrim covered
+          only the header strip and the drawer's nav list spilled down the
+          page, unbacked, over the content it was supposed to cover.
+
+          `document.body` needs no mount guard: `open` starts false and only a
+          click can set it, so this branch is unreachable on the server and
+          before hydration. */}
+      {open && createPortal(drawer, document.body)}
     </>
   );
 };
