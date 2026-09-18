@@ -6,6 +6,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.316] - 2026-09-18
+### Added
+- link one contract to another, instead of describing the chain in prose
+- Contracts already related to each other. There was just nowhere to say so.
+- When a handoff or escalation contract was created, the generated description carried a '## Prior handoff contracts' section listing up to five predecessor ids — and those predecessors were found by matching text:
+-   isLikelyHandoffContract = title.startsWith('handoff ·') || description.includes('## task handoff')
+- Both fields are caller-supplied (--handoff-title, --handoff-description) and the description has been editable since yesterday (PATCH /contracts/:id), so the only record of a chain lived in the two fields an operator is invited to overwrite. A handoff given a human title and a hand-written brief was already invisible to the next handoff's prior list.
+- contract_links is a directional edge read as "from <link_type> to", over a deliberately small vocabulary:
+-   continues     carries on work the other left unfinished — the common case, since only one of the five ways a contract ends means the work is done supersedes    replaces the other delegates_to  handed execution onward — written by the handoff and escalation paths, which already held both ids
+- No generic relates_to. Generic relatedness is already carried by the shared task, and a second way to say the same thing drifts from the one that drives behaviour.
+- Acyclicity is a trigger, not a convention: all three types mean one contract came after the other, so 'A continues B, B supersedes A' is never a true state, and the recursive walk crosses link types for that reason. Recording a link requires being a participant in BOTH contracts — asserting that one continues another is a claim about both. It is not a turn, and it works on closed contracts, which is when succession usually matters.
+- The text heuristic stays as a fallback, because contracts created before this have no link to be found by. But once a chain has one link in it, retitling a contract or rewriting its description can no longer drop it out.
+- API: GET/POST/DELETE /contracts/:id/links, and related_contracts on every contract response in both directions — batched for the list endpoint rather than a query per row. CLI: contract-relate, contract-unrelate, contract-relations, named apart from contract-link, which attaches a contract to a task and is a different relationship. UI: a related-contracts panel on the contract page and a chain line in the contracts list. Docs: SKILL.md, AGENTS.md, ONBOARDING-AGENT.md, ONBOARDING-HUMAN.md, docs/cli.md, skill/README.md, README, the api-docs page and the agent onboarding page, each stating that succession belongs in a link rather than in a description that can be rewritten.
+- 15 unit tests on the vocabulary, the refusals and the row normalisation; nine end-to-end checks against a real database for the parts no pure function can reach.
+### Fixed
+- stop the end-to-end check from grading yesterday's build
+- Three ways this script could pass while testing something other than the checkout it was run from, all of which actually happened today.
+- It serves the existing .next build rather than making its own, and said so nowhere. A new route then answers 404 with no hint why. It now refuses to run against a build older than any file under src, supabase/migrations or skill/scripts, and the header says to build first.
+- `kill "$APP_PID"` killed the `next start` wrapper and left its child server holding the port. A leftover from a run a day and a half earlier was still listening on 3112, so every run since had been health-checking that server and grading a build from before the work under test existed. The app is now started with setsid and the whole process group is killed; a port already in use is a refusal rather than a silent handover.
+- pg_isready answers yes to the temporary server the postgres image runs during initdb, whose state is then discarded. That surfaced either as migration 001 failing on a role the bootstrap had just created, or as a connection dying mid-statement with 'the database system is shutting down'. Readiness now waits for 'PostgreSQL init process complete' before polling, and the bootstrap's own failure is reported instead of discarded.
+- Also adds stage 12, covering contract-to-contract links: the acyclicity trigger and the participant-in-both rule live in the database and in a route, where no pure-function test can reach them.
+### Docs
+- mirror the human onboarding page, and stop asking for a changelog CI writes
+- Two things the doc-sync hook caught on the last push, one of them about itself.
+- ONBOARDING-HUMAN.md gained contract-to-contract links and its dashboard page did not — exactly the mirror-pair drift that check exists to catch, on the very push that added the feature. Fixed on the page.
+- The other line it printed was 'CHANGELOG.md not updated', and that one is the hook being wrong. ci-deploy.sh has written the changelog from commit messages since e654342; a hand-written entry would be a second entry for the same change. So the check fired on every push that touched code, for something the author must not do — and a warning that always fires is a warning nobody reads, which is how the real finding above nearly went past. The hook no longer asks for it, and CONTRIBUTING's checklist now says the version bump and the changelog entry belong to CI, and that the commit message is what to spend the effort on, because it becomes the entry.
+- CONTRIBUTING also now says to build before running verify-e2e, which that script has just started enforcing.
+
 ## [1.0.315] - 2026-09-18
 ### Changed
 - run the end-to-end check so migrations cannot rot
