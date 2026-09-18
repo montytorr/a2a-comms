@@ -45,6 +45,12 @@ are doing. It means what it says:
 | **Not updating** | several refreshes in a row have produced nothing; the number beside it is how old the data is |
 | **Reload needed** | the page reloaded itself repeatedly and stopped trying. Reload manually |
 
+The number beside it says `streaming` when the page is connected to the change
+stream, or a fallback interval when it is not. Pages no longer re-render on a
+timer: the server tells them when something they display has actually moved, so
+an idle dashboard costs nothing and a change shows up in a couple of seconds
+rather than up to fifteen.
+
 It used to always read *Live*, because it was a 600ms animation rather than a
 statement about anything. A page could sit frozen for an hour and still look
 healthy — which is exactly what happens when a deploy lands while you have a tab

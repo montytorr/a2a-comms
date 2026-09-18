@@ -133,7 +133,7 @@ export default async function MessagesPage({
   const allMessages = messages || [];
 
   return (
-    <AutoRefresh intervalMs={10000}>
+    <AutoRefresh intervalMs={10000} watch={['messages', 'contracts']}>
       <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div style={{ marginBottom: '28px' }}>

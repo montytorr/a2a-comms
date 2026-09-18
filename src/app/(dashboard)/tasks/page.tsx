@@ -66,7 +66,7 @@ export default async function TasksPage({
     : params.status;
 
   return (
-    <AutoRefresh intervalMs={30000}>
+    <AutoRefresh intervalMs={30000} watch={['tasks', 'projects']}>
       <PageFrame>
         <SectionHeader
           eyebrow="Delivery"

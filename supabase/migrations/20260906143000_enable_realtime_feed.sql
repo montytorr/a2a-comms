@@ -1,27 +1,26 @@
--- Match the feed client's three database-change subscriptions. Publish only
--- these tables and preserve their existing RLS policies.
-DO $publication$
-DECLARE
-  relation_name text;
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-    CREATE PUBLICATION supabase_realtime;
-  END IF;
+-- Neutralised. This migration published messages, contracts and audit_log to
+-- `supabase_realtime` to "match the feed client's three database-change
+-- subscriptions". Those subscriptions never existed: there is not one
+-- supabase.channel or postgres_changes call site in src/, and the feed client
+-- has always polled an HTTP endpoint instead.
+--
+-- It is not merely unused. It cannot run against the live database, and the
+-- proof is that it does not:
+--
+--   ERROR:  Realtime feed table public.messages must have RLS enabled
+--   WARNING:  "wal_level" is insufficient to publish logical changes
+--
+-- The instance moved off Supabase to native Postgres (20260911190000). It has
+-- no RLS enabled on any table and is not configured for logical replication, so
+-- the RAISE EXCEPTION above aborts this file - and, because the migrations are
+-- applied by hand in order (see CONTRIBUTING §1b), would abort every migration
+-- after it on any fresh deployment of this shape. verify-e2e never caught that,
+-- because its bootstrap creates the Supabase roles and the early migrations
+-- enable RLS there, so the harness is the one environment where this works.
+--
+-- Left as a file rather than deleted so the history stays honest about what was
+-- once intended here. The dashboard now gets change notifications from
+-- a2a_pulse() over SSE, which is what the original comment was describing and
+-- which has an actual subscriber.
 
-  FOREACH relation_name IN ARRAY ARRAY['messages', 'contracts', 'audit_log'] LOOP
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relname = relation_name AND c.relrowsecurity
-    ) THEN
-      RAISE EXCEPTION 'Realtime feed table public.% must have RLS enabled', relation_name;
-    END IF;
-
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_publication_tables
-      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = relation_name
-    ) THEN
-      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', relation_name);
-    END IF;
-  END LOOP;
-END
-$publication$;
+SELECT 1 WHERE false;

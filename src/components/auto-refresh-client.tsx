@@ -9,6 +9,7 @@ import {
   recentReloads,
   type BuildComparison,
 } from '@/lib/refresh-watchdog';
+import { changedKeys, type Pulse, type PulseKey } from '@/lib/pulse';
 
 interface AutoRefreshClientProps {
   intervalMs: number;
@@ -22,6 +23,11 @@ interface AutoRefreshClientProps {
   renderedAt: number;
   /** The version this bundle was built from, baked in at build time. */
   buildVersion: string;
+  /**
+   * The domains this page displays. A change in one of them is what earns a
+   * re-render; anything else is churn without information.
+   */
+  watch: readonly PulseKey[];
   children: React.ReactNode;
 }
 
@@ -58,6 +64,7 @@ export default function AutoRefreshClient({
   onlyWhenVisible,
   renderedAt,
   buildVersion,
+  watch,
   children,
 }: AutoRefreshClientProps) {
   const router = useRouter();
@@ -70,6 +77,7 @@ export default function AutoRefreshClient({
   const lastBuildCheckAt = useRef(0);
   const [status, setStatus] = useState<Status>('live');
   const [ageSeconds, setAgeSeconds] = useState(0);
+  const [streaming, setStreaming] = useState(false);
 
   // A new renderedAt is proof the round trip completed and the tree committed.
   // Only refs are touched here: the next tick reads them and is the single
@@ -107,6 +115,62 @@ export default function AutoRefreshClient({
     router.refresh();
   }, [router]);
 
+  /**
+   * Listen for the server saying something moved.
+   *
+   * This is the mechanism; the timer below is now only a fallback for when the
+   * stream is unavailable. A timer re-renders the page whether or not anything
+   * changed, and twenty pages were doing that every ten to fifteen seconds.
+   */
+  useEffect(() => {
+    let source: EventSource | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let attempt = 0;
+    let previous: Pulse | null = null;
+
+    const connect = () => {
+      source = new EventSource('/api/internal/pulse');
+
+      source.addEventListener('pulse', (event) => {
+        const next = JSON.parse((event as MessageEvent).data) as Pulse;
+        attempt = 0;
+        setStreaming(true);
+        // The first frame is a baseline, not a change. Refreshing on it would
+        // make every page load cost an immediate second render.
+        if (previous !== null && changedKeys(previous, next, watch).length > 0) {
+          lastServerRenderSeenAt.current = Date.now();
+          doRefresh();
+        }
+        previous = next;
+      });
+
+      source.addEventListener('bye', () => {
+        // The server is retiring this connection deliberately, usually because
+        // it has been open long enough to outlive a deploy. Reconnect at once.
+        source?.close();
+        source = null;
+        connect();
+      });
+
+      source.onerror = () => {
+        source?.close();
+        source = null;
+        setStreaming(false);
+        // Backed off, because a server that is down would otherwise be
+        // reconnected to by every open tab several times a second.
+        attempt += 1;
+        retry = setTimeout(connect, Math.min(30_000, 1000 * 2 ** Math.min(attempt, 5)));
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (retry) clearTimeout(retry);
+      source?.close();
+    };
+  }, [doRefresh, watch]);
+
   useEffect(() => {
     const tick = async () => {
       if (onlyWhenVisible && !isVisible.current) return;
@@ -137,7 +201,10 @@ export default function AutoRefreshClient({
       if (action === 'idle') return;
 
       setStatus((current) => (current === 'stuck' ? current : stale ? 'stale' : 'live'));
-      doRefresh();
+      // With the stream connected, the server says when something moved, so a
+      // timed refresh would be the churn this was built to remove. The timer
+      // stays for the watchdog above, and for when the stream is down.
+      if (!streaming) doRefresh();
     };
 
     if (!intervalRef.current) {
@@ -172,7 +239,7 @@ export default function AutoRefreshClient({
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('pageshow', handlePageShow);
     };
-  }, [doRefresh, checkBuild, intervalMs, onlyWhenVisible]);
+  }, [doRefresh, checkBuild, intervalMs, onlyWhenVisible, streaming]);
 
   const tone = status === 'live' ? 'mint' : status === 'stale' ? 'amber' : 'rose';
   const label = status === 'live' ? 'Live' : status === 'stale' ? 'Not updating' : 'Reload needed';
@@ -197,7 +264,7 @@ export default function AutoRefreshClient({
           {label}
         </span>
         <span className="mono num dim text-2xs">
-          {status === 'live' ? `${Math.round(intervalMs / 1000)}s` : `${ageSeconds}s ago`}
+          {status === 'live' ? (streaming ? 'streaming' : `${Math.round(intervalMs / 1000)}s`) : `${ageSeconds}s ago`}
         </span>
       </div>
       {children}

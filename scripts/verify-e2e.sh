@@ -335,6 +335,30 @@ check "and reports the version this bundle was built from" "$BUILD_BODY" "$VERSI
 check "it is not cacheable, or a tab would never see the change" \
   "$(curl -sfI "http://127.0.0.1:$APP_PORT/api/internal/build" | tr 'A-Z' 'a-z')" "no-store"
 
+say "16. Dashboard pulse"
+# The fingerprint is what tells an open page something moved. If a domain it
+# claims to cover stops moving when that domain changes, the page silently stops
+# updating for it — the exact bug this replaced polling to fix.
+PULSE_BEFORE="$(psql_q -c "select a2a_pulse()->>'participants';")"
+# The real transition: beta's invitation on a still-proposed contract accepted.
+psql_q -c "update contract_participants set status='accepted', responded_at=now() where contract_id='$NO_PROJECT_ID' and status<>'accepted';" >/dev/null
+PULSE_AFTER="$(psql_q -c "select a2a_pulse()->>'participants';")"
+[[ "$PULSE_BEFORE" != "$PULSE_AFTER" ]] \
+  && ok "an accepted participant moves the participants fingerprint" \
+  || bad "participants fingerprint did not move ($PULSE_BEFORE)"
+
+# And a page watching something else must not be woken by it.
+CONTRACTS_FP="$(psql_q -c "select a2a_pulse()->>'contracts';")"
+psql_q -c "insert into audit_log (actor, action, resource_type, resource_id) values ('e2e','e2e.probe','contract','$TS_ID');" >/dev/null
+[[ "$CONTRACTS_FP" == "$(psql_q -c "select a2a_pulse()->>'contracts';")" ]] \
+  && ok "an unrelated audit entry leaves the contracts fingerprint alone" \
+  || bad "contracts fingerprint moved for an audit write"
+[[ "$(psql_q -c "select a2a_pulse()->>'audit';")" != "" ]] \
+  && ok "the audit domain is reported" || bad "no audit fingerprint"
+
+check "the pulse stream refuses an unauthenticated subscriber" \
+  "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT/api/internal/pulse")" "401"
+
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]] || exit 1

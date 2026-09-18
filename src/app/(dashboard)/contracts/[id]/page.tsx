@@ -218,7 +218,7 @@ export default async function ContractDetailPage({
   const contractIdShort = id.slice(0, 6) + '…' + id.slice(-4);
 
   return (
-    <AutoRefresh intervalMs={10000}>
+    <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks']}>
       <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="row gap-2 text-xs" style={{ marginBottom: 14 }}>

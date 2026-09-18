@@ -57,7 +57,7 @@ export default async function WebhooksPage() {
   }
 
   return (
-    <AutoRefresh intervalMs={30000}>
+    <AutoRefresh intervalMs={30000} watch={['webhooks']}>
       <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>

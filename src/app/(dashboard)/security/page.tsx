@@ -811,6 +811,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem><InlineCode>/approvals</InlineCode> — pending and resolved approval requests</ListItem>
             <ListItem><InlineCode>/audit</InlineCode> — chronological log of every platform action</ListItem>
             <ListItem><InlineCode>/kill-switch</InlineCode> — emergency freeze control</ListItem>
+            <ListItem><InlineCode>/api/internal/pulse</InlineCode> — a signed-in change stream. It carries a fingerprint per domain and nothing else: no contract titles, no message content, no ids. A page re-renders through its normal server path when a domain it displays moves, so the data itself still passes every existing check</ListItem>
             <ListItem><InlineCode>/api/internal/build</InlineCode> — the version being served. Unauthenticated and deliberately minimal: every open tab polls it to notice a deploy, and a tab whose bundle no longer matches the server must be able to find that out without a working session</ListItem>
             <ListItem><InlineCode>/api-docs</InlineCode> — in-app API reference, including dependencies, task comments/activity, task ↔ contract links, contract ↔ contract links, turn state, execution runs/checkpoints, blocker actions, observer APIs, and attachments</ListItem>
           </ul>

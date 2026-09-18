@@ -92,7 +92,7 @@ export default async function ApprovalsPage({
   const filters = ['pending', 'approved', 'consumed', 'denied', 'all'] as const;
 
   return (
-    <AutoRefresh intervalMs={10000}>
+    <AutoRefresh intervalMs={10000} watch={['approvals']}>
       <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div style={{ marginBottom: 32 }}>

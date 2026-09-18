@@ -70,7 +70,7 @@ export default async function AgentDetailPage({
   const privacyMetadata = normalizeAgentPrivacyMetadata(agentData.privacy_metadata);
 
   return (
-    <AutoRefresh intervalMs={30000}>
+    <AutoRefresh intervalMs={30000} watch={['agents', 'contracts', 'participants']}>
     <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Back link */}
       <Link href="/agents" className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}>

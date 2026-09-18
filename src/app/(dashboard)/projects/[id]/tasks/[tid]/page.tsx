@@ -338,7 +338,7 @@ export default async function TaskDetailPage({
   ];
 
   return (
-    <AutoRefresh intervalMs={15000}>
+    <AutoRefresh intervalMs={15000} watch={['tasks', 'projects', 'contracts', 'participants']}>
       <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 animate-fade-in">

@@ -260,7 +260,7 @@ export default async function AnalyticsPage({
   }
 
   return (
-    <AutoRefresh intervalMs={30000}>
+    <AutoRefresh intervalMs={30000} watch={['contracts', 'messages', 'tasks', 'projects', 'agents']}>
     <AnalyticsCharts
       contractsByStatus={contractsByStatus}
       dayLabels={dayLabels}

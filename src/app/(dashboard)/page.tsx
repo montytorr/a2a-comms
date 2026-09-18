@@ -178,7 +178,7 @@ export default async function DashboardPage() {
   const latestWebhookDeliveryAt = latestWebhookDeliveryRes.data?.[0]?.last_delivery_at ?? null;
 
   return (
-    <AutoRefresh intervalMs={15000}>
+    <AutoRefresh intervalMs={15000} watch={['contracts', 'participants', 'messages', 'tasks', 'projects', 'approvals']}>
       <DashboardClient
         activeContracts={activeContracts}
         messagesToday={messagesToday}

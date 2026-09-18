@@ -5,6 +5,7 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import { getExecutionStatusLabel, getExecutionStatusTone, isExecutionStale } from '@/lib/task-execution-ui';
 import { loadProtocolInspector } from '@/lib/protocol-inspector';
+import AutoRefresh from '@/components/auto-refresh';
 import { describeContractLink } from '@/lib/contract-links';
 import { requeueWebhookDelivery } from './actions';
 import type { TaskExecutionCheckpoint, TaskExecutionRun } from '@/lib/types';
@@ -197,6 +198,10 @@ export default async function ProtocolInspectorPage({
   const searched = !!contractId || !!taskId;
 
   return (
+    // The debugging cockpit for stale state was itself the one page that never
+    // refreshed: it renders live contract status, turn counts and webhook
+    // delivery, and only re-submitting the form ever changed any of it.
+    <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks', 'webhooks']}>
     <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
@@ -613,5 +618,6 @@ export default async function ProtocolInspectorPage({
         </>
       )}
     </div>
+    </AutoRefresh>
   );
 }

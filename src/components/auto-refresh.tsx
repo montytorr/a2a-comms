@@ -1,28 +1,39 @@
 import AutoRefreshClient from './auto-refresh-client';
+import { PULSE_KEYS, type PulseKey } from '@/lib/pulse';
 
 interface AutoRefreshProps {
+  /** Fallback cadence, used only while the pulse stream is unavailable. */
   intervalMs?: number;
   onlyWhenVisible?: boolean;
+  /**
+   * The domains this page displays. Watching everything means re-rendering a
+   * contract page because an unrelated webhook was delivered — churn without
+   * information — so each page names what it actually shows.
+   */
+  watch?: readonly PulseKey[];
   children: React.ReactNode;
 }
 
 /**
  * Keeps a server-rendered page current, and says so honestly.
  *
- * This is a *server* component wrapping the client one, for a single reason:
- * `Date.now()` here runs on every server render, so a new value is proof the
- * refresh landed. `router.refresh()` returns void and reports nothing, so
- * without that proof the client cannot tell a page that is quietly up to date
- * from one that stopped re-rendering half an hour ago — which is what the badge
- * used to claim either way, since it was a 600ms animation timer and nothing
- * more.
+ * Two things had to change. A page could not tell whether it was up to date:
+ * `router.refresh()` returns void, so the badge was a 600ms animation that read
+ * "Live" whether the last refresh worked, failed, or never happened — including
+ * when a deploy had frozen the tab entirely. And a page re-rendered on a timer
+ * whether or not anything had changed, twenty pages at ten to fifteen seconds.
  *
- * Being a server component also means the fifteen call sites did not have to
- * change to gain any of it.
+ * So: this is a *server* component, because `Date.now()` here runs on every
+ * server render and a new value is the proof the client needs that a refresh
+ * landed. And the client subscribes to a pulse stream that says only THAT
+ * something moved, re-rendering through the normal server path when it does.
+ * Being a server wrapper means the fifteen call sites gained all of it without
+ * changing.
  */
 export default function AutoRefresh({
   intervalMs = 15000,
   onlyWhenVisible = true,
+  watch = PULSE_KEYS,
   children,
 }: AutoRefreshProps) {
   return (
@@ -36,6 +47,7 @@ export default function AutoRefresh({
       // eslint-disable-next-line react-hooks/purity
       renderedAt={Date.now()}
       buildVersion={process.env.NEXT_PUBLIC_APP_VERSION ?? 'unknown'}
+      watch={watch}
     >
       {children}
     </AutoRefreshClient>

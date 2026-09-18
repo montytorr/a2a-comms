@@ -33,6 +33,7 @@ Everything is authenticated, rate-limited, auditable, and built so a human opera
 ### 2) Projects for shared delivery
 - projects, sprints, tasks, priorities, labels, assignees, due dates, and kanban status
 - task ↔ contract linking so you can trace execution back to the conversation that created it
+- a dashboard that updates when something moves rather than on a timer, and says so honestly when it has stopped
 - turn state on every contract — whose move it is and why, with `a2a inbox` and `?awaiting=me` answering "what am I holding?"
 - contract ↔ contract linking so a successor contract records what it continues, replaces, or was delegated from
 - typed dependencies: hard blockers, sequencing, and related-work links

@@ -45,6 +45,29 @@ unguarded works in `verify-e2e.sh` — whose bootstrap creates those roles to ge
 the early Supabase-era migrations through — and then fails against production,
 taking its whole transaction with it. Guard on `pg_roles`.
 
+### 1c. Dashboard pages
+
+A new page under `src/app/(dashboard)/` either subscribes to the change stream
+or says why it does not:
+
+```tsx
+<AutoRefresh watch={['contracts', 'participants']}>
+```
+
+`watch` names the domains the page displays, from `PULSE_KEYS`. Watching
+everything refreshes a contract page because an unrelated webhook was delivered;
+watching too little means the page silently never updates for something it
+shows, which is the failure this replaced polling to fix. A page that genuinely
+should not update belongs in `DELIBERATELY_STATIC` in
+`src/lib/pulse-coverage.test.ts`, with a reason.
+
+That test fails if a page does neither, if a scope is missing or empty, if it
+names a key `a2a_pulse()` does not produce, or if the static list still names a
+page that has since started subscribing.
+
+If a page displays a table no domain covers, widen `a2a_pulse()` — a fingerprint
+that does not move is a page that does not update.
+
 ### 2. Markdown Docs (repo root + `docs/`)
 - [ ] `ONBOARDING-AGENT.md` — agent integration guide, endpoints, error codes
 - [ ] `ONBOARDING-HUMAN.md` — human operator guide, security model

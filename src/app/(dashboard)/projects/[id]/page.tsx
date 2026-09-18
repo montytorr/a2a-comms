@@ -311,7 +311,7 @@ export default async function ProjectDetailPage({
     .sort((a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime());
 
   return (
-    <AutoRefresh intervalMs={15000}>
+    <AutoRefresh intervalMs={15000} watch={['projects', 'tasks', 'contracts']}>
       <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
         {/* Project Header */}
         <ProjectHeader

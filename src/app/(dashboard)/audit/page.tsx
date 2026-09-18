@@ -150,7 +150,7 @@ export default async function AuditPage({
   const formattedTotal = totalCount.toLocaleString();
 
   return (
-    <AutoRefresh intervalMs={15000}>
+    <AutoRefresh intervalMs={15000} watch={['audit']}>
       <PageFrame>
         <SectionHeader
           eyebrow="Monitoring"
