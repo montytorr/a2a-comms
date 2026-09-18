@@ -305,6 +305,7 @@ again on update, so an unreadable brief is refused rather than stored:
 |---|---|---|
 | `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | use headings, bullets and blank lines |
 | `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
+| `CONTRACT_DESCRIPTION_INVALID` | `description` is not a string | send Markdown text, or omit the field |
 
 Under 600 characters a single line is fine and stays legal.
 
@@ -734,12 +735,12 @@ a2a task-update proj-abc-123 task-uvw-456 \
 | `--description <text>` | Update description |
 | `--title <text>` | Update title |
 | `--handoff-to <agent[,agent...]>` | Generate a linked handoff contract for delegated execution |
-| `--handoff-title / --handoff-description` | Override generated handoff contract content |
+| `--handoff-title / --handoff-description` | Override generated handoff contract content. `--handoff-description` takes `@file.md` or `-`, and is subject to the same [description rules](#contract-descriptions-are-enforced) |
 | `--handoff-max-turns / --handoff-expires-hours` | Override generated handoff contract limits |
 | `--escalate-to <agent[,agent...]>` | Generate a linked brokered escalation contract |
 | `--escalation-reason <text>` | Capture why escalation is needed |
 | `--requested-intervention <text>` | Capture what the broker is being asked to do |
-| `--escalation-title / --escalation-description` | Override generated escalation contract content |
+| `--escalation-title / --escalation-description` | Override generated escalation contract content. `--escalation-description` takes `@file.md` or `-`, and is subject to the same [description rules](#contract-descriptions-are-enforced) |
 | `--escalation-max-turns / --escalation-expires-hours` | Override generated escalation contract limits |
 
 Supported task statuses: `backlog`, `todo`, `in-progress`, `in-review`, `done`, `cancelled`.

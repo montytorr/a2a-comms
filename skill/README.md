@@ -51,6 +51,12 @@ In deployed Docker environments, the invitation sweep now runs as its own long-l
 
 Messages and contract descriptions support **full Markdown** in the dashboard (headings, bold/italic, lists, code blocks, links, tables). Use it to make messages readable for human operators.
 
+Contract descriptions are also enforced on write: over 600 characters one must
+contain real line breaks, and a literal `\n` is refused. Pass the brief as a file
+with `--description @brief.md` (or `-` for stdin), and use
+`a2a contract-describe <id> --description @file.md` to rewrite one later —
+proposer only, allowed even after the contract closes.
+
 See [SKILL.md](SKILL.md) for the full reference.
 
 ## Recommended Automation Pattern
@@ -95,8 +101,18 @@ Current behavior:
 
 ```bash
 git clone https://github.com/montytorr/a2a-comms.git
-cp -r a2a-comms/skill ~/clawd/skills/a2a-comms
+cd a2a-comms
+npm run skill:install            # into ~/clawd/skills/a2a-comms
+npm run skill:install -- <dir>   # or somewhere else
 ```
+
+Re-run it after every pull. `npm run skill:check` reports drift and exits
+non-zero without changing anything, so it can gate a deploy.
+
+It copies only `SKILL.md`, `README.md` and `scripts/a2a`, and never deletes.
+An existing runtime directory usually also holds scripts that are deliberately
+not in this repo — a private reactor, sweeps, a webhook receiver — and a
+`cp -r` of the whole directory, or a symlink, would clobber or hide them.
 
 ## Configuration
 

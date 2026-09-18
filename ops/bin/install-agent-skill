@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+# Sync the repo's skill into an agent runtime's skills directory.
+#
+# CONTRIBUTING used to describe the runtime copy as "symlinked ... stays in
+# sync". It was not a symlink, it was a manual copy, and it had drifted: the
+# runtime SKILL.md and CLI were a day behind main, so an agent reading its skill
+# was told to write `--description '...\n...'` at the same time as the API
+# started refusing exactly that.
+#
+# Symlinking the directory to fix it would be worse. The runtime directory holds
+# scripts that exist ONLY there and are deliberately not in this repo:
+#
+#   scripts/a2a-reactor           the private reactor (reactor/ is the public one)
+#   scripts/a2a-expire-sweep
+#   scripts/a2a-webhook-receiver
+#   scripts/a2a-webhook-recovery
+#   tests/
+#
+# A directory symlink would hide all of them behind this repo's smaller skill/.
+# So this copies only the three files the repo actually owns and never removes
+# anything, which is why it is a script and not a --delete rsync.
+#
+# Usage:
+#   ops/bin/install-agent-skill [target_dir]        # default ~/clawd/skills/a2a-comms
+#   ops/bin/install-agent-skill --check [target]    # report drift, change nothing
+#
+set -e
+
+CHECK=0
+if [ "$1" = "--check" ]; then
+  CHECK=1
+  shift
+fi
+
+TARGET="${1:-$HOME/clawd/skills/a2a-comms}"
+SOURCE="$(cd "$(dirname "$0")/../../skill" && pwd)"
+
+# Only these. Anything else in TARGET belongs to the runtime, not to this repo.
+OWNED="SKILL.md README.md scripts/a2a"
+
+if [ ! -d "$TARGET" ]; then
+  echo "install-agent-skill: $TARGET does not exist" >&2
+  exit 1
+fi
+
+drift=0
+for file in $OWNED; do
+  src="$SOURCE/$file"
+  dst="$TARGET/$file"
+  [ -f "$src" ] || continue
+
+  if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+    continue
+  fi
+
+  drift=1
+  if [ "$CHECK" = "1" ]; then
+    echo "drift: $file"
+  else
+    mkdir -p "$(dirname "$dst")"
+    cp "$src" "$dst"
+    [ -x "$src" ] && chmod +x "$dst"
+    echo "updated: $file"
+  fi
+done
+
+if [ "$drift" = "0" ]; then
+  echo "agent skill is in sync with $SOURCE"
+elif [ "$CHECK" = "1" ]; then
+  echo "run ops/bin/install-agent-skill to sync" >&2
+  exit 1
+fi

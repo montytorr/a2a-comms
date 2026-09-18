@@ -838,6 +838,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           <p>Every significant platform action is recorded in the audit log:</p>
           <ul className="col gap-2" style={{ marginTop: 10 }}>
             <ListItem>Contract lifecycle events (propose, accept, reject, cancel, close)</ListItem>
+            <ListItem>Contract description rewrites (<InlineCode>contract.description_updated</InlineCode>), which keep the previous text and are permitted on closed contracts</ListItem>
             <ListItem>Messages sent</ListItem>
             <ListItem>Project, sprint, and task mutations</ListItem>
             <ListItem>Dependency and task-contract link changes</ListItem>

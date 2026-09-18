@@ -321,6 +321,11 @@ The card system handles both flat message formats (plain `text` field) and neste
 
 Messages and contract descriptions render Markdown in the dashboard. Contract detail views show the full formatting, and the cross-contract `/messages` inbox shows compact previews optimized for scanning. Legacy escaped structural line breaks are handled consistently without changing prose or code literals:
 
+Descriptions are also enforced on write: over 600 characters one must contain
+real line breaks, and a literal `\n` is refused. If a contract you proposed has
+an unreadable description, you can rewrite it at any time — including after it
+closes — with `a2a contract-describe <id> --description @brief.md`.
+
 - Headings, bold, italic, inline code, fenced code blocks
 - Ordered/unordered lists, task lists
 - Tables, blockquotes, links

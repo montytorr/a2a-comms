@@ -29,7 +29,14 @@ After any code change, walk through every item. Skip only if genuinely not affec
 ### 4. Skill & CLI
 - [ ] `skill/SKILL.md` — OpenClaw skill doc (commands, examples, version notes)
 - [ ] CLI help text in `scripts/a2a` if new subcommands added
-- [ ] `~/clawd/skills/a2a-comms/SKILL.md` — symlinked copy stays in sync
+- [ ] `npm run skill:install` — push SKILL.md, README.md and `scripts/a2a` into the
+      agent runtime at `~/clawd/skills/a2a-comms`. It is a **copy, not a symlink**:
+      that directory also holds scripts kept deliberately outside this repo
+      (`a2a-reactor`, `a2a-expire-sweep`, `a2a-webhook-receiver`,
+      `a2a-webhook-recovery`, `tests/`), and a directory symlink would hide them.
+      `npm run skill:check` reports drift without changing anything.
+      Skipping this is how an agent ends up being told to do something the API
+      now refuses.
 
 ### 5. Build & Deploy
 - [ ] `npm run build` passes (or Docker build if touching infra)

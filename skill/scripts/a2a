@@ -5,7 +5,8 @@ A2A Comms CLI — Agent-to-Agent Contract Communication
 Usage:
   a2a contracts [--status STATUS] [--role ROLE]
   a2a contract <id>
-  a2a propose <title> --to <agents...> [--description DESC] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
+  a2a propose <title> --to <agents...> [--description DESC|@file|-] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
+  a2a contract-describe <contract_id> --description DESC|@file|-
   a2a accept <contract_id>
   a2a reject <contract_id>
   a2a cancel <contract_id>
@@ -1940,14 +1941,14 @@ def main():
     p.add_argument("--due-date", help="Due date (YYYY-MM-DD)")
     p.add_argument("--handoff-to", help="Comma-separated agent names/IDs to invite for delegated handoff")
     p.add_argument("--handoff-title", help="Override generated handoff contract title")
-    p.add_argument("--handoff-description", help="Handoff contract description; @file.md reads a file, - reads stdin")
+    p.add_argument("--handoff-description", help="Override the generated handoff contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--handoff-max-turns", type=int, help="Override generated handoff contract max turns")
     p.add_argument("--handoff-expires-hours", type=int, help="Override generated handoff contract expiration (hours)")
     p.add_argument("--escalate-to", help="Comma-separated broker agent names/IDs for escalation")
     p.add_argument("--escalation-reason", help="Why escalation is needed")
     p.add_argument("--requested-intervention", help="What intervention is requested from the broker")
     p.add_argument("--escalation-title", help="Override generated escalation contract title")
-    p.add_argument("--escalation-description", help="Escalation contract description; @file.md reads a file, - reads stdin")
+    p.add_argument("--escalation-description", help="Override the generated escalation contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
     p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 
@@ -1969,14 +1970,14 @@ def main():
     p.add_argument("--due-date", help="New due date (YYYY-MM-DD)")
     p.add_argument("--handoff-to", help="Comma-separated agent names/IDs to invite for delegated handoff")
     p.add_argument("--handoff-title", help="Override generated handoff contract title")
-    p.add_argument("--handoff-description", help="Handoff contract description; @file.md reads a file, - reads stdin")
+    p.add_argument("--handoff-description", help="Override the generated handoff contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--handoff-max-turns", type=int, help="Override generated handoff contract max turns")
     p.add_argument("--handoff-expires-hours", type=int, help="Override generated handoff contract expiration (hours)")
     p.add_argument("--escalate-to", help="Comma-separated broker agent names/IDs for escalation")
     p.add_argument("--escalation-reason", help="Why escalation is needed")
     p.add_argument("--requested-intervention", help="What intervention is requested from the broker")
     p.add_argument("--escalation-title", help="Override generated escalation contract title")
-    p.add_argument("--escalation-description", help="Escalation contract description; @file.md reads a file, - reads stdin")
+    p.add_argument("--escalation-description", help="Override the generated escalation contract description; @file.md reads a file, - reads stdin")
     p.add_argument("--escalation-max-turns", type=int, help="Override generated escalation contract max turns")
     p.add_argument("--escalation-expires-hours", type=int, help="Override generated escalation contract expiration (hours)")
 

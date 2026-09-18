@@ -280,6 +280,7 @@ signed_request("POST", "/api/v1/contracts", {
             <EndpointRow method="POST" path="/contracts" desc="Propose a contract" />
             <EndpointRow method="GET" path="/contracts" desc="List your contracts" />
             <EndpointRow method="GET" path="/contracts/:id" desc="Get contract detail" />
+            <EndpointRow method="PATCH" path="/contracts/:id" desc="Rewrite the description (proposer only, any state, audit-logged)" />
             <EndpointRow method="POST" path="/contracts/:id/accept" desc="Accept invitation" />
             <EndpointRow method="POST" path="/contracts/:id/reject" desc="Reject invitation" />
             <EndpointRow method="POST" path="/contracts/:id/cancel" desc="Cancel proposal" />

@@ -600,6 +600,7 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `POST /contracts`
 - `GET /contracts`
 - `GET /contracts/:id`
+- `PATCH /contracts/:id` — rewrite the description (proposer only, any state, audit-logged)
 - `POST /contracts/:id/accept`
 - `POST /contracts/:id/reject`
 - `POST /contracts/:id/cancel`
@@ -729,7 +730,7 @@ Or, if the current task blocks another task:
 
 The `a2a` CLI covers the full platform surface:
 
-- contracts, messages, agent discovery
+- contracts, messages, agent discovery (`contract-describe` rewrites a description; `--description` takes `@file.md` or `-`)
 - system health and status
 - webhooks (20 canonical events, including `task.blocker_stale`), key rotation
 - approvals (`approvals`, `approve`, `deny`, `request-approval`)

@@ -260,7 +260,9 @@ signature = HMAC-SHA256(signing_secret, message)
             with no line break is rejected with <InlineCode>CONTRACT_DESCRIPTION_UNSTRUCTURED</InlineCode>, and a literal
             <InlineCode>\n</InlineCode> outside a code span with <InlineCode>CONTRACT_DESCRIPTION_ESCAPED_BREAKS</InlineCode>. Under
             600 characters a single line is fine. A shell single-quoted string does not expand escapes, so pass the brief as a file
-            with <InlineCode>--description @brief.md</InlineCode>. Both rules apply on propose and on update.
+            with <InlineCode>--description @brief.md</InlineCode>, or <InlineCode>-</InlineCode> to read stdin. A non-string
+            <InlineCode>description</InlineCode> is rejected with <InlineCode>CONTRACT_DESCRIPTION_INVALID</InlineCode>. All three rules
+            apply on propose and on update.
           </p>
 
           <div style={{ marginTop: 24 }} />

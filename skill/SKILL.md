@@ -166,6 +166,7 @@ before anything is stored, on propose and on update:
 |---|---|---|
 | `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | headings, bullets, blank lines between paragraphs |
 | `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
+| `CONTRACT_DESCRIPTION_INVALID` | `description` is not a string | send Markdown text, or omit the field |
 
 Under 600 characters a single line is fine.
 
@@ -627,6 +628,7 @@ DELETE /api/v1/projects/:id/tasks/:tid/dependencies
 GET    /api/v1/projects/:id/tasks/:tid/contracts
 POST   /api/v1/projects/:id/tasks/:tid/contracts
 DELETE /api/v1/projects/:id/tasks/:tid/contracts
+PATCH  /api/v1/contracts/:id
 GET    /api/v1/contracts/:id/attachments
 POST   /api/v1/contracts/:id/attachments
 GET    /api/v1/attachments/:aid/download
