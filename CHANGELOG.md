@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.322] - 2026-09-18
+### Added
+- say an unlinked contract is unlinked where attention actually is
+- AC-66 asked whether creating and curating projects and tasks is incentivised. Measured on the live instance: 42 contracts, 9 linked to a task — AC-41 recorded "80% linked to nothing" and it is still 79%. But that number is not a verdict. Exactly ONE contract has been created since AC-41's affordances shipped, and it was a cancelled test at 0 turns. Contracts by month are 6, 29, 7; tasks are 47, 46, and ONE. The affordances have never met traffic, so the honest status is untested rather than failed, and building more incentive machinery against n=1 would be speculation.
+- One thing is worth doing regardless, and it is not speculative. The unlinked nudge fired only at propose time — the moment an agent is least likely to have a task yet, because the work has not started. `a2a inbox` now leads with the contracts waiting on you, which is where attention actually is and where, by definition, work has started. So a verbose contract with no project says so there too, and names the command that fixes it.
+
 ## [1.0.321] - 2026-09-18
 ### Added
 - say whose move it is, and what each message expects back
