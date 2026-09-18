@@ -3,7 +3,7 @@
 A2A Comms CLI — Agent-to-Agent Contract Communication
 
 Usage:
-  a2a contracts [--status STATUS] [--role ROLE] [--awaiting me|peer|nobody]
+  a2a contracts [--status STATUS] [--role ROLE] [--awaiting me|peer|nobody|human]
   a2a contract <id>
   a2a propose <title> --to <agents...> [--description DESC|@file|-] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
   a2a contract-describe <contract_id> --description DESC|@file|-
@@ -22,6 +22,12 @@ Usage:
   a2a pending
   a2a inbox [--project <id>]      # what is waiting on YOU, then invitations
   a2a health
+
+  Operator channel (humans leave standing notes, agents ask a person):
+  a2a notes <contract_id>
+  a2a note-ack <contract_id> [--note UUID ...]
+  a2a ask <contract_id> --body TEXT|@file|- [--kind question|validation|blocked] [--blocking|--no-blocking]
+  a2a questions <contract_id> [--status open|answered|dismissed|all]
 
   Projects:
   a2a projects [--status STATUS]
@@ -96,6 +102,12 @@ SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
 TASK_STATUSES = {"backlog", "todo", "in-progress", "in-review", "done", "cancelled", "blocked"}
 TASK_PRIORITIES = {"urgent", "critical", "high", "medium", "low"}
 RUN_STATUSES = {"queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"}
+
+# Operator channel — humans leave standing NOTES an agent re-reads on every
+# contract read, and agents ask people QUESTIONS. Mirrors
+# OPERATOR_QUESTION_KINDS in src/lib/contract-operator-channel.ts.
+QUESTION_KINDS = ["question", "validation", "blocked"]
+QUESTION_STATUSES = ["open", "answered", "dismissed"]
 
 
 def read_text_argument(value: str | None, label: str) -> str | None:
@@ -335,6 +347,97 @@ def format_related_contract(link: dict) -> str:
     return line
 
 
+def _indent_block(text: str, prefix: str = "   ") -> str:
+    """Indent a possibly multi-line body so it reads as one block, not one line."""
+    lines = str(text or "").splitlines() or [""]
+    return "\n".join(f"{prefix}{line}" for line in lines)
+
+
+def describe_channel_state(counts: dict | None) -> str | None:
+    """The one-line operator-channel nudge, or None when there is nothing to say.
+
+    Mirrors `describeChannelState` in src/lib/contract-operator-channel.ts word
+    for word, so the CLI and the API never disagree about what is outstanding.
+    """
+    if not counts:
+        return None
+    parts = []
+    unacked = counts.get("unacknowledged_notes")
+    if unacked:
+        parts.append(
+            f"{unacked} operator note{'' if unacked == 1 else 's'} you have not acknowledged"
+        )
+    open_questions = counts.get("open_questions")
+    if open_questions:
+        blocking_count = counts.get("blocking_questions")
+        blocking = f", {blocking_count} blocking" if blocking_count else ""
+        parts.append(
+            f"{open_questions} open question{'' if open_questions == 1 else 's'} to a human{blocking}"
+        )
+    return "; ".join(parts) if parts else None
+
+
+def format_channel_counts(counts: dict | None) -> str:
+    """The counts line printed under a notes or questions listing."""
+    counts = counts or {}
+    notes = counts.get("notes", 0)
+    unacked = counts.get("unacknowledged_notes")
+    open_questions = counts.get("open_questions", 0)
+    blocking = counts.get("blocking_questions", 0)
+    # `unacknowledged_notes` is null when the server could not identify a
+    # viewer. Printing "0 unacknowledged" there would claim they are all read.
+    unacked_text = "acknowledgement unknown" if unacked is None else f"{unacked} unacknowledged"
+    return (
+        f"Operator channel: {notes} note{'' if notes == 1 else 's'} ({unacked_text}), "
+        f"{open_questions} open question{'' if open_questions == 1 else 's'} to a human "
+        f"({blocking} blocking)"
+    )
+
+
+def format_operator_note(n: dict) -> str:
+    """One standing instruction from a human, and whether this agent has read it."""
+    acknowledged = n.get("acknowledged")
+    if acknowledged is True:
+        ack = "acknowledged"
+    elif acknowledged is False:
+        ack = "NOT acknowledged"
+    else:
+        ack = "acknowledgement unknown"
+    author = n.get("author_name") or "Unknown"
+    ts = str(n.get("created_at") or "")[:16].replace("T", " ")
+    line = f"📌 {author} — {ts} | {ack}"
+    line += f"\n   ID: {n.get('id', '?')}"
+    updated = n.get("updated_at")
+    if updated and updated != n.get("created_at"):
+        line += f"\n   Edited: {str(updated)[:16].replace('T', ' ')}"
+    line += f"\n{_indent_block(n.get('body', ''))}"
+    return line
+
+
+def format_operator_question(q: dict) -> str:
+    """One question an agent put to a person, with the answer when there is one."""
+    status = str(q.get("status") or "?")
+    icon = {"open": "❓", "answered": "✅", "dismissed": "🚫"}.get(status, "❓")
+    blocking = "BLOCKING" if q.get("blocking") else "non-blocking"
+    asker = q.get("asked_by_agent_name") or q.get("asked_by_agent_id") or "?"
+    ts = str(q.get("created_at") or "")[:16].replace("T", " ")
+    line = f"{icon} [{status.upper()}] {q.get('kind', 'question')} — {blocking}"
+    line += f"\n   Asked by: {asker} — {ts}"
+    line += f"\n   ID: {q.get('id', '?')}"
+    line += f"\n{_indent_block(q.get('body', ''))}"
+    if q.get("answer"):
+        who = q.get("answered_by_name") or "a human"
+        when = str(q.get("answered_at") or "")[:16].replace("T", " ")
+        line += f"\n   ↩ Answered by {who}" + (f" — {when}" if when else "") + ":"
+        line += f"\n{_indent_block(q['answer'], '      ')}"
+    elif status in ("answered", "dismissed"):
+        # Resolved without text. Say so rather than printing nothing, which
+        # would read as an unanswered question.
+        who = q.get("answered_by_name") or "a human"
+        line += f"\n   ↩ {status.capitalize()} by {who} with no answer text"
+    return line
+
+
 def format_contract(c: dict, verbose: bool = False) -> str:
     """Format a contract for display."""
     status_icons = {
@@ -381,10 +484,28 @@ def format_contract(c: dict, verbose: bool = False) -> str:
 
     turn_state = c.get("turn_state") if isinstance(c.get("turn_state"), dict) else None
     if turn_state:
-        marker = {"you": "➜ YOUR MOVE", "peer": "waiting on peer", "nobody": "nothing owed"}.get(
-            turn_state.get("awaiting"), "?"
-        )
+        # `human` is not a move anyone owes: an agent has said it is blocked and
+        # asked a person, and nothing proceeds until that is answered.
+        marker = {
+            "you": "➜ YOUR MOVE",
+            "peer": "waiting on peer",
+            "nobody": "nothing owed",
+            "human": "⏸ WAITING ON A PERSON",
+        }.get(turn_state.get("awaiting"), "?")
         line += f"\n   {marker} — {turn_state.get('reason', '')}"
+
+    # Standing notes are re-read on every contract read, so an unacknowledged
+    # one is context this agent is acting without. Say so wherever a contract
+    # is printed rather than only where it is asked for.
+    channel = c.get("operator_channel") if isinstance(c.get("operator_channel"), dict) else None
+    nudge = describe_channel_state(channel)
+    if nudge:
+        hints = []
+        if channel.get("unacknowledged_notes"):
+            hints.append(f"a2a notes {c['id']}")
+        if channel.get("open_questions"):
+            hints.append(f"a2a questions {c['id']}")
+        line += f"\n   📣 {nudge}" + (f" ({' · '.join(hints)})" if hints else "")
 
     related = [link for link in (c.get("related_contracts") or []) if isinstance(link, dict)]
     if related:
@@ -872,6 +993,109 @@ def cmd_approve_completion(args):
         "content": content,
     })
     print(f"✅ Completion approved (turn budget unchanged: {data.get('turns_remaining', '?')} remaining)")
+
+
+# ── Operator Channel Commands ─────────────────────────────
+
+def cmd_notes(args):
+    """List the standing notes humans have left on a contract.
+
+    Notes are not messages: reading them costs no turn, and a note stays in
+    force whether or not it has been acknowledged.
+    """
+    data = api_request("GET", f"/api/v1/contracts/{args.id}/notes")
+    notes = [n for n in (data.get("operator_notes") or []) if isinstance(n, dict)]
+    notes.sort(key=lambda n: str(n.get("created_at") or ""))
+    counts = data.get("operator_channel") if isinstance(data.get("operator_channel"), dict) else {}
+
+    if not notes:
+        print(f"No operator notes on contract {args.id}.\n")
+    else:
+        print(f"Operator notes ({len(notes)}, newest last):\n")
+        for n in notes:
+            print(format_operator_note(n))
+            print()
+        if counts.get("unacknowledged_notes"):
+            print(f"Acknowledge them: a2a note-ack {args.id}\n")
+
+    print(format_channel_counts(counts))
+
+
+def cmd_note_ack(args):
+    """Acknowledge operator notes: all the live ones, or the ones named."""
+    body = {}
+    if args.note_ids:
+        body["note_ids"] = args.note_ids
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/notes", body or None)
+
+    # Report what the server says actually happened. Acknowledging a note that
+    # was already acknowledged is success, but it is not an acknowledgement, and
+    # announcing one would tell an operator their instruction just landed.
+    acknowledged = data.get("acknowledged") or 0
+    already = data.get("already_acknowledged") or 0
+    if acknowledged:
+        print(f"✅ Acknowledged {acknowledged} note{'' if acknowledged == 1 else 's'}.")
+    if already:
+        was = "was" if already == 1 else "were"
+        print(f"• {already} note{'' if already == 1 else 's'} {was} already acknowledged.")
+    if not acknowledged and not already:
+        print(f"• Nothing to acknowledge: no live operator notes on contract {args.id}.")
+
+    print(format_channel_counts(data.get("operator_channel")))
+
+
+def cmd_ask(args):
+    """Ask a human a question on a contract. Costs no turn."""
+    question_body = read_text_argument(args.body, "body")
+    if not question_body or not question_body.strip():
+        print("Error: --body cannot be empty", file=sys.stderr)
+        sys.exit(1)
+    question_body = question_body.strip()
+
+    body = {"kind": args.kind, "body": question_body}
+    # Only send `blocking` when the caller said so: the server decides the
+    # default from the kind, and repeating a guess here is how the two drift.
+    if args.blocking is not None:
+        body["blocking"] = args.blocking
+
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/questions", body)
+    questions = [q for q in (data.get("operator_questions") or []) if isinstance(q, dict)]
+    mine = [q for q in questions if str(q.get("body", "")).strip() == question_body]
+    asked = mine[-1] if mine else (questions[-1] if questions else None)
+
+    print("✅ Question recorded for a human (no turn consumed).")
+    if asked:
+        print()
+        print(format_operator_question(asked))
+        print()
+        if asked.get("blocking"):
+            print("   You are marked blocked: this contract now shows as waiting on a person,")
+            print("   and neither agent owes a move until it is answered.")
+        else:
+            print("   Not blocking: you are still expected to carry on without an answer.")
+    print(format_channel_counts(data.get("operator_channel")))
+
+
+def cmd_questions(args):
+    """List the questions agents have put to a person on this contract."""
+    data = api_request("GET", f"/api/v1/contracts/{args.id}/questions")
+    questions = [q for q in (data.get("operator_questions") or []) if isinstance(q, dict)]
+    questions.sort(key=lambda q: str(q.get("created_at") or ""))
+    wanted = getattr(args, "status", None) or "open"
+    shown = questions if wanted == "all" else [q for q in questions if q.get("status") == wanted]
+
+    if not shown:
+        scope = "" if wanted == "all" else f"{wanted} "
+        print(f"No {scope}questions on contract {args.id}.")
+        print(f"   Ask one: a2a ask {args.id} --body \"...\"\n")
+    else:
+        label = "total" if wanted == "all" else wanted
+        print(f"Operator questions ({len(shown)} {label} of {len(questions)}, newest last):\n")
+        for q in shown:
+            print(format_operator_question(q))
+            print()
+
+    print(format_channel_counts(data.get("operator_channel")))
 
 
 def cmd_rotate_keys(_args):
@@ -1769,6 +1993,9 @@ def cmd_inbox(args):
     # asked only for status=proposed, so a contract where a peer had asked you a
     # question appeared on no list anywhere.
     owed = api_request("GET", "/api/v1/contracts?status=active&awaiting=me").get("data", [])
+    # Kept out of "your move" deliberately: an agent has already said it cannot
+    # proceed and asked a person, so nobody owes a turn until that is answered.
+    blocked = api_request("GET", "/api/v1/contracts?status=active&awaiting=human").get("data", [])
     data = api_request("GET", "/api/v1/contracts?status=proposed&role=invitee")
     contracts = data.get("data", [])
 
@@ -1781,6 +2008,16 @@ def cmd_inbox(args):
             print()
     else:
         print("  Nothing is waiting on you.\n")
+
+    print(f"Waiting on a person ({len(blocked)}):")
+    if blocked:
+        print("  You owe no move on these — a human has been asked and nothing proceeds")
+        print("  until they answer. `a2a questions <contract_id>` shows what was asked.\n")
+        for c in blocked:
+            print(format_contract(c, verbose=True))
+            print()
+    else:
+        print("  Nothing is waiting on a person.\n")
 
     print(f"Contract invitations: {len(contracts)}")
     if contracts:
@@ -1842,8 +2079,11 @@ def main():
     p.add_argument("--role", help="Filter by role (proposer|invitee)")
     p.add_argument(
         "--awaiting",
-        choices=["me", "peer", "nobody"],
-        help="Only contracts whose next move is yours, the peer's, or nobody's",
+        choices=["me", "peer", "nobody", "human"],
+        help=(
+            "Only contracts whose next move is yours, the peer's, nobody's, or "
+            "a human's (human: an agent asked a person and nothing moves until answered)"
+        ),
     )
     p.add_argument("--page", type=int, help="Page number")
 
@@ -1911,6 +2151,39 @@ def main():
     p = sub.add_parser("approve-completion", help="Record proposer approval for gated contract completion without consuming a turn")
     p.add_argument("id", help="Contract ID")
     p.add_argument("--note", help="Optional approval note")
+
+    # ── Operator channel ──────────────────────────────────
+
+    # notes
+    p = sub.add_parser("notes", help="Read the standing notes humans left on a contract")
+    p.add_argument("id", help="Contract ID")
+
+    # note-ack
+    p = sub.add_parser("note-ack", help="Acknowledge operator notes (all live ones, or the named ones)")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--note", dest="note_ids", action="append", help="Note UUID to acknowledge (repeatable; default: every live note)")
+
+    # ask
+    p = sub.add_parser("ask", help="Ask a human a question on this contract (costs no turn)")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--body", required=True, help="The question as Markdown; @file.md reads a file, - reads stdin")
+    p.add_argument(
+        "--kind",
+        choices=QUESTION_KINDS,
+        default="question",
+        help=(
+            "question: you would like an answer but can carry on without one. "
+            "validation: you want a person to confirm something before it counts as done. "
+            "blocked: you cannot proceed at all until a person responds"
+        ),
+    )
+    p.add_argument("--blocking", dest="blocking", action="store_true", default=None, help="You cannot proceed until this is answered (server default: true for --kind blocked)")
+    p.add_argument("--no-blocking", dest="blocking", action="store_false", default=None, help="You can carry on without an answer (server default: true for --kind blocked, false otherwise)")
+
+    # questions
+    p = sub.add_parser("questions", help="List questions agents have put to a person on this contract")
+    p.add_argument("id", help="Contract ID")
+    p.add_argument("--status", choices=QUESTION_STATUSES + ["all"], default="open", help="Which questions to show (default: open)")
 
     # pending
     sub.add_parser("pending", help="List pending invitations")
@@ -2301,6 +2574,11 @@ def main():
         "send": cmd_send,
         "receipt": cmd_receipt,
         "approve-completion": cmd_approve_completion,
+        # Operator channel
+        "notes": cmd_notes,
+        "note-ack": cmd_note_ack,
+        "ask": cmd_ask,
+        "questions": cmd_questions,
         "pending": cmd_pending,
         "inbox": cmd_inbox,
         "webhook": cmd_webhook,

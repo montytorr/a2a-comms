@@ -356,11 +356,33 @@ export interface ContractResponse extends Contract {
    * identified.
    */
   turn_state?: ContractTurnStateSummary | null;
+  /**
+   * Standing instructions a human left on this contract. Re-read on every
+   * contract read rather than delivered once, so a note written now takes
+   * effect the next time an agent looks. Never a turn and never a wake.
+   *
+   * Present in full on a single-contract read. On a list read only the counts
+   * are returned - see `operator_channel` - because embedding every note body
+   * for every contract turns a list into a transcript.
+   */
+  operator_notes?: OperatorNoteSummary[];
+  /**
+   * Questions agents have put to a person on this contract. Full on a single
+   * read, counted on a list read, same as the notes.
+   */
+  operator_questions?: OperatorQuestionSummary[];
+  /** Counts, always present. The list read returns these and nothing else. */
+  operator_channel?: OperatorChannelCounts;
 }
 
 /** Mirrors ContractTurnState in contract-turn-state.ts, which derives it. */
 export interface ContractTurnStateSummary {
-  awaiting: 'you' | 'peer' | 'nobody';
+  /**
+   * `human` means an agent has said it is blocked and asked a person. Nothing
+   * is owed by either agent until that question is answered, so the inbox must
+   * not nag anyone for a move they have already said they cannot make.
+   */
+  awaiting: 'you' | 'peer' | 'nobody' | 'human';
   reason: string;
   awaiting_agent_id: string | null;
   awaiting_agent_name: string | null;
@@ -392,6 +414,50 @@ export interface RelatedContractSummary {
   linked_at: string;
   /** Null when the server wrote the link from a handoff or escalation path. */
   linked_by_agent_id: string | null;
+}
+
+/** What an agent needs from a person. */
+export type OperatorQuestionKind = 'question' | 'validation' | 'blocked';
+
+export type OperatorQuestionStatus = 'open' | 'answered' | 'dismissed';
+
+export interface OperatorNoteSummary {
+  id: string;
+  body: string;
+  author_name: string;
+  created_at: string;
+  updated_at: string;
+  /** Set once withdrawn. A withdrawn note is history, not standing context. */
+  withdrawn_at: string | null;
+  /**
+   * Whether the agent that asked has acknowledged this note. Advisory - an
+   * unacknowledged note is still in force. Null when no agent was identified.
+   */
+  acknowledged?: boolean | null;
+}
+
+export interface OperatorQuestionSummary {
+  id: string;
+  kind: OperatorQuestionKind;
+  body: string;
+  /** The agent says it cannot proceed without an answer. */
+  blocking: boolean;
+  status: OperatorQuestionStatus;
+  asked_by_agent_id: string;
+  asked_by_agent_name: string | null;
+  created_at: string;
+  answer: string | null;
+  answered_by_name: string | null;
+  answered_at: string | null;
+}
+
+export interface OperatorChannelCounts {
+  notes: number;
+  /** Live notes this agent has not acknowledged. Null when no agent was identified. */
+  unacknowledged_notes: number | null;
+  open_questions: number;
+  /** Open questions whose asker said it cannot proceed. */
+  blocking_questions: number;
 }
 
 export interface LinkedTaskSummary {
@@ -443,6 +509,9 @@ export type WebhookEventType =
   | 'contract.rejected'
   | 'contract.cancelled'
   | 'contract.closed'
+  | 'contract.question_asked'
+  | 'contract.question_answered'
+  | 'contract.note_added'
   | 'contract.expired'
   | 'contract_state'
   | 'task.created'

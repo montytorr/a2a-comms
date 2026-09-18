@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import { getRelatedContracts } from '@/lib/contract-links';
+import { getOperatorChannel, type OperatorChannel } from '@/lib/contract-operator-channel-server';
 import { deriveContractTurnState, type TurnStateLastMessage } from '@/lib/contract-turn-state';
 import type { Contract, ContractResponse, RelatedContractSummary } from '@/lib/types';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
@@ -96,6 +97,15 @@ export interface EnrichOptions {
   lastMessage?: TurnStateLastMessage | null;
   /** True when `lastMessage` was looked up and there is none. */
   lastMessageResolved?: boolean;
+  /** The operator channel, already fetched for a whole page. */
+  channel?: OperatorChannel;
+  /**
+   * Whether to return note and question BODIES. A single-contract read does; a
+   * list read returns only the counts, because a page of forty contracts
+   * carrying every note body is a transcript, not a list, and the agent that
+   * needs the text is about to read the contract itself anyway.
+   */
+  includeChannelBodies?: boolean;
 }
 
 /**
@@ -151,6 +161,10 @@ export async function enrichContract(
   // authenticated route should hit. The comment here used to claim the field
   // was omitted in that case - it never was, and a client written to test for
   // its presence would have been wrong.
+  const channel =
+    options.channel ??
+    (await getOperatorChannel(contract.id, options.viewerAgentId ?? null));
+
   let turnState = null;
   if (options.viewerAgentId) {
     const lastMessage = options.lastMessageResolved
@@ -166,6 +180,11 @@ export async function enrichContract(
         name: agentMap.get(p.agent_id)?.display_name || agentMap.get(p.agent_id)?.name || null,
       })),
       lastMessage,
+      // Only the blocking ones: a question its asker can carry on without
+      // changes nothing about whose move it is.
+      blockingQuestions: channel.questions
+        .filter((q) => q.status === 'open' && q.blocking)
+        .map((q) => ({ asked_by_agent_id: q.asked_by_agent_id, kind: q.kind })),
     });
   }
 
@@ -177,6 +196,10 @@ export async function enrichContract(
     linked_task: linkedTask,
     related_contracts: options.relatedContracts ?? (await getRelatedContracts(contract.id)),
     turn_state: turnState,
+    ...(options.includeChannelBodies
+      ? { operator_notes: channel.notes, operator_questions: channel.questions }
+      : {}),
+    operator_channel: channel.counts,
   };
 }
 

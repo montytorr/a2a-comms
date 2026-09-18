@@ -23,6 +23,7 @@ from .adapters import (
 from .artifacts import ArtifactPolicy
 from .closure import CloseOutcome, read_close_outcome, work_was_accepted
 from .events import Disposition, Triage, triage_event
+from .outcomes import WorkerOutcome
 from .queue import read_queue, write_queue
 from .turns import read_turn_budget
 
@@ -44,16 +45,24 @@ class ReactorResult:
     stale: int = 0
     escalated: int = 0
     failed: int = 0
+    #: Workers that stopped and asked a person. Counted apart from `acted`
+    #: because the event is finished but the WORK is not: somebody owes an
+    #: answer, and an operator reading a pass summary needs to see that.
+    awaiting_human: int = 0
     notes: list[str] = field(default_factory=list)
 
     @property
     def processed(self) -> int:
-        return self.acted + self.recorded + self.duplicates + self.stale + self.escalated
+        return (
+            self.acted + self.recorded + self.duplicates + self.stale
+            + self.escalated + self.awaiting_human
+        )
 
     def summary(self) -> str:
         return (
             f"acted={self.acted} recorded={self.recorded} duplicates={self.duplicates} "
-            f"stale={self.stale} escalated={self.escalated} failed={self.failed}"
+            f"stale={self.stale} escalated={self.escalated} "
+            f"awaiting_human={self.awaiting_human} failed={self.failed}"
         )
 
 
@@ -167,12 +176,31 @@ class Reactor:
             return True
 
         label = f"A2A {event.get('event', 'event')} on contract {contract_id}"
-        if self.worker.spawn(event, label):
+        # A runtime may return a WorkerOutcome to say HOW the run ended. A bool
+        # still works and still means acted-or-failed, which is all a bool can
+        # say.
+        raw = self.worker.spawn(event, label)
+        outcome = raw if isinstance(raw, WorkerOutcome) else WorkerOutcome.from_bool(bool(raw))
+
+        if outcome is WorkerOutcome.NEEDS_HUMAN:
+            # Handled, deliberately. Retrying would spawn a second worker to ask
+            # the same question, and the reason it stopped has not changed.
+            result.awaiting_human += 1
+            message = (
+                f"Contract {contract_id}: a worker stopped and asked a person. "
+                "It will not be retried; answer it on the contract."
+            )
+            result.notes.append(message)
+            self.alerts.alert(message)
+            self._log(f"{event_id}: worker is waiting on a human — not retried")
+            return True
+
+        if outcome.handled:
             result.acted += 1
             return True
 
         result.failed += 1
-        self._log(f"{event_id}: worker failed to start; event retained for retry")
+        self._log(f"{event_id}: worker did not complete; event retained for retry")
         return False
 
     # -- closure ----------------------------------------------------------

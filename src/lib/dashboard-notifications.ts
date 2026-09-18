@@ -10,7 +10,8 @@ export type NotificationKind =
   | 'task-blocked-stale'
   | 'task-blocked-follow-through'
   | 'project-invitation'
-  | 'approval-request';
+  | 'approval-request'
+  | 'agent-question';
 
 export interface DashboardNotificationItem {
   id: string;
@@ -28,6 +29,8 @@ export interface DashboardNotificationCounts {
   projects: number;
   blockers: number;
   approvals: number;
+  /** Agents on your contracts that have stopped and asked you something. */
+  questions: number;
 }
 
 export interface DashboardNotificationSummary {
@@ -260,6 +263,45 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
     meta: 'Awaiting response',
   }));
 
+  // Questions agents have put to a person on contracts this user is on. Two
+  // steps rather than an embedded filter: the question is addressed to whoever
+  // can answer it, which is every human on the contract and not only the owner
+  // of the agent that asked.
+  const { data: myContractRows } = await supabase
+    .from('contract_participants')
+    .select('contract_id')
+    .in('agent_id', agentScope);
+  const myContractIds = [...new Set(((myContractRows || []) as Array<{ contract_id: string }>).map((row) => row.contract_id))];
+
+  const { data: questionRows } = myContractIds.length > 0
+    ? await supabase
+        .from('contract_questions')
+        .select('id, contract_id, kind, body, blocking, created_at, agent:agents!asked_by_agent_id(name, display_name), contract:contracts!contract_id(title)')
+        .eq('status', 'open')
+        .in('contract_id', myContractIds)
+        .order('created_at', { ascending: false })
+        .limit(25)
+    : { data: [] };
+
+  const questionItems: DashboardNotificationItem[] = ((questionRows || []) as Array<{
+    id: string; contract_id: string; kind: string; body: string; blocking: boolean; created_at: string;
+    agent?: { name?: string | null; display_name?: string | null } | Array<{ name?: string | null; display_name?: string | null }>;
+    contract?: { title?: string | null } | Array<{ title?: string | null }>;
+  }>).map((row) => {
+    const agent = Array.isArray(row.agent) ? row.agent[0] : row.agent;
+    const contract = Array.isArray(row.contract) ? row.contract[0] : row.contract;
+    const who = agent?.display_name || agent?.name || 'An agent';
+    return {
+      id: `question-${row.id}`,
+      kind: 'agent-question' as const,
+      title: row.blocking ? `${who} is blocked and asking you` : `${who} has a question`,
+      body: contract?.title ? `${row.body} — on "${contract.title}"` : row.body,
+      href: `/contracts/${row.contract_id}`,
+      createdAt: row.created_at,
+      meta: row.blocking ? 'Nothing moves until you answer' : `Awaiting your ${row.kind === 'validation' ? 'validation' : 'answer'}`,
+    };
+  });
+
   const approvalItems: DashboardNotificationItem[] = approvals.map((row) => ({
     id: `approval-${row.id}`,
     kind: 'approval-request' as const,
@@ -270,7 +312,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
     meta: 'Sensitive action pending review',
   }));
 
-  const items = [...blockerItems, ...contractItems, ...taskItems, ...projectItems, ...approvalItems]
+  const items = [...questionItems, ...blockerItems, ...contractItems, ...taskItems, ...projectItems, ...approvalItems]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 50);
 
@@ -279,7 +321,8 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
     projects: taskItems.length + projectItems.length,
     blockers: blockerItems.length,
     approvals: approvalItems.length,
-    total: blockerItems.length + contractItems.length + taskItems.length + projectItems.length + approvalItems.length,
+    questions: questionItems.length,
+    total: blockerItems.length + contractItems.length + taskItems.length + projectItems.length + approvalItems.length + questionItems.length,
   };
 
   return { counts, items };

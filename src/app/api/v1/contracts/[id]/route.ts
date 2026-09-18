@@ -40,7 +40,12 @@ export async function GET(
   }
 
   const updated = await autoCloseIfExpired(contract as Contract);
-  const enriched = await enrichContract(updated, { viewerAgentId: auth.agent.id });
+  // A single-contract read is where an agent goes to find out what it should
+  // do, so this is where the operator notes belong in full.
+  const enriched = await enrichContract(updated, {
+    viewerAgentId: auth.agent.id,
+    includeChannelBodies: true,
+  });
 
   return NextResponse.json(enriched);
 }

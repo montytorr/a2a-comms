@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContracts } from '@/lib/contract-links';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
+import { getNoteAckCounts, getOperatorChannel } from '@/lib/contract-operator-channel-server';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
@@ -14,11 +15,12 @@ import MessageCard from './message-card';
 import MarkdownPreview from '@/components/markdown-preview';
 import AttachmentList from '@/components/attachment-list';
 import ContractAttachmentUpload from './attachment-upload';
+import OperatorChannel from './operator-channel';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
 import { Avatar, KV, pillClassForName } from '@/components/atoms';
-import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck } from 'lucide-react';
+import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck, MessageSquareWarning } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -183,6 +185,12 @@ export default async function ContractDetailPage({
   const viewerAgentId =
     participants.find((p) => p.agent?.id && auth.agentScope.includes(p.agent.id))?.agent?.id ?? null;
   const latestMessage = messageList[0] ?? null;
+
+  // Fetched before the turn state is derived, because a blocking question
+  // changes whose move it is.
+  const channel = await getOperatorChannel(id, viewerAgentId);
+  const ackCounts = await getNoteAckCounts(channel.notes.map((note) => note.id));
+
   const turnState = viewerAgentId
     ? deriveContractTurnState({
         contract,
@@ -202,6 +210,9 @@ export default async function ContractDetailPage({
               created_at: latestMessage.created_at,
             }
           : null,
+        blockingQuestions: channel.questions
+          .filter((question) => question.status === 'open' && question.blocking)
+          .map((question) => ({ asked_by_agent_id: question.asked_by_agent_id, kind: question.kind })),
       })
     : null;
 
@@ -254,21 +265,25 @@ export default async function ContractDetailPage({
                 padding: '12px 16px',
                 borderRadius: 10,
                 alignItems: 'center',
-                border: `1px solid ${turnState.awaiting === 'you' ? 'var(--amber-line)' : 'var(--line-1)'}`,
-                background: turnState.awaiting === 'you' ? 'var(--amber-bg)' : 'var(--bg-2)',
+                border: `1px solid ${turnState.awaiting === 'you' ? 'var(--amber-line)' : turnState.awaiting === 'human' ? 'var(--rose-line)' : 'var(--line-1)'}`,
+                background: turnState.awaiting === 'you' ? 'var(--amber-bg)' : turnState.awaiting === 'human' ? 'var(--rose-bg)' : 'var(--bg-2)',
               }}
             >
               {turnState.awaiting === 'you' ? (
                 <CornerUpLeft size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+              ) : turnState.awaiting === 'human' ? (
+                <MessageSquareWarning size={15} style={{ color: 'var(--rose)', flexShrink: 0 }} />
               ) : (
                 <CheckCheck size={15} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
               )}
               <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
                 {turnState.awaiting === 'you'
                   ? 'Your move'
-                  : turnState.awaiting === 'peer'
-                    ? `Waiting on ${turnState.awaiting_agent_name || 'the other participant'}`
-                    : 'Nothing owed'}
+                  : turnState.awaiting === 'human'
+                    ? 'Waiting on you, the human'
+                    : turnState.awaiting === 'peer'
+                      ? `Waiting on ${turnState.awaiting_agent_name || 'the other participant'}`
+                      : 'Nothing owed'}
               </span>
               <span className="text-sm" style={{ color: 'var(--fg-2)' }}>{turnState.reason}</span>
             </div>
@@ -471,6 +486,19 @@ export default async function ContractDetailPage({
             </div>
           )}
         </div>
+
+        {/* The operator channel: what a person has told the agents here, and
+            what the agents have asked back. Placed above the attachments and
+            the thread because an unanswered blocking question is the reason
+            nothing below it has moved. */}
+        <OperatorChannel
+          contractId={id}
+          notes={channel.notes}
+          questions={channel.questions}
+          agentCount={participants.filter((participant) => participant.role !== 'observer').length}
+          ackCounts={ackCounts}
+          canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
+        />
 
         {/* Attachments */}
         <div className="card" style={{ marginBottom: 16 }}>

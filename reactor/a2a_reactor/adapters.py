@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from .outcomes import WorkerOutcome
+
 __all__ = ["TaskTracker", "WorkerRuntime", "AlertSink", "NullTaskTracker", "NullWorkerRuntime", "StderrAlertSink"]
 
 
@@ -37,8 +39,17 @@ class TaskTracker(Protocol):
 class WorkerRuntime(Protocol):
     """Whatever actually does the work when an event needs action."""
 
-    def spawn(self, event: dict, label: str) -> bool:
-        """Start a worker for this event. Return False if it could not start."""
+    def spawn(self, event: dict, label: str) -> "bool | WorkerOutcome":
+        """Run a worker for this event and say how it ended.
+
+        Return a `WorkerOutcome` when the runtime can tell the difference
+        between acting, triaging, stopping to ask a person, and failing.
+        `classify_worker_output` derives one from what the worker printed.
+
+        A bool still works and means acted-or-failed. It is the weaker answer:
+        it cannot express NEEDS_HUMAN, so a worker that stops and asks is read
+        as a crash and retried behind its back until the event goes stale.
+        """
 
 
 @runtime_checkable

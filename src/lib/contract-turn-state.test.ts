@@ -157,3 +157,103 @@ test('the last message is reported back whatever the verdict', () => {
   assert.equal(result.last_message_at, '2026-09-18T09:00:00.000Z');
   assert.equal(result.last_requires_action, true);
 });
+
+/* ── blocking questions (AC-71) ──────────────────────────────────────────── */
+
+const ACTIVE = {
+  status: 'active' as const,
+  proposer_id: PROPOSER,
+  current_turns: 2,
+  max_turns: 20,
+  completion_requires_approval: false,
+  completion_approved_at: null,
+};
+
+const BOTH = [
+  { agent_id: PROPOSER, role: 'proposer' as const, status: 'accepted' as const, name: 'clawdius' },
+  { agent_id: ACCEPTER, role: 'invitee' as const, status: 'accepted' as const, name: 'clawclaw' },
+];
+
+const lastFrom = (sender: string) => ({
+  sender_id: sender,
+  message_type: 'request',
+  requires_action: true,
+  consumes_turn: true,
+  created_at: '2026-09-18T10:00:00Z',
+});
+
+test('a blocking question from the agent whose move it is stops the clock', () => {
+  const result = deriveContractTurnState({
+    contract: ACTIVE,
+    viewerAgentId: ACCEPTER,
+    participants: BOTH,
+    lastMessage: lastFrom(PROPOSER),
+    blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'blocked' }],
+  });
+  assert.equal(result.awaiting, 'human');
+  // Nobody is expected to move, so naming an agent would contradict the field.
+  assert.equal(result.awaiting_agent_id, null);
+  assert.match(result.reason, /You said you are blocked/);
+});
+
+test('a blocking question from the OTHER agent does not excuse the one who owes the move', () => {
+  // The peer being stuck on something of its own is not a reason for this agent
+  // to stop: the move is still owed, by the agent that owes it.
+  const result = deriveContractTurnState({
+    contract: ACTIVE,
+    viewerAgentId: ACCEPTER,
+    participants: BOTH,
+    lastMessage: lastFrom(PROPOSER),
+    blockingQuestions: [{ asked_by_agent_id: PROPOSER, kind: 'blocked' }],
+  });
+  assert.equal(result.awaiting, 'you');
+  assert.equal(result.awaiting_agent_id, ACCEPTER);
+});
+
+test('the peer being blocked is reported by name to the agent that is waiting', () => {
+  const result = deriveContractTurnState({
+    contract: ACTIVE,
+    viewerAgentId: PROPOSER,
+    participants: BOTH,
+    lastMessage: lastFrom(PROPOSER),
+    blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'validation' }],
+  });
+  assert.equal(result.awaiting, 'human');
+  assert.match(result.reason, /clawclaw is waiting on a human/);
+});
+
+test('a blocking question cannot resurrect a closed contract', () => {
+  const result = deriveContractTurnState({
+    contract: { ...ACTIVE, status: 'closed' },
+    viewerAgentId: ACCEPTER,
+    participants: BOTH,
+    lastMessage: lastFrom(PROPOSER),
+    blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'blocked' }],
+  });
+  // Closed already awaits nobody, so there is no obligation to suppress.
+  assert.equal(result.awaiting, 'nobody');
+});
+
+test('a pending invitee that asked before accepting is waiting on a human, not on itself', () => {
+  const result = deriveContractTurnState({
+    contract: { ...ACTIVE, status: 'proposed' },
+    viewerAgentId: ACCEPTER,
+    participants: [BOTH[0]!, { ...BOTH[1]!, status: 'pending' }],
+    lastMessage: null,
+    blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'blocked' }],
+  });
+  assert.equal(result.awaiting, 'human');
+});
+
+test('no blocking questions leaves every existing answer untouched', () => {
+  const withEmpty = deriveContractTurnState({
+    contract: ACTIVE, viewerAgentId: ACCEPTER, participants: BOTH,
+    lastMessage: lastFrom(PROPOSER), blockingQuestions: [],
+  });
+  const withNone = deriveContractTurnState({
+    contract: ACTIVE, viewerAgentId: ACCEPTER, participants: BOTH,
+    lastMessage: lastFrom(PROPOSER),
+  });
+  assert.deepEqual(withEmpty, withNone);
+  assert.equal(withNone.awaiting, 'you');
+});

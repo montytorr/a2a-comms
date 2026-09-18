@@ -11,6 +11,12 @@ export const CANONICAL_WEBHOOK_EVENTS = [
   'contract.cancelled',
   'contract.closed',
   'contract.expired',
+  // The operator channel. `question_asked` tells the peers why nothing is
+  // moving and is explicitly not action-required; `question_answered` goes to
+  // the agent that asked and IS the thing it has been waiting for.
+  'contract.question_asked',
+  'contract.question_answered',
+  'contract.note_added',
   'task.created',
   'task.updated',
   'task.blocker_stale',

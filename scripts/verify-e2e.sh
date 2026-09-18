@@ -301,7 +301,7 @@ check "messages say what each one expected" \
 # has to refuse it too, for anyone calling over HTTP: an empty 200 there reads
 # as "nothing is waiting on you", the most misleading answer it can give.
 check "the CLI refuses an unknown awaiting value and names the allowed ones" \
-  "$(a2a contracts --awaiting nonsense 2>&1 || true)" "{me,peer,nobody}"
+  "$(a2a contracts --awaiting nonsense 2>&1 || true)" "{me,peer,nobody,human}"
 check "and so does the API, over a real signed request" \
   "$(python3 -c "
 import importlib.machinery, importlib.util
@@ -358,6 +358,74 @@ psql_q -c "insert into audit_log (actor, action, resource_type, resource_id) val
 
 check "the pulse stream refuses an unauthenticated subscriber" \
   "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT/api/internal/pulse")" "401"
+
+
+say "17. The operator channel"
+# Two directions on one contract: a human leaving standing instructions, and an
+# agent stopping to ask a person. Notes are written from the dashboard only —
+# the v1 API is HMAC-only, so an agent that could author one could put words in
+# an operator's mouth on the one surface they have. The note here is therefore
+# inserted the way the server action does, and what is under test is everything
+# downstream of that.
+psql_q -c "insert into contract_notes (contract_id, body, author_name) values ('$TS_ID', 'Use the staging bucket, never production.', 'E2E Operator');" >/dev/null
+check "an agent reads the note back" \
+  "$(a2a notes "$TS_ID")" "staging bucket"
+check "and is told it has not acknowledged it" \
+  "$(a2a notes "$TS_ID")" "1 operator note"
+check "the contract itself carries the note without being asked" \
+  "$(a2a contract "$TS_ID")" "operator note"
+check "acknowledging says how many it actually wrote" \
+  "$(a2a note-ack "$TS_ID")" "Acknowledged 1"
+# The lesson from deleteContractLink reporting removals that never happened: a
+# second acknowledgement must not claim a second effect.
+check "acknowledging again claims nothing new" \
+  "$(a2a note-ack "$TS_ID")" "already acknowledged"
+check "and the nudge is gone once it is read" \
+  "$(a2a notes "$TS_ID" | tail -3)" "0 unacknowledged"
+
+EMPTY_NOTE_OUT="$(psql_q -c "insert into contract_notes (contract_id, body, author_name) values ('$TS_ID', '   ', 'E2E');" 2>&1 || true)"
+check "an empty note body is refused rather than stored" "$EMPTY_NOTE_OUT" "violates check constraint"
+
+# Now the other direction.
+check "an agent can stop and ask a person" \
+  "$(a2a ask "$TS_ID" --kind blocked --body "No credentials for the artifact host.")" "blocked"
+check "the contract stops asking that agent for a move" \
+  "$(a2a contract "$TS_ID")" "WAITING ON A PERSON"
+check "and the awaiting filter can find exactly those" \
+  "$(a2a contracts --awaiting human --status active)" "E2E turn state"
+check "while the inbox no longer claims a move is owed" \
+  "$(a2a inbox)" "Waiting on a person"
+check "the question is listed with who asked and why" \
+  "$(a2a questions "$TS_ID")" "artifact host"
+
+# Answering is the human half, so again by the path the server action takes.
+QID="$(psql_q -c "select id from contract_questions where contract_id='$TS_ID' limit 1;")"
+psql_q -c "update contract_questions set status='answered', answer='Use staging.', answered_by_name='E2E Operator', answered_at=now() where id='$QID';" >/dev/null
+check "an answered question releases the contract" \
+  "$(a2a contract "$TS_ID")" "YOUR MOVE"
+check "and the answer is readable by the agent that asked" \
+  "$(a2a questions "$TS_ID" --status answered)" "Use staging."
+
+# A question is not a turn: an agent with no budget left still has to be able to
+# say it is stuck, for the same reason a receipt is non-turn.
+psql_q -c "update contracts set current_turns=max_turns where id='$TS_ID';" >/dev/null
+check "asking is still possible with the turn budget spent" \
+  "$(a2a ask "$TS_ID" --kind question --body "Anything else before I stop?")" "question"
+psql_q -c "update contracts set current_turns=1 where id='$TS_ID';" >/dev/null
+
+check "an ended contract refuses a new question and says where to raise it" \
+  "$(a2a close "$TS_ID" --reason "e2e done" >/dev/null; a2a ask "$TS_ID" --body "too late" 2>&1 || true)" \
+  "successor"
+
+# A note is displayed on contract pages, so it must move the domain those pages
+# watch. Too narrow and a page silently never updates for it, which is the bug
+# the whole pulse exercise exists to prevent.
+CH_BEFORE="$(psql_q -c "select a2a_pulse()->>'contracts';")"
+psql_q -c "insert into contract_notes (contract_id, body, author_name) values ('$LINKED_ID', 'pulse probe', 'E2E');" >/dev/null
+CH_AFTER="$(psql_q -c "select a2a_pulse()->>'contracts';")"
+[[ "$CH_BEFORE" != "$CH_AFTER" ]] \
+  && ok "an operator note moves the contracts fingerprint" \
+  || bad "contracts fingerprint did not move for a note ($CH_BEFORE)"
 
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"

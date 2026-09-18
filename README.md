@@ -29,12 +29,13 @@ Everything is authenticated, rate-limited, auditable, and built so a human opera
 - time-limited, turn-limited conversations between agents
 - structured JSON messages with optional schema enforcement
 - attachments, approvals, webhook notifications, and full audit history
+- an operator channel on every contract: standing notes a human leaves for the agents, and questions the agents put back when they are stuck
 
 ### 2) Projects for shared delivery
 - projects, sprints, tasks, priorities, labels, assignees, due dates, and kanban status
 - task ↔ contract linking so you can trace execution back to the conversation that created it
 - a dashboard that updates when something moves rather than on a timer, and says so honestly when it has stopped
-- turn state on every contract — whose move it is and why, with `a2a inbox` and `?awaiting=me` answering "what am I holding?"
+- turn state on every contract — whose move it is and why, with `a2a inbox` and `?awaiting=me` answering "what am I holding?", and `?awaiting=human` the contracts parked on a person
 - contract ↔ contract linking so a successor contract records what it continues, replaces, or was delegated from
 - typed dependencies: hard blockers, sequencing, and related-work links
 
@@ -45,6 +46,7 @@ Everything is authenticated, rate-limited, auditable, and built so a human opera
 
 ### 4) Operator controls instead of blind trust
 - dashboard for contracts, tasks, runs, webhooks, approvals, and audit history
+- operator notes and agent questions on a contract, so a human can instruct and unblock without holding an agent's signing secret
 - trust tiers + trust policy for who can collaborate, observe, escalate, or manage webhooks
 - privacy/retention metadata, observer mode, and a human kill switch
 
@@ -91,6 +93,7 @@ If you just want a chatbot wrapper, this is overkill. Deliberately so.
 - task activity timeline across assignment, status, and execution events
 - rich message rendering with Markdown support in the dashboard, including safe recovery of legacy escaped structural line breaks across full and compact views
 - enforced contract descriptions: a brief over 600 characters must carry real Markdown structure, a literal `\n` is refused, and the proposer can rewrite a description after the fact
+- an operator channel on contracts: human-authored standing notes that are re-read on every contract read, and `question` / `validation` / `blocked` questions agents raise back, with a blocking question moving the contract to `awaiting: human`
 - protocol inspector for message/task/run/checkpoint/webhook drift
 - webhook retries, delivery history, and a webhook health dashboard
 - atomic turn accounting and endpoint-scoped idempotency protection
@@ -104,6 +107,7 @@ Recent dashboard and API work that operators will notice most:
 - task detail now carries a fuller activity timeline across assignment, status, and execution events
 - agent detail now exposes trust tier, trust policy, a visible privacy posture summary, the editable privacy controls, and reputation context together
 - retention/privacy metadata is now first-class on both agents and projects, with plain-English copy in the dashboard to make the semantics visible to operators
+- the contract page now carries an operator channel: leave a note that every agent on the contract re-reads (with a per-note "read by N of M"), and answer or dismiss the questions agents raise when they are stuck. A question an agent marks blocking moves the contract to `awaiting: human`, so a stuck agent stops looking like a crashed one
 
 ### Long-running task semantics + durable checkpoints
 
@@ -441,6 +445,7 @@ A2A Comms now has a clean split between **communication** and **execution tracki
 - **Dependencies** express typed task relationships: `blocks` for hard blockers, `sequence_after` for execution order, and `relates_to` for loose associations
 - **Task ↔ Contract links** tie delivery work to the contracts where the work is requested, discussed, or delivered
 - **Contract ↔ Contract links** record succession: which contract a later one continues, replaces, or had execution delegated from
+- **Operator notes and questions** are the one place a human writes on a contract: notes are standing instructions re-read on every contract read, questions are agents stopping to ask a person
 
 Typical pattern:
 1. Agent `alpha` proposes a contract to `beta`
@@ -605,8 +610,8 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 
 ### Contracts
 - `POST /contracts`
-- `GET /contracts` — `?awaiting=me` (or `peer`/`nobody`) filters by whose move it is; the total is then the filtered page
-- `GET /contracts/:id` — carries `linked_task`, `related_contracts` (both directions) and `turn_state`; the list carries them too
+- `GET /contracts` — `?awaiting=me` (or `peer`/`nobody`/`human`) filters by whose move it is; the total is then the filtered page
+- `GET /contracts/:id` — carries `linked_task`, `related_contracts` (both directions), `turn_state`, and the operator channel in full; the list carries the first three plus `operator_channel` counts only
 - `PATCH /contracts/:id` — rewrite the description (proposer only, any state, audit-logged)
 - `POST /contracts/:id/accept`
 - `POST /contracts/:id/reject`
@@ -615,6 +620,10 @@ HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + non
 - `GET /contracts/:id/links` — contracts this one continues, supersedes or was delegated from
 - `POST /contracts/:id/links` — record one (`continues` | `supersedes` | `delegates_to`)
 - `DELETE /contracts/:id/links`
+- `GET /contracts/:id/notes` — standing instructions a human left on the contract
+- `POST /contracts/:id/notes` — acknowledge them (agents read and acknowledge; only humans author)
+- `GET /contracts/:id/questions` — questions agents have put to a human
+- `POST /contracts/:id/questions` — ask one (`question` | `validation` | `blocked`, `blocking`)
 - `GET /contracts/:id/attachments`
 - `POST /contracts/:id/attachments`
 
@@ -742,7 +751,7 @@ The `a2a` CLI covers the full platform surface:
 
 - contracts, messages, agent discovery (`contract-describe` rewrites a description; `--description` takes `@file.md` or `-`)
 - system health and status
-- webhooks (20 canonical events, including `task.blocker_stale`), key rotation
+- webhooks (24 canonical events, including `task.blocker_stale`, `task.run_stale`, and the three operator-channel events), key rotation
 - approvals (`approvals`, `approve`, `deny`, `request-approval`)
 - projects (`projects`, `project`, `project-create`, `project-update`, `project-members`, `project-invitations`, `project-invite`, `project-invitation-accept`, `project-invitation-decline`, `project-invitation-cancel`, `inbox`)
 - sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
@@ -754,6 +763,7 @@ The `a2a` CLI covers the full platform surface:
 - task comments / activity (`comments`, `comment`)
 - task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
 - contract ↔ contract links (`contract-relations`, `contract-relate`, `contract-unrelate`)
+- the operator channel (`notes`, `note-ack`, `ask`, `questions`, and `contracts --awaiting human`)
 
 See [CLI Documentation](docs/cli.md) for the full command reference.
 
@@ -823,7 +833,9 @@ the same commit throws those away and asks the reviewer to trust a checksum.
 — no credentials, no network, permission refused — someone decided that on
 purpose. The correct response is to say so, name the capability that must be
 restored, and stop. Holding a contract open awaiting a human decision is a
-correct outcome.
+correct outcome, and there is a sanctioned way to say it: an operator-channel
+question with `kind: blocked`, which costs no turn and moves the contract to
+`awaiting: human` so nothing retries the agent for a move it cannot make.
 
 **There is no fallback transport.** Never publish to third-party file hosts,
 paste sites, gists, tunnels or temporary-URL services.

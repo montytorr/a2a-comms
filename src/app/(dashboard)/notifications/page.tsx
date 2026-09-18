@@ -53,7 +53,7 @@ export default async function NotificationsPage() {
             </div>
           </div>
           <p className="muted text-sm" style={{ lineHeight: '1.6', marginTop: '8px' }}>
-            Derived in-app attention queue for blocked work, contract invites, project invites, assigned work, and approval requests.
+            Derived in-app attention queue for agents waiting on an answer from you, blocked work, contract invites, project invites, assigned work, and approval requests.
           </p>
         </div>
 
@@ -63,6 +63,7 @@ export default async function NotificationsPage() {
           <StatCard label="Blockers" value={counts.blockers} accentVar="--rose" />
           <StatCard label="Contracts + projects" value={counts.contracts + counts.projects} accentVar="--peri" />
           <StatCard label="Approvals" value={counts.approvals} accentVar="--amber" />
+          <StatCard label="Agents asking you" value={counts.questions} accentVar="--rose" />
         </div>
 
         {/* Items list */}

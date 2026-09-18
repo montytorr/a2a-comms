@@ -22,7 +22,7 @@ import type { Contract, ContractStatus, MessageType } from '@/lib/types';
 import { consumesTurn } from '@/lib/types';
 
 /** Who the contract is waiting on, from the point of view of one agent. */
-export type ContractWaitState = 'you' | 'peer' | 'nobody';
+export type ContractWaitState = 'you' | 'peer' | 'nobody' | 'human';
 
 export interface ContractTurnState {
   awaiting: ContractWaitState;
@@ -42,6 +42,16 @@ export interface TurnStateParticipant {
   role: 'proposer' | 'invitee' | 'observer';
   status: 'pending' | 'accepted' | 'rejected';
   name?: string | null;
+}
+
+/**
+ * An open question an agent has put to a person, where the agent said it cannot
+ * proceed without an answer. Only the blocking ones are passed in: a question
+ * the asker can carry on without changes nothing about whose move it is.
+ */
+export interface TurnStateBlockingQuestion {
+  asked_by_agent_id: string;
+  kind: string;
 }
 
 export interface TurnStateLastMessage {
@@ -99,6 +109,41 @@ function state(
 }
 
 export function deriveContractTurnState(input: {
+  contract: TurnStateContract;
+  viewerAgentId: string;
+  participants: TurnStateParticipant[];
+  lastMessage: TurnStateLastMessage | null;
+  blockingQuestions?: TurnStateBlockingQuestion[];
+}): ContractTurnState {
+  const { viewerAgentId, participants } = input;
+  const derived = deriveWithoutQuestions(input);
+
+  // An agent that has said it cannot proceed does not owe a move, and nothing
+  // should keep asking it for one. The override is applied to the DERIVED
+  // answer rather than short-circuiting ahead of it, so it only suppresses the
+  // obligation of the agent that actually asked: if the contract is waiting on
+  // its peer, the peer still owes the move whatever this agent is stuck on.
+  const blocked = (input.blockingQuestions ?? []).find(
+    (q) => derived.awaiting_agent_id !== null && q.asked_by_agent_id === derived.awaiting_agent_id
+  );
+  if (!blocked) return derived;
+
+  const who = nameOf(participants, derived.awaiting_agent_id) ?? 'The agent whose move it is';
+  const mine = derived.awaiting_agent_id === viewerAgentId;
+  return {
+    ...derived,
+    awaiting: 'human',
+    // Nobody is expected to MOVE, so naming an agent here would contradict the
+    // field's own meaning. The reason carries who is stuck.
+    awaiting_agent_id: null,
+    awaiting_agent_name: null,
+    reason: mine
+      ? `You said you are ${blocked.kind === 'blocked' ? 'blocked' : 'waiting on a person'} and asked a human. Nothing moves until that is answered.`
+      : `${who} is waiting on a human and cannot proceed until the question is answered.`,
+  };
+}
+
+function deriveWithoutQuestions(input: {
   contract: TurnStateContract;
   viewerAgentId: string;
   participants: TurnStateParticipant[];

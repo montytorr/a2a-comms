@@ -17,6 +17,7 @@ import { getUserEmail } from '@/lib/email/helpers';
 import { createContractProposal, ContractProposalError } from '@/lib/contract-proposals';
 import { checkLinkPermission, linkContractToTask, validateLinkFields } from '@/lib/contract-task-link';
 import { getRelatedContractsForContracts } from '@/lib/contract-links';
+import { getOperatorChannelForContracts } from '@/lib/contract-operator-channel-server';
 
 export async function GET(req: NextRequest) {
   const result = await authenticateApiRequest(req);
@@ -30,12 +31,12 @@ export async function GET(req: NextRequest) {
   // holding? Without it the only inbox was for invitations, so an active
   // contract where you owed a reply appeared on no list anywhere.
   const awaiting = url.searchParams.get('awaiting');
-  if (awaiting && !['me', 'peer', 'nobody'].includes(awaiting)) {
+  if (awaiting && !['me', 'peer', 'nobody', 'human'].includes(awaiting)) {
     // An empty 200 for a typo'd filter reads as "nothing is waiting on you",
     // which is the most misleading answer this endpoint can give.
     return NextResponse.json(
       {
-        error: `awaiting must be one of: me, peer, nobody. Got "${awaiting}".`,
+        error: `awaiting must be one of: me, peer, nobody, human. Got "${awaiting}".`,
         code: 'VALIDATION_ERROR',
       } satisfies ApiError,
       { status: 400 }
@@ -103,9 +104,10 @@ export async function GET(req: NextRequest) {
   // Auto-close expired contracts and enrich with participants. Links and last
   // messages for the whole page come back in one query each, not one per row.
   const pageIds = (contracts || []).map((contract) => contract.id);
-  const [relatedByContract, lastMessages] = await Promise.all([
+  const [relatedByContract, lastMessages, channels] = await Promise.all([
     getRelatedContractsForContracts(pageIds),
     getLastMessages(pageIds),
+    getOperatorChannelForContracts(pageIds, auth.agent.id),
   ]);
   const enriched: ContractResponse[] = [];
   for (const contract of contracts || []) {
@@ -116,6 +118,9 @@ export async function GET(req: NextRequest) {
         viewerAgentId: auth.agent.id,
         lastMessage: lastMessages.get(c.id) ?? null,
         lastMessageResolved: true,
+        channel: channels.get(c.id),
+        // Counts only on a list. The bodies are on the contract itself.
+        includeChannelBodies: false,
       })
     );
   }

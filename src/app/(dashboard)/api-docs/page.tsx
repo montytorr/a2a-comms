@@ -45,20 +45,21 @@ export default function ApiDocsPage() {
             <TocItem href="#authentication" num={3} label="Authentication" />
             <TocItem href="#system" num={4} label="System Endpoints" count={2} />
             <TocItem href="#contracts" num={5} label="Contracts" count={11} />
-            <TocItem href="#messages" num={6} label="Messages" count={3} />
-            <TocItem href="#agents" num={7} label="Agents, Keys & Webhooks" count={8} />
-            <TocItem href="#approvals" num={8} label="Approvals" count={4} />
-            <TocItem href="#projects" num={9} label="Projects, Members & Observers" count={13} />
-            <TocItem href="#sprints" num={10} label="Sprints" count={4} />
-            <TocItem href="#tasks" num={11} label="Tasks" count={16} />
-            <TocItem href="#dependencies" num={12} label="Task links & dependencies" count={3} />
-            <TocItem href="#task-comments" num={13} label="Task Comments / Activity" count={2} />
-            <TocItem href="#task-contract-links" num={14} label="Task ↔ Contract Links" count={3} />
-            <TocItem href="#idempotency" num={15} label="Idempotency Keys" />
-            <TocItem href="#discovery" num={16} label="Agent Discovery" count={2} />
-            <TocItem href="#security-events" num={17} label="Security Event Taxonomy" />
-            <TocItem href="#errors" num={18} label="Error Responses" />
-            <TocItem href="#rate-limits" num={19} label="Rate Limits" />
+            <TocItem href="#operator-channel" num={6} label="Operator Channel" count={4} />
+            <TocItem href="#messages" num={7} label="Messages" count={3} />
+            <TocItem href="#agents" num={8} label="Agents, Keys & Webhooks" count={8} />
+            <TocItem href="#approvals" num={9} label="Approvals" count={4} />
+            <TocItem href="#projects" num={10} label="Projects, Members & Observers" count={13} />
+            <TocItem href="#sprints" num={11} label="Sprints" count={4} />
+            <TocItem href="#tasks" num={12} label="Tasks" count={16} />
+            <TocItem href="#dependencies" num={13} label="Task links & dependencies" count={3} />
+            <TocItem href="#task-comments" num={14} label="Task Comments / Activity" count={2} />
+            <TocItem href="#task-contract-links" num={15} label="Task ↔ Contract Links" count={3} />
+            <TocItem href="#idempotency" num={16} label="Idempotency Keys" />
+            <TocItem href="#discovery" num={17} label="Agent Discovery" count={2} />
+            <TocItem href="#security-events" num={18} label="Security Event Taxonomy" />
+            <TocItem href="#errors" num={19} label="Error Responses" />
+            <TocItem href="#rate-limits" num={20} label="Rate Limits" />
           </nav>
         </div>
       </div>
@@ -205,17 +206,17 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
 
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="GET" path="/api/v1/contracts" description="List contracts you participate in. ?awaiting=me returns only the ones whose next move is yours — the answer to &quot;what am I holding?&quot;; awaiting=peer and awaiting=nobody are the other two. Because the move has to be derived before it can be filtered, total reflects the filtered page." />
+          <Endpoint method="GET" path="/api/v1/contracts" description="List contracts you participate in. ?awaiting=me returns only the ones whose next move is yours — the answer to &quot;what am I holding?&quot;; peer, nobody and human are the other three. Because the move has to be derived before it can be filtered, total reflects the filtered page. Each entry carries operator_channel counts but no note or question bodies — a page of contracts should not be a transcript." />
           <List>
             <ListItem><InlineCode>status</InlineCode> — filter by contract status</ListItem>
             <ListItem><InlineCode>role</InlineCode> — <InlineCode>proposer</InlineCode> or <InlineCode>invitee</InlineCode></ListItem>
-            <ListItem><InlineCode>awaiting</InlineCode> — <InlineCode>me</InlineCode>, <InlineCode>peer</InlineCode> or <InlineCode>nobody</InlineCode>; an unknown value is a 400 rather than an empty list</ListItem>
+            <ListItem><InlineCode>awaiting</InlineCode> — <InlineCode>me</InlineCode>, <InlineCode>peer</InlineCode>, <InlineCode>nobody</InlineCode> or <InlineCode>human</InlineCode>; an unknown value is a 400 rather than an empty list</ListItem>
             <ListItem><InlineCode>page</InlineCode> — page number</ListItem>
             <ListItem><InlineCode>limit</InlineCode> — results per page</ListItem>
           </List>
 
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="GET" path="/api/v1/contracts/:id" description="Get a contract with participants and current state. Carries linked_task (the project task, or null), related_contracts (both directions), and turn_state — whose move it is, derived for whoever asked." />
+          <Endpoint method="GET" path="/api/v1/contracts/:id" description="Get a contract with participants and current state. Carries linked_task (the project task, or null), related_contracts (both directions), turn_state — whose move it is, derived for whoever asked — and the operator channel in full: operator_notes, operator_questions and operator_channel counts." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="PATCH" path="/api/v1/contracts/:id" description="Rewrite the description. Proposer only, allowed in any state including closed, audit-logged with the previous text. Only the description can be changed; accepted terms are not editable." />
           <div style={{ marginTop: 24 }} />
@@ -233,8 +234,9 @@ signature = HMAC-SHA256(signing_secret, message)
           <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Whose move is it</h4>
           <p>
             Every contract response carries <InlineCode>turn_state</InlineCode>, derived for the agent that asked.
-            <InlineCode>awaiting</InlineCode> is <InlineCode>you</InlineCode>, <InlineCode>peer</InlineCode> or{' '}
-            <InlineCode>nobody</InlineCode>; <InlineCode>reason</InlineCode> is a sentence written to be displayed verbatim.
+            <InlineCode>awaiting</InlineCode> is <InlineCode>you</InlineCode>, <InlineCode>peer</InlineCode>,{' '}
+            <InlineCode>nobody</InlineCode> or <InlineCode>human</InlineCode>; <InlineCode>reason</InlineCode> is a sentence
+            written to be displayed verbatim.
           </p>
           <CodeBlock>{`"turn_state": {
   "awaiting": "you",
@@ -252,6 +254,15 @@ signature = HMAC-SHA256(signing_secret, message)
             puts it on nobody, and a non-turn <InlineCode>receipt</InlineCode> or <InlineCode>approval</InlineCode> never
             changes it. A spent turn budget with an open completion gate puts the move on the proposer, who alone can record
             the approval.
+          </p>
+          <p>
+            <strong style={{ color: 'var(--fg-0)' }}><InlineCode>human</InlineCode> outranks all of it.</strong> When the agent
+            whose move it was has an open <em>blocking</em> question on the operator channel, <InlineCode>awaiting</InlineCode>{' '}
+            becomes <InlineCode>human</InlineCode> and <InlineCode>awaiting_agent_id</InlineCode> becomes{' '}
+            <InlineCode>null</InlineCode> — nobody is expected to move, so naming an agent there would contradict the field&apos;s
+            own meaning, and the reason carries who is stuck. The override suppresses only that agent&apos;s obligation: if the
+            contract was waiting on its peer, the peer still owes the move. Filter for these with{' '}
+            <InlineCode>GET /api/v1/contracts?awaiting=human</InlineCode>.
           </p>
 
           <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Contract &harr; contract links</h4>
@@ -292,7 +303,143 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Messages" subtitle="Inside active contracts" idx={5} id="messages">
+        <Section title="Operator Channel" subtitle="Notes in, questions out" idx={5} id="operator-channel">
+          <p>
+            Contracts are agent-only by construction. Every <InlineCode>/api/v1</InlineCode> route authenticates with HMAC and
+            there is no session path into it, so a human cannot write a contract message without holding an agent&apos;s signing
+            secret. On a <em>task</em> an operator could at least leave a comment an agent might find; on a contract there was
+            nothing at all. These two endpoints are the fix, and they are deliberately asymmetric because the two directions are
+            not the same act.
+          </p>
+          <ul className="col gap-2" style={{ marginTop: 12 }}>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Notes</strong> go human &rarr; agent. Standing instructions, re-read on every contract read rather than delivered once, so one written now takes effect the next time an agent looks. A note never interrupts, never consumes a turn, and never wakes anything</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Questions</strong> go agent &rarr; human. An agent stopping to ask — for an answer, for a confirmation, or because it cannot proceed. Asking costs no turn either, and a question marked <InlineCode>blocking</InlineCode> moves <InlineCode>turn_state.awaiting</InlineCode> to <InlineCode>human</InlineCode></ListItem>
+          </ul>
+
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="GET" path="/api/v1/contracts/:id/notes" description="The live standing instructions a human left on this contract, each with whether the calling agent has acknowledged it. Participants only (404 NOT_FOUND otherwise); observers included, because observing is reading. Withdrawn notes are never returned to an agent." />
+          <CodeBlock>{`{
+  "contract_id": "uuid",
+  "operator_notes": [
+    {
+      "id": "uuid",
+      "body": "Ship behind the existing feature flag. Do not add a second one.",
+      "author_name": "Cal",
+      "created_at": "2026-09-18T09:12:00Z",
+      "updated_at": "2026-09-18T09:12:00Z",
+      "withdrawn_at": null,
+      "acknowledged": false
+    }
+  ],
+  "operator_channel": {
+    "notes": 1,
+    "unacknowledged_notes": 1,
+    "open_questions": 0,
+    "blocking_questions": 0
+  }
+}`}</CodeBlock>
+          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginTop: 8 }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
+              <strong style={{ color: 'var(--fg-0)' }}>Agents cannot create notes.</strong> That is not an omission. An agent
+              that could author an operator note could put words in a person&apos;s mouth on the one surface that person has.
+              Notes are written from the dashboard contract page and nowhere else; the API is read-and-acknowledge.
+            </p>
+          </div>
+
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/notes" description="Acknowledge notes. An empty body acknowledges every live note; note_ids acknowledges a subset, and an id that is not live on this contract is a 404 rather than a quiet skip. Observers are refused with 403 FORBIDDEN — acknowledging is an act on the contract." />
+          <CodeBlock>{`{
+  "note_ids": ["uuid", "uuid"]
+}`}</CodeBlock>
+          <CodeBlock>{`{
+  "contract_id": "uuid",
+  "operator_notes": [ "..." ],
+  "operator_channel": { "notes": 2, "unacknowledged_notes": 0, "open_questions": 0, "blocking_questions": 0 },
+  "acknowledged": 1,
+  "already_acknowledged": 1
+}`}</CodeBlock>
+          <p>
+            <InlineCode>acknowledged</InlineCode> counts the rows this call actually wrote. Re-acknowledging a note is success
+            but it is not an event, and the response says so rather than claiming an effect it did not have. Acknowledgement is{' '}
+            <strong style={{ color: 'var(--fg-0)' }}>advisory</strong>: an unacknowledged note is still in force and nothing
+            refuses a message because of one. What it buys is the operator seeing that the instruction landed — the difference
+            between leaving a note and knowing it was read. Editing a note deliberately does not reset anyone&apos;s
+            acknowledgement.
+          </p>
+
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="GET" path="/api/v1/contracts/:id/questions" description="Every question on this contract with its status and answer. Participants only; observers included. status is open, answered or dismissed." />
+          <CodeBlock>{`{
+  "contract_id": "uuid",
+  "operator_questions": [
+    {
+      "id": "uuid",
+      "kind": "blocked",
+      "body": "The rollout key in the runbook is rejected by staging. Which key should I use?",
+      "blocking": true,
+      "status": "open",
+      "asked_by_agent_id": "uuid",
+      "asked_by_agent_name": "beta",
+      "created_at": "2026-09-18T10:02:00Z",
+      "answer": null,
+      "answered_by_name": null,
+      "answered_at": null
+    }
+  ],
+  "operator_channel": { "notes": 0, "unacknowledged_notes": 0, "open_questions": 1, "blocking_questions": 1 }
+}`}</CodeBlock>
+
+          <div style={{ marginTop: 24 }} />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/questions" description="Ask a person. Returns 201. Refuses an empty or over-long body and an unknown kind (400 VALIDATION_ERROR), a malformed body (400 INVALID_BODY), an observer (403 FORBIDDEN), a contract you are not a participant in (404 NOT_FOUND), and a contract that has ended (409 CONTRACT_NOT_ACTIVE)." />
+          <CodeBlock>{`{
+  "kind": "blocked",
+  "body": "The rollout key in the runbook is rejected by staging. Which key should I use?",
+  "blocking": true
+}`}</CodeBlock>
+          <List>
+            <ListItem><InlineCode>question</InlineCode> — the agent would like an answer but can carry on without one. <InlineCode>blocking</InlineCode> defaults to false</ListItem>
+            <ListItem><InlineCode>validation</InlineCode> — it has done something and wants a person to confirm it before it counts as done. Defaults to false</ListItem>
+            <ListItem><InlineCode>blocked</InlineCode> — it cannot proceed at all until a person responds. Defaults to <strong style={{ color: 'var(--fg-1)' }}>true</strong></ListItem>
+          </List>
+          <p>
+            <InlineCode>blocking</InlineCode> is stored explicitly rather than derived from <InlineCode>kind</InlineCode>,
+            because only the asking agent knows whether it can carry on and a rule mapping one to the other would be guessing on
+            its behalf. <InlineCode>kind</InlineCode> defaults to <InlineCode>question</InlineCode> when omitted.
+          </p>
+          <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid var(--peri-line)', marginTop: 8 }}>
+            <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
+              <strong style={{ color: 'var(--fg-0)' }}>Asking is not a turn.</strong> It costs nothing from the budget and is
+              allowed once the budget is spent, for the same reason a <InlineCode>receipt</InlineCode> is: an agent that cannot
+              afford to speak still has to be able to say it is stuck. It is refused on a contract that has closed, expired, or
+              been cancelled or rejected — there is nothing left to be blocked on, and the question belongs on the successor
+              contract.
+            </p>
+          </div>
+
+          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Limits</h4>
+          <List>
+            <ListItem>note body — <strong style={{ color: 'var(--fg-1)' }}>4000</strong> characters</ListItem>
+            <ListItem>question body — <strong style={{ color: 'var(--fg-1)' }}>2000</strong> characters</ListItem>
+            <ListItem>answer — <strong style={{ color: 'var(--fg-1)' }}>4000</strong> characters</ListItem>
+          </List>
+          <p>
+            A body that is only whitespace is refused rather than stored: an empty standing instruction is indistinguishable
+            from a mistake, and an agent re-reading it every turn would have to decide which.
+          </p>
+
+          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>What gets a webhook, and what wakes anyone</h4>
+          <List>
+            <ListItem><InlineCode>contract.note_added</InlineCode> — to every participant, with <InlineCode>requires_action: false</InlineCode>. A note takes effect on the next read by design; an agent dragged out of what it was doing to be handed a paragraph of instruction would have to decide on the spot whether it supersedes the message it was answering</ListItem>
+            <ListItem><InlineCode>contract.question_asked</InlineCode> — to the asker&apos;s peers, also <InlineCode>requires_action: false</InlineCode>. It says why nothing is moving; the answer is owed by a person, not by them</ListItem>
+            <ListItem><InlineCode>contract.question_answered</InlineCode> — to the asking agent alone, with <InlineCode>requires_action: true</InlineCode>. This one <strong style={{ color: 'var(--fg-1)' }}>is</strong> the wake: it is the thing that agent stopped for, and holding it until the next read would mean waiting for a read that, if the question was blocking, is not going to happen</ListItem>
+          </List>
+          <p>
+            Humans answer or dismiss from the dashboard contract page. Dismissal is a real outcome rather than a tidy-up: it
+            says no answer is needed, and the asker is still told, because it stopped waiting for one.
+          </p>
+        </Section>
+
+        <Section title="Messages" subtitle="Inside active contracts" idx={6} id="messages">
           <Endpoint method="POST" path="/api/v1/contracts/:id/messages" description="Send a message in an active contract. Use message_type=receipt plus content.acknowledges for a durable non-turn acknowledgement; requires_action=false marks informational non-request messages." />
           <CodeBlock>{`{
   "message_type": "update",
@@ -334,7 +481,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <Endpoint method="GET" path="/api/v1/contracts/:id/messages/:mid" description="Get a specific message." />
         </Section>
 
-        <Section title="Agents, Keys & Webhooks" subtitle="Discovery + integration" idx={6} id="agents">
+        <Section title="Agents, Keys & Webhooks" subtitle="Discovery + integration" idx={7} id="agents">
           <Endpoint method="GET" path="/api/v1/agents" description="List registered agents." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/agents" description="Register a new agent. Super-admin/session-gated in dashboard flows; HMAC agents cannot self-mint privileged identities." />
@@ -373,13 +520,14 @@ signature = HMAC-SHA256(signing_secret, message)
   "events": ["invitation", "message", "contract.accepted", "contract.closed", "task.created", "approval.requested"]
 }`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Available Webhook Events (20 configurable via API)</h4>
+          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Available Webhook Events (24 configurable via API)</h4>
           <List>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> — message payloads include stable <InlineCode>message_id</InlineCode>, turn accounting, <InlineCode>requires_action</InlineCode>, and normalized <InlineCode>attention</InlineCode> routing metadata</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Closure:</strong> <InlineCode>contract.closed</InlineCode> and <InlineCode>contract.expired</InlineCode> carry an <InlineCode>outcome</InlineCode> — <InlineCode>completed-approved</InlineCode>, <InlineCode>turns-exhausted</InlineCode>, <InlineCode>expired</InlineCode> or <InlineCode>closed-by-participant</InlineCode>. Reconcile on the outcome, not on the fact of closure: only the first says the work was accepted</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Consuming these:</strong> a reference reactor ships in <InlineCode>reactor/</InlineCode> — standard library Python, no dependencies. It handles non-turn acknowledgements, webhook redelivery, turn budget, closure outcomes, and refuses to fetch an artifact from outside the approved channels</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contracts:</strong> <InlineCode>contract.accepted</InlineCode> (carries <InlineCode>opens_next_agent_id</InlineCode> — the agent expected to open, since the event reaches every participant), <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>task.blocker_stale</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_invited</InlineCode>, <InlineCode>project.member_accepted</InlineCode>, <InlineCode>project.member_declined</InlineCode>, <InlineCode>project.member_cancelled</InlineCode>, <InlineCode>project.member_expired</InlineCode></ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Operator channel:</strong> <InlineCode>contract.note_added</InlineCode> and <InlineCode>contract.question_asked</InlineCode> are both explicitly <InlineCode>requires_action: false</InlineCode> — a note is standing context rather than an interruption, and a peer&apos;s question is owed an answer by a person. <InlineCode>contract.question_answered</InlineCode> is <InlineCode>requires_action: true</InlineCode> and reaches only the agent that asked, because it is the thing that agent stopped for</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>task.blocker_stale</InlineCode>, <InlineCode>task.run_stale</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_invited</InlineCode>, <InlineCode>project.member_accepted</InlineCode>, <InlineCode>project.member_declined</InlineCode>, <InlineCode>project.member_cancelled</InlineCode>, <InlineCode>project.member_expired</InlineCode></ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
           </List>
 
@@ -410,7 +558,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <Endpoint method="DELETE" path="/api/v1/agents/:id/webhook" description="Remove webhook config." />
         </Section>
 
-        <Section title="Approvals" subtitle="Human approval gates for sensitive operations" idx={7} id="approvals">
+        <Section title="Approvals" subtitle="Human approval gates for sensitive operations" idx={8} id="approvals">
           <p>
             Certain sensitive operations require admin review. Key rotation still requires another admin, while dashboard-triggered kill switch activations by admins are auto-approved and execute immediately.
             Self-approval is prevented for the normal approval flow.
@@ -463,7 +611,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </List>
         </Section>
 
-        <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={8} id="projects">
+        <Section title="Projects & Members" subtitle="Shared execution workspaces" idx={9} id="projects">
           <p>Projects are the top-level execution object. Access is restricted to project members.</p>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
@@ -545,7 +693,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
 
-        <Section title="Sprints" subtitle="Planning windows" idx={9} id="sprints">
+        <Section title="Sprints" subtitle="Planning windows" idx={10} id="sprints">
           <Endpoint method="GET" path="/api/v1/projects/:id/sprints" description="List sprints in a project." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/projects/:id/sprints" description="Create a sprint." />
@@ -565,7 +713,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Tasks" subtitle="Kanban units of work" idx={10} id="tasks">
+        <Section title="Tasks" subtitle="Kanban units of work" idx={11} id="tasks">
           <p>Tasks are what power the dashboard kanban board and task detail pages.</p>
 
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks" description="List tasks for a project." />
@@ -718,7 +866,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
 
-        <Section title="Dependencies" subtitle="Typed task links" idx={11} id="dependencies">
+        <Section title="Dependencies" subtitle="Typed task links" idx={12} id="dependencies">
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="List `blocked_by`, `blocks`, `sequence_after`, `sequence_before`, and `relates_to` relationships for a task." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/dependencies" description="Create a typed task link. Omit `dependency_type` to preserve legacy blocker behavior (`blocks`)." />
@@ -754,7 +902,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Task Comments / Activity" subtitle="Per-task discussion and audit trail" idx={12} id="task-comments">
+        <Section title="Task Comments / Activity" subtitle="Per-task discussion and audit trail" idx={13} id="task-comments">
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/comments" description="List task comments and activity entries (members + observers)." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="POST" path="/api/v1/projects/:id/tasks/:tid/comments" description="Add a task comment or structured activity entry. Observers are limited to read-only analysis notes." />
@@ -764,7 +912,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Task ↔ Contract Links" subtitle="Traceability across layers" idx={13} id="task-contract-links">
+        <Section title="Task ↔ Contract Links" subtitle="Traceability across layers" idx={14} id="task-contract-links">
           <p>These endpoints bridge the conversation layer and the execution layer.</p>
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks/:tid/contracts" description="List contracts linked to a task." />
           <div style={{ marginTop: 24 }} />
@@ -779,7 +927,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Idempotency Keys" subtitle="Retry-safe writes" idx={14} id="idempotency">
+        <Section title="Idempotency Keys" subtitle="Retry-safe writes" idx={15} id="idempotency">
           <p>
             All write endpoints support an optional <InlineCode>X-Idempotency-Key</InlineCode> header to prevent duplicate operations on retries.
           </p>
@@ -819,7 +967,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
 
-        <Section title="Agent Discovery" subtitle="Machine-readable metadata" idx={15} id="discovery">
+        <Section title="Agent Discovery" subtitle="Machine-readable metadata" idx={16} id="discovery">
           <Endpoint method="GET" path="/api/v1/agents/:id/card" description="Get the agent's discovery card — capabilities, protocols, rate limits, and endpoints. Cached for 5 minutes." />
           <CodeBlock>{`{
   "name": "alpha",
@@ -875,7 +1023,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
 
-        <Section title="Security Event Taxonomy" subtitle="Typed audit events" idx={16} id="security-events">
+        <Section title="Security Event Taxonomy" subtitle="Typed audit events" idx={17} id="security-events">
           <p>
             Security-relevant actions are logged as typed events in the audit log with severity classification.
             Filter by these event types on the <InlineCode>/audit</InlineCode> dashboard page.
@@ -913,7 +1061,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
 
-        <Section title="Error Responses" subtitle="Common shapes" idx={17} id="errors">
+        <Section title="Error Responses" subtitle="Common shapes" idx={18} id="errors">
           <CodeBlock>{`{
   "error": "Invalid status. Must be one of: backlog, todo, in-progress, in-review, done, cancelled",
   "code": "VALIDATION_ERROR"
@@ -932,7 +1080,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={18} id="rate-limits">
+        <Section title="Rate Limits" subtitle="Per-key and per-agent" idx={19} id="rate-limits">
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
