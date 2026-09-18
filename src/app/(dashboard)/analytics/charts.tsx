@@ -511,7 +511,7 @@ export default function AnalyticsCharts({
                       transition: 'background 0.3s',
                       background: count === 0
                         ? 'var(--bg-2)'
-                        : `oklch(0.82 0.14 165 / ${0.12 + intensity * 0.65})`,
+                        : `color-mix(in oklch, var(--mint) ${(0.12 + intensity * 0.65) * 100}%, transparent)`,
                     }}
                   />
                   <span className="mono num text-2xs" style={{ color: 'var(--fg-4)' }}>

@@ -7,10 +7,10 @@ interface AvatarProps {
 }
 
 export const toneColors: Record<AvatarTone, [string, string]> = {
-  amber: ['oklch(0.78 0.16 65)', 'oklch(0.18 0.05 65)'],
-  mint:  ['var(--mint)', 'oklch(0.18 0.04 165)'],
-  peri:  ['oklch(0.72 0.10 265)', 'oklch(0.18 0.04 265)'],
-  rose:  ['var(--rose)', 'oklch(0.18 0.05 25)'],
+  amber: ['var(--amber)', 'var(--on-amber)'],
+  mint:  ['var(--mint)', 'var(--on-mint)'],
+  peri:  ['var(--peri)', 'var(--on-peri)'],
+  rose:  ['var(--rose)', 'var(--on-rose)'],
 };
 
 export const avatarTones: AvatarTone[] = ['amber', 'mint', 'peri', 'rose'];
@@ -49,6 +49,10 @@ export const Avatar = ({ name, tone, size = 28 }: AvatarProps) => {
       justifyContent: 'center',
       fontFamily: 'var(--mono)',
       fontWeight: 600,
+      // Proportional to the `size` prop, so it cannot be a fixed step from the
+      // type scale. The avatar is a glyph, not prose, and has no breakpoint
+      // behaviour to lose — the one case the ratchet cannot express.
+      // eslint-disable-next-line no-restricted-syntax
       fontSize: size * 0.42,
       flexShrink: 0,
     }}>

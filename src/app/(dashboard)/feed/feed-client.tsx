@@ -322,7 +322,7 @@ function EventRow({ event, isNew }: { event: FeedEvent; isNew: boolean }) {
         gap: 10,
         padding: '7px 14px',
         borderBottom: '1px solid var(--line-1)',
-        background: isNew ? 'oklch(0.22 0.02 165 / 0.08)' : undefined,
+        background: isNew ? 'color-mix(in oklch, var(--mint) 8%, transparent)' : undefined,
         transition: 'background 0.3s',
         ...(event.link ? { textDecoration: 'none', color: 'inherit', cursor: 'pointer' } : {}),
       }}

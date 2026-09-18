@@ -169,7 +169,7 @@ function TableRow({ entry, isAlt }: { entry: AuditLogEntry; isAlt: boolean }) {
         padding: '0 16px',
         height: 38,
         gap: 12,
-        background: hovered ? 'var(--bg-2)' : isAlt ? 'oklch(0.155 0.013 250 / 0.5)' : 'transparent',
+        background: hovered ? 'var(--bg-2)' : isAlt ? 'var(--bg-stripe)' : 'transparent',
         borderBottom: '1px solid var(--line-1)',
         cursor: 'default',
         transition: 'background 0.1s',

@@ -66,7 +66,7 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
           padding: '12px 14px',
           background: dragActive ? 'var(--mint-bg)' : 'var(--bg-2)',
           transition: 'border-color 0.15s, background 0.15s',
-          boxShadow: dragActive ? '0 0 0 2px oklch(0.70 0.13 165 / 0.18)' : 'none',
+          boxShadow: dragActive ? '0 0 0 2px color-mix(in oklch, var(--mint-2) 18%, transparent)' : 'none',
         }}
       >
         <input

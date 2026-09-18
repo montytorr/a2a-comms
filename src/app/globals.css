@@ -46,6 +46,12 @@
   --amber-bg: oklch(0.30 0.06 65 / 0.35);
   --amber-line: oklch(0.55 0.12 60 / 0.55);
   --on-amber: oklch(0.18 0.04 60);
+  --on-mint: oklch(0.18 0.04 165);
+  --on-peri: oklch(0.18 0.04 265);
+  --on-rose: oklch(0.18 0.05 25);
+  --mint-deep: oklch(0.25 0.06 165);
+  --rose-deep: oklch(0.25 0.06 25);
+  --rose-line-strong: oklch(0.45 0.10 25 / 0.4);
   --mint: oklch(0.82 0.14 165);
   --mint-2: oklch(0.70 0.13 165);
   --mint-bg: oklch(0.30 0.05 165 / 0.35);
@@ -61,6 +67,10 @@
      raised. Both were repeated as literals across the components. */
   --focus-ring: oklch(0.70 0.16 60 / 0.15);
   --highlight: oklch(1 0 0 / 0.05);
+  /* Zebra stripe for dense tables: a touch darker than --bg-1, not a new surface. */
+  --bg-stripe: oklch(0.155 0.013 250 / 0.5);
+  /* The square brand mark in the sidebar and on every auth page. */
+  --brand-mark: linear-gradient(135deg, oklch(0.32 0.02 250), oklch(0.20 0.01 250));
   --shadow-strong: oklch(0 0 0 / 0.5);
 
   /* ambient wash behind the shell */
@@ -115,6 +125,12 @@
   --amber-bg: oklch(0.94 0.055 65);
   --amber-line: oklch(0.72 0.11 60);
   --on-amber: oklch(1 0 0);
+  --on-mint: oklch(1 0 0);
+  --on-peri: oklch(1 0 0);
+  --on-rose: oklch(1 0 0);
+  --mint-deep: oklch(0.93 0.04 165);
+  --rose-deep: oklch(0.93 0.05 25);
+  --rose-line-strong: oklch(0.68 0.13 25 / 0.5);
   --mint: oklch(0.50 0.12 165);
   --mint-2: oklch(0.43 0.12 165);
   --mint-bg: oklch(0.94 0.05 165);
@@ -128,6 +144,8 @@
 
   --focus-ring: oklch(0.56 0.14 65 / 0.22);
   --highlight: oklch(0 0 0 / 0.04);
+  --bg-stripe: oklch(0.965 0.005 250 / 0.7);
+  --brand-mark: linear-gradient(135deg, oklch(0.90 0.010 250), oklch(0.80 0.012 250));
   --shadow-strong: oklch(0.30 0.01 250 / 0.22);
 
   --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.80 0.05 65 / 0.18), transparent 60%),

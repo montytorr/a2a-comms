@@ -122,7 +122,7 @@ const Logo = ({ collapsed }: { collapsed?: boolean }) => (
       height: 26,
       flexShrink: 0,
       borderRadius: 6,
-      background: 'linear-gradient(135deg, oklch(0.32 0.02 250), oklch(0.20 0.01 250))',
+      background: 'var(--brand-mark)',
       border: '1px solid var(--line-2)',
       position: 'relative',
       display: 'flex',

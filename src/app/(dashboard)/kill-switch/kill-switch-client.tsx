@@ -144,9 +144,9 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
             justifyContent: 'center',
             transition: 'all 0.7s',
             background: isActive
-              ? 'radial-gradient(135deg, var(--rose-bg), oklch(0.25 0.06 25))'
-              : 'radial-gradient(135deg, var(--mint-bg), oklch(0.25 0.06 165))',
-            border: `2px solid ${isActive ? 'oklch(0.45 0.10 25 / 0.4)' : 'var(--mint-line)'}`,
+              ? 'radial-gradient(135deg, var(--rose-bg), var(--rose-deep))'
+              : 'radial-gradient(135deg, var(--mint-bg), var(--mint-deep))',
+            border: `2px solid ${isActive ? 'var(--rose-line-strong)' : 'var(--mint-line)'}`,
           }}>
             <div style={{
               width: 56,

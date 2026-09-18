@@ -283,8 +283,8 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               {task.due_date && (
                                 <span
-                                  className={isOverdue ? 'pill pill--rose' : 'pill pill--ghost'}
-                                  style={{ fontSize: 8, fontFamily: 'var(--mono)' }}
+                                  className={`${isOverdue ? 'pill pill--rose' : 'pill pill--ghost'} text-2xs`}
+                                  style={{ fontFamily: 'var(--mono)' }}
                                 >
                                   {compactDate(task.due_date)}
                                 </span>

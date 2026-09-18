@@ -52,10 +52,21 @@ say "1. Throwaway postgres"
 $DOCKER run -d --rm --name "$PG_CONTAINER" \
   -e POSTGRES_PASSWORD=e2e -e POSTGRES_USER=a2a_app -e POSTGRES_DB=a2a \
   -p "127.0.0.1:$PG_PORT:5432" postgres:17.11-alpine >/dev/null || { echo "docker run failed"; exit 1; }
+# Report readiness honestly. This loop used to fall through to `ok` when it
+# exhausted, so a slow start (a cold image pull, say) was announced as success
+# and then surfaced as a baffling migration error: psql inside a container whose
+# server was not listening yet.
+PG_READY=""
 for _ in $(seq 1 60); do
-  $DOCKER exec "$PG_CONTAINER" pg_isready -U a2a_app -d a2a >/dev/null 2>&1 && break
+  $DOCKER exec "$PG_CONTAINER" pg_isready -U a2a_app -d a2a >/dev/null 2>&1 && { PG_READY=1; break; }
   sleep 1
 done
+if [[ -z "$PG_READY" ]]; then
+  bad "postgres never became ready on $PG_PORT after 60s"
+  echo
+  echo "1 check failed before anything could run." >&2
+  exit 1
+fi
 ok "postgres up on $PG_PORT"
 
 # The migrations predate the move off Supabase and still reference auth.*.

@@ -5,11 +5,15 @@ import nextTs from "eslint-config-next/typescript";
 /**
  * Design-system ratchets.
  *
- * Both rules guard invariants the UI refactor is establishing, and both are
- * deliberately `warn` rather than `error` while the existing violations are
- * worked down — the warning count is the progress counter (see AC-37). Flip
- * each to `error` once its count reaches zero, at which point regression
- * becomes mechanically impossible rather than a matter of discipline.
+ * Both rules guard invariants the UI refactor established. They ran as `warn`
+ * while the existing violations were worked down — the warning count was the
+ * progress counter (see AC-37). That count reached zero on 2026-09-18, so they
+ * are now `error`: regression is mechanically impossible rather than a matter
+ * of discipline, which was the whole point of counting.
+ *
+ * There is exactly one suppression, in components/atoms/avatar.tsx, where the
+ * glyph size is proportional to a `size` prop and therefore cannot be a fixed
+ * step from the scale. Any new suppression wants the same kind of reason.
  */
 const designSystemRatchets = {
   files: ["src/**/*.ts", "src/**/*.tsx"],
@@ -19,7 +23,7 @@ const designSystemRatchets = {
   ignores: ["src/lib/email/**", "src/emails/**"],
   rules: {
     "no-restricted-syntax": [
-      "warn",
+      "error",
       {
         // Typography must come from the shared scale, not per-call-site pixels.
         // Inline styles also cannot express breakpoints, so every one of these

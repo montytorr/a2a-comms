@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{
             width: 50, height: 50, borderRadius: 12,
-            background: 'linear-gradient(135deg, oklch(0.32 0.02 250), oklch(0.20 0.01 250))',
+            background: 'var(--brand-mark)',
             border: '1px solid var(--line-2)',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
           }}>
