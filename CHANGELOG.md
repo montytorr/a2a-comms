@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.318] - 2026-09-18
+### Fixed
+- guard the contract_links RLS block, and write down how migrations reach production
+- The migration shipped in 68d7080 ended with an unguarded `CREATE POLICY ... TO service_role`. It passed verify-e2e because that harness creates `authenticated`, `anon` and `service_role` itself to get the Supabase-era migrations through. The live database has none of them, and not one RLS policy in public: it is native Postgres, the app connects as the owning role, and authorization is enforced in the application layer. So the policy failed there, and because the file is one transaction it took the table with it.
+- Now guarded on pg_roles. A Supabase-shaped deployment still gets the policies; this one gets a table that behaves like its neighbours, and says so in a NOTICE rather than silently.
+- Applied to production by hand and verified there: table, both indexes, the unique index and the acyclicity trigger, which was then exercised on two real contract ids inside a transaction that was rolled back.
+- Which is the second half of this. CI applies no migrations at all — ci-deploy.sh builds, deploys and restarts, and nothing in the pipeline touches the schema. A release that adds a table therefore ships code querying a table that is not there, and the query layer returns { data: null, error } rather than throwing, so it degrades to an empty result rather than an alarm. That was true before today and written down nowhere. CONTRIBUTING now has the command, the two properties every migration file needs (one transaction, safe to run twice), and the roles trap above.
+
 ## [1.0.316] - 2026-09-18
 ### Added
 - link one contract to another, instead of describing the chain in prose
