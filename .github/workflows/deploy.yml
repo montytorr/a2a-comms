@@ -5,6 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# One run of this workflow at a time. The self-hosted runner serialises JOBS,
+# not RUNS, so without this an earlier run's deploy job starts after a later
+# run's lint job has already finished — and pulls a commit it was never testing.
+# cancel-in-progress is deliberately false: a deploy half-way through a Traefik
+# switch must be allowed to finish.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
 env:
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
@@ -84,10 +93,17 @@ jobs:
         id: deploy
         run: |
           set -o pipefail
-          VERSION=$(sudo /root/projects/a2a-comms/scripts/ci-deploy.sh | tail -1)
+          # The SHA is passed as an argument, not an env var: this runs under
+          # sudo, which strips the environment.
+          VERSION=$(sudo /root/projects/a2a-comms/scripts/ci-deploy.sh "${{ github.sha }}" | tail -1)
           if [ -z "$VERSION" ]; then
             echo "ci-deploy.sh completed but did not emit a version" >&2
             exit 1
+          fi
+          if [ "$VERSION" = "SUPERSEDED" ]; then
+            echo "superseded=true" >> "$GITHUB_OUTPUT"
+            echo "A newer commit is already on main; the run that owns it deploys both."
+            exit 0
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -99,7 +115,7 @@ jobs:
           rm -rf .next node_modules/.cache
 
       - name: Notify Discord (success)
-        if: success()
+        if: success() && steps.deploy.outputs.superseded != 'true' 
         run: |
           VERSION="${{ steps.deploy.outputs.version }}"
           COMMIT_MSG="${{ steps.commit.outputs.msg }}"

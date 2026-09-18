@@ -24,6 +24,58 @@ PY
 # Pull latest
 git pull origin main 2>&1
 
+# Deploy the commit that triggered this run, or stand down.
+#
+# The workflow has no actions/checkout and never referenced github.sha: both
+# jobs just pulled origin/main into this one shared directory on the self-hosted
+# runner. The runner serialises JOBS, not RUNS, so jobs from different runs
+# interleave — and an earlier run's deploy routinely started minutes AFTER a
+# later commit had landed. Measured: run 4042eb6 deployed at 06:03:47, four
+# minutes after a85bd0a was pushed. It shipped both as 1.0.313; the run that
+# owned a85bd0a then found only a bump commit and minted 1.0.314 with no
+# commits, a byte-identical image, and no changelog entry. That is where
+# 1.0.311, .314, .317 and .324 came from, and why Discord announced versions
+# the changelog filed elsewhere.
+#
+# The fix is not to build the older tree — the newer commit is already merged
+# and is what should ship. It is for the superseded run to stand down and let
+# the run that owns the tip deploy both commits under one honest version.
+# This script runs under sudo (see .github/workflows/deploy.yml), so every
+# object and ref git writes here lands owned by root — inside a checkout the
+# runner owns. The next run's `git pull`, which is NOT sudo, then dies with
+# "insufficient permission for adding an object to repository database". That is
+# why deploys once alternated between passing and failing: each success poisoned
+# the run after it. See AC-39.
+#
+# It is a trap rather than a line after the commit, because the version bump now
+# stays in the working tree until the deploy has actually succeeded — so an
+# early exit can leave root-owned files behind where it previously could not.
+REPO_OWNER="$(stat -c '%u:%g' "$PWD")"
+PUBLISHED="no"
+
+finish() {
+  local status=$?
+  # A bump that never shipped must not survive into the next run, or the next
+  # version is computed from a version that does not exist.
+  if [[ "$status" -ne 0 && "$PUBLISHED" == "no" ]]; then
+    git checkout -- package.json CHANGELOG.md 2>/dev/null || true
+  fi
+  chown -R "$REPO_OWNER" "$PWD/.git" "$PWD/package.json" "$PWD/CHANGELOG.md" 2>/dev/null || true
+  exit "$status"
+}
+trap finish EXIT
+
+EXPECTED_SHA="${1:-}"
+if [[ -n "$EXPECTED_SHA" ]]; then
+  HEAD_SHA="$(git rev-parse HEAD)"
+  if [[ "$HEAD_SHA" != "$EXPECTED_SHA" ]]; then
+    echo "Superseded: this run is for ${EXPECTED_SHA:0:7}, but main is now at ${HEAD_SHA:0:7}." >&2
+    echo "The run that owns ${HEAD_SHA:0:7} will deploy both. Standing down." >&2
+    echo "SUPERSEDED"
+    exit 0
+  fi
+fi
+
 # Bump patch version
 CURRENT=$(node -p "require('./package.json').version")
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
@@ -124,26 +176,6 @@ if not sep:
 open(path, "w", encoding="utf-8").write(head + sep + "\n" + "\n".join(block) + "\n" + tail)
 PY
 
-# This script runs under sudo (see .github/workflows/deploy.yml), so every
-# object and ref git writes here lands owned by root — inside a checkout the
-# runner owns. The next run's `git pull`, which is NOT sudo, then dies with
-# "insufficient permission for adding an object to repository database".
-#
-# That is why deploys alternated between passing and failing: each success
-# poisoned the run after it. Restoring ownership once the writes are done is
-# the whole fix. See AC-39.
-REPO_OWNER="$(stat -c '%u:%g' "$PWD")"
-
-git add package.json CHANGELOG.md
-git diff --cached --quiet || {
-  git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-  git push origin main
-}
-
-# .git for the objects and refs git just wrote; the two files because the
-# version bump rewrites them in place with sed, also as root.
-chown -R "$REPO_OWNER" "$PWD/.git" "$PWD/package.json" "$PWD/CHANGELOG.md"
-
 # Build web image before touching the live container. This keeps the current
 # production app serving while the replacement image is compiled.
 IMAGE="a2a-comms-a2a-comms:v$NEW_VERSION"
@@ -229,6 +261,36 @@ done
 # no longer removes the public web container or webhook receiver.
 docker compose -f docker-compose.yml build webhook-worker invitation-sweep-worker stale-blocker-sweep-worker stale-run-sweep-worker >&2 2>&1
 docker compose -f docker-compose.yml up -d --no-deps webhook-worker invitation-sweep-worker stale-blocker-sweep-worker stale-run-sweep-worker >&2 2>&1
+
+# Publish the version ONLY now that it is serving traffic.
+#
+# This used to run before `docker build`. Under `set -e`, any failure after it —
+# a broken build, an unhealthy container, a Traefik switch that did not take —
+# left package.json and CHANGELOG.md committed and PUSHED to main claiming a
+# version had shipped while production still served the previous one. The next
+# run then bumped from the phantom, so that version was never built at all: it
+# existed in the changelog and in git history and nowhere else.
+git add package.json CHANGELOG.md
+git diff --cached --quiet || {
+  git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+  git push origin main
+}
+PUBLISHED="yes"
+
+# A tag, so a version is something you can check out.
+#
+# There were 328 published versions and zero tags, because nothing ever created
+# one. Tagging was not worth adding while a version could contain two commits or
+# none — it would have tagged a counter. Now that one version means one tree, it
+# means something. Annotated so the tag carries its own date and author.
+if git rev-parse -q --verify "refs/tags/v$NEW_VERSION" >/dev/null; then
+  echo "tag v$NEW_VERSION already exists; leaving it alone" >&2
+else
+  git tag -a "v$NEW_VERSION" -m "v$NEW_VERSION" && git push origin "v$NEW_VERSION" >&2 2>&1 || {
+    # A tag that fails to push must not fail a deploy that already succeeded.
+    echo "WARN: could not push tag v$NEW_VERSION" >&2
+  }
+fi
 
 # Export version for CI (MUST be the only stdout line — workflow captures this via tail -1)
 echo "$NEW_VERSION"
