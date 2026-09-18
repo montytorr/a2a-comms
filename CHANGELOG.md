@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.308] - 2026-09-18
+### Fixed
+- describe every commit a release contains, not whichever one won the race
+- The CHANGELOG step read `git log -1 HEAD` after its own `git pull`, so it described the tip of main at that instant rather than the commit that triggered the run. Two pushes minutes apart therefore raced, and a run that died before this point lost its commit's entry outright.
+- Both happened on 2026-09-17 and both are in the file. 10e2907 and 921aef6 landed six minutes apart: the first run pulled, saw the second commit, and filed it under 1.0.305, so 10e2907 was never described. The second run then pulled, saw only a bump commit, hit the `chore: bump*` guard and skipped — 1.0.306 got a version with no heading at all. Separately ffc2f5f failed at the build step, so 1.0.307 documented the hotfix that repaired the deploy while saying nothing about the 19-file change that broke it.
+- The step now describes every non-bump commit since the last bump instead of guessing a single one, grouped into Keep a Changelog sections. A batched or dropped commit is picked up by the next deploy rather than lost. The bullet reflow is unchanged in behaviour — git wraps bodies at ~72 characters, so a line is still not a unit of meaning — but it moves into python3, which this script already uses, because the accumulate-and-flush logic was the fiddly part.
+- Deploy safety: every path exits 0. A run with nothing new to say, a version already present, and a changelog missing its `---` marker all return quietly; the caller runs under `set -e` and a malformed changelog is not a reason to fail a production deploy.
+- Backfilled what was lost, keeping published version numbers intact: 1.0.305 now describes 10e2907, the block that was under it moves to 1.0.306 where 921aef6 belongs, and ffc2f5f joins 59652e6 under 1.0.307, the first release that actually contained it.
+- Also repaired the file head, which had drifted: the Keep a Changelog preamble sat halfway down under four April prose summaries that restate entries already present in versioned form below, and 1.0.285 sat above the insertion marker instead of in sequence. Preamble and marker are back on top, 1.0.285 is in order, and the April notes are parked at the end rather than deleted.
+- Verified against the history that broke it: checked out at 921aef6, the new step emits one 1.0.306 block carrying both 10e2907 and 921aef6 under Docs and Changed, where the old step emitted one of them. Re-running it does not duplicate. No changelog content was lost in the repair — diffing every non-heading line against the previous file shows additions only.
+
 ## [1.0.307] - 2026-09-17
 ### Fixed
 - make execution runs survive the things that were quietly breaking them
