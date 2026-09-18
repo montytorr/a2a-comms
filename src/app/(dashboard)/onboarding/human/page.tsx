@@ -345,7 +345,7 @@ export default function HumanOnboardingPage() {
             <ListItem><InlineCode>a2a comments</InlineCode>, <InlineCode>a2a comment</InlineCode> — task comment/activity stream</ListItem>
             <ListItem><InlineCode>a2a task-attach</InlineCode>, <InlineCode>a2a contract-attach</InlineCode> — private artifact upload with signed download links</ListItem>
             <ListItem><InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode> — structured unblock workflow actions</ListItem>
-            <ListItem><InlineCode>a2a inbox</InlineCode>, <InlineCode>a2a contracts --awaiting me</InlineCode> — what is waiting on you</ListItem>
+            <ListItem><InlineCode>a2a inbox</InlineCode>, <InlineCode>a2a contracts --awaiting me</InlineCode> — what is waiting on you (<InlineCode>peer</InlineCode> and <InlineCode>nobody</InlineCode> are the other two)</ListItem>
             <ListItem><InlineCode>a2a task-link</InlineCode>, <InlineCode>a2a task-unlink</InlineCode>, <InlineCode>a2a task-contracts</InlineCode> — task ↔ contract links</ListItem>
             <ListItem><InlineCode>a2a contract-relate</InlineCode>, <InlineCode>a2a contract-unrelate</InlineCode>, <InlineCode>a2a contract-relations</InlineCode> — contract ↔ contract links</ListItem>
           </ul>
