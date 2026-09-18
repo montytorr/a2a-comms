@@ -6,6 +6,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.329] - 2026-09-18
+### Fixed
+- the primary button was unreadable in light mode, and nothing could see it
+- .btn--primary paints a fixed amber gradient in both themes but took its ink from --on-amber, which correctly flips to white in light — correct for the two places it is used on solid --amber, wrong here, because this button does not use --amber at all. Measured: white on the gradient is 1.87:1 and 2.60:1 against a 4.5:1 requirement, on the most prominent control in the product. Dark mode was always fine at 10.09:1.
+- Amber is a light hue and white-on-amber is a contrast trap in any theme, so the button now takes --on-brand: a deliberately theme-independent dark ink, defined once beside --on-amber with the reason written down.
+- The guard that found the other two: src/lib/color-contrast.ts converts OKLCH to sRGB (with gamut clipping, so a clipped channel is measured the way a browser would paint it) and computes WCAG ratios, and the test walks the real palette. It immediately failed on two more:
+- --fg-4 on --bg-0 in light measured 4.46:1 while the palette comment beside it claimed 4.5. Annotated contrast ratios are exactly the claim that goes stale the first time a value moves. Now 0.54 → 4.64:1.
+- --amber as text on --amber-bg in light measured 3.93:1 — the pill and banner pairing. Now 0.52 → 4.65:1.
+- The button check reads the ink token out of the .btn--primary RULE rather than assuming which token it uses. The first version tested --on-brand directly, which passed happily when the rule was reverted to --on-amber — a guard for a bug it could not have caught. Mutation-tested both ways: reverting the fix now reproduces "1.87:1, below 4.5:1".
+- 306 unit tests, build clean.
+- AC-75
+- deploy the commit that triggered the run, and tag what shipped
+- The workflow had no actions/checkout and never referenced github.sha. Both jobs pulled origin/main into one shared directory on the self-hosted runner, and the runner serialises JOBS, not RUNS — so jobs from different runs interleave. Measured on a real pair: run 4042eb6's deploy started at 06:03:47, four minutes AFTER commit a85bd0a landed. It shipped both as 1.0.313, and the run that owned a85bd0a then found only a bump commit and minted 1.0.314 with zero commits, a byte-identical image and no changelog entry, while Discord announced "v1.0.314 — a85bd0a …" for a commit the changelog files under 1.0.313.
+- That is the whole of 1.0.311, .314, .317 and .324, all after AC-56 was fixed. The changelog generator was never at fault; it was being handed the wrong tree.
+- Three changes:
+- `concurrency: deploy-main` so runs queue instead of interleaving. cancel-in-progress is false: a deploy mid-Traefik-switch must finish.
+- ci-deploy.sh takes the triggering SHA and stands down when main has moved past it, exit 0, printing SUPERSEDED. The superseded run does not build the older tree — the newer commit is already merged and is what should ship — it lets the run that owns the tip deploy both under one honest version. Passed as an argument, not an env var, because this runs under sudo.
+- The bump is committed, pushed and TAGGED only once the public health check passes. It used to be pushed before `docker build`, so under `set -e` any later failure published a version that was never built: present in the changelog and in git history, absent from production, and bumped past by the next run.
+- Tagging was not worth adding while a version could contain two commits or none — it would have tagged a counter. 328 versions, zero tags. Now one version is one tree, so `git tag -a v$VERSION` means something, and a failed tag push warns rather than failing a deploy that already succeeded.
+- Restoring file ownership (AC-39) became a trap: the bump now lives in the working tree until the deploy succeeds, so an early exit can leave root-owned files where it previously could not. The same trap reverts an unshipped bump, so the next run cannot compute a version from one that does not exist.
+- Guard branches tested in a scratch repo with a stubbed `git pull`: matching SHA proceeds, stale SHA stands down with exit 0, and a manual dispatch with no SHA proceeds.
+- AC-76
+
 ## [1.0.328] - 2026-09-18
 ### Added
 - let a person and an agent speak to each other on a contract
