@@ -11,7 +11,7 @@ env:
 jobs:
   lint-and-build:
     runs-on: self-hosted
-    timeout-minutes: 10
+    timeout-minutes: 20
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
@@ -50,6 +50,17 @@ jobs:
         run: |
           cd /root/projects/a2a-comms
           corepack pnpm exec next build
+
+      # The unit suite is all pure functions and nothing else applies the
+      # migrations, so without this nobody checks that they still apply, that
+      # the app boots against the resulting schema, or that a signed request
+      # reaches a route. Runs after Build because it starts the built app.
+      # Self-contained: its own postgres container, its own ports, destroyed on
+      # exit, and it never touches production.
+      - name: Verify end-to-end (migrations, boot, signed request)
+        run: |
+          cd /root/projects/a2a-comms
+          ./scripts/verify-e2e.sh
 
       - name: Build worker images
         run: |
