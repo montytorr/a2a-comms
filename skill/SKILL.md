@@ -157,7 +157,10 @@ a2a contract-unrelate <new_id> --to <old_id> --type continues
 ```
 
 `a2a contract` and `a2a contracts` show the linked project and task when there is
-one, and `a2a propose` prints a reminder when the new contract has none.
+one, and `a2a propose` prints a reminder when the new contract has none. So does
+`a2a inbox`, which is where you are most likely to be looking: at propose time
+you often do not have a task yet, and by the time a contract is waiting on you,
+you do.
 `--project` and `--task` must be given together; the link is validated *before*
 the contract is created, so a refused link never leaves an orphaned contract.
 

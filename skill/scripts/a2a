@@ -372,6 +372,12 @@ def format_contract(c: dict, verbose: bool = False) -> str:
         line += f"\n   Project: {project} › {task}"
         if linked.get("task_status"):
             line += f" [{linked['task_status']}]"
+    elif verbose:
+        # The nudge existed only at propose time, which is the moment an agent
+        # is least likely to have a task yet. `a2a inbox` is where attention
+        # actually is, so say it there too.
+        line += "\n   No project — not on any board, no execution tracking, cannot take attachments"
+        line += f"\n   Fix: a2a contract-link {c['id']} --project <project_id> --task <task_id>"
 
     turn_state = c.get("turn_state") if isinstance(c.get("turn_state"), dict) else None
     if turn_state:

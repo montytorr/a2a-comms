@@ -297,6 +297,10 @@ check "an informational message leaves nobody owing a turn" \
   "asked for no reply"
 check "messages say what each one expected" \
   "$(a2a messages "$TS_ID")" "informational — no reply expected"
+# UNLINKED_ID was linked back in stage 11, so this needs its own.
+NO_PROJECT_ID="$(a2a propose "E2E still unlinked" --to beta | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+check "an unlinked contract says so where attention is, not only at propose time" \
+  "$(a2a contract "$NO_PROJECT_ID")" "not on any board"
 
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
