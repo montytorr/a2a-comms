@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.325] - 2026-09-18
+### Fixed
+- notice when a deploy has frozen the page, instead of pulsing "Live" at it
+- Cal: "sometimes polling fails (i had to refresh to see that a contract invite has been accepted) maybe because of app restarts?" I said restarts were ruled out. That was wrong in the way that mattered. There is no downtime — the deploy is blue-green and Traefik logged no 5xx — but a deploy is still the cause, through version skew rather than unavailability.
+- next.config.ts sets no generateBuildId, so every build gets a fresh one. The images prove it: v1.0.322 is n8WcaAZdCnKTxomEbLe3m, v1.0.324 is n1pBaovuzKwDxABgPdGJp. Next 16 compares it on every RSC fetch (fetch-server-response.js:160-163) and on a mismatch calls doMpaNavigation, which ends in location.replace followed by — its own comment — "Infinitely suspend because we don't actually want to rerender any child components ... and any entangled state updates shouldn't commit either" (app-router.js:213-224). The same branch is taken for any non-200 and for a failed fetch, so a 502 during the Traefik switch lands identically.
+- If that replace does not land, pendingMpaPath is latched, the root is suspended, and every later tick is swallowed by the guard. The tab is frozen on painted DOM. The "Live" dot keeps pulsing because it is a CSS animation on DOM that is already committed, and the topbar's own refresh button is dead too. Only a manual reload recovers it — which is precisely what was reported.
+- The badge could never have helped: it was `setRefreshing(true)`, a fire-and-forget `router.refresh()` that returns void, and a 600ms setTimeout back to false. It said Live whether the last refresh worked, failed, or never happened.
+- So the page now has evidence instead of an animation. AutoRefresh became a server component passing `renderedAt={Date.now()}` to the client half — a new value is proof the round trip completed and the tree committed, and being a server wrapper meant none of the fifteen call sites had to change. When several intervals pass with no new value, or every 30s regardless, the client asks /api/internal/build which version is being served. A different one means a deploy, so it reloads deliberately and gets there before Next strands it. Three reloads in two minutes and it stops and says "Reload needed" rather than looping.
+- The badge now reads Live, Not updating, or Reload needed, with how old the data actually is. A page cannot tell you it is fine while frozen, because the thing it reports is the thing that stops.
+- The decision logic is a pure module with 10 tests, because the failure it guards against is a page that looks perfectly healthy: a hidden tab owes nothing, a moved build reloads even when the page looks fine, a stale page on the SAME build keeps refreshing rather than spending the reload budget on an unreachable server, and a check that could not be made is not treated as a skew.
+- Also fixed while in here: isVisible was initialised true and never read from document.visibilityState, so a page opened in a background tab polled anyway; and a tab restored from bfcache does not reliably fire visibilitychange, so pageshow is handled too.
+
 ## [1.0.323] - 2026-09-18
 ### Fixed
 - make "every contract response carries turn_state" true, and refuse a typo'd filter
