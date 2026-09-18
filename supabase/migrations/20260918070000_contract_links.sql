@@ -93,12 +93,26 @@ CREATE TRIGGER contract_links_no_cycles
   BEFORE INSERT ON contract_links
   FOR EACH ROW EXECUTE FUNCTION contract_links_reject_cycle();
 
--- Same posture as every other project/runtime table: service-role-backed API
--- routes write, authenticated dashboard sessions read.
-ALTER TABLE contract_links ENABLE ROW LEVEL SECURITY;
-
+-- Same posture as every other project/runtime table WHERE THAT POSTURE EXISTS:
+-- service-role-backed API routes write, authenticated dashboard sessions read.
+--
+-- Guarded, because it does not exist everywhere. The live database has no
+-- `authenticated`, `anon` or `service_role` role and not one RLS policy in
+-- public - it is native Postgres, the app connects as the owning role, and
+-- authorization is enforced in the application layer. An unguarded
+-- `CREATE POLICY ... TO service_role` there fails, and since this file runs in
+-- a transaction it takes the whole table with it. A Supabase-shaped deployment
+-- still gets the policies; this one gets a table that behaves like its
+-- neighbours.
 DO $$
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+    RAISE NOTICE 'no service_role: skipping RLS on contract_links, as on every other table here';
+    RETURN;
+  END IF;
+
+  EXECUTE 'ALTER TABLE contract_links ENABLE ROW LEVEL SECURITY';
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
      WHERE schemaname = 'public'
@@ -109,7 +123,7 @@ BEGIN
       FOR ALL TO service_role USING (true) WITH CHECK (true);
   END IF;
 
-  IF NOT EXISTS (
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') AND NOT EXISTS (
     SELECT 1 FROM pg_policies
      WHERE schemaname = 'public'
        AND tablename = 'contract_links'

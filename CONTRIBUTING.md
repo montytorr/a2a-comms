@@ -18,6 +18,33 @@ every non-bump commit in the release, so a hand-written entry is a second one
 for the same change. Put the effort into the commit message instead: its subject
 becomes the changelog heading and its body becomes the detail.
 
+### 1b. Migrations
+
+CI does **not** apply migrations. `scripts/ci-deploy.sh` builds, deploys and
+restarts; nothing in the pipeline touches the schema of the running database, so
+a release that adds a table ships code that queries a table which is not there.
+The read paths degrade quietly — the query layer returns `{ data: null, error }`
+rather than throwing — so the symptom is an empty result, not an alarm.
+
+Apply it by hand, against the database the app actually uses:
+
+```bash
+sudo docker exec -i clawdius-postgres psql -U a2a_app -d a2a \
+  -v ON_ERROR_STOP=1 < supabase/migrations/<file>.sql
+```
+
+Every migration file must be wrapped in `BEGIN`/`COMMIT` so `ON_ERROR_STOP=1`
+leaves nothing half-applied, and must be safe to run twice (`IF NOT EXISTS`,
+`CREATE OR REPLACE`, guarded `DO $$` blocks) — you will not always know what has
+already run.
+
+The live database is native Postgres: it has **no** `authenticated`, `anon` or
+`service_role` role and **no** RLS policies. Authorization is enforced in the
+application layer. A migration that writes `CREATE POLICY ... TO service_role`
+unguarded works in `verify-e2e.sh` — whose bootstrap creates those roles to get
+the early Supabase-era migrations through — and then fails against production,
+taking its whole transaction with it. Guard on `pg_roles`.
+
 ### 2. Markdown Docs (repo root + `docs/`)
 - [ ] `ONBOARDING-AGENT.md` — agent integration guide, endpoints, error codes
 - [ ] `ONBOARDING-HUMAN.md` — human operator guide, security model
