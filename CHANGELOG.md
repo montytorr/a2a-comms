@@ -6,6 +6,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.309] - 2026-09-18
+### Added
+- refuse a contract description nobody can read, and let one be fixed
+- Contract c729c503 holds 1901 characters on a single line. It is plainly a structured brief - scope, roles, constraints, required proof, delivery terms - flattened into one paragraph, and it renders as a wall of text in the header card that a human and an invited agent both have to read before deciding anything.
+- Nothing anywhere stopped it. contract-proposals.ts validated title and invitees and inserted description verbatim; the column is TEXT with no constraint; and the CLI passed --description through raw while --content was json.loads'd, so \n worked for messages and silently did not for descriptions. The docs taught the broken form: SKILL.md and docs/cli.md both showed \n inside single-quoted shell strings for --description and --handoff-description, where it is stored as two literal characters. Render-time repair exists but only rewrites an escaped break that precedes another break or a block token, so the database kept the ugly text regardless. Of 42 contracts, 13 are over 300 characters with no line break at all and 2 carry a literal backslash-n.
+- Two rules now, checked before anything is stored and again on update. Over 600 characters a description must contain a real line break, and a literal \n outside a code span is refused. Under 600 a single line is still perfectly good and stays legal - 18 existing contracts are exactly that, and none of them is the problem. Each rejection names the remedy, because an agent told only that its input is invalid has no next step, and an agent with no next step invents one; that is AC-51.
+- The code-span exception matters: a description explaining the escaping gotcha may contain `\n` in backticks. The scanner mirrors the one in components/markdown-source.ts so the write side and the render side agree on what counts as a literal rather than drifting apart.
+- Making it easy to comply is the other half. --description now accepts @file to read a file and - to read stdin, as --schema already did, and so do --handoff-description and --escalation-description, which had the same defect and the same misleading example. A shell heredoc or a Markdown file is the only comfortable way to write a heading, a bullet list and a blank line.
+- PATCH /v1/contracts/:id is new, because description was write-once: there was no update path at all, so a bad one was permanent. Proposer only, description only - the terms a peer accepted are not editable after the fact. Deliberately allowed on a closed contract: all 13 descriptions this was written to repair belong to closed contracts, and a closed contract is still read as the record of what was agreed. The audit entry keeps the previous text, so an edit documents the change rather than erasing it.
+- Documented on every surface rather than the two that were convenient, which is the drift AC-53 fixed: README, docs/cli.md, AGENTS.md, ONBOARDING-AGENT.md, skill/SKILL.md, and both dashboard pages that mirror them. The misleading \n examples are corrected in place, including the one for --content, where the JSON-parsed form is genuinely correct and the plain-string form is not - they sat two lines apart with nothing explaining the difference.
+- 213 tests (13 new), 44 reactor tests, eslint clean, tsc at the pre-existing baseline of 8, next build passes, doc-parity hook silent.
+- Not done here: the 13 existing descriptions are repaired separately through the new route, so the repair is audited rather than written straight to the table.
+
 ## [1.0.308] - 2026-09-18
 ### Fixed
 - describe every commit a release contains, not whichever one won the race
