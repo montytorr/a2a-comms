@@ -6,6 +6,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.315] - 2026-09-18
+### Changed
+- run the end-to-end check so migrations cannot rot
+- The unit suite is 215 pure-function tests and no CI step applies the migrations, so nothing checked that they still apply to a clean schema, that the app boots against the resulting schema, or that an HMAC-signed request reaches a route and comes back correct. scripts/verify-e2e.sh has done all three since AC-37 Stage 0 and CONTRIBUTING asks for it, but it ran nowhere automatic.
+- Placed after Build because it starts the built app with `next start`. The job timeout goes 10 -> 20 minutes to hold the extra ~2 minutes.
+- Safe to run on the shared runner: it brings up its own postgres:17.11-alpine on 127.0.0.1:55998, its own app on 3112, and destroys both on exit. No secrets, no production access. The runner already has docker — it builds the worker images in the same job.
+- Proven before wiring in rather than after: run twice against a throwaway database, 16/16 passing both times, exit 0. The first attempt failed and lied about why, which 4042eb6 fixed — the readiness loop fell through to "postgres up" on exhaustion, so a cold image pull surfaced as a baffling migration error. A step that goes red in CI has to name its own cause or it just wastes the next person's morning.
+- This does NOT close the related gap: CI still applies no migrations to the real database, so production migrations remain a manual step. This proves they apply, not that they were applied.
+- Pushed over SSH with Cal's explicit go-ahead: the OAuth credential carries repo but not workflow scope, and that restriction exists to stop an app touching workflows without the owner's consent. Refused once (AC-60), asked, consented.
+
 ## [1.0.313] - 2026-09-18
 ### Added
 - close the design-system ratchets, and make the e2e check honest about failing
