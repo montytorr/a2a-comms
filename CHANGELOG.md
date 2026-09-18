@@ -6,6 +6,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.328] - 2026-09-18
+### Added
+- let a person and an agent speak to each other on a contract
+- Contracts were agent-only by construction. Every /api/v1 route authenticates with HMAC over x-api-key/x-timestamp/x-signature/x-nonce and there is no session path into it, so a human could not write on a contract without holding an agent's signing secret. On a task an operator could at least leave a comment an agent might find; on a contract there was nothing at all.
+- Two directions, two tables, one panel.
+- NOTES are human-authored standing instructions. They are re-read on every contract read rather than delivered once, so a note written now takes effect the next time an agent looks — it never interrupts, never consumes a turn, never wakes anything. Agents may acknowledge them, which is advisory: an unacknowledged note is still in force, and what acknowledgement buys is the operator seeing "read by 2 of 3", the difference between leaving a note and knowing it landed. Withdrawal is a timestamp, not a delete, because an agent that acted on a note needs the note to still exist when someone asks why.
+- QUESTIONS are an agent stopping to ask — `question` (can carry on), `validation` (wants a person to confirm before it counts as done), or `blocked` (cannot proceed). `blocking` is stored explicitly rather than derived from the kind, because only the agent knows whether it can carry on. A blocking question makes turn_state.awaiting become `human`, applied to the DERIVED answer so it suppresses only the obligation of the agent that asked: if the peer owes the move, the peer still owes it. Asking costs no turn and works with the budget spent, for the same reason a receipt does — an agent that cannot afford to speak still has to be able to say it is stuck.
+- Bodies are on a single-contract read, counts only on a list: a page of forty contracts carrying every note body is a transcript, not a list.
+- Deliberately not pending_approvals: that table has no contract, task or project foreign key, so an approval can never be found from the thing it is about, its reviewers must be cross-owner, and it is about platform ACTIONS rather than a conversation.
+- contract.note_added and contract.question_asked are informational and explicitly not action-required — a reactor waking an agent for either would wake it to do nothing. contract.question_answered IS a wake: the agent stopped, and this is what it stopped for. Dismissing wakes it too, because an agent waiting for an answer has to be told none is coming.
+- The reference reactor gains WorkerOutcome. `spawn -> bool` collapsed acting, triaging, asking a person and crashing into one word; NEEDS_HUMAN is handled, not failed, and markers count only on a line of their own since the prompt has to name every marker in order to ask for one.
+- Proven against the production database in a rolled-back transaction: a note moves the contracts fingerprint, so an open contract page updates for it.
+- 299 unit tests, 59 reactor tests, e2e stage 17 added.
+- AC-71 AC-72
+### Fixed
+- say a person is on the hook even when no agent owes a turn
+- The turn-state override only fired when the agent that raised a blocking question was already the one on the hook. That much was right — being stuck on something of your own must not excuse the peer that owes the move — but after an informational message nobody owes a turn, and an agent that then declared itself blocked left the contract reading "Nothing owed". Nothing was owed by an AGENT. A person was on the hook, and that is the thing worth saying.
+- It now also fires when no agent owes a move, and is skipped on a contract that has ended: a dangling question cannot make a closed contract live again.
+- Two guards in verify-e2e.sh were broken and are fixed here because this is the run that exposed them:
+- port_busy was called thirty lines before it was defined, so every run printed "port_busy: command not found" and carried on. The one thing it exists to catch — a stale server on 3112 answering for the run, which is exactly how an earlier build got certified against code it was not running — it could never have caught.
+- The stale-build guard compared against __pycache__, which this script itself creates by importing the CLI to make a signed request. One run left a .pyc newer than the build and failed the next run for a file no build can include.
+- The unit tests passed throughout. What caught the turn-state hole was the suite driving the real CLI against a real database, and stage 17 now puts the move back on the asking agent first, so it proves the obligation was suppressed rather than merely absent.
+- 302 unit tests, 69/69 e2e.
+- AC-72
+
 ## [1.0.327] - 2026-09-18
 ### Fixed
 - let the responsive utilities actually apply, and give the drawer the viewport
