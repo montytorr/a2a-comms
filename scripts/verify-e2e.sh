@@ -11,7 +11,11 @@
 # attachment directory. Run it before shipping anything that changes migrations,
 # the HMAC path, or the contract/task/attachment routes.
 #
-#   ./scripts/verify-e2e.sh
+#   npx next build && ./scripts/verify-e2e.sh
+#
+# It serves the existing .next build rather than making its own, so a stale
+# build silently serves yesterday's routes and a new one answers 404 with no
+# hint why. The preflight below refuses to run rather than let that happen.
 #
 set -uo pipefail
 
@@ -25,6 +29,26 @@ else
   exit 1
 fi
 
+# A build newer than every source file, or the run is not testing this checkout.
+if [[ ! -f .next/BUILD_ID ]]; then
+  echo "no .next build to serve — run 'npx next build' first" >&2
+  exit 1
+fi
+for p in "${E2E_APP_PORT:-3112}" "${E2E_PG_PORT:-55998}"; do
+  if port_busy "$p"; then
+    echo "port $p is already in use — something else would answer instead of this run" >&2
+    echo "(find it with: ss -lptn 'sport = :$p')" >&2
+    exit 1
+  fi
+done
+
+NEWER="$(find src supabase/migrations skill/scripts -newer .next/BUILD_ID -type f -print -quit 2>/dev/null)"
+if [[ -n "$NEWER" ]]; then
+  echo "the .next build is older than $NEWER — run 'npx next build' first" >&2
+  echo "(serving a stale build makes a new route answer 404 for no visible reason)" >&2
+  exit 1
+fi
+
 PG_CONTAINER="a2a-e2e-pg-$$"
 PG_PORT="${E2E_PG_PORT:-55998}"
 APP_PORT="${E2E_APP_PORT:-3112}"
@@ -34,11 +58,17 @@ PASS=0
 FAIL=0
 
 cleanup() {
-  [[ -n "$APP_PID" ]] && kill "$APP_PID" 2>/dev/null
+  # Kill the whole process group. `next start` is a wrapper around a child
+  # server; killing only the wrapper leaves that child holding the port, and
+  # the next run then health-checks a server built from an older checkout and
+  # reports its routes as missing. That happened, for a day and a half.
+  [[ -n "$APP_PID" ]] && { kill -TERM -"$APP_PID" 2>/dev/null || kill "$APP_PID" 2>/dev/null; }
   $DOCKER rm -f "$PG_CONTAINER" >/dev/null 2>&1
   rm -rf "$WORK"
 }
 trap cleanup EXIT
+
+port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && { exec 3<&-; exec 3>&-; return 0; }; return 1; }
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 ok()   { PASS=$((PASS+1)); printf '  \033[32m✓\033[0m %s\n' "$*"; }
@@ -56,9 +86,20 @@ $DOCKER run -d --rm --name "$PG_CONTAINER" \
 # exhausted, so a slow start (a cold image pull, say) was announced as success
 # and then surfaced as a baffling migration error: psql inside a container whose
 # server was not listening yet.
+#
+# pg_isready alone is not enough. The postgres image runs a temporary server on
+# the unix socket while initdb applies POSTGRES_* and any entrypoint scripts,
+# and pg_isready answers yes to that one. Work done against it is discarded when
+# it shuts down, so an early bootstrap either vanished ('role "authenticated"
+# does not exist' at migration 001) or hit the shutdown window mid-connection.
+# The log line below is printed only once initdb is finished, so wait for it
+# first and only then poll.
 PG_READY=""
 for _ in $(seq 1 60); do
-  $DOCKER exec "$PG_CONTAINER" pg_isready -U a2a_app -d a2a >/dev/null 2>&1 && { PG_READY=1; break; }
+  if $DOCKER logs "$PG_CONTAINER" 2>&1 | grep -q 'database system is ready to accept connections' &&
+     $DOCKER logs "$PG_CONTAINER" 2>&1 | grep -q 'PostgreSQL init process complete'; then
+    $DOCKER exec "$PG_CONTAINER" pg_isready -U a2a_app -d a2a >/dev/null 2>&1 && { PG_READY=1; break; }
+  fi
   sleep 1
 done
 if [[ -z "$PG_READY" ]]; then
@@ -70,7 +111,9 @@ fi
 ok "postgres up on $PG_PORT"
 
 # The migrations predate the move off Supabase and still reference auth.*.
-$DOCKER exec -i "$PG_CONTAINER" psql -U a2a_app -d a2a -q >/dev/null 2>&1 <<'SQL'
+# Its failure used to be discarded, which is how a lost bootstrap turned into a
+# migration error naming a role nobody had asked for.
+if ! $DOCKER exec -i "$PG_CONTAINER" psql -U a2a_app -d a2a -q -v ON_ERROR_STOP=1 >"$WORK/bootstrap.log" 2>&1 <<'SQL'
 -- RLS policies in the early migrations grant to Supabase's roles.
 do $$ begin
   if not exists (select 1 from pg_roles where rolname='authenticated') then create role authenticated; end if;
@@ -90,6 +133,12 @@ insert into auth.users (id, email, encrypted_password) values
   ('eb1f0989-1b9b-4576-9912-037a7fd298a3','seed-a@example.test','x'),
   ('d80083d8-4b17-4052-90fd-f2cb91fbff06','seed-b@example.test','x');
 SQL
+then
+  bad "supabase-compatibility bootstrap failed: $(head -3 "$WORK/bootstrap.log" | tr '\n' ' ')"
+  echo
+  echo "1 check failed before anything could run." >&2
+  exit 1
+fi
 
 say "2. Migrations apply to a clean schema"
 MIG_FAIL=""
@@ -123,7 +172,7 @@ say "4. App boots against that schema"
 mkdir -p "$WORK/attachments"
 DATABASE_URL="postgresql://a2a_app:e2e@127.0.0.1:$PG_PORT/a2a" \
   A2A_ATTACHMENT_DIR="$WORK/attachments" NODE_ENV=production \
-  npx next start -p "$APP_PORT" >"$WORK/app.log" 2>&1 &
+  setsid npx next start -p "$APP_PORT" >"$WORK/app.log" 2>&1 &
 APP_PID=$!
 UP=""
 for _ in $(seq 1 45); do
@@ -174,6 +223,29 @@ check "contract-link succeeds" \
   "$(a2a contract-link "$UNLINKED_ID" --project "$PROJECT_ID" --task "$TASK_ID")" "linked to task"
 check "attach now succeeds" \
   "$(a2a contract-attach "$UNLINKED_ID" --file "$WORK/sample.csv")" '"filename": "sample.csv"'
+
+say "12. Contract-to-contract links"
+# The acyclicity trigger and the both-ends permission rule live in the database
+# and in a route, so no unit test can reach them.
+check "relate records a successor" \
+  "$(a2a contract-relate "$UNLINKED_ID" --to "$LINKED_ID" --type continues --note 'turn budget ran out')" \
+  "continues"
+check "the link reads from the from end" \
+  "$(a2a contract-relations "$UNLINKED_ID")" "Continues: E2E linked"
+check "and reads back from the other end" \
+  "$(a2a contract-relations "$LINKED_ID")" "Continued by: E2E unlinked"
+check "re-recording the same link is not an error" \
+  "$(a2a contract-relate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "continues"
+check "the reverse link is refused as a cycle" \
+  "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "cycle"
+check "self-linking is refused" \
+  "$(a2a contract-relate "$LINKED_ID" --to "$LINKED_ID" --type continues)" "itself"
+check "a contract you are not in is refused" \
+  "$(a2a contract-relate "$LINKED_ID" --to '00000000-0000-0000-0000-000000000000' --type continues)" "participant in both"
+check "unrelate removes it" \
+  "$(a2a contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Removed"
+check "and it is gone from both ends" \
+  "$(a2a contract-relations "$LINKED_ID")" "No related contracts"
 
 # ----------------------------------------------------------------- summary ---
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
