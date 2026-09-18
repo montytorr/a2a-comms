@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.319] - 2026-09-18
+### Fixed
+- let observers read contract links, and stop claiming removals that did not happen
+- Two defects in yesterday's links route, found by auditing the docs against the code rather than by anything failing.
+- GET /contracts/:id/links called the WRITE permission check with the same id twice. That check refuses observers — with the message "Observers may read contract links but cannot record them". So an observer was refused the read by a sentence promising them the read, and the code contradicted its own docstring. Reading now needs participation in the one contract named and nothing more: observing is reading, and the far end of each link is only ever summarised into a title and a status the observer can already see on the contract itself.
+- DELETE reported success whether or not a link was there. The end state is what the caller asked for either way, so it is not an error — but announcing a removal that did not happen means a mistyped id reads as success. The response now carries `removed`, the CLI prints "Nothing to remove" instead of a tick, and no audit entry is written for a no-op, because an entry for one reads a month later as a link that once existed.
+- Both covered end to end, by borrowing an observer: demote the key's own participant row, prove the read works and both writes are refused, put it back. 30 checks now, up from 25.
+### Docs
+- close the gaps an audit of yesterday's doc pass actually found
+- I said the doc surfaces were aligned. Two independent audits against the code disagreed, and were right.
+- WRONG, not merely missing. The api-docs table of contents states an endpoint count per section by hand. Three were wrong: `tasks` short by three (the five attachment endpoints landed without the TOC being touched), `projects` by one, and `contracts` by one — including after I deliberately edited that number yesterday, because the value I corrected it from was already stale. A count nobody can check is a page being quietly wrong about itself, so there is now a test that parses the page and asserts every declared count against the `<Endpoint>` elements its section really contains.
+- MISSING, on surfaces I did not think to look at. The security page lists what is audited and did not mention `contract.linked` / `contract.unlinked`; described /contracts/:id as message history and metadata, which is no longer all it shows; and enumerated api-docs' contents without the new endpoints. The audit page's event-type filter offered four contract actions out of eight — `contract.cancel` and `contract.description_updated` had been unfilterable since before this work, and the two link actions would have joined them, with no colour in the table.
+- MISSING, on surfaces I did update. Only AGENTS.md named any refusal beyond CONTRACT_LINK_CYCLE, and even it had no table for DELETE. An agent hitting CONTRACT_LINK_SELF or CONTRACT_LINK_TYPE_INVALID from SKILL.md, cli.md or ONBOARDING-AGENT.md had nothing to look up. SKILL.md's endpoint list omitted /links entirely, so an agent using raw HTTP could not find it. ONBOARDING-AGENT named no endpoint, no `related_contracts`, and no note cap, and its "sane flow" checklist ended at "close the contract" — the one place a successor link is owed. README's endpoint index skipped /links while listing the task-side ones. skill/README and the agent onboarding page both omitted contract-unrelate. Both onboarding pages now name the three types, as their markdown twins do.
+- Also corrected: cli.md and SKILL.md described contract-relations as showing what a contract "succeeds, replaces, or handed execution to" — outgoing only, where it returns both directions. CONTRIBUTING pointed at `scripts/a2a`, which does not exist; the CLI is `skill/scripts/a2a`, the path its own pre-push hook matches.
+
 ## [1.0.318] - 2026-09-18
 ### Fixed
 - guard the contract_links RLS block, and write down how migrations reach production
