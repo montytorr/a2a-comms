@@ -40,3 +40,22 @@ test('normalization restores structural breaks but preserves prose and code lite
   const fenced = '```text\\nliteral \\n code\\n```';
   assert.equal(normalizeMarkdownSource(fenced), fenced);
 });
+
+test('normalization handles real and escaped breaks mixed in one document', () => {
+  // A document part-written by a client that escaped its newlines and part by
+  // one that did not. Both halves must come out as real structure.
+  const mixed = '## Scope\n\n- Real bullet\\n- Escaped bullet\n\n\\n## Escaped heading';
+  assert.equal(
+    normalizeMarkdownSource(mixed),
+    '## Scope\n\n- Real bullet\n- Escaped bullet\n\n\n## Escaped heading'
+  );
+
+  // A real break already adjacent to an escaped one must not be doubled up or
+  // swallowed.
+  assert.equal(normalizeMarkdownSource('a\n\\n- b'), 'a\n\n- b');
+});
+
+test('normalization converts structural escaped carriage returns, not just \\n', () => {
+  assert.equal(normalizeMarkdownSource('## Scope\\r\\n\\r\\n- First'), '## Scope\n\n- First');
+  assert.equal(normalizeMarkdownSource('## Scope\\r\\r- First'), '## Scope\n\n- First');
+});
