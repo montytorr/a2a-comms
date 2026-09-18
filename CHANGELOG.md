@@ -6,6 +6,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.310] - 2026-09-18
+### Docs
+- align every skill and doc surface with the description rules, and stop the runtime skill drifting
+- A parity audit after aaefb41 found the rule itself stated correctly and identically everywhere - 600 in every occurrence, both error codes spelled the same in six places, and no remaining \n-in-single-quotes example anywhere. The defects were omissions, in the places a reader actually looks.
+- The worst was not in the repo at all. ~/clawd/skills/a2a-comms, the skill an agent loads at runtime, was a day behind main: its SKILL.md and CLI still taught --description '...\n...' while the deployed API had started refusing exactly that. CONTRIBUTING called that directory a "symlinked copy [that] stays in sync"; it was a manual copy, it was not in sync, and skill/README.md told you to cp -r instead. Two docs contradicting each other and reality matching neither.
+- Symlinking it, as CONTRIBUTING implied, would have been worse. That directory also holds scripts deliberately kept out of this repo - a2a-reactor (the private reactor; reactor/ is the public one), a2a-expire-sweep, a2a-webhook-receiver, a2a-webhook-recovery, tests/ - and a directory symlink would hide every one of them. So ops/bin/install-agent-skill copies only the three files this repo owns and never deletes; npm run skill:install runs it, npm run skill:check reports drift and exits non-zero so it can gate a deploy. CONTRIBUTING and skill/README.md now describe what it actually does and why it is not a symlink.
+- The runtime copy was verified file by file before being overwritten, because the last time something reached into that tree it nearly destroyed uncommitted work (AC-47). Its SKILL.md and CLI differed only in the exact lines aaefb41 changed, and its README was one day older with a since-rewritten sentence. Nothing local was lost, and all four host-only scripts plus tests/ are still there.
+- Repo omissions, each fixed where a reader would look:
+- AGENTS.md's reference CLI declared --description as a plain string, so an agent building a client from it could not comply with the rule it is told about 200 lines later. Its prose also still called descriptions "freeform".
+- PATCH /contracts/:id was missing from four of five endpoint inventories - README, AGENTS.md, skill/SKILL.md and the onboarding dashboard page.
+- contract-describe was invisible to a2a --help despite existing.
+- CONTRACT_DESCRIPTION_INVALID was documented nowhere; it is now in all four rejection tables.
+- security/page.tsx listed every audited contract event except contract.description_updated - a proposer-only mutation permitted on a closed contract is precisely that page's subject.
+- README, skill/README.md and ONBOARDING-HUMAN.md gained the rule; the handoff and escalation rows in docs/cli.md gained the @file and stdin forms.
+- Also restored "Override the generated" in the handoff/escalation help text, which the previous commit had dropped while adding the file forms - the flags override an auto-generated description rather than simply setting one.
+- 213 tests, eslint clean, tsc at the pre-existing baseline of 8, next build passes, doc-parity hook silent, runtime skill reports in sync.
+
 ## [1.0.309] - 2026-09-18
 ### Added
 - refuse a contract description nobody can read, and let one be fixed
