@@ -46,6 +46,13 @@
   --amber-bg: oklch(0.30 0.06 65 / 0.35);
   --amber-line: oklch(0.55 0.12 60 / 0.55);
   --on-amber: oklch(0.18 0.04 60);
+  /* Ink for the brand gradient, which is deliberately identical in both themes.
+     --on-amber cannot serve here: it correctly flips to white in light, where
+     solid --amber is a mid-dark swatch — but .btn--primary does not use
+     --amber, it uses a fixed bright gradient. White on that measured 1.87:1,
+     on the most prominent control in the product. Amber is a light hue and
+     white-on-amber is a contrast trap; dark ink is right in both themes. */
+  --on-brand: oklch(0.18 0.04 60);
   --on-mint: oklch(0.18 0.04 165);
   --on-peri: oklch(0.18 0.04 265);
   --on-rose: oklch(0.18 0.05 25);
@@ -118,9 +125,11 @@
   --fg-1: oklch(0.32 0.012 250);   /* 11.6 : 1 */
   --fg-2: oklch(0.44 0.012 250);   /*  7.1 : 1 */
   --fg-3: oklch(0.52 0.012 250);   /*  5.0 : 1 */
-  --fg-4: oklch(0.55 0.012 250);   /*  4.5 : 1 */
+  --fg-4: oklch(0.54 0.012 250);   /*  4.64 : 1 — was 0.55, which measured
+                                        4.46 against --bg-0 while claiming 4.5 */
 
-  --amber: oklch(0.56 0.14 65);
+  /* 0.56 measured 3.93:1 as text on --amber-bg, the pill and banner pairing. */
+  --amber: oklch(0.52 0.14 65);
   --amber-2: oklch(0.48 0.15 55);
   --amber-bg: oklch(0.94 0.055 65);
   --amber-line: oklch(0.72 0.11 60);
@@ -455,14 +464,14 @@ body::before {
 .btn:hover { background: var(--bg-3); border-color: var(--line-strong); color: var(--fg-0); }
 .btn--primary {
   background: linear-gradient(180deg, oklch(0.82 0.16 65), oklch(0.72 0.16 60));
-  color: var(--on-amber);
+  color: var(--on-brand);
   border-color: oklch(0.62 0.16 60);
   font-weight: 600;
   box-shadow: 0 1px 0 oklch(0.95 0.10 65 / 0.4) inset, 0 4px 12px oklch(0.40 0.10 60 / 0.25);
 }
 .btn--primary:hover {
   background: linear-gradient(180deg, oklch(0.86 0.16 65), oklch(0.76 0.16 60));
-  color: var(--on-amber);
+  color: var(--on-brand);
 }
 .btn--ghost { background: transparent; border-color: transparent; color: var(--fg-2); }
 .btn--ghost:hover { background: var(--bg-2); color: var(--fg-0); }
