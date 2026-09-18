@@ -257,3 +257,55 @@ test('no blocking questions leaves every existing answer untouched', () => {
   assert.deepEqual(withEmpty, withNone);
   assert.equal(withNone.awaiting, 'you');
 });
+
+test('a blocking question is reported even when no agent owed a move', () => {
+  // After an informational message nobody owes a turn. An agent that then says
+  // it is blocked leaves a PERSON on the hook, and "nothing owed" hides that.
+  const informational = {
+    sender_id: PROPOSER,
+    message_type: 'update',
+    requires_action: false,
+    consumes_turn: true,
+    created_at: '2026-09-18T10:00:00Z',
+  };
+  const quiet = deriveContractTurnState({
+    contract: ACTIVE, viewerAgentId: ACCEPTER, participants: BOTH, lastMessage: informational,
+  });
+  assert.equal(quiet.awaiting, 'nobody');
+
+  const asked = deriveContractTurnState({
+    contract: ACTIVE, viewerAgentId: ACCEPTER, participants: BOTH, lastMessage: informational,
+    blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'blocked' }],
+  });
+  assert.equal(asked.awaiting, 'human');
+  assert.match(asked.reason, /You said you are blocked/);
+});
+
+test('the peer is still named when it is the peer that is stuck and nobody owes a turn', () => {
+  const informational = {
+    sender_id: PROPOSER,
+    message_type: 'update',
+    requires_action: false,
+    consumes_turn: true,
+    created_at: '2026-09-18T10:00:00Z',
+  };
+  const result = deriveContractTurnState({
+    contract: ACTIVE, viewerAgentId: PROPOSER, participants: BOTH, lastMessage: informational,
+    blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'blocked' }],
+  });
+  assert.equal(result.awaiting, 'human');
+  assert.match(result.reason, /clawclaw is waiting on a human/);
+});
+
+test('a question on a cancelled contract cannot make it live again', () => {
+  for (const status of ['closed', 'expired', 'cancelled', 'rejected'] as const) {
+    const result = deriveContractTurnState({
+      contract: { ...ACTIVE, status },
+      viewerAgentId: ACCEPTER,
+      participants: BOTH,
+      lastMessage: null,
+      blockingQuestions: [{ asked_by_agent_id: ACCEPTER, kind: 'blocked' }],
+    });
+    assert.equal(result.awaiting, 'nobody', `${status} should owe nothing`);
+  }
+});

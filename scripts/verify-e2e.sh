@@ -34,6 +34,13 @@ if [[ ! -f .next/BUILD_ID ]]; then
   echo "no .next build to serve — run 'npx next build' first" >&2
   exit 1
 fi
+# Defined here rather than further down with the other helpers, which is where
+# it was: the guard below called it thirty lines before it existed, so every run
+# printed "port_busy: command not found" and carried on. The one thing it was
+# written to catch — a stale server on 3112 answering for this run — it could
+# never have caught.
+port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && { exec 3<&-; exec 3>&-; return 0; }; return 1; }
+
 for p in "${E2E_APP_PORT:-3112}" "${E2E_PG_PORT:-55998}"; do
   if port_busy "$p"; then
     echo "port $p is already in use — something else would answer instead of this run" >&2
@@ -42,7 +49,11 @@ for p in "${E2E_APP_PORT:-3112}" "${E2E_PG_PORT:-55998}"; do
   fi
 done
 
-NEWER="$(find src supabase/migrations skill/scripts -newer .next/BUILD_ID -type f -print -quit 2>/dev/null)"
+# __pycache__ is excluded because this script itself imports the CLI as a module
+# to make a signed request, which writes a .pyc newer than the build and made
+# the guard fail the NEXT run for a file no build could ever include.
+NEWER="$(find src supabase/migrations skill/scripts \
+  -name __pycache__ -prune -o -newer .next/BUILD_ID -type f -print -quit 2>/dev/null)"
 if [[ -n "$NEWER" ]]; then
   echo "the .next build is older than $NEWER — run 'npx next build' first" >&2
   echo "(serving a stale build makes a new route answer 404 for no visible reason)" >&2
@@ -68,7 +79,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && { exec 3<&-; exec 3>&-; return 0; }; return 1; }
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 ok()   { PASS=$((PASS+1)); printf '  \033[32m✓\033[0m %s\n' "$*"; }
@@ -371,7 +381,7 @@ psql_q -c "insert into contract_notes (contract_id, body, author_name) values ('
 check "an agent reads the note back" \
   "$(a2a notes "$TS_ID")" "staging bucket"
 check "and is told it has not acknowledged it" \
-  "$(a2a notes "$TS_ID")" "1 operator note"
+  "$(a2a notes "$TS_ID")" "NOT acknowledged"
 check "the contract itself carries the note without being asked" \
   "$(a2a contract "$TS_ID")" "operator note"
 check "acknowledging says how many it actually wrote" \
@@ -387,6 +397,14 @@ EMPTY_NOTE_OUT="$(psql_q -c "insert into contract_notes (contract_id, body, auth
 check "an empty note body is refused rather than stored" "$EMPTY_NOTE_OUT" "violates check constraint"
 
 # Now the other direction.
+# Put the move back on alpha first. The interesting case is an agent that OWES
+# a turn and says it cannot take it — a blocking question raised when nobody
+# owed anything also reports `human`, but it does not prove the obligation was
+# suppressed.
+psql_q -c "insert into messages (contract_id, sender_id, message_type, content, requires_action, consumes_turn, turn_number) select '$TS_ID', id, 'request', '{\"text\":\"your move again\"}'::jsonb, true, true, 5 from agents where name='beta'; update contracts set current_turns=5 where id='$TS_ID';" >/dev/null
+check "the move is mine again before the question" \
+  "$(a2a contract "$TS_ID")" "YOUR MOVE"
+
 check "an agent can stop and ask a person" \
   "$(a2a ask "$TS_ID" --kind blocked --body "No credentials for the artifact host.")" "blocked"
 check "the contract stops asking that agent for a move" \
@@ -401,7 +419,7 @@ check "the question is listed with who asked and why" \
 # Answering is the human half, so again by the path the server action takes.
 QID="$(psql_q -c "select id from contract_questions where contract_id='$TS_ID' limit 1;")"
 psql_q -c "update contract_questions set status='answered', answer='Use staging.', answered_by_name='E2E Operator', answered_at=now() where id='$QID';" >/dev/null
-check "an answered question releases the contract" \
+check "an answered question hands the move back to the agent that asked" \
   "$(a2a contract "$TS_ID")" "YOUR MOVE"
 check "and the answer is readable by the agent that asked" \
   "$(a2a questions "$TS_ID" --status answered)" "Use staging."

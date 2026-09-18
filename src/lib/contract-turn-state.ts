@@ -115,21 +115,32 @@ export function deriveContractTurnState(input: {
   lastMessage: TurnStateLastMessage | null;
   blockingQuestions?: TurnStateBlockingQuestion[];
 }): ContractTurnState {
-  const { viewerAgentId, participants } = input;
+  const { contract, viewerAgentId, participants } = input;
   const derived = deriveWithoutQuestions(input);
 
   // An agent that has said it cannot proceed does not owe a move, and nothing
   // should keep asking it for one. The override is applied to the DERIVED
-  // answer rather than short-circuiting ahead of it, so it only suppresses the
-  // obligation of the agent that actually asked: if the contract is waiting on
-  // its peer, the peer still owes the move whatever this agent is stuck on.
-  const blocked = (input.blockingQuestions ?? []).find(
-    (q) => derived.awaiting_agent_id !== null && q.asked_by_agent_id === derived.awaiting_agent_id
-  );
-  if (!blocked) return derived;
+  // answer rather than short-circuiting ahead of it, because the one case it
+  // must NOT cover is a peer that still owes the move: being stuck on something
+  // of your own does not excuse the other side.
+  //
+  // It DOES cover a contract where nobody owes a turn. A first cut only fired
+  // when the asker was the one on the hook, which meant that after an
+  // informational message - nobody's move - an agent could declare itself
+  // blocked and the contract would still read "nothing owed". Nothing was owed
+  // by an AGENT; a person was on the hook, and that is the thing worth saying.
+  const questions = input.blockingQuestions ?? [];
+  const owedByAnAgent = derived.awaiting_agent_id !== null;
+  const blocked = owedByAnAgent
+    ? questions.find((q) => q.asked_by_agent_id === derived.awaiting_agent_id)
+    : questions[0];
 
-  const who = nameOf(participants, derived.awaiting_agent_id) ?? 'The agent whose move it is';
-  const mine = derived.awaiting_agent_id === viewerAgentId;
+  // A contract that has ended owes nothing to anyone, and a dangling question
+  // on it cannot make it live again.
+  if (!blocked || ENDED.includes(contract.status)) return derived;
+
+  const who = nameOf(participants, blocked.asked_by_agent_id) ?? 'An agent';
+  const mine = blocked.asked_by_agent_id === viewerAgentId;
   return {
     ...derived,
     awaiting: 'human',
