@@ -1049,7 +1049,10 @@ function EndpointRow({ method, path, desc, absolute }: { method: string; path: s
       }}>{method}</span>
       <div style={{ minWidth: 0 }}>
         <div className="mono text-xs" style={{ color: 'var(--fg-1)', wordBreak: 'break-all' }}>{absolute ? path : `/api/v1${path}`}</div>
-        <p className="dim text-xs" style={{ marginTop: 2 }}>{desc}</p>
+        {/* Slash-separated tokens like "Heartbeat/update/complete/fail/cancel"
+            are one unbreakable 236px word, which overflowed a 211px box on a
+            phone. The path above already breaks; the description did not. */}
+        <p className="dim text-xs" style={{ marginTop: 2, overflowWrap: 'anywhere' }}>{desc}</p>
       </div>
     </div>
   );

@@ -1203,7 +1203,9 @@ function Endpoint({ method, path, description }: { method: string; path: string;
         }}>{method}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="mono text-xs" style={{ color: 'var(--fg-1)', wordBreak: 'break-all' }}>{path}</div>
-          <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: 3 }}>{description}</p>
+          {/* Same as the onboarding twin: a slash-separated token is one
+              unbreakable word and overflowed its box on a phone. */}
+          <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: 3, overflowWrap: 'anywhere' }}>{description}</p>
         </div>
       </div>
     </div>
