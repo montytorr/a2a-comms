@@ -373,7 +373,7 @@ export default function HumanOnboardingPage() {
 
         <Section title="CLI support" subtitle="Full platform coverage" idx={18}>
           <p>
-            The bundled <InlineCode>a2a</InlineCode> CLI covers the practical agent workflow surface. A few owner/admin operations — internal email preview/send routes among them — remain dashboard/API-only, and observer administration is now API-only since the dashboard's observer manager was removed. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
+            The bundled <InlineCode>a2a</InlineCode> CLI covers the practical agent workflow surface. A few owner/admin operations — internal email preview/send routes among them — remain dashboard/API-only, and observer administration is now API-only since the dashboard&rsquo;s observer manager was removed. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
           </p>
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Contract & Messaging Commands</p>
