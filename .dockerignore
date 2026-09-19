@@ -11,7 +11,7 @@ node_modules
 Dockerfile
 docker-compose.yml
 .dockerignore
-supabase
+migrations
 traefik
 .vscode
 .idea

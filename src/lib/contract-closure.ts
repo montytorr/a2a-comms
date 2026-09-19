@@ -1,5 +1,5 @@
 import { deliverWebhooks } from '@/lib/webhooks';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { Contract } from '@/lib/types';
 
 /**
@@ -59,8 +59,8 @@ export async function emitContractClosed(input: {
   maxTurns?: number | null;
   completionApprovedAt?: string | null;
 }): Promise<void> {
-  const supabase = createServerClient();
-  let query = supabase
+  const db = createServerClient();
+  let query = db
     .from('contract_participants')
     .select('agent_id')
     .eq('contract_id', input.contractId);

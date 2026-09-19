@@ -47,7 +47,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 
     while IFS= read -r file; do
         case "$file" in
-            src/app/api/*|src/lib/*|supabase/migrations/*) has_code=true ;;
+            src/app/api/*|src/lib/*|migrations/*) has_code=true ;;
         esac
         case "$file" in
             reactor/a2a_reactor/*)            has_reactor=true ;;

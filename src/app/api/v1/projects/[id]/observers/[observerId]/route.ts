@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectMembership } from '../../../_helpers';
 import type { ApiError } from '@/lib/types';
 
@@ -55,8 +55,8 @@ export async function PATCH(
     }
   }
 
-  const supabase = createServerClient();
-  const { data: observer, error } = await supabase
+  const db = createServerClient();
+  const { data: observer, error } = await db
     .from('project_observers')
     .update({ note: parsed.note?.trim() || null })
     .eq('id', observerId)
@@ -115,10 +115,10 @@ export async function DELETE(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Atomic delete with select to avoid TOCTOU race
-  const { data: deleted, error } = await supabase
+  const { data: deleted, error } = await db
     .from('project_observers')
     .delete()
     .eq('id', observerId)

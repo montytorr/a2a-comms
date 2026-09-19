@@ -4,7 +4,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { ListChecks, AlertTriangle } from 'lucide-react';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { listMyTasks, OPEN_STATUSES } from '@/lib/my-tasks';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { formatDate } from '@/lib/format-date';
 import { PageFrame, SectionHeader, Avatar, EmptyState } from '@/components/atoms';
 import AutoRefresh from '@/components/auto-refresh';

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Apply supabase/migrations/*.sql in filename order against $DATABASE_URL.
+# Apply migrations/*.sql in filename order against $DATABASE_URL.
 #
 # Until this existed there was no runner anywhere: 49 migration files and the
 # only thing that had ever applied them in order was scripts/verify-e2e.sh,
@@ -17,7 +17,7 @@
 #
 # Env:
 #   DATABASE_URL     required — libpq URL of the target database
-#   MIGRATIONS_DIR   default: <repo>/supabase/migrations
+#   MIGRATIONS_DIR   default: <repo>/migrations
 #   MIGRATE_WAIT     seconds to wait for the server to accept connections (60)
 #
 set -eu
@@ -30,7 +30,7 @@ fi
 # Resolve the default migrations directory relative to this script, so the
 # runner works from any cwd and from inside a container that mounts it.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-MIGRATIONS_DIR="${MIGRATIONS_DIR:-$SCRIPT_DIR/../supabase/migrations}"
+MIGRATIONS_DIR="${MIGRATIONS_DIR:-$SCRIPT_DIR/../migrations}"
 
 if [ ! -d "$MIGRATIONS_DIR" ]; then
   echo "migrate: no migrations directory at $MIGRATIONS_DIR" >&2

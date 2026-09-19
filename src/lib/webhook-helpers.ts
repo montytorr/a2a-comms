@@ -82,10 +82,10 @@ export async function sendWebhookRequest(params: SendWebhookRequestParams): Prom
   }
 }
 
-export async function incrementFailure(supabase: DatabaseClient, wh: WebhookRecord) {
+export async function incrementFailure(db: DatabaseClient, wh: WebhookRecord) {
   const newCount = (wh.failure_count || 0) + 1;
   const willDisable = newCount >= 10;
-  await supabase
+  await db
     .from('webhooks')
     .update({
       failure_count: newCount,
@@ -99,8 +99,8 @@ export async function incrementFailure(supabase: DatabaseClient, wh: WebhookReco
   }
 }
 
-export async function resetWebhookFailureState(supabase: DatabaseClient, webhookId: string) {
-  await supabase
+export async function resetWebhookFailureState(db: DatabaseClient, webhookId: string) {
+  await db
     .from('webhooks')
     .update({
       last_delivery_at: new Date().toISOString(),
@@ -109,8 +109,8 @@ export async function resetWebhookFailureState(supabase: DatabaseClient, webhook
     .eq('id', webhookId);
 }
 
-export async function markDeliverySuccess(supabase: DatabaseClient, deliveryId: string, responseStatus: number) {
-  await supabase
+export async function markDeliverySuccess(db: DatabaseClient, deliveryId: string, responseStatus: number) {
+  await db
     .from('webhook_deliveries')
     .update({
       status: 'success',
@@ -120,8 +120,8 @@ export async function markDeliverySuccess(supabase: DatabaseClient, deliveryId: 
     .eq('id', deliveryId);
 }
 
-export async function markDeliveryFailed(supabase: DatabaseClient, deliveryId: string, responseStatus: number) {
-  await supabase
+export async function markDeliveryFailed(db: DatabaseClient, deliveryId: string, responseStatus: number) {
+  await db
     .from('webhook_deliveries')
     .update({
       status: 'failed',

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 const PAGE_SIZE = 50;
 

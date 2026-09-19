@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { MessageSquare, ChevronRight, AlertTriangle } from 'lucide-react';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
@@ -35,11 +35,11 @@ export default async function MessagesPage({
   const agentFilter = params.agent || 'all';
   const typeFilter = params.type || 'all';
   const searchFilter = params.search || '';
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   // Fetch agents for filter dropdown — scoped for non-admins
-  let agentsQuery = supabase.from('agents').select('id, name, display_name');
+  let agentsQuery = db.from('agents').select('id, name, display_name');
   if (!user.isSuperAdmin) {
     agentsQuery = agentsQuery.eq('owner_user_id', user.id);
   }
@@ -50,7 +50,7 @@ export default async function MessagesPage({
   // For non-admin, get scoped contract IDs
   let scopedContractIds: string[] | null = null;
   if (!user.isSuperAdmin) {
-    const { data: participantContracts } = await supabase
+    const { data: participantContracts } = await db
       .from('contract_participants')
       .select('contract_id')
       .in('agent_id', auth.agentScope);
@@ -58,7 +58,7 @@ export default async function MessagesPage({
   }
 
   // Build filtered messages query
-  let query = supabase
+  let query = db
     .from('messages')
     // requires_action / consumes_turn are persisted per message and were not
     // even fetched here, so the cross-contract inbox could not say which of
@@ -112,14 +112,14 @@ export default async function MessagesPage({
 
   const contractIds = [...new Set((messages || []).map(m => m.contract_id))];
   const { data: contracts } = contractIds.length > 0
-    ? await supabase.from('contracts').select('id, title').in('id', contractIds)
+    ? await db.from('contracts').select('id, title').in('id', contractIds)
     : { data: [] };
   const contractMap = new Map((contracts || []).map(c => [c.id, c]));
 
   // Resolve ALL sender names (not just owned agents) so counterparties don't show as "Unknown"
   const missingSenderIds = [...new Set((messages || []).map(m => m.sender_id))].filter(id => !agentMap.has(id));
   if (missingSenderIds.length > 0) {
-    const { data: extraAgents } = await supabase
+    const { data: extraAgents } = await db
       .from('agents')
       .select('id, name, display_name')
       .in('id', missingSenderIds);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent } from '@/lib/admin';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { AgentReputationDetail, ApiError, UpdateAgentRequest } from '@/lib/types';
 import { isAgentTrustTier } from '@/lib/trust-tiers';
 import { getAgentReputationDetail } from '@/lib/reputation-ledger';
@@ -18,9 +18,9 @@ export async function GET(
   const { auth } = result;
   const { id } = await params;
   const includeReputation = new URL(req.url).searchParams.get('include') === 'reputation';
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: agent, error } = await supabase
+  const { data: agent, error } = await db
     .from('agents')
     .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, reputation_snapshot, created_at, updated_at')
     .eq('id', id)

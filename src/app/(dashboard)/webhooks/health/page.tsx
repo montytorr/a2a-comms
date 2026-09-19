@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
@@ -90,7 +90,7 @@ export default async function WebhookHealthPage({
   const params = await searchParams;
   const filterWebhookId = params.webhook || null;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   // eslint-disable-next-line react-hooks/purity -- server component with noStore(), Date.now() is intentional
@@ -104,7 +104,7 @@ export default async function WebhookHealthPage({
   const needsScope = !isSuperAdmin && hasWebhooks;
 
   // Fetch recent deliveries (last 50), optionally filtered by webhook + failures only
-  let deliveriesQuery = supabase
+  let deliveriesQuery = db
     .from('webhook_deliveries')
     .select(`
       id,
@@ -137,7 +137,7 @@ export default async function WebhookHealthPage({
   const deliveries = (recentDeliveries || []) as unknown as WebhookDelivery[];
 
   // Fetch deliveries in last 24h for summary stats
-  let stats24hQuery = supabase
+  let stats24hQuery = db
     .from('webhook_deliveries')
     .select(`
       id,

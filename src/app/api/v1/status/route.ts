@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 export async function GET() {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('system_config')
     .select('value, updated_at, updated_by')
     .eq('key', 'kill_switch')

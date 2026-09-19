@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect, notFound } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
@@ -73,10 +73,10 @@ export default async function TaskDetailPage({
   if (!user || !auth) redirect('/login');
 
   const { id: projectId, tid } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
-  const { data: task, error } = await supabase
+  const { data: task, error } = await db
     .from('tasks')
     .select('*')
     .eq('id', tid)
@@ -90,19 +90,19 @@ export default async function TaskDetailPage({
   let hasReadOnlyObserverAccess = false;
   if (!user.isSuperAdmin) {
     const [{ data: membership }, { data: observerAccess }, { data: invitationAccess }] = await Promise.all([
-      supabase
+      db
         .from('project_members')
         .select('id')
         .eq('project_id', projectId)
         .in('agent_id', agentScope)
         .limit(1),
-      supabase
+      db
         .from('project_observers')
         .select('id')
         .eq('project_id', projectId)
         .in('agent_id', agentScope)
         .limit(1),
-      supabase
+      db
         .from('project_member_invitations')
         .select('id')
         .eq('project_id', projectId)
@@ -123,38 +123,38 @@ export default async function TaskDetailPage({
     membersRes, sprintsRes, commentsRes,
     attachmentsRes, activityRes,
   ] = await Promise.all([
-    supabase.from('projects').select('id, title').eq('id', projectId).single(),
+    db.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
-      ? supabase.from('agents').select('id, name, display_name').eq('id', task.assignee_agent_id).single()
+      ? db.from('agents').select('id, name, display_name').eq('id', task.assignee_agent_id).single()
       : Promise.resolve({ data: null }),
     task.reporter_agent_id
-      ? supabase.from('agents').select('id, name, display_name').eq('id', task.reporter_agent_id).single()
+      ? db.from('agents').select('id, name, display_name').eq('id', task.reporter_agent_id).single()
       : Promise.resolve({ data: null }),
     task.sprint_id
-      ? supabase.from('sprints').select('id, title, status').eq('id', task.sprint_id).single()
+      ? db.from('sprints').select('id, title, status').eq('id', task.sprint_id).single()
       : Promise.resolve({ data: null }),
-    supabase
+    db
       .from('task_dependencies')
       .select('id, blocking_task_id, dependency_type, tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
-    supabase
+    db
       .from('task_dependencies')
       .select('id, blocked_task_id, dependency_type, tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
-    supabase
+    db
       .from('task_contracts')
       .select('id, contract:contracts(id, title, status)')
       .eq('task_id', tid),
-    supabase
+    db
       .from('project_members')
       .select('id, role, agent:agents(id, name, display_name)')
       .eq('project_id', projectId),
-    supabase
+    db
       .from('sprints')
       .select('id, title, status')
       .eq('project_id', projectId)
       .order('position', { ascending: true }),
-    supabase
+    db
       .from('task_comments')
       .select('*, author:agents!task_comments_author_agent_id_fkey(id, name, display_name)')
       .eq('task_id', tid)
@@ -219,7 +219,7 @@ export default async function TaskDetailPage({
   if (!user.isSuperAdmin && linkedContracts.length > 0) {
     const contractIds = linkedContracts.map((lc) => lc.contract?.id).filter(Boolean) as string[];
     if (contractIds.length > 0) {
-      const { data: visibleParts } = await supabase
+      const { data: visibleParts } = await db
         .from('contract_participants')
         .select('contract_id')
         .in('contract_id', contractIds)

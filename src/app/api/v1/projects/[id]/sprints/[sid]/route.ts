@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../../_helpers';
 import type { UpdateSprintRequest, ApiError } from '@/lib/types';
@@ -29,8 +29,8 @@ export async function GET(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: sprint, error } = await supabase
+  const db = createServerClient();
+  const { data: sprint, error } = await db
     .from('sprints')
     .select('*')
     .eq('id', sid)
@@ -45,7 +45,7 @@ export async function GET(
   }
 
   // Get task stats for this sprint
-  const { data: tasks, error: taskError } = await supabase
+  const { data: tasks, error: taskError } = await db
     .from('tasks')
     .select('id, status')
     .eq('sprint_id', sid);
@@ -129,11 +129,11 @@ export async function PATCH(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // If position is being changed, shift siblings to avoid duplicate positions
   if (positionChange !== undefined) {
-    const { data: current } = await supabase
+    const { data: current } = await db
       .from('sprints')
       .select('position')
       .eq('id', sid)
@@ -144,8 +144,8 @@ export async function PATCH(
       const oldPos = current.position;
       const newPos = positionChange;
       const shiftResult = newPos < oldPos
-        ? await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 })
-        : await supabase.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 });
+        ? await db.rpc('shift_sprint_positions', { p_project_id: id, p_min: newPos, p_max: oldPos - 1, p_delta: 1 })
+        : await db.rpc('shift_sprint_positions', { p_project_id: id, p_min: oldPos + 1, p_max: newPos, p_delta: -1 });
 
       if (shiftResult.error) {
         return NextResponse.json(
@@ -156,7 +156,7 @@ export async function PATCH(
     }
   }
 
-  const { data: sprint, error } = await supabase
+  const { data: sprint, error } = await db
     .from('sprints')
     .update(updates)
     .eq('id', sid)

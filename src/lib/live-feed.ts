@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { type AuthActorContext } from '@/lib/auth-actor-context';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 
@@ -48,7 +48,7 @@ function normalize(items: TimestampedTickerItem[]): TickerItem[] {
 
 /** Returns the activity strip data used by both the first dashboard paint and its live refresh. */
 export async function getLiveFeedItems(auth: AuthActorContext): Promise<TickerItem[]> {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const isAdmin = auth.user.isSuperAdmin;
   const scope = await buildDashboardVisibilityScope(auth);
 
@@ -57,12 +57,12 @@ export async function getLiveFeedItems(auth: AuthActorContext): Promise<TickerIt
     && scope.contractActorNames.length === 0;
   if (noVisibleScope) return [];
 
-  let auditQuery = supabase
+  let auditQuery = db
     .from('audit_log')
     .select('actor, action, created_at')
     .order('created_at', { ascending: false })
     .limit(10);
-  let deliveriesQuery = supabase
+  let deliveriesQuery = db
     .from('webhook_deliveries')
     .select('event, status, created_at, delivered_at, webhook_id')
     .order('created_at', { ascending: false })

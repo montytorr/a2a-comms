@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createBrowserClient } from '@/lib/auth/browser';
 import { Mail } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
@@ -17,9 +17,9 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const supabase = createBrowserClient();
+      const db = createBrowserClient();
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error: resetError } = await db.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${appUrl}/reset-password`,
       });
 

@@ -1,8 +1,8 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 export async function resolveProjectForContract(contractId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('task_contracts')
     .select('task:tasks!task_contracts_task_id_fkey(project_id)')
     .eq('contract_id', contractId)

@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { createHmac } from 'crypto';
 import { resolveAndValidateHost } from '@/lib/url-validator';
@@ -38,9 +38,9 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
   const user = auth?.user ?? null;
   if (!user || !auth) return { success: false, error: 'Not authenticated' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhook, error: fetchError } = await supabase
+  const { data: webhook, error: fetchError } = await db
     .from('webhooks')
     .select('id, url, secret, agent_id')
     .eq('id', webhookId)
@@ -50,7 +50,7 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
     return { success: false, error: 'Webhook not found' };
   }
 
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
@@ -135,9 +135,9 @@ export async function updateWebhook(
   const user = auth?.user ?? null;
   if (!user || !auth) return { error: 'Not authenticated' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhook } = await supabase
+  const { data: webhook } = await db
     .from('webhooks')
     .select('id, agent_id')
     .eq('id', webhookId)
@@ -145,7 +145,7 @@ export async function updateWebhook(
 
   if (!webhook) return { error: 'Webhook not found' };
 
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
@@ -173,14 +173,14 @@ export async function updateWebhook(
     if (updates.is_active) patch.failure_count = 0;
   }
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from('webhooks')
     .update(patch)
     .eq('id', webhookId);
 
   if (updateError) return { error: updateError.message };
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.id,
     action: 'webhook.update',
     resource_type: 'webhook',
@@ -210,16 +210,16 @@ export async function getDeliveries(webhookId: string): Promise<{ data: WebhookD
   const user = auth?.user ?? null;
   if (!user || !auth) return { data: [], error: 'Not authenticated' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhook } = await supabase
+  const { data: webhook } = await db
     .from('webhooks')
     .select('agent_id')
     .eq('id', webhookId)
     .single();
   if (!webhook) return { data: [], error: 'Webhook not found' };
 
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
@@ -230,7 +230,7 @@ export async function getDeliveries(webhookId: string): Promise<{ data: WebhookD
   const trustGate = evaluateWebhookManagementAccess('list', resolveWebhookManagementActor(auth, agent || null));
   if (!trustGate.allowed) return { data: [], error: trustGate.body.error };
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('webhook_deliveries')
     .select('id, event, status, attempts, max_retries, retry_delay_ms, last_retry_at, response_status, delivered_at, created_at')
     .eq('webhook_id', webhookId)
@@ -246,9 +246,9 @@ export async function deleteWebhook(webhookId: string): Promise<{ error?: string
   const user = auth?.user ?? null;
   if (!user || !auth) return { error: 'Not authenticated' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhook } = await supabase
+  const { data: webhook } = await db
     .from('webhooks')
     .select('id, agent_id, url')
     .eq('id', webhookId)
@@ -256,7 +256,7 @@ export async function deleteWebhook(webhookId: string): Promise<{ error?: string
 
   if (!webhook) return { error: 'Webhook not found' };
 
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('id, owner_user_id, trust_tier, trust_policy')
     .eq('id', webhook.agent_id)
@@ -270,14 +270,14 @@ export async function deleteWebhook(webhookId: string): Promise<{ error?: string
     return { error: trustGate.body.error };
   }
 
-  const { error: delError } = await supabase
+  const { error: delError } = await db
     .from('webhooks')
     .update({ is_active: false, url: '', updated_at: new Date().toISOString() })
     .eq('id', webhookId);
 
   if (delError) return { error: delError.message };
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.id,
     action: 'webhook.delete',
     resource_type: 'webhook',

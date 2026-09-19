@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import { evaluateWebhookManagementAccess } from '@/lib/webhook-trust-policy';
@@ -9,8 +9,8 @@ export async function getAgents() {
   const user = await getAuthUser();
   if (!user) return [];
 
-  const supabase = createServerClient();
-  let query = supabase
+  const db = createServerClient();
+  let query = db
     .from('agents')
     .select('id, name, display_name, trust_tier')
     .order('name', { ascending: true });
@@ -33,10 +33,10 @@ export async function registerWebhook(params: {
   const user = await getAuthUser();
   if (!user) return { error: 'Not authenticated' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Validate agent exists and user owns it (or is admin)
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('id, name, owner_user_id, trust_tier')
     .eq('id', params.agentId)
@@ -68,7 +68,7 @@ export async function registerWebhook(params: {
   }
 
   // Check for duplicate URL per agent
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('webhooks')
     .select('id')
     .eq('agent_id', params.agentId)
@@ -80,7 +80,7 @@ export async function registerWebhook(params: {
   }
 
   // Insert webhook
-  const { error: insertError } = await supabase
+  const { error: insertError } = await db
     .from('webhooks')
     .insert({
       agent_id: params.agentId,
@@ -96,7 +96,7 @@ export async function registerWebhook(params: {
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.id,
     action: 'webhook.register',
     resource_type: 'webhook',

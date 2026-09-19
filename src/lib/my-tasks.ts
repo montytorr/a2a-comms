@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import type { AuthActorContext } from '@/lib/auth-actor-context';
 import type { TaskStatus } from '@/lib/types';
@@ -55,11 +55,11 @@ export interface MyTaskFilters {
 export const OPEN_STATUSES: TaskStatus[] = ['backlog', 'todo', 'in-progress', 'in-review'];
 
 export async function listMyTasks(auth: AuthActorContext, filters: MyTaskFilters = {}) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const scope = await buildDashboardVisibilityScope(auth);
   const limit = filters.limit ?? 200;
 
-  let query = supabase
+  let query = db
     .from('tasks')
     .select(`
       id,

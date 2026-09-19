@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { validateContractDescription } from '@/lib/contract-description';
 import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant } from '../_helpers';
@@ -15,7 +15,7 @@ export async function GET(
 
   const { auth } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify agent is a participant
   const participant = await getParticipant(id, auth.agent.id);
@@ -26,7 +26,7 @@ export async function GET(
     );
   }
 
-  const { data: contract, error } = await supabase
+  const { data: contract, error } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)
@@ -72,7 +72,7 @@ export async function PATCH(
 
   const { auth, body } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const participant = await getParticipant(id, auth.agent.id);
   if (!participant) {
@@ -82,7 +82,7 @@ export async function PATCH(
     );
   }
 
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)
@@ -131,7 +131,7 @@ export async function PATCH(
     return NextResponse.json(description.body satisfies ApiError, { status: description.status });
   }
 
-  const { data: saved, error: updateErr } = await supabase
+  const { data: saved, error: updateErr } = await db
     .from('contracts')
     .update({ description: description.value })
     .eq('id', id)

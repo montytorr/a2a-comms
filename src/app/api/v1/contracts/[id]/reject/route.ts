@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
@@ -16,7 +16,7 @@ export async function POST(
 
   const { auth } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify agent is a participant
   const participant = await getParticipant(id, auth.agent.id);
@@ -33,7 +33,7 @@ export async function POST(
   }
 
   // Check contract is still proposed
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)
@@ -55,7 +55,7 @@ export async function POST(
   }
 
   // Update participant status (CAS guard: only if still pending)
-  const { data: updatedParticipant } = await supabase
+  const { data: updatedParticipant } = await db
     .from('contract_participants')
     .update({
       status: 'rejected',
@@ -75,7 +75,7 @@ export async function POST(
   }
 
   // Reject the entire contract (CAS guard: only if still proposed)
-  const { data: updatedContract } = await supabase
+  const { data: updatedContract } = await db
     .from('contracts')
     .update({
       status: 'rejected',
@@ -91,7 +91,7 @@ export async function POST(
     .maybeSingle();
 
   // Deliver webhook notification to proposer (fire-and-forget)
-  const { data: contractData } = await supabase
+  const { data: contractData } = await db
     .from('contracts')
     .select('proposer_id')
     .eq('id', id)
@@ -115,7 +115,7 @@ export async function POST(
   });
 
   // Fetch updated contract
-  const { data: finalContract } = await supabase
+  const { data: finalContract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)

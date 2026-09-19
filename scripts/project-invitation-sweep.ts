@@ -63,7 +63,7 @@ if (!process.env.DATABASE_URL) {
   console.error(`[${ts()}] Missing DATABASE_URL`);
   process.exit(1);
 }
-const supabase = admin();
+const db = admin();
 
 let stopping = false;
 let timer: NodeJS.Timeout | null = null;
@@ -266,7 +266,7 @@ async function processInvitation(client: DatabaseClient, invitation: PendingInvi
 }
 
 async function runCycle() {
-  const invitations = await fetchPendingInvitations(supabase);
+  const invitations = await fetchPendingInvitations(db);
   if (invitations.length === 0) {
     log('No pending invitations to reconcile');
     return;
@@ -279,7 +279,7 @@ async function runCycle() {
   for (const invitation of invitations) {
     if (stopping) break;
     try {
-      const result = await processInvitation(supabase, invitation);
+      const result = await processInvitation(db, invitation);
       if (result === 'expired') expired += 1;
       else if (result === 'reminded') reminded += 1;
       else noop += 1;

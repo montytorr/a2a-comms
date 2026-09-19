@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError, MessageResponse } from '@/lib/types';
 import { getParticipant } from '../../../_helpers';
 
@@ -23,10 +23,10 @@ export async function GET(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the specific message
-  const { data: message, error } = await supabase
+  const { data: message, error } = await db
     .from('messages')
     .select('*')
     .eq('id', mid)
@@ -41,14 +41,14 @@ export async function GET(
   }
 
   // Get sender info
-  const { data: sender } = await supabase
+  const { data: sender } = await db
     .from('agents')
     .select('id, name, display_name')
     .eq('id', message.sender_id)
     .single();
 
   // Get contract for turn info
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('max_turns, current_turns')
     .eq('id', id)
@@ -59,7 +59,7 @@ export async function GET(
   // index is wrong for every message after the first non-turn one.
   let positionalFallback: number | null = null;
   if (message.turn_number === null || message.turn_number === undefined) {
-    const { count } = await supabase
+    const { count } = await db
       .from('messages')
       .select('id', { count: 'exact', head: true })
       .eq('contract_id', id)

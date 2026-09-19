@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { getProjectAccess } from '@/lib/project-access';
@@ -15,8 +15,8 @@ function isMissingAttachmentIdsColumn(error: PostgrestError | null | undefined) 
 }
 
 async function verifyTask(projectId: string, taskId: string): Promise<{ data: { id: string; project_id: string } | null; error: string | null }> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('tasks')
     .select('id, project_id')
     .eq('id', taskId)
@@ -114,9 +114,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await ensureAttachmentBucket();
   await uploadAttachmentBinary(storagePath, content, validated.mimeType);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   try {
-    const { data: attachment, error } = await supabase
+    const { data: attachment, error } = await db
       .from('task_attachments')
       .insert({
         project_id: projectId,
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (error || !attachment) throw error;
 
     if (checkpointId) {
-      const checkpointResult = await supabase
+      const checkpointResult = await db
         .from('task_execution_checkpoints')
         .select('attachment_ids')
         .eq('id', checkpointId)
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       if (!isMissingAttachmentIdsColumn(checkpointResult.error)) {
         const attachmentIds = Array.isArray(checkpointResult.data?.attachment_ids) ? checkpointResult.data.attachment_ids : [];
-        const updateResult = await supabase
+        const updateResult = await db
           .from('task_execution_checkpoints')
           .update({ attachment_ids: [...attachmentIds, attachment.id] })
           .eq('id', checkpointId);
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(attachment, { status: 201 });
   } catch (error) {
-    await supabase.from('task_attachments').delete().eq('storage_path', storagePath);
+    await db.from('task_attachments').delete().eq('storage_path', storagePath);
     await removeAttachmentBinary(storagePath).catch(() => {});
     throw error;
   }

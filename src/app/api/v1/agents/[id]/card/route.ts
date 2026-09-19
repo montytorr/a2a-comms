@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError } from '@/lib/types';
 
 /**
@@ -15,9 +15,9 @@ export async function GET(
   if (result.error) return result.error;
 
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: agent, error } = await supabase
+  const { data: agent, error } = await db
     .from('agents')
     .select('id, name, display_name, description, capabilities, protocols, max_concurrent_contracts, created_at')
     .eq('id', id)

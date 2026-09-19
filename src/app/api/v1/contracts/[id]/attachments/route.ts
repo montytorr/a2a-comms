@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { resolveProjectForContract } from '@/app/api/v1/projects/[id]/attachments/_helpers';
@@ -9,8 +9,8 @@ import type { ApiError } from '@/lib/types';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 async function verifyParticipation(contractId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('contract_participants')
     .select('id, role, status')
     .eq('contract_id', contractId)
@@ -88,9 +88,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await ensureAttachmentBucket();
   await uploadAttachmentBinary(storagePath, content, validated.mimeType);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   try {
-    const { data: attachment, error } = await supabase
+    const { data: attachment, error } = await db
       .from('task_attachments')
       .insert({
         project_id: projectId,

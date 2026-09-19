@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { revalidatePath } from 'next/cache';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
@@ -21,8 +21,8 @@ async function requireProjectMembership(
 export async function updateProjectStatus(projectId: string, status: string) {
   await requireProjectMembership(projectId, { requireRole: 'owner' });
 
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('projects')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', projectId);
@@ -33,14 +33,14 @@ export async function updateProjectStatus(projectId: string, status: string) {
 export async function updateTaskStatus(projectId: string, taskId: string, status: string) {
   await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('tasks')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', taskId)
     .eq('project_id', projectId);
   if (error) throw new Error(`Failed to update task status: ${error.message}`);
-  await refreshTaskBlockedState(supabase, taskId);
+  await refreshTaskBlockedState(db, taskId);
   revalidatePath(`/projects/${projectId}/tasks/${taskId}`);
   revalidatePath(`/projects/${projectId}`);
 }
@@ -48,8 +48,8 @@ export async function updateTaskStatus(projectId: string, taskId: string, status
 export async function updateSprintStatus(projectId: string, sprintId: string, status: string) {
   await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('sprints')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', sprintId)
@@ -62,18 +62,18 @@ export async function inviteProjectMember(projectId: string, agentId: string) {
   const user = await requireProjectMembership(projectId, { requireRole: 'owner' });
   const auth = await getAuthActorContext();
   if (!auth) throw new Error('Unauthorized');
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const inviterLookupId = user.memberAgentId || auth.actingAgentId;
 
   const [{ data: project }, { data: existing }, { data: existingInvite }, { data: agent }, { data: inviterAgent }] = await Promise.all([
-    supabase.from('projects').select('id, title').eq('id', projectId).single(),
-    supabase.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    supabase.from('project_member_invitations').select('id, status').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    supabase.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', agentId).single(),
+    db.from('projects').select('id, title').eq('id', projectId).single(),
+    db.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    db.from('project_member_invitations').select('id, status').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    db.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', agentId).single(),
     inviterLookupId
-      ? supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
-      : supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
+      ? db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
+      : db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
   ]);
 
   if (!project) throw new Error('Project not found');
@@ -88,7 +88,7 @@ export async function inviteProjectMember(projectId: string, agentId: string) {
   const inviterAgentId = user.memberAgentId || auth.actingAgentId;
   if (!inviterAgentId) throw new Error('No acting agent available to send invitation');
 
-  const { error } = await supabase.from('project_member_invitations').upsert({
+  const { error } = await db.from('project_member_invitations').upsert({
     project_id: projectId,
     agent_id: agentId,
     invited_by_agent_id: inviterAgentId,
@@ -123,8 +123,8 @@ export async function respondToProjectInvitation(
   const user = auth?.user ?? null;
   if (!user || !auth) throw new Error('Unauthorized');
 
-  const supabase = createServerClient();
-  const { data: invitation } = await supabase
+  const db = createServerClient();
+  const { data: invitation } = await db
     .from('project_member_invitations')
     .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .eq('id', invitationId)
@@ -137,7 +137,7 @@ export async function respondToProjectInvitation(
   }
 
   const isInvitee = auth.agentScope.includes(invitation.agent_id);
-  const isOwner = user.isSuperAdmin || !!(await supabase
+  const isOwner = user.isSuperAdmin || !!(await db
     .from('project_members')
     .select('id')
     .eq('project_id', projectId)
@@ -154,7 +154,7 @@ export async function respondToProjectInvitation(
   const nextStatus = action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : 'cancelled';
   const respondedAt = new Date().toISOString();
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from('project_member_invitations')
     .update({ status: nextStatus, responded_at: respondedAt, updated_at: respondedAt })
     .eq('id', invitationId)
@@ -164,7 +164,7 @@ export async function respondToProjectInvitation(
   if (updateError) throw new Error(`Failed to update invitation: ${updateError.message}`);
 
   if (nextStatus === 'accepted') {
-    const { error: addMemberError } = await supabase.from('project_members').insert({
+    const { error: addMemberError } = await db.from('project_members').insert({
       project_id: projectId,
       agent_id: invitation.agent_id,
       role: invitation.role,
@@ -191,18 +191,18 @@ export async function addProjectObserver(projectId: string, agentId: string, not
   const user = await requireProjectMembership(projectId, { requireRole: 'owner' });
   const auth = await getAuthActorContext();
   if (!auth) throw new Error('Unauthorized');
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const inviterLookupId = user.memberAgentId || auth.actingAgentId;
 
   const [{ data: project }, { data: existingMember }, { data: existingObserver }, { data: agent }, { data: inviterAgent }] = await Promise.all([
-    supabase.from('projects').select('id').eq('id', projectId).single(),
-    supabase.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    supabase.from('project_observers').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    supabase.from('agents').select('id, name, display_name, trust_tier').eq('id', agentId).single(),
+    db.from('projects').select('id').eq('id', projectId).single(),
+    db.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    db.from('project_observers').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
+    db.from('agents').select('id, name, display_name, trust_tier').eq('id', agentId).single(),
     inviterLookupId
-      ? supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
-      : supabase.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
+      ? db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
+      : db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
   ]);
 
   if (!project) throw new Error('Project not found');
@@ -217,7 +217,7 @@ export async function addProjectObserver(projectId: string, agentId: string, not
   const inviterAgentId = user.memberAgentId || auth.actingAgentId;
   if (!inviterAgentId) throw new Error('No acting agent available to add observer');
 
-  const { error } = await supabase.from('project_observers').insert({
+  const { error } = await db.from('project_observers').insert({
     project_id: projectId,
     agent_id: agentId,
     invited_by_agent_id: inviterAgentId,
@@ -232,8 +232,8 @@ export async function addProjectObserver(projectId: string, agentId: string, not
 export async function updateProjectObserver(projectId: string, observerId: string, note?: string | null) {
   await requireProjectMembership(projectId, { requireRole: 'owner' });
 
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('project_observers')
     .update({ note: note?.trim() || null, updated_at: new Date().toISOString() })
     .eq('id', observerId)
@@ -247,8 +247,8 @@ export async function updateProjectObserver(projectId: string, observerId: strin
 export async function removeProjectObserver(projectId: string, observerId: string) {
   await requireProjectMembership(projectId, { requireRole: 'owner' });
 
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('project_observers')
     .delete()
     .eq('id', observerId)
@@ -262,10 +262,10 @@ export async function removeProjectObserver(projectId: string, observerId: strin
 export async function removeProjectMember(projectId: string, memberId: string) {
   await requireProjectMembership(projectId, { requireRole: 'owner' });
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Prevent removing an owner
-  const { data: member } = await supabase
+  const { data: member } = await db
     .from('project_members')
     .select('id, role')
     .eq('id', memberId)
@@ -275,7 +275,7 @@ export async function removeProjectMember(projectId: string, memberId: string) {
   if (!member) throw new Error('Member not found');
   if (member.role === 'owner') throw new Error('Cannot remove the project owner');
 
-  const { error } = await supabase
+  const { error } = await db
     .from('project_members')
     .delete()
     .eq('id', memberId)
@@ -285,16 +285,16 @@ export async function removeProjectMember(projectId: string, memberId: string) {
 }
 
 export async function getAvailableAgents(projectId: string) {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Get all agents
-  const { data: allAgents } = await supabase
+  const { data: allAgents } = await db
     .from('agents')
     .select('id, name, display_name')
     .order('name');
 
   // Get current members
-  const { data: currentMembers } = await supabase
+  const { data: currentMembers } = await db
     .from('project_members')
     .select('agent_id')
     .eq('project_id', projectId);
@@ -312,10 +312,10 @@ export async function createSprint(
 ) {
   await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Get max position
-  const { data: sprints } = await supabase
+  const { data: sprints } = await db
     .from('sprints')
     .select('position')
     .eq('project_id', projectId)
@@ -324,7 +324,7 @@ export async function createSprint(
 
   const nextPosition = sprints && sprints.length > 0 ? sprints[0].position + 1 : 0;
 
-  const { error } = await supabase.from('sprints').insert({
+  const { error } = await db.from('sprints').insert({
     project_id: projectId,
     title,
     start_date: startDate || null,
@@ -344,14 +344,14 @@ export async function updateSprint(
 ) {
   await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.title !== undefined) updates.title = data.title;
   if (data.startDate !== undefined) updates.start_date = data.startDate || null;
   if (data.endDate !== undefined) updates.end_date = data.endDate || null;
   if (data.goal !== undefined) updates.goal = data.goal || null;
 
-  const { error } = await supabase
+  const { error } = await db
     .from('sprints')
     .update(updates)
     .eq('id', sprintId)
@@ -366,12 +366,12 @@ export async function updateProject(
 ) {
   await requireProjectMembership(projectId, { requireRole: 'owner' });
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.title !== undefined) updates.title = data.title;
   if (data.description !== undefined) updates.description = data.description;
 
-  const { error } = await supabase
+  const { error } = await db
     .from('projects')
     .update(updates)
     .eq('id', projectId);
@@ -392,11 +392,11 @@ export async function createTask(
 ) {
   await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Validate sprint belongs to same project
   if (sprintId) {
-    const { data: sprint } = await supabase
+    const { data: sprint } = await db
       .from('sprints')
       .select('id')
       .eq('id', sprintId)
@@ -404,7 +404,7 @@ export async function createTask(
       .single();
     if (!sprint) throw new Error('Sprint not found in this project');
   }
-  const { error } = await supabase.from('tasks').insert({
+  const { error } = await db.from('tasks').insert({
     project_id: projectId,
     title,
     description: description || null,

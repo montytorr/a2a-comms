@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createElement, type ComponentType } from 'react';
 import { render } from '@react-email/components';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { sessionUser } from '@/lib/auth/session';
 import WelcomeEmail from '@/lib/email/templates/welcome';
 import PasswordResetEmail from '@/lib/email/templates/password-reset';
@@ -92,8 +92,8 @@ export async function GET(req: NextRequest) {
   const user = await sessionUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
-  const supabase = createServerClient();
-  const { data: profile } = await supabase
+  const db = createServerClient();
+  const { data: profile } = await db
     .from('user_profiles')
     .select('is_super_admin')
     .eq('id', user.id)

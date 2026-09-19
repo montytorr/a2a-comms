@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createBrowserClient } from '@/lib/auth/browser';
 import { Avatar } from '@/components/atoms';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
@@ -156,8 +156,8 @@ export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, 
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    const supabase = createBrowserClient();
-    await supabase.auth.signOut();
+    const db = createBrowserClient();
+    await db.auth.signOut();
     window.location.href = '/login';
   };
 

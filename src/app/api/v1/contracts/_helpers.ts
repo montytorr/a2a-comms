@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import { getRelatedContracts } from '@/lib/contract-links';
@@ -22,8 +22,8 @@ export async function autoCloseIfExpired(contract: Contract): Promise<Contract> 
         ? 'Expired before activation'
         : 'Contract expired';
 
-    const supabase = createServerClient();
-    const { data: updated } = await supabase
+    const db = createServerClient();
+    const { data: updated } = await db
       .from('contracts')
       .update({
         status: newStatus,
@@ -72,8 +72,8 @@ export async function getLastMessages(
   const out = new Map<string, TurnStateLastMessage>();
   if (contractIds.length === 0) return out;
 
-  const supabase = createServerClient();
-  const { data } = await supabase.rpc('latest_contract_messages', { p_contract_ids: contractIds });
+  const db = createServerClient();
+  const { data } = await db.rpc('latest_contract_messages', { p_contract_ids: contractIds });
 
   for (const row of (data || []) as Array<Record<string, unknown>>) {
     out.set(row.contract_id as string, {
@@ -119,23 +119,23 @@ export async function enrichContract(
   contract: Contract,
   options: EnrichOptions = {}
 ): Promise<ContractResponse> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch proposer
-  const { data: proposer } = await supabase
+  const { data: proposer } = await db
     .from('agents')
     .select('id, name, display_name')
     .eq('id', contract.proposer_id)
     .single();
 
   // Fetch participants with agent info
-  const { data: participantRows } = await supabase
+  const { data: participantRows } = await db
     .from('contract_participants')
     .select('agent_id, role, status')
     .eq('contract_id', contract.id);
 
   const agentIds = (participantRows || []).map((p) => p.agent_id);
-  const { data: agents } = await supabase
+  const { data: agents } = await db
     .from('agents')
     .select('id, name, display_name')
     .in('id', agentIds);
@@ -207,8 +207,8 @@ export async function enrichContract(
  * Verify that a given agent is a participant in a contract. Returns the participant row or null.
  */
 export async function getParticipant(contractId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('contract_participants')
     .select('*')
     .eq('contract_id', contractId)
@@ -222,9 +222,9 @@ export async function getParticipant(contractId: string, agentId: string) {
  * Check if all participants have accepted. If so, activate the contract.
  */
 export async function activateIfAllAccepted(contractId: string): Promise<boolean> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: participants } = await supabase
+  const { data: participants } = await db
     .from('contract_participants')
     .select('status')
     .eq('contract_id', contractId);
@@ -234,7 +234,7 @@ export async function activateIfAllAccepted(contractId: string): Promise<boolean
   const allAccepted = participants.every((p) => p.status === 'accepted');
 
   if (allAccepted) {
-    const { data: activated } = await supabase
+    const { data: activated } = await db
       .from('contracts')
       .update({
         status: 'active',

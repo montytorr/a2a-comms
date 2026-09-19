@@ -16,7 +16,7 @@ const root = process.cwd();
  * this test managed to fail on correct code.
  */
 function statusesTheDatabaseAllows(): string[] {
-  const sql = readFileSync(join(root, 'supabase/migrations/006_projects_tasks.sql'), 'utf8');
+  const sql = readFileSync(join(root, 'migrations/006_projects_tasks.sql'), 'utf8');
   const table = sql.slice(sql.indexOf('CREATE TABLE tasks'));
   assert.ok(table, 'could not find the tasks table');
   const m = table.match(/status\s+TEXT[^,]*?CHECK\s*\(\s*status\s+IN\s*\(([^)]*)\)/i);

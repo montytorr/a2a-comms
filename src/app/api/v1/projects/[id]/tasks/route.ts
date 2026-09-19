@@ -3,7 +3,7 @@ import { appUrl } from '@/lib/app-url';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
 import { getProjectAccess } from '@/lib/project-access';
@@ -16,7 +16,7 @@ import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tie
 import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function notifyAssigneeOwner(
-  supabase: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
   options: {
     assigneeAgentId: string;
     projectId: string;
@@ -25,7 +25,7 @@ async function notifyAssigneeOwner(
     priority: string;
   }
 ) {
-  const { data: assigneeAgent } = await supabase
+  const { data: assigneeAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('id', options.assigneeAgentId)
@@ -36,7 +36,7 @@ async function notifyAssigneeOwner(
   const email = await getUserEmail(assigneeAgent.owner_user_id);
   if (!email) return;
 
-  const { data: project } = await supabase
+  const { data: project } = await db
     .from('projects')
     .select('title')
     .eq('id', options.projectId)
@@ -104,9 +104,9 @@ export async function GET(
   const page = Math.max(1, Number.isFinite(rawPage) ? rawPage : 1);
   const perPage = Math.min(100, Math.max(1, Number.isFinite(rawPerPage) ? rawPerPage : 50));
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  let query = supabase
+  let query = db
     .from('tasks')
     .select('id, project_id, sprint_id, title, description, status, priority, assignee_agent_id, reporter_agent_id, labels, due_date, position, active_run_id, execution_status, execution_started_at, execution_heartbeat_at, execution_completed_at, last_checkpoint_at, last_checkpoint_summary, last_checkpoint_payload, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, created_at, updated_at', { count: 'exact' })
     .eq('project_id', id);
@@ -218,7 +218,7 @@ export async function POST(
     }
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   let handoffInviteeAgents: Array<{ id: string; name: string; display_name: string; max_concurrent_contracts: number | null; owner_user_id?: string | null }> = [];
   let escalationBrokerAgents: Array<{ id: string; name: string; display_name: string; max_concurrent_contracts: number | null; owner_user_id?: string | null }> = [];
@@ -231,7 +231,7 @@ export async function POST(
       );
     }
 
-    const { data: inviteeAgents, error: inviteeError } = await supabase
+    const { data: inviteeAgents, error: inviteeError } = await db
       .from('agents')
       .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
       .in('name', invitees);
@@ -273,7 +273,7 @@ export async function POST(
       );
     }
 
-    const { data: brokerAgents, error: brokerError } = await supabase
+    const { data: brokerAgents, error: brokerError } = await db
       .from('agents')
       .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
       .in('name', brokers);
@@ -308,7 +308,7 @@ export async function POST(
 
   // Validate sprint belongs to same project
   if (parsed.sprint_id) {
-    const { data: sprint } = await supabase
+    const { data: sprint } = await db
       .from('sprints')
       .select('id')
       .eq('id', parsed.sprint_id)
@@ -325,7 +325,7 @@ export async function POST(
 
   // Validate assignee is an actual project member
   if (parsed.assignee_agent_id) {
-    const { data: assigneeMember } = await supabase
+    const { data: assigneeMember } = await db
       .from('project_members')
       .select('id')
       .eq('project_id', id)
@@ -341,7 +341,7 @@ export async function POST(
   }
 
   // Get next position
-  const { data: existingTasks } = await supabase
+  const { data: existingTasks } = await db
     .from('tasks')
     .select('position')
     .eq('project_id', id)
@@ -352,7 +352,7 @@ export async function POST(
     ? existingTasks[0].position + 1
     : 0;
 
-  const { data: task, error } = await supabase
+  const { data: task, error } = await db
     .from('tasks')
     .insert({
       project_id: id,
@@ -390,7 +390,7 @@ export async function POST(
       priorHandoffs: [],
     });
 
-    const { data: contract, error: contractError } = await supabase
+    const { data: contract, error: contractError } = await db
       .from('contracts')
       .insert({
         title: parsed.handoff_contract.title || buildHandoffContractTitle(task.title),
@@ -406,7 +406,7 @@ export async function POST(
       .single();
 
     if (contractError || !contract) {
-      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      await db.from('tasks').delete().eq('id', task.id).eq('project_id', id);
       return NextResponse.json(
         { error: 'Failed to create handoff contract', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
@@ -430,21 +430,21 @@ export async function POST(
       })),
     ];
 
-    const { error: participantError } = await supabase.from('contract_participants').insert(participants);
+    const { error: participantError } = await db.from('contract_participants').insert(participants);
     if (participantError) {
-      await supabase.from('contracts').delete().eq('id', contract.id);
-      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      await db.from('contracts').delete().eq('id', contract.id);
+      await db.from('tasks').delete().eq('id', task.id).eq('project_id', id);
       return NextResponse.json(
         { error: 'Failed to create handoff contract participants', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
       );
     }
 
-    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: task.id, contract_id: contract.id });
+    const { error: linkError } = await db.from('task_contracts').insert({ task_id: task.id, contract_id: contract.id });
     if (linkError) {
-      await supabase.from('contract_participants').delete().eq('contract_id', contract.id);
-      await supabase.from('contracts').delete().eq('id', contract.id);
-      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      await db.from('contract_participants').delete().eq('contract_id', contract.id);
+      await db.from('contracts').delete().eq('id', contract.id);
+      await db.from('tasks').delete().eq('id', task.id).eq('project_id', id);
       return NextResponse.json(
         { error: 'Failed to link handoff contract to task', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
@@ -500,7 +500,7 @@ export async function POST(
       brokerAgentNames: brokerNames,
     });
 
-    const { data: contract, error: contractError } = await supabase
+    const { data: contract, error: contractError } = await db
       .from('contracts')
       .insert({
         title: parsed.escalation_contract.title || buildBrokeredCollaborationTitle(task.title),
@@ -516,7 +516,7 @@ export async function POST(
       .single();
 
     if (contractError || !contract) {
-      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      await db.from('tasks').delete().eq('id', task.id).eq('project_id', id);
       return NextResponse.json(
         { error: 'Failed to create escalation contract', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
@@ -540,21 +540,21 @@ export async function POST(
       })),
     ];
 
-    const { error: participantError } = await supabase.from('contract_participants').insert(participants);
+    const { error: participantError } = await db.from('contract_participants').insert(participants);
     if (participantError) {
-      await supabase.from('contracts').delete().eq('id', contract.id);
-      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      await db.from('contracts').delete().eq('id', contract.id);
+      await db.from('tasks').delete().eq('id', task.id).eq('project_id', id);
       return NextResponse.json(
         { error: 'Failed to create escalation contract participants', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
       );
     }
 
-    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: task.id, contract_id: contract.id });
+    const { error: linkError } = await db.from('task_contracts').insert({ task_id: task.id, contract_id: contract.id });
     if (linkError) {
-      await supabase.from('contract_participants').delete().eq('contract_id', contract.id);
-      await supabase.from('contracts').delete().eq('id', contract.id);
-      await supabase.from('tasks').delete().eq('id', task.id).eq('project_id', id);
+      await db.from('contract_participants').delete().eq('contract_id', contract.id);
+      await db.from('contracts').delete().eq('id', contract.id);
+      await db.from('tasks').delete().eq('id', task.id).eq('project_id', id);
       return NextResponse.json(
         { error: 'Failed to link escalation contract to task', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
@@ -563,7 +563,7 @@ export async function POST(
 
     escalationContract = contract;
 
-    await supabase.from('task_comments').insert({
+    await db.from('task_comments').insert({
       task_id: task.id,
       project_id: id,
       author_agent_id: auth.agent.id,
@@ -688,7 +688,7 @@ export async function POST(
 
   // Email notification to assignee owner (fire-and-forget)
   if (task.assignee_agent_id) {
-    notifyAssigneeOwner(supabase, {
+    notifyAssigneeOwner(db, {
       assigneeAgentId: task.assignee_agent_id,
       projectId: id,
       taskId: task.id,

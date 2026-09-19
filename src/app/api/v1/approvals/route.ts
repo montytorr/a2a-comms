@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { sendApprovalRequestEmail } from '@/lib/email';
 import { getSuperAdminEmails, getAgentOwnerEmail, getApprovalScope } from '@/lib/email/helpers';
@@ -18,11 +18,11 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const status = url.searchParams.get('status') || 'pending';
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const visibility = await getApprovalVisibilityForAgent(auth.agent.id, auth.agent.name);
 
-  let query = supabase
+  let query = db
     .from('pending_approvals')
     .select('*');
 
@@ -84,9 +84,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .insert({
       action: parsed.action,

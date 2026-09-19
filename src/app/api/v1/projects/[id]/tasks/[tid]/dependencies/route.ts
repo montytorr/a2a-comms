@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError, TaskDependencyType } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { isMissingDependencyTypeColumn } from '@/lib/task-dependency-schema';
@@ -11,8 +11,8 @@ async function verifyMembership(projectId: string, agentId: string) {
 }
 
 async function verifyTaskInProject(taskId: string, projectId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('tasks')
     .select('id')
     .eq('id', taskId)
@@ -47,14 +47,14 @@ export async function GET(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const [incomingRes, outgoingRes] = await Promise.all([
-    supabase
+    db
       .from('task_dependencies')
       .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
-    supabase
+    db
       .from('task_dependencies')
       .select('*, blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
@@ -165,7 +165,7 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const insertPayload = {
     blocking_task_id: blockingId,
@@ -173,7 +173,7 @@ export async function POST(
     dependency_type: dependencyType,
   };
 
-  let { data: dep, error } = await supabase
+  let { data: dep, error } = await db
     .from('task_dependencies')
     .insert(insertPayload)
     .select()
@@ -190,7 +190,7 @@ export async function POST(
       );
     }
 
-    const legacyInsert = await supabase
+    const legacyInsert = await db
       .from('task_dependencies')
       .insert({
         blocking_task_id: blockingId,
@@ -270,7 +270,7 @@ export async function DELETE(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify the task belongs to this project
   const taskInProject = await verifyTaskInProject(tid, id);
@@ -282,7 +282,7 @@ export async function DELETE(
   }
 
   // Verify the dependency exists and both tasks belong to this project
-  const { data: dep } = await supabase
+  const { data: dep } = await db
     .from('task_dependencies')
     .select('blocking_task_id, blocked_task_id')
     .eq('id', parsed.dependency_id)
@@ -306,7 +306,7 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('task_dependencies')
     .delete()
     .eq('id', parsed.dependency_id);

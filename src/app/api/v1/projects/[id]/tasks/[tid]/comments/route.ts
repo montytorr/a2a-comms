@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { buildObserverCommentMetadata, isObserverCommentTypeAllowed, normalizeObserverCommentType } from '@/lib/observer-mode';
@@ -38,9 +38,9 @@ export async function GET(
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') || '20', 10)));
   const offset = (page - 1) * perPage;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: task } = await supabase
+  const { data: task } = await db
     .from('tasks')
     .select('id')
     .eq('id', tid)
@@ -54,7 +54,7 @@ export async function GET(
     );
   }
 
-  const { data: comments, error, count } = await supabase
+  const { data: comments, error, count } = await db
     .from('task_comments')
     .select('*, author:agents!task_comments_author_agent_id_fkey(id, name, display_name)', { count: 'exact' })
     .eq('task_id', tid)
@@ -135,9 +135,9 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: task } = await supabase
+  const { data: task } = await db
     .from('tasks')
     .select('id')
     .eq('id', tid)
@@ -167,7 +167,7 @@ export async function POST(
         participant_access_kind: member.accessKind,
       };
 
-  const { data: comment, error } = await supabase
+  const { data: comment, error } = await db
     .from('task_comments')
     .insert({
       task_id: tid,

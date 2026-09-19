@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { ProjectInvitationStatus, ProjectStatus } from '@/lib/types';
@@ -33,7 +33,7 @@ export default async function ProjectsPage({
   const params = await searchParams;
   const statusFilter = (params.status || 'all') as ProjectStatus | 'all';
   const inboxFilter = params.inbox || 'all';
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   const agentScope = auth.agentScope;
@@ -42,15 +42,15 @@ export default async function ProjectsPage({
   let projectAccessById: Record<string, ReturnType<typeof buildProjectCardAccessMap>[string]> = {};
   if (!user.isSuperAdmin) {
     const [{ data: memberRows }, { data: observerRows }, { data: inviteRowsRaw }] = await Promise.all([
-      supabase
+      db
         .from('project_members')
         .select('project_id, role')
         .in('agent_id', agentScope),
-      supabase
+      db
         .from('project_observers')
         .select('project_id')
         .in('agent_id', agentScope),
-      supabase
+      db
         .from('project_member_invitations')
         .select('*, project:projects(id, title), agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
         .in('agent_id', agentScope)
@@ -90,7 +90,7 @@ export default async function ProjectsPage({
 
     return renderProjectsPage({
       userIsSuperAdmin: user.isSuperAdmin,
-      supabase,
+      db,
       scopedProjectIds,
       projectAccessById,
       statusFilter,
@@ -104,7 +104,7 @@ export default async function ProjectsPage({
 
   return renderProjectsPage({
     userIsSuperAdmin: user.isSuperAdmin,
-    supabase,
+    db,
     scopedProjectIds,
     statusFilter,
     inboxFilter,
@@ -117,7 +117,7 @@ export default async function ProjectsPage({
 }
 
 async function renderProjectsPage({
-  supabase,
+  db,
   scopedProjectIds,
   statusFilter,
   inboxFilter,
@@ -128,7 +128,7 @@ async function renderProjectsPage({
   auth,
 }: {
   userIsSuperAdmin: boolean;
-  supabase: ReturnType<typeof createServerClient>;
+  db: ReturnType<typeof createServerClient>;
   scopedProjectIds: string[] | null;
   statusFilter: ProjectStatus | 'all';
   inboxFilter: string;
@@ -138,7 +138,7 @@ async function renderProjectsPage({
   user: { id: string; displayName: string; isSuperAdmin: boolean; trustTier?: string; trustPolicy?: unknown };
   auth?: { trustTier: 'internal' | 'partner' | 'external'; trustPolicy: unknown };
 }) {
-  let query = supabase.from('projects').select('*');
+  let query = db.from('projects').select('*');
 
   if (scopedProjectIds !== null) {
     if (scopedProjectIds.length > 0) {
@@ -179,11 +179,11 @@ async function renderProjectsPage({
 
   if (projectIds.length > 0) {
     const [membersRes, observersRes, tasksRes, sprintsRes, invitationRes] = await Promise.all([
-      supabase.from('project_members').select('project_id').in('project_id', projectIds),
-      supabase.from('project_observers').select('project_id').in('project_id', projectIds),
-      supabase.from('tasks').select('project_id, status').in('project_id', projectIds),
-      supabase.from('sprints').select('project_id, title, status').in('project_id', projectIds).eq('status', 'active'),
-      supabase
+      db.from('project_members').select('project_id').in('project_id', projectIds),
+      db.from('project_observers').select('project_id').in('project_id', projectIds),
+      db.from('tasks').select('project_id, status').in('project_id', projectIds),
+      db.from('sprints').select('project_id, title, status').in('project_id', projectIds).eq('status', 'active'),
+      db
         .from('project_member_invitations')
         .select('project_id, status, agent_id, invited_by_agent_id, created_at')
         .in('project_id', projectIds),

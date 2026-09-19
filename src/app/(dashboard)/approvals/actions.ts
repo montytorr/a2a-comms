@@ -9,9 +9,9 @@ export async function handleApprove(approvalId: string) {
   if (!user) throw new Error('Not authenticated');
   if (!user.isSuperAdmin) throw new Error('Admin access required');
 
-  const { createServerClient } = await import('@/lib/supabase/server');
-  const supabase = createServerClient();
-  const { data: approval } = await supabase
+  const { createServerClient } = await import('@/lib/db/server');
+  const db = createServerClient();
+  const { data: approval } = await db
     .from('pending_approvals')
     .select('actor, details')
     .eq('id', approvalId)

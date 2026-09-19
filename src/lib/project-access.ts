@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 export type ProjectAccessRole = 'owner' | 'member' | 'observer';
 export type ProjectAccessKind = 'membership' | 'observer';
@@ -12,9 +12,9 @@ export interface ProjectAccessRecord {
 }
 
 export async function getProjectAccess(projectId: string, agentId: string): Promise<ProjectAccessRecord | null> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: member } = await supabase
+  const { data: member } = await db
     .from('project_members')
     .select('project_id, agent_id, role')
     .eq('project_id', projectId)
@@ -31,7 +31,7 @@ export async function getProjectAccess(projectId: string, agentId: string): Prom
     };
   }
 
-  const { data: observer } = await supabase
+  const { data: observer } = await db
     .from('project_observers')
     .select('project_id, agent_id')
     .eq('project_id', projectId)
@@ -50,8 +50,8 @@ export async function getProjectAccess(projectId: string, agentId: string): Prom
 }
 
 export async function listProjectObserverAgentIds(projectId: string): Promise<string[]> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('project_observers')
     .select('agent_id')
     .eq('project_id', projectId);
@@ -60,8 +60,8 @@ export async function listProjectObserverAgentIds(projectId: string): Promise<st
 }
 
 export async function listObservedProjectIds(agentId: string): Promise<string[]> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('project_observers')
     .select('project_id')
     .eq('agent_id', agentId);

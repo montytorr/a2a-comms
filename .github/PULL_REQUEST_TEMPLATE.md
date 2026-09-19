@@ -48,7 +48,7 @@ It **warns** by default; `A2A_STRICT_DOCS=1` makes it block. Please satisfy it
 rather than pushing past it.
 
 - [ ] Hook installed (`npm run hooks:install`) and it passed
-- [ ] Code changed (`src/app/api/`, `src/lib/`, `supabase/migrations/`) → at
+- [ ] Code changed (`src/app/api/`, `src/lib/`, `migrations/`) → at
       least one doc moved with it (`README.md`, `AGENTS.md`, `ONBOARDING-*.md`,
       `docs/`, or the matching dashboard page)
 - [ ] `skill/scripts/a2a` changed → `skill/SKILL.md` updated, including the

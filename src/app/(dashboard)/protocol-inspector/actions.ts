@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 
 async function canOperateWebhook(
@@ -9,22 +9,22 @@ async function canOperateWebhook(
   agentScope: string[],
   isSuperAdmin: boolean,
 ) {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhook, error } = await supabase
+  const { data: webhook, error } = await db
     .from('webhooks')
     .select('id, agent_id, url, is_active')
     .eq('id', webhookId)
     .maybeSingle();
 
   if (error || !webhook) return { ok: false, error: 'Webhook not found' } as const;
-  if (isSuperAdmin) return { ok: true, webhook, supabase } as const;
+  if (isSuperAdmin) return { ok: true, webhook, db } as const;
 
   if (!agentScope.includes(webhook.agent_id)) {
     return { ok: false, error: 'You can only operate webhooks for the active dashboard agent scope' } as const;
   }
 
-  return { ok: true, webhook, supabase } as const;
+  return { ok: true, webhook, db } as const;
 }
 
 export async function requeueWebhookDelivery(input: {
@@ -40,9 +40,9 @@ export async function requeueWebhookDelivery(input: {
   const authz = await canOperateWebhook(input.webhookId, auth.agentScope, user.isSuperAdmin);
   if (!authz.ok) throw new Error(authz.error);
 
-  const { supabase, webhook } = authz;
+  const { db, webhook } = authz;
 
-  const { data: delivery, error: deliveryError } = await supabase
+  const { data: delivery, error: deliveryError } = await db
     .from('webhook_deliveries')
     .select('id, webhook_id, status, attempts, max_retries, payload, last_retry_at, response_status, event')
     .eq('id', input.deliveryId)
@@ -77,7 +77,7 @@ export async function requeueWebhookDelivery(input: {
   }
 
   const now = new Date().toISOString();
-  const { data: updatedRows, error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await db
     .from('webhook_deliveries')
     .update({
       status: 'pending_retry',
@@ -94,7 +94,7 @@ export async function requeueWebhookDelivery(input: {
     throw new Error('Delivery state changed since inspection — refresh and try again');
   }
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.email || user.displayName,
     action: 'webhook.delivery.requeue',
     resource_type: 'webhook',

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateHmac } from './hmac';
 import { checkRateLimit, RATE_LIMITS } from './rate-limit';
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import type { Agent, ApiError, AuthContext } from './types';
 
 /**
@@ -68,8 +68,8 @@ export async function authenticateRequest(
     };
   }
 
-  const supabase = createServerClient();
-  const { data: agent } = await supabase
+  const db = createServerClient();
+  const { data: agent } = await db
     .from('agents')
     .select('*')
     .eq('id', hmacResult.agentId)
@@ -96,8 +96,8 @@ export async function authenticateRequest(
  * Check if kill switch is active.
  */
 export async function isSystemFrozen(): Promise<boolean> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('system_config')
     .select('value')
     .eq('key', 'kill_switch')
@@ -117,8 +117,8 @@ export async function auditLog(params: {
   details?: Record<string, unknown>;
   ipAddress?: string;
 }) {
-  const supabase = createServerClient();
-  await supabase.from('audit_log').insert({
+  const db = createServerClient();
+  await db.from('audit_log').insert({
     actor: params.actor,
     action: params.action,
     resource_type: params.resourceType || null,

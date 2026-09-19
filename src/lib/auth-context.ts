@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { sessionUser } from '@/lib/auth/session';
 import { normalizeAgentTrustPolicy, type AgentTrustPolicyConfig } from '@/lib/agent-trust-policy';
 import { normalizeAgentTrustTier, type AgentTrustTier } from '@/lib/trust-tiers';

@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createBrowserClient } from '@/lib/auth/browser';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -19,8 +19,8 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const supabase = createBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const db = createBrowserClient();
+      const { error: authError } = await db.auth.signInWithPassword({
         email: email.trim(),
         password,
       });

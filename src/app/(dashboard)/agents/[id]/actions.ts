@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { randomBytes, createHash } from 'crypto';
 import { requestApproval, consumeApproval } from '@/lib/approvals';
@@ -22,10 +22,10 @@ export async function requestKeyRotation(agentId: string): Promise<RotateKeyResu
   const user = await getAuthUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify agent exists
-  const { data: agent, error: agentError } = await supabase
+  const { data: agent, error: agentError } = await db
     .from('agents')
     .select('id, name, display_name, owner_user_id')
     .eq('id', agentId)
@@ -75,10 +75,10 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
     return { success: false, error: 'Approval is not for key rotation' };
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify agent exists
-  const { data: agent, error: agentError } = await supabase
+  const { data: agent, error: agentError } = await db
     .from('agents')
     .select('id, name, display_name, owner_user_id')
     .eq('id', agentId)
@@ -94,7 +94,7 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
   }
 
   // Find current active key
-  const { data: currentKeys } = await supabase
+  const { data: currentKeys } = await db
     .from('service_keys')
     .select('id, key_id')
     .eq('agent_id', agentId)
@@ -104,7 +104,7 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
   if (currentKeys && currentKeys.length > 0) {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     for (const key of currentKeys) {
-      await supabase
+      await db
         .from('service_keys')
         .update({
           expires_at: expiresAt,
@@ -119,7 +119,7 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
   const signingSecret = randomBytes(32).toString('hex');
   const keyHash = createHash('sha256').update(signingSecret).digest('hex');
 
-  const { error: keyError } = await supabase.from('service_keys').insert({
+  const { error: keyError } = await db.from('service_keys').insert({
     key_id: keyId,
     key_hash: keyHash,
     signing_secret: signingSecret,
@@ -133,7 +133,7 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.id,
     action: 'key.rotate',
     resource_type: 'agent',

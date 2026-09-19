@@ -5,7 +5,7 @@
  * a consistent shape and can be filtered in the dashboard.
  */
 
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 
 // ── Event types ──
 
@@ -78,9 +78,9 @@ export interface SecurityEventParams {
  */
 export async function logSecurityEvent(params: SecurityEventParams): Promise<void> {
   const severity = getSeverity(params.event);
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { error } = await supabase.from('audit_log').insert({
+  const { error } = await db.from('audit_log').insert({
     actor: params.actor,
     action: params.event,
     resource_type: params.resourceType || null,

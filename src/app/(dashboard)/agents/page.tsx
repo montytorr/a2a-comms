@@ -2,7 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Filter, Plus, AlertTriangle, Bot } from 'lucide-react';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { Avatar, KV, SectionHeader, PageFrame, EmptyState } from '@/components/atoms';
 import { TRUST_TIER_LABELS, normalizeAgentTrustTier } from '@/lib/trust-tiers';
@@ -36,10 +36,10 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
 
   const params = await searchParams;
   const activeTier = params?.tier || 'all';
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
-  let query = supabase
+  let query = db
     .from('agents')
     .select('id, name, display_name, description, owner, capabilities, protocols, trust_tier, created_at, max_concurrent_contracts')
     .order('name');

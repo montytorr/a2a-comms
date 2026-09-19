@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import UsersClient from './users-client';
 export const dynamic = 'force-dynamic';
@@ -11,17 +11,17 @@ export default async function UsersPage() {
   if (!user || !auth) redirect('/login');
   if (!user.isSuperAdmin) redirect('/?error=admin_required');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   // Fetch all profiles
-  const { data: profiles } = await supabase
+  const { data: profiles } = await db
     .from('user_profiles')
     .select('*')
     .order('created_at', { ascending: true });
 
   // Fetch all agents with owner_user_id
-  const { data: agents } = await supabase
+  const { data: agents } = await db
     .from('agents')
     .select('id, name, display_name, owner, owner_user_id, capabilities')
     .order('name', { ascending: true });
@@ -33,7 +33,7 @@ export default async function UsersPage() {
   // Get emails for each profile
   const profilesWithEmail = await Promise.all(
     profileList.map(async (profile) => {
-      const { data: authData } = await supabase.auth.admin.getUserById(profile.id);
+      const { data: authData } = await db.auth.admin.getUserById(profile.id);
       return {
         ...profile,
         email: authData?.user?.email || 'unknown',

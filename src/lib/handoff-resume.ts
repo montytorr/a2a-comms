@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import {
   appendTaskCheckpoint,
   createTaskExecutionRun,
@@ -33,8 +33,8 @@ export interface ClaimHandoffResult {
 }
 
 export async function getLinkedTaskForContract(contractId: string): Promise<HandoffTaskContext | null> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('task_contracts')
     .select(
       'task:tasks!task_contracts_task_id_fkey(id, project_id, title, status, assignee_agent_id, active_run_id, execution_status, last_checkpoint_summary, last_checkpoint_payload)',
@@ -68,7 +68,7 @@ export async function claimAcceptedHandoff(params: {
   const task = await getLinkedTaskForContract(params.contract.id);
   if (!task) return null;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const actorLabel = params.acceptedByAgentDisplayName || params.acceptedByAgentName;
   const latestCheckpoint = task.activeRunId
     ? await getLatestTaskCheckpoint(task.taskId, task.activeRunId).catch(() => null)
@@ -147,7 +147,7 @@ export async function claimAcceptedHandoff(params: {
     attachmentIds: latestCheckpoint?.attachment_ids ?? [],
   });
 
-  await supabase
+  await db
     .from('tasks')
     .update({
       assignee_agent_id: params.acceptedByAgentId,
@@ -156,7 +156,7 @@ export async function claimAcceptedHandoff(params: {
     .eq('id', task.taskId)
     .eq('project_id', task.projectId);
 
-  await supabase.from('task_comments').insert([
+  await db.from('task_comments').insert([
     {
       task_id: task.taskId,
       project_id: task.projectId,

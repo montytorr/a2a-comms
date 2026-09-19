@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getReservedNames } from '@/lib/admin';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { buildDefaultAgentTrustPolicyForTier, normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
@@ -113,10 +113,10 @@ export function buildAgentUpdateFields(input: AgentLifecycleUpdateInput): Record
 }
 
 export async function createAgentWithServiceKey(input: AgentLifecycleCreateInput) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const agentPayload = normalizeCreatePayload(input);
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('agents')
     .select('id')
     .eq('name', agentPayload.name)
@@ -126,7 +126,7 @@ export async function createAgentWithServiceKey(input: AgentLifecycleCreateInput
     throw new AgentLifecycleError(`Agent with name "${agentPayload.name}" already exists`, 'DUPLICATE', 409);
   }
 
-  const { data: agent, error: agentError } = await supabase
+  const { data: agent, error: agentError } = await db
     .from('agents')
     .insert(agentPayload)
     .select('*')
@@ -140,18 +140,18 @@ export async function createAgentWithServiceKey(input: AgentLifecycleCreateInput
   const signingSecret = input.service_key?.signing_secret || crypto.randomBytes(32).toString('hex');
   const keyHash = crypto.createHash('sha256').update(signingSecret).digest('hex');
 
-  const { data: existingKey } = await supabase
+  const { data: existingKey } = await db
     .from('service_keys')
     .select('id')
     .eq('key_id', keyId)
     .maybeSingle();
 
   if (existingKey) {
-    await supabase.from('agents').delete().eq('id', agent.id);
+    await db.from('agents').delete().eq('id', agent.id);
     throw new AgentLifecycleError(`Service key "${keyId}" already exists`, 'DUPLICATE_KEY', 409);
   }
 
-  const { data: key, error: keyError } = await supabase
+  const { data: key, error: keyError } = await db
     .from('service_keys')
     .insert({
       key_id: keyId,
@@ -166,7 +166,7 @@ export async function createAgentWithServiceKey(input: AgentLifecycleCreateInput
     .single();
 
   if (keyError || !key) {
-    await supabase.from('agents').delete().eq('id', agent.id);
+    await db.from('agents').delete().eq('id', agent.id);
     throw new AgentLifecycleError(keyError?.message || 'Failed to create service key', 'DB_ERROR', 500);
   }
 
@@ -183,8 +183,8 @@ export async function createAgentWithServiceKey(input: AgentLifecycleCreateInput
 }
 
 export async function updateAgentLifecycle(agentId: string, input: AgentLifecycleUpdateInput) {
-  const supabase = createServerClient();
-  const { data: agent, error: agentError } = await supabase
+  const db = createServerClient();
+  const { data: agent, error: agentError } = await db
     .from('agents')
     .select('*')
     .eq('id', agentId)
@@ -211,7 +211,7 @@ export async function updateAgentLifecycle(agentId: string, input: AgentLifecycl
 
   updates.updated_at = new Date().toISOString();
 
-  const { data: updated, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await db
     .from('agents')
     .update(updates)
     .eq('id', agentId)
@@ -223,7 +223,7 @@ export async function updateAgentLifecycle(agentId: string, input: AgentLifecycl
   }
 
   if (isDeactivating) {
-    const { error: deactivateKeysError } = await supabase
+    const { error: deactivateKeysError } = await db
       .from('service_keys')
       .update({
         is_active: false,
@@ -237,7 +237,7 @@ export async function updateAgentLifecycle(agentId: string, input: AgentLifecycl
       throw new AgentLifecycleError(deactivateKeysError.message, 'DB_ERROR', 500);
     }
 
-    await supabase.from('webhooks').delete().eq('agent_id', agentId);
+    await db.from('webhooks').delete().eq('agent_id', agentId);
   }
 
   return updated;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { validateQuestionRequest } from '@/lib/contract-operator-channel';
 import {
@@ -62,7 +62,7 @@ export async function POST(
 
   const { auth, body } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   let parsed: unknown;
   try {
@@ -80,7 +80,7 @@ export async function POST(
   const refusal = await checkChannelWriteAccess(id, auth.agent.id);
   if (refusal) return NextResponse.json(refusal.body, { status: refusal.status });
 
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('status, title')
     .eq('id', id)
@@ -117,7 +117,7 @@ export async function POST(
   // The peers are told so they can see why nothing is moving. It is explicitly
   // not action-required: the answer is owed by a person, not by them, and a
   // reactor that woke an agent for this would wake it to do nothing.
-  const { data: participantRows } = await supabase
+  const { data: participantRows } = await db
     .from('contract_participants')
     .select('agent_id')
     .eq('contract_id', id);

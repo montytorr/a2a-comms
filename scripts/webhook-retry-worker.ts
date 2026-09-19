@@ -54,7 +54,7 @@ if (!process.env.DATABASE_URL) {
   console.error(`[${ts()}] Missing DATABASE_URL`);
   process.exit(1);
 }
-const supabase = admin();
+const db = admin();
 
 let stopping = false;
 let timer: NodeJS.Timeout | null = null;
@@ -89,7 +89,7 @@ function resolveWebhook(d: PendingDelivery): WebhookRecord | null {
 // --- Core ---
 
 async function fetchPending(): Promise<PendingDelivery[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('webhook_deliveries')
     .select(`
       id, webhook_id, event, status, attempts,
@@ -109,7 +109,7 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
 
   if (!webhook) {
     log('Skipping — missing webhook record', { id: delivery.id });
-    await markDeliveryFailed(supabase, delivery.id, 0);
+    await markDeliveryFailed(db, delivery.id, 0);
     return;
   }
 
@@ -120,8 +120,8 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
 
   if (!url || !timestamp || !p?.event) {
     log('Skipping — incomplete payload', { id: delivery.id });
-    await markDeliveryFailed(supabase, delivery.id, 0);
-    await incrementFailure(supabase, webhook);
+    await markDeliveryFailed(db, delivery.id, 0);
+    await incrementFailure(db, webhook);
     return;
   }
 
@@ -138,7 +138,7 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
 
   // CAS guard: atomically claim this delivery for retry.
   // Only succeeds if status is still 'pending_retry' and attempts haven't changed.
-  const { data: claimed, error: claimError } = await supabase
+  const { data: claimed, error: claimError } = await db
     .from('webhook_deliveries')
     .update({
       status: 'retrying',
@@ -168,22 +168,22 @@ async function processDelivery(delivery: PendingDelivery): Promise<void> {
   });
 
   if (result.ok) {
-    await markDeliverySuccess(supabase, delivery.id, result.responseStatus);
-    await resetWebhookFailureState(supabase, delivery.webhook_id);
+    await markDeliverySuccess(db, delivery.id, result.responseStatus);
+    await resetWebhookFailureState(db, delivery.webhook_id);
     log('✓ Delivered', { id: delivery.id, attempt: nextAttempt, status: result.responseStatus });
     return;
   }
 
   // Terminal failure?
   if (nextAttempt >= delivery.max_retries) {
-    await markDeliveryFailed(supabase, delivery.id, result.responseStatus);
-    await incrementFailure(supabase, webhook);
+    await markDeliveryFailed(db, delivery.id, result.responseStatus);
+    await incrementFailure(db, webhook);
     log('✗ Permanently failed', { id: delivery.id, attempt: nextAttempt, reason: result.reason });
     return;
   }
 
   // Will retry again next cycle
-  await supabase.from('webhook_deliveries').update({
+  await db.from('webhook_deliveries').update({
     status: 'pending_retry',
     response_status: result.responseStatus || null,
     last_retry_at: now,

@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { auditLog } from '@/lib/api-helpers';
 import { evaluateContractCollaboration, type TrustPolicyAgent } from '@/lib/trust-tiers';
 import { enrichContract } from '@/app/api/v1/contracts/_helpers';
@@ -63,10 +63,10 @@ export async function createContractProposal(params: {
   const expiresInHours = parsed.expires_in_hours ?? 168;
   const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const requestedAgentNames = Array.from(new Set([...normalizedInvitees, ...normalizedObservers]));
 
-  const { data: requestedAgents, error: requestedAgentsError } = await supabase
+  const { data: requestedAgents, error: requestedAgentsError } = await db
     .from('agents')
     .select('id, name, display_name, max_concurrent_contracts, owner_user_id, trust_tier')
     .in('name', requestedAgentNames);
@@ -114,12 +114,12 @@ export async function createContractProposal(params: {
     });
   }
 
-  const { data: actorParticipantRows } = await supabase
+  const { data: actorParticipantRows } = await db
     .from('contract_participants')
     .select('contract_id')
     .eq('agent_id', actor.id);
 
-  const { data: actorActiveContracts } = await supabase
+  const { data: actorActiveContracts } = await db
     .from('contracts')
     .select('id')
     .in('status', ['active', 'proposed'])
@@ -135,12 +135,12 @@ export async function createContractProposal(params: {
 
   for (const invitee of inviteeAgents) {
     if (!invitee.max_concurrent_contracts) continue;
-    const { data: inviteeParticipantRows } = await supabase
+    const { data: inviteeParticipantRows } = await db
       .from('contract_participants')
       .select('contract_id')
       .eq('agent_id', invitee.id);
 
-    const { data: inviteeContracts } = await supabase
+    const { data: inviteeContracts } = await db
       .from('contracts')
       .select('id')
       .in('status', ['active', 'proposed'])
@@ -154,7 +154,7 @@ export async function createContractProposal(params: {
     }
   }
 
-  const { data: contract, error: contractErr } = await supabase
+  const { data: contract, error: contractErr } = await db
     .from('contracts')
     .insert({
       title: parsed.title,
@@ -179,12 +179,12 @@ export async function createContractProposal(params: {
 
   // Re-check max-concurrent after insert (CAS guard against race conditions).
   // Another proposal may have been inserted between the count check and our insert.
-  const { data: postInsertParticipantRows } = await supabase
+  const { data: postInsertParticipantRows } = await db
     .from('contract_participants')
     .select('contract_id')
     .eq('agent_id', actor.id);
 
-  const { data: postInsertActiveContracts } = await supabase
+  const { data: postInsertActiveContracts } = await db
     .from('contracts')
     .select('id')
     .in('status', ['active', 'proposed'])
@@ -192,7 +192,7 @@ export async function createContractProposal(params: {
 
   const postInsertCount = postInsertActiveContracts?.length || 0;
   if (actor.max_concurrent_contracts && postInsertCount > actor.max_concurrent_contracts) {
-    await supabase.from('contracts').delete().eq('id', contract.id);
+    await db.from('contracts').delete().eq('id', contract.id);
     throw new ContractProposalError(409, {
       error: `Proposer ${actor.name} has reached max concurrent active contracts (${actor.max_concurrent_contracts})`,
       code: 'MAX_CONTRACTS_REACHED',
@@ -223,9 +223,9 @@ export async function createContractProposal(params: {
     })),
   ];
 
-  const { error: partInsertErr } = await supabase.from('contract_participants').insert(participants);
+  const { error: partInsertErr } = await db.from('contract_participants').insert(participants);
   if (partInsertErr) {
-    await supabase.from('contracts').delete().eq('id', contract.id);
+    await db.from('contracts').delete().eq('id', contract.id);
     throw new ContractProposalError(500, {
       error: 'Failed to create participants',
       code: 'DB_ERROR',
@@ -251,8 +251,8 @@ export async function createContractProposal(params: {
   try {
     enriched = await enrichContract(contract, { viewerAgentId: actor.id });
   } catch (enrichErr) {
-    await supabase.from('contract_participants').delete().eq('contract_id', contract.id);
-    await supabase.from('contracts').delete().eq('id', contract.id);
+    await db.from('contract_participants').delete().eq('contract_id', contract.id);
+    await db.from('contracts').delete().eq('id', contract.id);
     throw new ContractProposalError(500, {
       error: 'Failed to enrich contract after creation',
       code: 'DB_ERROR',

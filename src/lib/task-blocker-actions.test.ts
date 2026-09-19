@@ -67,7 +67,7 @@ test('stale blocker webhook payload carries explicit escalation reason for bespo
 test('refreshTaskBlockedState only treats blocks dependencies as hard blockers', async () => {
   const calls: Array<{ op: string; args?: unknown[] }> = [];
   const taskUpdates: Array<Record<string, unknown>> = [];
-  const supabase = {
+  const db = {
     from(table: string) {
       if (table === 'task_dependencies') {
         return {
@@ -112,7 +112,7 @@ test('refreshTaskBlockedState only treats blocks dependencies as hard blockers',
     },
   } as unknown as Parameters<typeof refreshTaskBlockedState>[0];
 
-  await refreshTaskBlockedState(supabase, 'task-123');
+  await refreshTaskBlockedState(db, 'task-123');
 
   assert.deepEqual(calls.slice(0, 3), [
     { op: 'select', args: ['dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(status)'] },

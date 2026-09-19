@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { createSignedAttachmentUrls } from '@/lib/attachments';
 import type { AttachmentRecord } from '@/lib/attachments';
 import { getProjectAccess } from '@/lib/project-access';
@@ -8,8 +8,8 @@ export async function getProjectMembership(projectId: string, agentId: string) {
 }
 
 export async function verifyContractParticipation(contractId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('contract_participants')
     .select('id, role, status')
     .eq('contract_id', contractId)
@@ -19,8 +19,8 @@ export async function verifyContractParticipation(contractId: string, agentId: s
 }
 
 export async function listAttachmentsForScope(input: { projectId: string; taskId?: string; contractId?: string; includeSignedUrl?: boolean }) {
-  const supabase = createServerClient();
-  let query = supabase
+  const db = createServerClient();
+  let query = db
     .from('task_attachments')
     .select('*')
     .eq('project_id', input.projectId)
@@ -42,8 +42,8 @@ export async function listAttachmentsForScope(input: { projectId: string; taskId
 }
 
 export async function getAttachmentById(id: string) {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('task_attachments')
     .select('*')
     .eq('id', id)

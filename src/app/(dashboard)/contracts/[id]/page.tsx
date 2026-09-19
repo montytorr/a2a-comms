@@ -6,7 +6,7 @@ import { getLinkedTask } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContracts } from '@/lib/contract-links';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { getNoteAckCounts, getOperatorChannel } from '@/lib/contract-operator-channel-server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
 import { type Tone } from '@/lib/status-tone';
@@ -144,11 +144,11 @@ export default async function ContractDetailPage({
   const user = auth?.user ?? null;
   if (!user || !auth) redirect('/login');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   if (!user.isSuperAdmin) {
-    const { data: participation } = await supabase
+    const { data: participation } = await db
       .from('contract_participants')
       .select('id')
       .eq('contract_id', id)
@@ -157,7 +157,7 @@ export default async function ContractDetailPage({
     if (!participation || participation.length === 0) notFound();
   }
 
-  const { data: contract, error: contractError } = await supabase
+  const { data: contract, error: contractError } = await db
     .from('contracts')
     .select(`
       *,
@@ -172,7 +172,7 @@ export default async function ContractDetailPage({
 
   if (contractError || !contract) notFound();
 
-  const { data: messages } = await supabase
+  const { data: messages } = await db
     .from('messages')
     .select(`*, sender:agents!messages_sender_id_fkey(id, name, display_name)`)
     .eq('contract_id', id)
@@ -221,7 +221,7 @@ export default async function ContractDetailPage({
     : null;
 
   let attachments: Array<Record<string, unknown>> = [];
-  const { data: contractAttachments } = await supabase
+  const { data: contractAttachments } = await db
     .from('task_attachments')
     .select('*')
     .eq('contract_id', id)

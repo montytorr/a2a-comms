@@ -85,7 +85,7 @@ test('the close route refuses to complete a contract whose approval gate is open
 });
 
 test('the migration keeps non-turn messages free and holds a gated contract open at the cap', () => {
-  const migration = read('supabase/migrations/20260917150000_non_turn_messages_and_completion_approval.sql');
+  const migration = read('migrations/20260917150000_non_turn_messages_and_completion_approval.sql');
 
   assert.match(migration, /v_consumes_turn := p_message_type NOT IN \('receipt', 'approval'\)/);
   // the cap blocks moves only
@@ -139,7 +139,7 @@ test('the route rejects a control message with no target', () => {
 });
 
 test('turn accounting is persisted on the row, not only announced', () => {
-  const migration = read('supabase/migrations/20260917160000_persist_turn_accounting.sql');
+  const migration = read('migrations/20260917160000_persist_turn_accounting.sql');
 
   // columns, backfill and index
   assert.match(migration, /ADD COLUMN IF NOT EXISTS requires_action BOOLEAN/);
@@ -186,7 +186,7 @@ test('a checkpoint append allocates and consumes its sequence in one statement',
   // under a CAS. A missed CAS threw with the row already written, so the run
   // held a checkpoint it could not count and the next append collided on
   // UNIQUE(run_id, sequence) — permanently.
-  const migration = read('supabase/migrations/20260917200000_atomic_checkpoint_append.sql');
+  const migration = read('migrations/20260917200000_atomic_checkpoint_append.sql');
   assert.match(migration, /FROM task_execution_runs\s+WHERE id = p_run_id\s+FOR UPDATE/);
   assert.match(migration, /v_next_sequence := COALESCE\(v_run\.checkpoint_count, 0\) \+ 1/);
   // an absent summary must not overwrite the run's
@@ -199,7 +199,7 @@ test('a checkpoint append allocates and consumes its sequence in one statement',
 });
 
 test('a run that stops heartbeating is cancelled and releases its task', () => {
-  const migration = read('supabase/migrations/20260917210000_reap_stale_execution_runs.sql');
+  const migration = read('migrations/20260917210000_reap_stale_execution_runs.sql');
   // cancelled, not failed — silence is not evidence the work failed
   assert.match(migration, /SET status = 'cancelled'/);
   assert.doesNotMatch(migration, /SET status = 'failed'/);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type {
   CreateProjectRequest,
   PaginatedResponse,
@@ -22,10 +22,10 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') || '20', 10)));
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const [memberRes, observedProjectIds] = await Promise.all([
-    supabase
+    db
       .from('project_members')
       .select('project_id')
       .eq('agent_id', auth.agent.id),
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     } satisfies PaginatedResponse<Project>);
   }
 
-  let query = supabase
+  let query = db
     .from('projects')
     .select('*', { count: 'exact' })
     .in('id', projectIds);
@@ -106,10 +106,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Create project
-  const { data: project, error: createErr } = await supabase
+  const { data: project, error: createErr } = await db
     .from('projects')
     .insert({
       title: parsed.title,
@@ -141,13 +141,13 @@ export async function POST(req: NextRequest) {
 
   const inviteeIds = (parsed.members || []).filter((agentId) => agentId !== auth.agent.id);
 
-  const { error: memErr } = await supabase
+  const { error: memErr } = await db
     .from('project_members')
     .insert(members);
 
   if (memErr) {
     // Cleanup
-    await supabase.from('projects').delete().eq('id', project.id);
+    await db.from('projects').delete().eq('id', project.id);
     return NextResponse.json(
       { error: 'Failed to add project members', code: 'DB_ERROR' } satisfies ApiError,
       { status: 500 }
@@ -155,21 +155,21 @@ export async function POST(req: NextRequest) {
   }
 
   if (inviteeIds.length > 0) {
-    const { data: inviteAgents, error: inviteError } = await supabase
+    const { data: inviteAgents, error: inviteError } = await db
       .from('agents')
       .select('id, name, display_name')
       .in('id', inviteeIds);
 
     if (inviteError || (inviteAgents || []).length !== inviteeIds.length) {
-      await supabase.from('project_members').delete().eq('project_id', project.id);
-      await supabase.from('projects').delete().eq('id', project.id);
+      await db.from('project_members').delete().eq('project_id', project.id);
+      await db.from('projects').delete().eq('id', project.id);
       return NextResponse.json(
         { error: 'Failed to resolve invited agents', code: 'VALIDATION_ERROR' } satisfies ApiError,
         { status: 400 }
       );
     }
 
-    const { error: invitationError } = await supabase
+    const { error: invitationError } = await db
       .from('project_member_invitations')
       .insert(inviteeIds.map((agentId) => ({
         project_id: project.id,
@@ -180,8 +180,8 @@ export async function POST(req: NextRequest) {
       })));
 
     if (invitationError) {
-      await supabase.from('project_members').delete().eq('project_id', project.id);
-      await supabase.from('projects').delete().eq('id', project.id);
+      await db.from('project_members').delete().eq('project_id', project.id);
+      await db.from('projects').delete().eq('id', project.id);
       return NextResponse.json(
         { error: 'Failed to create project invitations', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }

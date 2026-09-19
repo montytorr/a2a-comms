@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import type { AuthContext } from './types';
 
 const IDEMPOTENCY_HEADER = 'x-idempotency-key';
@@ -37,11 +37,11 @@ export async function checkIdempotency(
     };
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Atomic upsert: try to claim the key with a sentinel response.
   // If another request already claimed it, the upsert returns the existing row.
-  const { data: upserted, error: upsertError } = await supabase
+  const { data: upserted, error: upsertError } = await db
     .from('idempotency_keys')
     .upsert(
       {
@@ -60,7 +60,7 @@ export async function checkIdempotency(
 
   // If upsert returned no rows, the key already exists — fetch it
   const existing = upsertError
-    ? (await supabase
+    ? (await db
         .from('idempotency_keys')
         .select('status_code, response, expires_at')
         .eq('key', key)
@@ -71,7 +71,7 @@ export async function checkIdempotency(
 
   if (existing && existing.status_code !== 0) {
     if (new Date(existing.expires_at) < new Date()) {
-      await supabase
+      await db
         .from('idempotency_keys')
         .delete()
         .eq('key', key)
@@ -111,10 +111,10 @@ export async function storeIdempotencyResponse(
 ): Promise<void> {
   if (!key) return;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Use upsert to handle race conditions gracefully
-  await supabase.from('idempotency_keys').upsert(
+  await db.from('idempotency_keys').upsert(
     {
       key,
       endpoint,

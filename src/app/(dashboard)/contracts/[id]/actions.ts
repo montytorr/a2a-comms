@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { revalidatePath } from 'next/cache';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
@@ -11,9 +11,9 @@ export async function uploadContractAttachment(contractId: string, formData: For
   const user = auth?.user ?? null;
   if (!user || !auth) throw new Error('Unauthorized');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const agentScope = auth.agentScope.length > 0 ? auth.agentScope : [EMPTY_UUID];
-  const { data: participation } = await supabase
+  const { data: participation } = await db
     .from('contract_participants')
     .select('id, agent_id, role, status')
     .eq('contract_id', contractId)
@@ -27,7 +27,7 @@ export async function uploadContractAttachment(contractId: string, formData: For
     throw new Error('Forbidden: observers may inspect contract artifacts but cannot upload new ones');
   }
 
-  const { data: link } = await supabase
+  const { data: link } = await db
     .from('task_contracts')
     .select('task:tasks!task_contracts_task_id_fkey(project_id)')
     .eq('contract_id', contractId)
@@ -47,7 +47,7 @@ export async function uploadContractAttachment(contractId: string, formData: For
   await ensureAttachmentBucket();
   await uploadAttachmentBinary(storagePath, buffer, validated.mimeType);
 
-  const { error } = await supabase.from('task_attachments').insert({
+  const { error } = await db.from('task_attachments').insert({
     project_id: task.project_id,
     contract_id: contractId,
     uploader_agent_id: participation?.[0]?.agent_id || auth.actingAgentId || null,
@@ -63,7 +63,7 @@ export async function uploadContractAttachment(contractId: string, formData: For
   });
   if (error) throw new Error(`Failed to save attachment: ${error.message}`);
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.email || user.displayName,
     action: 'attachment.upload',
     resource_type: 'contract',
@@ -87,8 +87,8 @@ export async function closeContract(contractId: string) {
 
   // Check participation unless superAdmin
   if (!user.isSuperAdmin) {
-    const supabase = createServerClient();
-    const { data: participation } = await supabase
+    const db = createServerClient();
+    const { data: participation } = await db
       .from('contract_participants')
       .select('id, role, agent_id')
       .eq('contract_id', contractId)
@@ -104,9 +104,9 @@ export async function closeContract(contractId: string) {
     }
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: closePolicy } = await supabase
+  const { data: closePolicy } = await db
     .from('contracts')
     .select('completion_requires_approval, completion_approved_at')
     .eq('id', contractId)
@@ -117,7 +117,7 @@ export async function closeContract(contractId: string) {
 
   const actor = user.email || user.displayName;
 
-  const { error } = await supabase
+  const { error } = await db
     .from('contracts')
     .update({
       status: 'closed',
@@ -135,7 +135,7 @@ export async function closeContract(contractId: string) {
   }
 
   // Log the action
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor,
     action: 'contract.close',
     resource_type: 'contract',

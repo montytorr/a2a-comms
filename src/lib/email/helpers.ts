@@ -1,12 +1,12 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 /**
  * Look up a user's email from their auth user ID.
  * Uses the native application user store.
  */
 export async function getUserEmail(userId: string): Promise<string | null> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  const db = createServerClient();
+  const { data, error } = await db.auth.admin.getUserById(userId);
   if (error) {
     throw new Error(`Failed to look up user email for ${userId}: ${error.message}`);
   }
@@ -19,8 +19,8 @@ export async function getUserEmail(userId: string): Promise<string | null> {
  * Returns array of { email, userId } for notification targeting.
  */
 export async function getSuperAdminEmails(): Promise<Array<{ email: string; userId: string }>> {
-  const supabase = createServerClient();
-  const { data: admins, error } = await supabase
+  const db = createServerClient();
+  const { data: admins, error } = await db
     .from('user_profiles')
     .select('id')
     .eq('is_super_admin', true);
@@ -46,8 +46,8 @@ export async function getSuperAdminEmails(): Promise<Array<{ email: string; user
  * Returns { email, userId } or null if agent has no owner or owner has no email.
  */
 export async function getAgentOwnerEmail(agentName: string): Promise<{ email: string; userId: string } | null> {
-  const supabase = createServerClient();
-  const { data: agent, error } = await supabase
+  const db = createServerClient();
+  const { data: agent, error } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('name', agentName)

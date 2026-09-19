@@ -2,7 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
@@ -31,10 +31,10 @@ export default async function AgentDetailPage({
   const user = await getAuthUser();
   if (!user) redirect('/login');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
-  const { data: agent, error: agentError } = await supabase
+  const { data: agent, error: agentError } = await db
     .from('agents')
     .select('*')
     .eq('id', id)
@@ -49,7 +49,7 @@ export default async function AgentDetailPage({
     notFound();
   }
 
-  const { data: keys } = await supabase
+  const { data: keys } = await db
     .from('service_keys')
     .select('id, key_id, is_active, created_at, rotated_at, expires_at, label')
     .eq('agent_id', id)

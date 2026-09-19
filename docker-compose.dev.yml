@@ -2,7 +2,7 @@
 #
 #   docker compose -f docker-compose.dev.yml up -d --build
 #
-# Postgres, all 49 migrations, a seeded agent with a working key pair, the
+# Postgres, every migration, a seeded agent with a working key pair, the
 # Next.js app on http://localhost:3100, and the four sweep workers. No .env
 # needed — every value below has a working default. Copy .env.example to .env
 # when you want real email or your own secrets.
@@ -39,7 +39,7 @@ x-psql-tools: &psql-tools
   restart: "no"
   volumes:
     - ./scripts:/opt/scripts:ro
-    - ./supabase/migrations:/migrations:ro
+    - ./migrations:/migrations:ro
 
 services:
   # ------------------------------------------------------------- database ---

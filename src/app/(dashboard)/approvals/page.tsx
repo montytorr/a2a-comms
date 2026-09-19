@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import ApprovalList from './approval-list';
@@ -24,10 +24,10 @@ export default async function ApprovalsPage({
   const params = await searchParams;
   const filter = params.filter || 'pending';
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
-  let query = supabase
+  let query = db
     .from('pending_approvals')
     .select('*')
     .order('created_at', { ascending: false })
@@ -78,7 +78,7 @@ export default async function ApprovalsPage({
   }>;
 
   // Count pending for badge
-  let pendingCountQuery = supabase
+  let pendingCountQuery = db
     .from('pending_approvals')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending');

@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { appUrl } from '@/lib/app-url';
 import { getUserEmail } from '@/lib/email/helpers';
 import { sendEmailWithPrefs, sendStaleBlockerEmail } from '@/lib/email';
@@ -44,25 +44,25 @@ export function normalizeBlockerWorkflowInput(input: BlockerWorkflowInput) {
 }
 
 async function resolveBlockerActionContext(
-  supabase: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
   projectId: string,
   taskId: string,
 ) {
   const actionAt = new Date().toISOString();
 
   const [{ data: task }, { data: project }, { data: blockedBy }] = await Promise.all([
-    supabase
+    db
       .from('tasks')
       .select('id, title, project_id, assignee_agent_id, blocked_at, blocker_escalated_at')
       .eq('id', taskId)
       .eq('project_id', projectId)
       .single(),
-    supabase
+    db
       .from('projects')
       .select('title')
       .eq('id', projectId)
       .single(),
-    supabase
+    db
       .from('task_dependencies')
       .select('dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)')
       .eq('blocked_task_id', taskId)
@@ -75,20 +75,20 @@ async function resolveBlockerActionContext(
     .map((dep) => Array.isArray(dep.blocking_task) ? dep.blocking_task[0] ?? null : dep.blocking_task)
     .filter((blocker): blocker is { id: string; title: string; status: string } => !!blocker && blocker.status !== 'done' && blocker.status !== 'cancelled');
 
-  return { supabase, actionAt, task, project, activeBlockers };
+  return { db, actionAt, task, project, activeBlockers };
 }
 
 export async function runBlockerWorkflowAction(options: {
-  supabase?: ReturnType<typeof createServerClient>;
+  db?: ReturnType<typeof createServerClient>;
   projectId: string;
   taskId: string;
   type: BlockerWorkflowActionType;
   input: BlockerWorkflowInput;
   actor: BlockerWorkflowActor;
 }) {
-  const supabase = options.supabase ?? createServerClient();
+  const db = options.db ?? createServerClient();
   const workflow = normalizeBlockerWorkflowInput(options.input);
-  const { actionAt, task, project, activeBlockers } = await resolveBlockerActionContext(supabase, options.projectId, options.taskId);
+  const { actionAt, task, project, activeBlockers } = await resolveBlockerActionContext(db, options.projectId, options.taskId);
 
   const updates: Record<string, string> = {
     blocker_follow_up_at: actionAt,
@@ -104,7 +104,7 @@ export async function runBlockerWorkflowAction(options: {
     updates.blocker_escalated_at = actionAt;
   }
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from('tasks')
     .update(updates)
     .eq('id', options.taskId)
@@ -130,7 +130,7 @@ export async function runBlockerWorkflowAction(options: {
     participant_access_kind: options.actor.participantAccessKind ?? null,
   };
 
-  const { error: commentError } = await supabase.from('task_comments').insert({
+  const { error: commentError } = await db.from('task_comments').insert({
     task_id: options.taskId,
     project_id: options.projectId,
     author_agent_id: options.actor.agentId ?? null,
@@ -152,7 +152,7 @@ export async function runBlockerWorkflowAction(options: {
     metadata,
   }).catch(() => {});
 
-  await notifyBlockerAction(supabase, {
+  await notifyBlockerAction(db, {
     projectId: options.projectId,
     taskId: options.taskId,
     taskTitle: task.title,
@@ -186,10 +186,10 @@ export async function runBlockerWorkflowAction(options: {
 }
 
 export async function refreshTaskBlockedState(
-  supabase: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
   taskId: string
 ): Promise<void> {
-  const { data: deps } = await supabase
+  const { data: deps } = await db
     .from('task_dependencies')
     .select('dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(status)')
     .eq('blocked_task_id', taskId)
@@ -201,7 +201,7 @@ export async function refreshTaskBlockedState(
   });
 
   if (hasActiveBlockers) {
-    await supabase
+    await db
       .from('tasks')
       .update({ blocked_at: new Date().toISOString() })
       .eq('id', taskId)
@@ -209,7 +209,7 @@ export async function refreshTaskBlockedState(
     return;
   }
 
-  await supabase
+  await db
     .from('tasks')
     .update({
       blocked_at: null,
@@ -225,7 +225,7 @@ export async function refreshTaskBlockedState(
 }
 
 export async function notifyBlockerAction(
-  supabase: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
   options: {
     projectId: string;
     taskId: string;
@@ -290,7 +290,7 @@ export async function notifyBlockerAction(
 
   if (!options.assigneeAgentId) return;
 
-  const { data: assigneeAgent } = await supabase
+  const { data: assigneeAgent } = await db
     .from('agents')
     .select('owner_user_id, display_name, name')
     .eq('id', options.assigneeAgentId)

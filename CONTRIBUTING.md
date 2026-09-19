@@ -80,7 +80,7 @@ corepack pnpm dev             # Next dev server on :3000
 ### Apply migrations
 
 CI does **not** apply migrations, and neither does the deploy. `scripts/migrate.sh`
-applies `supabase/migrations/*.sql` in filename order against whatever
+applies `migrations/*.sql` in filename order against whatever
 `DATABASE_URL` points at, keeps a ledger so a second run is a no-op, and uses
 `ON_ERROR_STOP=1` per file:
 
@@ -313,12 +313,12 @@ Apply it by hand, against the database the app actually uses:
 DATABASE_URL=postgresql://user:pass@host:5432/a2a ./scripts/migrate.sh
 ```
 
-`scripts/migrate.sh` applies every file in `supabase/migrations/` in filename
+`scripts/migrate.sh` applies every file in `migrations/` in filename
 order with `ON_ERROR_STOP=1`, and records what it applied so a second run is a
 no-op. To apply a single file against a database you can reach directly:
 
 ```bash
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/<file>.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/<file>.sql
 ```
 
 Every migration file must be wrapped in `BEGIN`/`COMMIT` so `ON_ERROR_STOP=1`
@@ -447,7 +447,7 @@ requires. By default it **warns** — set `A2A_STRICT_DOCS=1` to **hard block**.
 
 What it checks:
 
-- Code changed (`src/app/api/`, `src/lib/`, `supabase/migrations/`) → at least
+- Code changed (`src/app/api/`, `src/lib/`, `migrations/`) → at least
   one doc file must be in the diff (README, AGENTS.md, ONBOARDING, dashboard
   pages, docs/)
 - `skill/scripts/a2a` changed → `skill/SKILL.md` must be in the diff

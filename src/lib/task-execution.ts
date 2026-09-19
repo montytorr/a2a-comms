@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 
 export const TASK_EXECUTION_STATUSES = [
@@ -134,8 +134,8 @@ export function deriveTaskExecutionSnapshot(input: {
 }
 
 export async function listTaskExecutionRuns(taskId: string) {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('task_execution_runs')
     .select('*')
     .eq('task_id', taskId)
@@ -176,9 +176,9 @@ async function selectTaskExecutionCheckpoints(
 }
 
 export async function listTaskExecutionCheckpoints(runId: string) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const { data, error } = await selectTaskExecutionCheckpoints(async (selectClause) =>
-    (await supabase
+    (await db
       .from('task_execution_checkpoints')
       .select(selectClause)
       .eq('run_id', runId)
@@ -199,7 +199,7 @@ export async function createTaskExecutionRun(input: {
   errorMessage?: string | null;
   metadata?: Record<string, unknown>;
 }) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
   // Matches the POST /runs route, which defaults to 'starting', and the
   // README. This defaulted to 'queued' — harmless in practice because the
@@ -210,7 +210,7 @@ export async function createTaskExecutionRun(input: {
   const completedAt = ['succeeded', 'failed', 'cancelled'].includes(status) ? now : null;
   const heartbeatAt = ['starting', 'running', 'pending-approval', 'waiting', 'blocked', 'paused', 'handoff-needed'].includes(status) ? now : null;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('task_execution_runs')
     .insert({
       task_id: input.taskId,
@@ -254,10 +254,10 @@ export async function updateTaskExecutionRun(input: {
   metadata?: Record<string, unknown>;
   heartbeat?: boolean;
 }) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
 
-  const { data: existing, error: existingError } = await supabase
+  const { data: existing, error: existingError } = await db
     .from('task_execution_runs')
     .select('*')
     .eq('id', input.runId)
@@ -283,7 +283,7 @@ export async function updateTaskExecutionRun(input: {
   if (input.metadata !== undefined) updates.metadata = input.metadata;
   if (input.heartbeat) updates.heartbeat_at = now;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('task_execution_runs')
     .update(updates)
     .eq('id', input.runId)
@@ -318,7 +318,7 @@ export async function appendTaskCheckpoint(input: {
   payload?: Record<string, unknown>;
   attachmentIds?: string[];
 }) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const checkpointPayload = input.payload ?? {};
 
   // Allocating the sequence and consuming it used to be two statements: the
@@ -327,7 +327,7 @@ export async function appendTaskCheckpoint(input: {
   // written, leaving a checkpoint the run could not count — and the next append
   // reused that sequence and died on the unique constraint, permanently. One
   // locked statement does both now.
-  const { data: result, error } = await supabase.rpc('append_task_checkpoint_atomic', {
+  const { data: result, error } = await db.rpc('append_task_checkpoint_atomic', {
     p_run_id: input.runId,
     p_task_id: input.taskId,
     p_project_id: input.projectId,
@@ -348,7 +348,7 @@ export async function appendTaskCheckpoint(input: {
 
   const typedCheckpoint = result.checkpoint as TaskExecutionCheckpointRow;
 
-  const { data: updatedRun } = await supabase
+  const { data: updatedRun } = await db
     .from('task_execution_runs')
     .select('id, status, started_at, heartbeat_at, completed_at')
     .eq('id', input.runId)
@@ -372,9 +372,9 @@ export async function appendTaskCheckpoint(input: {
 }
 
 export async function getLatestTaskCheckpoint(taskId: string, runId?: string) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const { data, error } = await selectTaskExecutionCheckpoints(async (selectClause) => {
-    let query = supabase
+    let query = db
       .from('task_execution_checkpoints')
       .select(selectClause)
       .eq('task_id', taskId)
@@ -400,10 +400,10 @@ export async function syncTaskExecutionSnapshot(input: {
   checkpointSummary?: string | null;
   checkpointPayload?: Record<string, unknown> | null;
 }) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const snapshot = deriveTaskExecutionSnapshot(input);
 
-  const { error } = await supabase
+  const { error } = await db
     .from('tasks')
     .update(snapshot)
     .eq('id', input.taskId);

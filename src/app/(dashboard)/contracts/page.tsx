@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { Contract, ContractStatus } from '@/lib/types';
@@ -69,19 +69,19 @@ export default async function ContractsPage({
   const statusFilter = (params.status || 'all') as ContractStatus | 'all';
   const searchFilter = params.search || '';
   const sortFilter = params.sort || 'newest';
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   let scopedContractIds: string[] | null = null;
   if (!user.isSuperAdmin) {
-    const { data: participantContracts } = await supabase
+    const { data: participantContracts } = await db
       .from('contract_participants')
       .select('contract_id')
       .in('agent_id', auth.agentScope);
     scopedContractIds = (participantContracts || []).map(p => p.contract_id);
   }
 
-  let query = supabase
+  let query = db
     .from('contracts')
     .select(`
       *,

@@ -212,7 +212,7 @@ export function describeChannelState(counts: OperatorChannelCounts | null | unde
 /**
  * Everything above is pure: no database client, no server-only import. The
  * dashboard's operator-channel panel is a client component and imports the
- * limits and the kind descriptions from here, and a single `@/lib/supabase/server`
+ * limits and the kind descriptions from here, and a single `@/lib/db/server`
  * import in this file would bundle `pg` for the browser. The queries live in
  * `contract-operator-channel-server.ts`, on the same split as `pulse.ts`.
  */

@@ -52,7 +52,7 @@ done
 # __pycache__ is excluded because this script itself imports the CLI as a module
 # to make a signed request, which writes a .pyc newer than the build and made
 # the guard fail the NEXT run for a file no build could ever include.
-NEWER="$(find src supabase/migrations skill/scripts \
+NEWER="$(find src migrations skill/scripts \
   -name __pycache__ -prune -o -newer .next/BUILD_ID -type f -print -quit 2>/dev/null)"
 if [[ -n "$NEWER" ]]; then
   echo "the .next build is older than $NEWER — run 'npx next build' first" >&2
@@ -152,14 +152,14 @@ fi
 
 say "2. Migrations apply to a clean schema"
 MIG_FAIL=""
-for f in $(ls supabase/migrations/*.sql | sort); do
+for f in $(ls migrations/*.sql | sort); do
   if ! $DOCKER exec -i "$PG_CONTAINER" psql -U a2a_app -d a2a -q -v ON_ERROR_STOP=1 < "$f" >"$WORK/mig.log" 2>&1; then
     MIG_FAIL="$(basename "$f")"
     bad "migration $MIG_FAIL failed: $(head -2 "$WORK/mig.log" | tr '\n' ' ')"
     break
   fi
 done
-[[ -z "$MIG_FAIL" ]] && ok "$(ls supabase/migrations/*.sql | wc -l) migrations applied"
+[[ -z "$MIG_FAIL" ]] && ok "$(ls migrations/*.sql | wc -l) migrations applied"
 [[ -n "$MIG_FAIL" ]] && exit 1
 
 # ------------------------------------------------------------------ fixtures ---

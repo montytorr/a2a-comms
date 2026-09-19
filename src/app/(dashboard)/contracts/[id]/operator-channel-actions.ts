@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext, type AuthActorContext } from '@/lib/auth-actor-context';
 import { EMPTY_UUID } from '@/lib/dashboard-actor-helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
@@ -38,8 +38,8 @@ async function requireOperator(contractId: string): Promise<{ auth: AuthActorCon
 
   if (user.isSuperAdmin) return { auth, actor };
 
-  const supabase = createServerClient();
-  const { data: participation } = await supabase
+  const db = createServerClient();
+  const { data: participation } = await db
     .from('contract_participants')
     .select('role')
     .eq('contract_id', contractId)
@@ -62,8 +62,8 @@ function unwrap<T extends { ok: boolean }>(result: T | null, fallback: string): 
 }
 
 async function audit(action: string, contractId: string, actor: string, details: Record<string, unknown>) {
-  const supabase = createServerClient();
-  await supabase.from('audit_log').insert({
+  const db = createServerClient();
+  await db.from('audit_log').insert({
     actor,
     action,
     resource_type: 'contract',
@@ -93,8 +93,8 @@ export async function addContractNote(contractId: string, formData: FormData) {
   // standing context, not an interruption, and an agent dragged out of
   // whatever it was doing to be handed a paragraph of instruction would have
   // to decide on the spot whether it supersedes the message it was answering.
-  const supabase = createServerClient();
-  const { data: rows } = await supabase
+  const db = createServerClient();
+  const { data: rows } = await db
     .from('contract_participants')
     .select('agent_id')
     .eq('contract_id', contractId);

@@ -25,7 +25,7 @@
 #
 #   ./scripts/verify-schema.sh                    compare against production
 #   ./scripts/verify-schema.sh --against <url>    compare against any database
-#   ./scripts/verify-schema.sh --snapshot         write supabase/schema.txt
+#   ./scripts/verify-schema.sh --snapshot         write docs/schema.txt
 #
 # Extension-owned functions are excluded: pgcrypto and amcheck exist in
 # production and not in a bare container, which is a property of the host
@@ -83,8 +83,8 @@ printf '%s' "$SHAPE" | $DOCKER exec -i "$CONTAINER" psql -U a2a_app -d a2a -t -A
 echo "  $(wc -l < "$FROM_MIGRATIONS") schema objects"
 
 if [[ "$MODE" == "--snapshot" ]]; then
-  cp "$FROM_MIGRATIONS" supabase/schema.txt
-  echo "wrote supabase/schema.txt — commit it so a change to the schema shows up in a diff"
+  cp "$FROM_MIGRATIONS" docs/schema.txt
+  echo "wrote docs/schema.txt — commit it so a change to the schema shows up in a diff"
   exit 0
 fi
 

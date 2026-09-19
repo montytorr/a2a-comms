@@ -3,7 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type {
   SendMessageRequest,
   MessageResponse,
@@ -51,14 +51,14 @@ export async function GET(
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || url.searchParams.get('per_page') || '20', 10)));
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Auto-close if expired (side effect on contract)
-  const { data: contract } = await supabase.from('contracts').select('*').eq('id', id).single();
+  const { data: contract } = await db.from('contracts').select('*').eq('id', id).single();
   if (contract) await autoCloseIfExpired(contract as Contract);
 
   // Fetch messages
-  const { data: messages, count, error } = await supabase
+  const { data: messages, count, error } = await db
     .from('messages')
     .select('*', { count: 'exact' })
     .eq('contract_id', id)
@@ -78,7 +78,7 @@ export async function GET(
 
   // Get sender info for all messages
   const senderIds = [...new Set((messages || []).map((m) => m.sender_id))];
-  const { data: senders } = await supabase
+  const { data: senders } = await db
     .from('agents')
     .select('id, name, display_name')
     .in('id', senderIds);
@@ -141,10 +141,10 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch and validate contract status
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)
@@ -267,7 +267,7 @@ export async function POST(
   }
 
   // Atomic: insert message + increment turns + auto-close in one transaction (SELECT FOR UPDATE)
-  const { data: rpcResult, error: rpcErr } = await supabase.rpc('insert_message_atomic', {
+  const { data: rpcResult, error: rpcErr } = await db.rpc('insert_message_atomic', {
     p_contract_id: id,
     p_sender_id: auth.agent.id,
     p_message_type: messageType,
@@ -305,7 +305,7 @@ export async function POST(
   const messageCreatedAt: string = rpcResult.message_created_at;
 
   // Deliver webhook notifications to all OTHER participants (fire-and-forget)
-  const { data: allParticipants } = await supabase
+  const { data: allParticipants } = await db
     .from('contract_participants')
     .select('agent_id')
     .eq('contract_id', id)

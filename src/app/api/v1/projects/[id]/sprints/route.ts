@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '../../_helpers';
 import type { CreateSprintRequest, ApiError } from '@/lib/types';
@@ -29,8 +29,8 @@ export async function GET(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: sprints, error } = await supabase
+  const db = createServerClient();
+  const { data: sprints, error } = await db
     .from('sprints')
     .select('*')
     .eq('project_id', id)
@@ -88,17 +88,17 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Get next position via count (more robust than max+1 under concurrent inserts)
-  const { count } = await supabase
+  const { count } = await db
     .from('sprints')
     .select('id', { count: 'exact', head: true })
     .eq('project_id', id);
 
   const nextPosition = count ?? 0;
 
-  const { data: sprint, error } = await supabase
+  const { data: sprint, error } = await db
     .from('sprints')
     .insert({
       project_id: id,

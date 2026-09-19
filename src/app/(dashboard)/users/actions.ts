@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { sendWelcomeEmail } from '@/lib/email';
 
@@ -17,9 +17,9 @@ export async function toggleSuperAdmin(
     return { error: 'Cannot remove your own super admin status' };
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from('user_profiles')
     .update({ is_super_admin: newValue })
     .eq('id', userId)
@@ -28,7 +28,7 @@ export async function toggleSuperAdmin(
   if (error) return { error: error.message };
   if (!updated || updated.length === 0) return { error: 'User not found' };
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName,
     action: newValue ? 'user.promote_admin' : 'user.demote_admin',
     resource_type: 'user',
@@ -47,9 +47,9 @@ export async function linkAgentToUser(
   if (!user) return { error: 'Not authenticated' };
   if (!user.isSuperAdmin) return { error: 'Admin access required' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from('agents')
     .update({ owner_user_id: userId })
     .eq('id', agentId)
@@ -58,7 +58,7 @@ export async function linkAgentToUser(
   if (error) return { error: error.message };
   if (!updated || updated.length === 0) return { error: 'Agent not found' };
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName,
     action: 'user.link_agent',
     resource_type: 'agent',
@@ -76,9 +76,9 @@ export async function unlinkAgent(
   if (!user) return { error: 'Not authenticated' };
   if (!user.isSuperAdmin) return { error: 'Admin access required' };
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from('agents')
     .update({ owner_user_id: null })
     .eq('id', agentId)
@@ -87,7 +87,7 @@ export async function unlinkAgent(
   if (error) return { error: error.message };
   if (!updated || updated.length === 0) return { error: 'Agent not found' };
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName,
     action: 'user.unlink_agent',
     resource_type: 'agent',
@@ -115,10 +115,10 @@ export async function createUser(
     return { error: 'Password must be at least 8 characters' };
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Create auth user
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+  const { data: authData, error: authError } = await db.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -128,7 +128,7 @@ export async function createUser(
   if (!authData.user) return { error: 'Failed to create auth user' };
 
   // Create user profile
-  const { error: profileError } = await supabase
+  const { error: profileError } = await db
     .from('user_profiles')
     .insert({
       id: authData.user.id,
@@ -137,7 +137,7 @@ export async function createUser(
     });
 
   if (profileError) {
-    const { error: cleanupError } = await supabase.auth.admin.deleteUser(authData.user.id);
+    const { error: cleanupError } = await db.auth.admin.deleteUser(authData.user.id);
     if (cleanupError) {
       console.error(`[users] Failed to clean up orphaned auth account ${authData.user.id}:`, cleanupError.message);
     }
@@ -145,7 +145,7 @@ export async function createUser(
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName,
     action: 'user.create',
     resource_type: 'user',
@@ -172,8 +172,8 @@ export async function getUnlinkedAgents(): Promise<
   const user = await getAuthUser();
   if (!user || !user.isSuperAdmin) return [];
 
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('agents')
     .select('id, name, display_name')
     .is('owner_user_id', null)

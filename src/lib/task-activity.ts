@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 export interface TaskActivityEvent {
   id: string;
@@ -30,8 +30,8 @@ function isMissingTaskActivityTable(error: { message?: string } | null) {
 }
 
 export async function listTaskActivityEvents(taskId: string, limit = 50) {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('task_activity_events')
     .select('*, actor_agent:agents!task_activity_events_actor_agent_id_fkey(id, name, display_name), actor_user:user_profiles!task_activity_events_actor_user_id_fkey(id, display_name)')
     .eq('task_id', taskId)
@@ -47,8 +47,8 @@ export async function listTaskActivityEvents(taskId: string, limit = 50) {
 }
 
 export async function appendTaskActivityEvent(input: CreateTaskActivityEventInput) {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('task_activity_events')
     .insert({
       project_id: input.projectId,

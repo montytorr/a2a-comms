@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { sessionUser } from '@/lib/auth/session';
 
 export async function GET() {
@@ -29,17 +29,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 });
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Check if user is admin
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from('user_profiles')
     .select('is_super_admin')
     .eq('id', user.id)
     .single();
 
   // Get the user's agents
-  const { data: userAgents } = await supabase
+  const { data: userAgents } = await db
     .from('agents')
     .select('id')
     .eq('owner_user_id', user.id);
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Create the project
-  const { data: project, error: createErr } = await supabase
+  const { data: project, error: createErr } = await db
     .from('projects')
     .insert({
       title: title.trim(),
@@ -91,13 +91,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (members.length > 0) {
-    const { error: memErr } = await supabase
+    const { error: memErr } = await db
       .from('project_members')
       .insert(members);
 
     if (memErr) {
       console.error('Failed to add members:', memErr);
-      await supabase.from('projects').delete().eq('id', project.id);
+      await db.from('projects').delete().eq('id', project.id);
       return NextResponse.json(
         { error: 'Project created but failed to add owner member. The project has been rolled back.' },
         { status: 500 }
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     : [];
 
   if (inviteeIds.length > 0) {
-    const { error: invitationError } = await supabase
+    const { error: invitationError } = await db
       .from('project_member_invitations')
       .insert(inviteeIds.map((agentId: string) => ({
         project_id: project.id,

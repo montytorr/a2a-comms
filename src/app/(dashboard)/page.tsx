@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
@@ -14,29 +14,29 @@ export default async function DashboardPage() {
   const user = auth?.user ?? null;
   if (!user || !auth) redirect('/login');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   const isAdmin = user.isSuperAdmin;
   const scope = await buildDashboardVisibilityScope(auth);
   const agentIds = scope.agentIds;
 
-  let contractsQuery = supabase
+  let contractsQuery = db
     .from('contracts')
     .select('id, status')
     .eq('status', 'active');
 
-  let pendingQuery = supabase
+  let pendingQuery = db
     .from('contracts')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'proposed');
 
-  let messagesQuery = supabase
+  let messagesQuery = db
     .from('messages')
     .select('id', { count: 'exact', head: true })
     .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
 
-  let auditQuery = supabase
+  let auditQuery = db
     .from('audit_log')
     .select('*')
     .order('created_at', { ascending: false })
@@ -49,26 +49,26 @@ export default async function DashboardPage() {
     scopedProjectIds = scope.projectIds;
 
     if (contractIds.length > 0) {
-      contractsQuery = supabase
+      contractsQuery = db
         .from('contracts')
         .select('id, status')
         .eq('status', 'active')
         .in('id', contractIds);
-      pendingQuery = supabase
+      pendingQuery = db
         .from('contracts')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'proposed')
         .in('id', contractIds);
-      messagesQuery = supabase
+      messagesQuery = db
         .from('messages')
         .select('id', { count: 'exact', head: true })
         .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
         .in('contract_id', contractIds);
     } else {
       const none = '00000000-0000-0000-0000-000000000000';
-      contractsQuery = supabase.from('contracts').select('id, status').eq('status', 'active').eq('id', none);
-      pendingQuery = supabase.from('contracts').select('id', { count: 'exact', head: true }).eq('status', 'proposed').eq('id', none);
-      messagesQuery = supabase.from('messages').select('id', { count: 'exact', head: true }).eq('contract_id', none);
+      contractsQuery = db.from('contracts').select('id, status').eq('status', 'active').eq('id', none);
+      pendingQuery = db.from('contracts').select('id', { count: 'exact', head: true }).eq('status', 'proposed').eq('id', none);
+      messagesQuery = db.from('messages').select('id', { count: 'exact', head: true }).eq('contract_id', none);
     }
 
     const names = scope.contractActorNames;
@@ -78,15 +78,15 @@ export default async function DashboardPage() {
   } else if (!isAdmin && agentIds.length === 0) {
     scopedProjectIds = [];
     const none = '00000000-0000-0000-0000-000000000000';
-    contractsQuery = supabase.from('contracts').select('id, status').eq('id', none);
-    pendingQuery = supabase.from('contracts').select('id', { count: 'exact', head: true }).eq('id', none);
-    messagesQuery = supabase.from('messages').select('id', { count: 'exact', head: true }).eq('contract_id', none);
-    auditQuery = supabase.from('audit_log').select('*').eq('actor', '__none__').limit(12);
+    contractsQuery = db.from('contracts').select('id, status').eq('id', none);
+    pendingQuery = db.from('contracts').select('id', { count: 'exact', head: true }).eq('id', none);
+    messagesQuery = db.from('messages').select('id', { count: 'exact', head: true }).eq('contract_id', none);
+    auditQuery = db.from('audit_log').select('*').eq('actor', '__none__').limit(12);
   }
 
-  const agentsCountQuery = supabase.from('agents').select('id', { count: 'exact', head: true });
+  const agentsCountQuery = db.from('agents').select('id', { count: 'exact', head: true });
 
-  let activeProjectsQuery = supabase
+  let activeProjectsQuery = db
     .from('projects')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'active');
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
     }
   }
 
-  let tasksInProgressQuery = supabase
+  let tasksInProgressQuery = db
     .from('tasks')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'in-progress');
@@ -111,11 +111,11 @@ export default async function DashboardPage() {
   }
 
   const twentyFourHoursAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000).toISOString();
-  let webhookDeliveriesQuery = supabase
+  let webhookDeliveriesQuery = db
     .from('webhooks')
     .select('id', { count: 'exact', head: true })
     .gte('last_delivery_at', twentyFourHoursAgo);
-  let latestWebhookDeliveryQuery = supabase
+  let latestWebhookDeliveryQuery = db
     .from('webhooks')
     .select('last_delivery_at')
     .not('last_delivery_at', 'is', null)
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
     latestWebhookDeliveryQuery = latestWebhookDeliveryQuery.eq('agent_id', '00000000-0000-0000-0000-000000000000');
   }
 
-  let pendingProjectInvitationsQuery = supabase
+  let pendingProjectInvitationsQuery = db
     .from('project_member_invitations')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending');
@@ -154,7 +154,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     contractsQuery,
     messagesQuery,
-    supabase.from('system_config').select('*').eq('key', 'kill_switch').single(),
+    db.from('system_config').select('*').eq('key', 'kill_switch').single(),
     auditQuery,
     pendingQuery,
     agentsCountQuery,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createBrowserClient } from '@/lib/auth/browser';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -14,10 +14,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = createBrowserClient();
+    const db = createBrowserClient();
 
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session) {
         router.replace('/login');
       } else {
@@ -28,7 +28,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         router.replace('/login');
         setIsAuthenticated(false);

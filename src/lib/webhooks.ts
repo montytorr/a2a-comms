@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import { resolveAndValidateHost } from './url-validator';
 import { logWebhookDelivery } from './security-events';
 import {
@@ -49,10 +49,10 @@ export async function deliverWebhooks(
   targetAgentIds: string[],
   event: WebhookEvent
 ): Promise<void> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch active webhooks for target agents that subscribe to this event
-  const { data: webhooks } = await supabase
+  const { data: webhooks } = await db
     .from('webhooks')
     .select('*')
     .in('agent_id', targetAgentIds)
@@ -63,7 +63,7 @@ export async function deliverWebhooks(
   // subscribed to the legacy 'contract_state' event type
   let legacyWebhooks: typeof webhooks = [];
   if (event.event.startsWith('contract.')) {
-    const { data: legacy } = await supabase
+    const { data: legacy } = await db
       .from('webhooks')
       .select('*')
       .in('agent_id', targetAgentIds)
@@ -91,7 +91,7 @@ export async function deliverWebhooks(
     // Insert delivery record with stored payload for retry worker recovery
     // NOTE: We intentionally do NOT store wh.secret here — the retry worker
     // looks up the secret from the webhooks table via webhook_id at retry time.
-    const { error: insertError } = await supabase.from('webhook_deliveries').insert({
+    const { error: insertError } = await db.from('webhook_deliveries').insert({
       id: deliveryId,
       webhook_id: wh.id,
       event: event.event,
@@ -112,7 +112,7 @@ export async function deliverWebhooks(
     // DNS validation — queue for retry on transient failures instead of hard-failing
     const dnsCheck = await resolveAndValidateHost(wh.url);
     if (!dnsCheck.valid) {
-      const { error: dnsRetryErr } = await supabase.from('webhook_deliveries').update({
+      const { error: dnsRetryErr } = await db.from('webhook_deliveries').update({
         status: 'pending_retry',
         attempts: 1,
         response_status: null,
@@ -123,7 +123,7 @@ export async function deliverWebhooks(
       return;
     }
 
-    const { error: attemptErr } = await supabase.from('webhook_deliveries').update({
+    const { error: attemptErr } = await db.from('webhook_deliveries').update({
       status: 'pending',
       attempts: 1,
     }).eq('id', deliveryId);
@@ -139,13 +139,13 @@ export async function deliverWebhooks(
     });
 
     if (result.ok) {
-      await markDeliverySuccess(supabase, deliveryId, result.responseStatus);
-      await resetWebhookFailureState(supabase, wh.id);
+      await markDeliverySuccess(db, deliveryId, result.responseStatus);
+      await resetWebhookFailureState(db, wh.id);
       logWebhookDelivery('success', wh.id, wh.agent_id, wh.url, { attempts: 1 }).catch(() => {});
       return;
     }
 
-    const { error: retryErr } = await supabase.from('webhook_deliveries').update({
+    const { error: retryErr } = await db.from('webhook_deliveries').update({
       status: 'pending_retry',
       response_status: result.responseStatus || null,
       last_retry_at: null,

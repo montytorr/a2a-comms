@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { sessionUser } from '@/lib/auth/session';
 import NotificationSettingsClient from './notification-settings-client';
 import type { NotificationPreferences } from './actions';
@@ -9,8 +9,8 @@ export default async function SettingsPage() {
   if (!user) redirect('/login');
 
   // Fetch current preferences (service role to bypass RLS for initial load)
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('notification_preferences')
     .select('welcome, contract_invitation, task_assigned, approval_request, project_member_invitation, stale_blocker')
     .eq('user_id', user.id)

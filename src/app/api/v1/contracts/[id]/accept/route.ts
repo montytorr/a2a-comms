@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant, activateIfAllAccepted } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
@@ -19,7 +19,7 @@ export async function POST(
 
   const { auth } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify agent is a participant
   const participant = await getParticipant(id, auth.agent.id);
@@ -36,7 +36,7 @@ export async function POST(
   }
 
   // Check contract is still proposed
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)
@@ -58,7 +58,7 @@ export async function POST(
   }
 
   // Update participant status (CAS guard: only if still pending)
-  const { data: updatedParticipant } = await supabase
+  const { data: updatedParticipant } = await db
     .from('contract_participants')
     .update({
       status: 'accepted',
@@ -86,7 +86,7 @@ export async function POST(
   // Deliver webhook notifications to all participants (fire-and-forget)
   if (activated) {
     if (isLikelyBrokerContract({ title: checked.title, description: checked.description } as never)) {
-      const { data: linkedTaskRow } = await supabase
+      const { data: linkedTaskRow } = await db
         .from('task_contracts')
         .select('task_id, task:tasks!task_contracts_task_id_fkey(id, project_id, active_run_id, assignee_agent_id, last_checkpoint_summary, last_checkpoint_payload)')
         .eq('contract_id', id)
@@ -98,7 +98,7 @@ export async function POST(
         const activeRunId = linkedTask.active_run_id as string | null;
         const latestReason = checked.description || checked.title;
         if (activeRunId) {
-          const { data: run } = await supabase
+          const { data: run } = await db
             .from('task_execution_runs')
             .select('*')
             .eq('id', activeRunId)
@@ -106,13 +106,13 @@ export async function POST(
 
           if (run) {
             const metadata = { ...(run.metadata || {}), broker_agent_id: auth.agent.id, broker_assigned_at: new Date().toISOString(), escalation_contract_id: id, broker_contract_id: id, collaboration_mode: 'brokered-collaboration', escalation_status: 'broker-engaged' };
-            await supabase
+            await db
               .from('task_execution_runs')
               .update({ metadata, heartbeat_at: new Date().toISOString(), updated_at: new Date().toISOString() })
               .eq('id', activeRunId);
           }
 
-          await supabase.from('task_execution_checkpoints').insert({
+          await db.from('task_execution_checkpoints').insert({
             run_id: activeRunId,
             task_id: linkedTask.id,
             project_id: linkedTask.project_id,
@@ -132,7 +132,7 @@ export async function POST(
           });
         }
 
-        await supabase.from('task_comments').insert({
+        await db.from('task_comments').insert({
           task_id: linkedTask.id,
           project_id: linkedTask.project_id,
           author_agent_id: auth.agent.id,
@@ -158,7 +158,7 @@ export async function POST(
       }).catch(() => null);
     }
 
-    const { data: allParticipants } = await supabase
+    const { data: allParticipants } = await db
       .from('contract_participants')
       .select('agent_id, role, status')
       .eq('contract_id', id);
@@ -179,7 +179,7 @@ export async function POST(
       lastMessage: null,
     }).awaiting_agent_id;
     const { data: opener } = opensNextAgentId
-      ? await supabase.from('agents').select('name').eq('id', opensNextAgentId).maybeSingle()
+      ? await db.from('agents').select('name').eq('id', opensNextAgentId).maybeSingle()
       : { data: null };
 
     deliverWebhooks(participantIds, {
@@ -222,7 +222,7 @@ export async function POST(
   });
 
   // Fetch updated contract
-  const { data: updatedContract } = await supabase
+  const { data: updatedContract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)

@@ -1,5 +1,5 @@
 import type { AuthActorContext } from '@/lib/auth-actor-context';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 const EMPTY_UUID = '00000000-0000-0000-0000-000000000000';
 
@@ -30,12 +30,12 @@ export async function buildDashboardVisibilityScope(auth: AuthActorContext): Pro
     };
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const [{ data: participantContracts }, { data: memberProjects }, { data: userWebhooks }] = await Promise.all([
-    supabase.from('contract_participants').select('contract_id').in('agent_id', agentIds),
-    supabase.from('project_members').select('project_id').in('agent_id', agentIds),
-    supabase.from('webhooks').select('id').in('agent_id', agentIds),
+    db.from('contract_participants').select('contract_id').in('agent_id', agentIds),
+    db.from('project_members').select('project_id').in('agent_id', agentIds),
+    db.from('webhooks').select('id').in('agent_id', agentIds),
   ]);
 
   const contractIds = unique((participantContracts || []).map((row) => row.contract_id));
@@ -44,7 +44,7 @@ export async function buildDashboardVisibilityScope(auth: AuthActorContext): Pro
 
   let contractParticipantAgentIds = [...agentIds];
   if (contractIds.length > 0) {
-    const { data: allParticipants } = await supabase
+    const { data: allParticipants } = await db
       .from('contract_participants')
       .select('agent_id')
       .in('contract_id', contractIds);
@@ -57,7 +57,7 @@ export async function buildDashboardVisibilityScope(auth: AuthActorContext): Pro
 
   let contractActorNames: string[] = [];
   if (contractParticipantAgentIds.length > 0) {
-    const { data: agents } = await supabase
+    const { data: agents } = await db
       .from('agents')
       .select('name')
       .in('id', contractParticipantAgentIds);

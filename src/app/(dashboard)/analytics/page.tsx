@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
@@ -24,7 +24,7 @@ export default async function AnalyticsPage({
   const params = await searchParams;
   const parsedDays = parseInt(params.days || '14', 10);
   const days = Math.min(90, Math.max(7, Number.isFinite(parsedDays) ? parsedDays : 14));
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   const cutoffDate = new Date();
@@ -36,13 +36,13 @@ export default async function AnalyticsPage({
   let scopedProjectIds: string[] | null = null;
   if (!user.isSuperAdmin) {
     const safeAgentIds = auth.agentScope;
-    const { data: participantContracts } = await supabase
+    const { data: participantContracts } = await db
       .from('contract_participants')
       .select('contract_id')
       .in('agent_id', safeAgentIds);
     scopedContractIds = (participantContracts || []).map(p => p.contract_id);
 
-    const { data: memberProjects } = await supabase
+    const { data: memberProjects } = await db
       .from('project_members')
       .select('project_id')
       .in('agent_id', safeAgentIds);
@@ -55,7 +55,7 @@ export default async function AnalyticsPage({
   // 1. Contracts created in the window. One query feeds the status donut, the
   // per-day bars and avg turns — before, those were three separate queries and
   // only the per-day one was actually windowed.
-  let contractsQuery = supabase
+  let contractsQuery = db
     .from('contracts')
     .select('id, status, created_at, current_turns')
     .gte('created_at', cutoffISO)
@@ -72,7 +72,7 @@ export default async function AnalyticsPage({
   const avgTurns = contractStats.avgTurns;
 
   // 2. Messages per day (last N days) — also used for hourly heatmap + avg response time
-  let messagesQuery = supabase
+  let messagesQuery = db
     .from('messages')
     .select('id, created_at, sender_id, contract_id')
     .gte('created_at', cutoffISO)
@@ -122,7 +122,7 @@ export default async function AnalyticsPage({
   const agentIds = Object.keys(agentMessageCount);
   const agentNameMap: Record<string, string> = {};
   if (agentIds.length > 0) {
-    const { data: agents } = await supabase
+    const { data: agents } = await db
       .from('agents')
       .select('id, display_name, name')
       .in('id', agentIds);
@@ -139,7 +139,7 @@ export default async function AnalyticsPage({
   // they can be intersected with the projects that actually saw task activity in
   // the window — `projects.updated_at` only moves when the project row itself is
   // edited, so it is useless as an activity signal.
-  let activeProjectsQuery = supabase
+  let activeProjectsQuery = db
     .from('projects')
     .select('id')
     .eq('status', 'active');
@@ -168,7 +168,7 @@ export default async function AnalyticsPage({
     : null;
 
   // 8. Webhooks Fired — audit_log entries with 'webhook' in action (scoped for non-admin)
-  let webhooksFiredQuery = supabase
+  let webhooksFiredQuery = db
     .from('audit_log')
     .select('id', { count: 'exact', head: true })
     .ilike('action', '%webhook%')
@@ -177,7 +177,7 @@ export default async function AnalyticsPage({
     const allWebhookAgentIds = new Set(auth.agentScope);
     const ownAgentIds = [...allWebhookAgentIds];
     const safeOwnAgentIds = ownAgentIds.length > 0 ? ownAgentIds : ['00000000-0000-0000-0000-000000000000'];
-    const { data: agentNamesData } = await supabase
+    const { data: agentNamesData } = await db
       .from('agents')
       .select('name')
       .in('id', safeOwnAgentIds);
@@ -196,7 +196,7 @@ export default async function AnalyticsPage({
   // 10. Tasks touched in the window. Windowed on updated_at rather than created_at
   // so the donut's "done" slice is exactly the Tasks Done card above it — there is
   // no NOT NULL completion timestamp on tasks to key off instead.
-  let taskStatusQuery = supabase
+  let taskStatusQuery = db
     .from('tasks')
     .select('id, status, project_id')
     .gte('updated_at', cutoffISO);
@@ -215,7 +215,7 @@ export default async function AnalyticsPage({
 
   // 11. All-time totals. Shown only in the empty states, so that a window with no
   // activity says "nothing happened lately" rather than implying nothing exists.
-  let allTimeTasksQuery = supabase
+  let allTimeTasksQuery = db
     .from('tasks')
     .select('id', { count: 'exact', head: true });
   if (scopedProjectIds !== null) {
@@ -225,7 +225,7 @@ export default async function AnalyticsPage({
   }
   const { count: allTimeTaskCount } = await allTimeTasksQuery;
 
-  let allTimeContractsQuery = supabase
+  let allTimeContractsQuery = db
     .from('contracts')
     .select('id', { count: 'exact', head: true });
   if (scopedContractIds !== null) {
@@ -245,7 +245,7 @@ export default async function AnalyticsPage({
   let topContractsByMessages: { title: string; count: number }[] = [];
   if (contractMessageCounts.length > 0) {
     const topIds = contractMessageCounts.map(c => c.contractId);
-    const { data: topContracts } = await supabase
+    const { data: topContracts } = await db
       .from('contracts')
       .select('id, title')
       .in('id', topIds);

@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { logKillSwitchChange } from '@/lib/security-events';
 import { approveDashboardRequest, requestApproval, consumeApprovalByAction } from '@/lib/approvals';
@@ -11,16 +11,16 @@ export async function getKillSwitchStatus(): Promise<{
   updated_by: string | null;
   pending_approval_id?: string;
 }> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data } = await supabase
+  const { data } = await db
     .from('system_config')
     .select('*')
     .eq('key', 'kill_switch')
     .single();
 
   // Check for pending approval
-  const { data: pendingApproval } = await supabase
+  const { data: pendingApproval } = await db
     .from('pending_approvals')
     .select('id')
     .eq('action', 'killswitch.activate')
@@ -82,9 +82,9 @@ export async function executeKillSwitchActivation() {
   if (!user) throw new Error('Not authenticated');
   if (!user.isSuperAdmin) throw new Error('Admin access required');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: pendingApproval } = await supabase
+  const { data: pendingApproval } = await db
     .from('pending_approvals')
     .select('id')
     .eq('action', 'killswitch.activate')
@@ -99,7 +99,7 @@ export async function executeKillSwitchActivation() {
 
   const now = new Date().toISOString();
 
-  const { error: ksError } = await supabase
+  const { error: ksError } = await db
     .from('system_config')
     .upsert({
       key: 'kill_switch',
@@ -115,7 +115,7 @@ export async function executeKillSwitchActivation() {
     throw new Error('Failed to consume approval after state change.');
   }
 
-  const { error: closeError } = await supabase
+  const { error: closeError } = await db
     .from('contracts')
     .update({
       status: 'closed',
@@ -129,7 +129,7 @@ export async function executeKillSwitchActivation() {
 
   if (closeError) throw new Error(`Failed to close active contracts: ${closeError.message}`);
 
-  const { error: cancelError } = await supabase
+  const { error: cancelError } = await db
     .from('contracts')
     .update({
       status: 'cancelled',
@@ -144,7 +144,7 @@ export async function executeKillSwitchActivation() {
   if (cancelError) throw new Error(`Failed to cancel proposed contracts: ${cancelError.message}`);
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName,
     action: 'killswitch.activate',
     resource_type: 'system',
@@ -161,10 +161,10 @@ export async function deactivateKillSwitch() {
   if (!user) throw new Error('Not authenticated');
   if (!user.isSuperAdmin) throw new Error('Admin access required');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
 
-  const { data: current } = await supabase
+  const { data: current } = await db
     .from('system_config')
     .select('value')
     .eq('key', 'kill_switch')
@@ -174,7 +174,7 @@ export async function deactivateKillSwitch() {
     throw new Error('Kill switch is already inactive');
   }
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from('system_config')
     .update({
       value: { active: false, deactivated_at: now },
@@ -188,7 +188,7 @@ export async function deactivateKillSwitch() {
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName,
     action: 'killswitch.deactivate',
     resource_type: 'system',

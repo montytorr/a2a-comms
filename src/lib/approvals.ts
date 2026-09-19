@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import { deliverWebhooks } from './webhooks';
 
 export interface PendingApproval {
@@ -44,9 +44,9 @@ export async function isAuthorizedReviewer(
   agentId: string,
   actorAgentName?: string
 ): Promise<boolean> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('owner_user_id, name')
     .eq('id', agentId)
@@ -63,7 +63,7 @@ export async function isAuthorizedReviewer(
     return false;
   }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from('user_profiles')
     .select('is_super_admin')
     .eq('id', agent.owner_user_id)
@@ -74,7 +74,7 @@ export async function isAuthorizedReviewer(
   // Cross-owner check: if an actor agent name is provided, ensure
   // the reviewer and actor are owned by different users.
   if (actorAgentName) {
-    const { data: actorAgent } = await supabase
+    const { data: actorAgent } = await db
       .from('agents')
       .select('owner_user_id')
       .eq('name', actorAgentName)
@@ -100,9 +100,9 @@ export async function isAuthorizedDashboardReviewer(
   userId: string,
   actorAgentName?: string
 ): Promise<boolean> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from('user_profiles')
     .select('is_super_admin')
     .eq('id', userId)
@@ -113,7 +113,7 @@ export async function isAuthorizedDashboardReviewer(
   // Reviewer allowlist check: if env var is set, user must own an agent in the list
   const allowlist = getReviewerAllowlist();
   if (allowlist) {
-    const { data: userAgents } = await supabase
+    const { data: userAgents } = await db
       .from('agents')
       .select('name')
       .eq('owner_user_id', userId);
@@ -132,7 +132,7 @@ export async function isAuthorizedDashboardReviewer(
 
   // Cross-owner check: ensure the dashboard user doesn't own the actor agent
   if (actorAgentName) {
-    const { data: actorAgent } = await supabase
+    const { data: actorAgent } = await db
       .from('agents')
       .select('owner_user_id')
       .eq('name', actorAgentName)
@@ -153,9 +153,9 @@ export async function isAuthorizedDashboardReviewer(
  * If APPROVAL_REVIEWER_AGENTS is set, only agents in the allowlist are returned.
  */
 export async function getAdminAgentIds(excludeActorName?: string): Promise<string[]> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: admins } = await supabase
+  const { data: admins } = await db
     .from('user_profiles')
     .select('id')
     .eq('is_super_admin', true);
@@ -167,7 +167,7 @@ export async function getAdminAgentIds(excludeActorName?: string): Promise<strin
   // If we have an actor to exclude, find their owner
   let excludeOwnerId: string | null = null;
   if (excludeActorName) {
-    const { data: actorAgent } = await supabase
+    const { data: actorAgent } = await db
       .from('agents')
       .select('owner_user_id')
       .eq('name', excludeActorName)
@@ -175,7 +175,7 @@ export async function getAdminAgentIds(excludeActorName?: string): Promise<strin
     excludeOwnerId = actorAgent?.owner_user_id ?? null;
   }
 
-  const { data: agents } = await supabase
+  const { data: agents } = await db
     .from('agents')
     .select('id, name, owner_user_id')
     .in('owner_user_id', adminUserIds);
@@ -197,9 +197,9 @@ export async function requestApproval(opts: {
   actor: string;
   details: Record<string, unknown>;
 }): Promise<{ id: string }> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('pending_approvals')
     .insert({
       action: opts.action,
@@ -215,7 +215,7 @@ export async function requestApproval(opts: {
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: opts.actor,
     action: 'approval.requested',
     resource_type: 'approval',
@@ -246,10 +246,10 @@ export async function approveRequest(
   reviewerAgentId: string,
   reviewerName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the approval first so we can pass actor to the cross-owner check
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', approvalId)
@@ -277,7 +277,7 @@ export async function approveRequest(
   const now = new Date().toISOString();
 
   // Atomic CAS update — only succeeds if status is still 'pending'
-  const { data: updated, error: updateErr } = await supabase
+  const { data: updated, error: updateErr } = await db
     .from('pending_approvals')
     .update({
       status: 'approved',
@@ -294,7 +294,7 @@ export async function approveRequest(
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: reviewerName,
     action: 'approval.approved',
     resource_type: 'approval',
@@ -304,7 +304,7 @@ export async function approveRequest(
 
   // Deliver approval.approved webhook to the requesting agent
   // Find agent ID by matching actor name
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('id')
     .eq('name', approval.actor)
@@ -324,7 +324,7 @@ export async function approveRequest(
 
   // Auto-execute side effects for known action types
   if (approval.action === 'key.rotate') {
-    await executeKeyRotationSideEffect(approvalId, reviewerName, approval, supabase);
+    await executeKeyRotationSideEffect(approvalId, reviewerName, approval, db);
   }
 
   return { success: true };
@@ -334,17 +334,17 @@ async function executeKeyRotationSideEffect(
   approvalId: string,
   reviewerName: string,
   approval: { details: Record<string, unknown>; actor: string },
-  supabase: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
 ) {
   const agentId = approval.details?.agent_id as string | undefined;
   if (!agentId) return;
 
-  const { data: targetAgent } = await supabase
+  const { data: targetAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('id', agentId)
     .single();
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('name', approval.actor)
@@ -354,7 +354,7 @@ async function executeKeyRotationSideEffect(
   const consumed = await consumeApproval(approvalId, reviewerName);
   if (!consumed) return;
 
-  const { data: currentKeys } = await supabase
+  const { data: currentKeys } = await db
     .from('service_keys')
     .select('id, key_id, human_owner, label')
     .eq('agent_id', agentId)
@@ -362,7 +362,7 @@ async function executeKeyRotationSideEffect(
 
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   for (const key of currentKeys || []) {
-    await supabase
+    await db
       .from('service_keys')
       .update({ expires_at: expiresAt, rotated_at: new Date().toISOString() })
       .eq('id', key.id);
@@ -374,7 +374,7 @@ async function executeKeyRotationSideEffect(
   const keyHash = crypto.createHash('sha256').update(signingSecret).digest('hex');
   const firstKey = (currentKeys || [])[0];
 
-  const { data: newKey } = await supabase.from('service_keys').insert({
+  const { data: newKey } = await db.from('service_keys').insert({
     key_id: keyId,
     key_hash: keyHash,
     signing_secret: signingSecret,
@@ -385,7 +385,7 @@ async function executeKeyRotationSideEffect(
   }).select('id, key_id, label, is_active').single();
   void newKey;
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: reviewerName,
     action: 'key.rotate.executed',
     resource_type: 'agent',
@@ -408,11 +408,11 @@ export async function consumeApproval(
   approvalId: string,
   executorName: string
 ): Promise<PendingApproval | null> {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
 
   // Step 1: Read the current approval to capture original details
-  const { data: current } = await supabase
+  const { data: current } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', approvalId)
@@ -424,7 +424,7 @@ export async function consumeApproval(
   const originalDetails = (current.details as Record<string, unknown>) || {};
 
   // Step 2: Atomic conditional update — only succeeds if still 'approved'
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('pending_approvals')
     .update({
       status: 'consumed',
@@ -443,7 +443,7 @@ export async function consumeApproval(
   if (error || !data) return null;
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: executorName,
     action: 'approval.consumed',
     resource_type: 'approval',
@@ -462,10 +462,10 @@ export async function consumeApprovalByAction(
   action: string,
   executorName: string
 ): Promise<PendingApproval | null> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Find the most recent approved (not yet consumed) approval for this action
-  const { data: approval } = await supabase
+  const { data: approval } = await db
     .from('pending_approvals')
     .select('id')
     .eq('action', action)
@@ -489,10 +489,10 @@ export async function denyRequest(
   reviewerAgentId: string,
   reviewerName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the approval first so we can pass actor to the cross-owner check
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', approvalId)
@@ -519,7 +519,7 @@ export async function denyRequest(
   const now = new Date().toISOString();
 
   // Atomic CAS update — only succeeds if status is still 'pending'
-  const { data: updated, error: updateErr } = await supabase
+  const { data: updated, error: updateErr } = await db
     .from('pending_approvals')
     .update({
       status: 'denied',
@@ -536,7 +536,7 @@ export async function denyRequest(
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: reviewerName,
     action: 'approval.denied',
     resource_type: 'approval',
@@ -545,7 +545,7 @@ export async function denyRequest(
   });
 
   // Deliver approval.denied webhook to the requesting agent
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('id')
     .eq('name', approval.actor)
@@ -575,10 +575,10 @@ export async function approveDashboardRequest(
   userId: string,
   displayName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the approval first
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', approvalId)
@@ -605,7 +605,7 @@ export async function approveDashboardRequest(
 
   const now = new Date().toISOString();
 
-  const { data: updated, error: updateErr } = await supabase
+  const { data: updated, error: updateErr } = await db
     .from('pending_approvals')
     .update({
       status: 'approved',
@@ -622,7 +622,7 @@ export async function approveDashboardRequest(
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: displayName,
     action: 'approval.approved',
     resource_type: 'approval',
@@ -631,7 +631,7 @@ export async function approveDashboardRequest(
   });
 
   // Deliver approval.approved webhook to the requesting agent
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('id')
     .eq('name', approval.actor)
@@ -651,7 +651,7 @@ export async function approveDashboardRequest(
 
   // Auto-execute side effects for known action types
   if (approval.action === 'key.rotate') {
-    await executeKeyRotationSideEffect(approvalId, displayName, approval, supabase);
+    await executeKeyRotationSideEffect(approvalId, displayName, approval, db);
   }
 
   return { success: true };
@@ -666,10 +666,10 @@ export async function denyDashboardRequest(
   userId: string,
   displayName: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the approval first
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', approvalId)
@@ -695,7 +695,7 @@ export async function denyDashboardRequest(
 
   const now = new Date().toISOString();
 
-  const { data: updated, error: updateErr } = await supabase
+  const { data: updated, error: updateErr } = await db
     .from('pending_approvals')
     .update({
       status: 'denied',
@@ -712,7 +712,7 @@ export async function denyDashboardRequest(
   }
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: displayName,
     action: 'approval.denied',
     resource_type: 'approval',
@@ -721,7 +721,7 @@ export async function denyDashboardRequest(
   });
 
   // Deliver approval.denied webhook to the requesting agent
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('id')
     .eq('name', approval.actor)

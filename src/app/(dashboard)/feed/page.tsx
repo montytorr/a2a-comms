@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import FeedClient from './feed-client';
 
 export const dynamic = 'force-dynamic';
@@ -13,11 +13,11 @@ export default async function FeedPage() {
 
   const scope = await buildDashboardVisibilityScope(auth);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const ownAgentIds = auth.agentScope;
   let ownAgentNames: string[] = [];
   if (!user.isSuperAdmin && ownAgentIds.length > 0) {
-    const { data: ownAgents } = await supabase
+    const { data: ownAgents } = await db
       .from('agents')
       .select('name')
       .in('id', ownAgentIds);

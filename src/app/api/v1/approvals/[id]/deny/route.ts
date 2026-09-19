@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { isAuthorizedReviewer } from '@/lib/approvals';
 import type { ApiError } from '@/lib/types';
@@ -26,10 +26,10 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the approval first so we can pass actor to the cross-owner check
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', id)
@@ -69,7 +69,7 @@ export async function POST(
   const now = new Date().toISOString();
 
   // Atomic CAS update — only succeeds if status is still 'pending'
-  const { data: updated, error: updateErr } = await supabase
+  const { data: updated, error: updateErr } = await db
     .from('pending_approvals')
     .update({
       status: 'denied',
@@ -105,7 +105,7 @@ export async function POST(
   });
 
   // Deliver approval.denied webhook to the requesting agent
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('id')
     .eq('name', approval.actor)

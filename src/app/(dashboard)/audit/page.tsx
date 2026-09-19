@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import { redirect } from 'next/navigation';
@@ -50,7 +50,7 @@ export default async function AuditPage({
   const actorFilter = params.actor || '';
   const actionFilter = params.action || 'all';
   const rangeFilter = params.range || 'all';
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   const scope = user.isSuperAdmin ? null : await buildDashboardVisibilityScope(auth);
@@ -58,7 +58,7 @@ export default async function AuditPage({
 
   // ── count query ──────────────────────────────────────────────────────────────
 
-  let countQuery = supabase
+  let countQuery = db
     .from('audit_log')
     .select('id', { count: 'exact', head: true });
 
@@ -97,7 +97,7 @@ export default async function AuditPage({
 
   // ── data query ───────────────────────────────────────────────────────────────
 
-  let dataQuery = supabase
+  let dataQuery = db
     .from('audit_log')
     .select('*')
     .order('created_at', { ascending: false });

@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import {
   REPUTATION_DEFAULT_HALF_LIFE_DAYS,
   REPUTATION_FULL_CONFIDENCE_EVENT_COUNT,
@@ -782,8 +782,8 @@ function getDerivedAuditEvents(agentId: string, auditRows: AuditLogRow[], actorN
 }
 
 async function getDerivedReputationLedgerEvents(agentId: string) {
-  const supabase = createServerClient();
-  const { data: agentRow, error: agentError } = await supabase
+  const db = createServerClient();
+  const { data: agentRow, error: agentError } = await db
     .from('agents')
     .select('id, name')
     .eq('id', agentId)
@@ -794,20 +794,20 @@ async function getDerivedReputationLedgerEvents(agentId: string) {
   const agentName = agentRow?.name ?? null;
 
   const [runsRes, activityRes, auditRes] = await Promise.all([
-    supabase
+    db
       .from('task_execution_runs')
       .select('id, task_id, project_id, agent_id, status, attempt, created_at, updated_at, completed_at, heartbeat_at, summary, error_message, metadata')
       .eq('agent_id', agentId)
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
+    db
       .from('task_activity_events')
       .select('id, project_id, task_id, actor_agent_id, actor_user_id, event_type, summary, metadata, created_at')
       .eq('actor_agent_id', agentId)
       .in('event_type', ['handoff_claimed', 'blocker_escalation'])
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
+    db
       .from('audit_log')
       .select('id, actor, action, resource_type, resource_id, details, created_at')
       .or(agentName ? `actor.eq.${agentName},details->>original_actor.eq.${agentName},details->>agent_id.eq.${agentId}` : `details->>agent_id.eq.${agentId}`)
@@ -845,8 +845,8 @@ async function getDerivedReputationLedgerEvents(agentId: string) {
 }
 
 export async function listReputationLedgerEvents(agentId: string, limit = 100) {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('reputation_ledger_events')
     .select('*')
     .eq('agent_id', agentId)
@@ -862,11 +862,11 @@ export async function listReputationLedgerEvents(agentId: string, limit = 100) {
 }
 
 export async function appendReputationLedgerEvent(input: CreateReputationLedgerEventInput) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const occurredAt = input.occurredAt ?? new Date().toISOString();
   const recordedAt = input.recordedAt ?? new Date().toISOString();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('reputation_ledger_events')
     .insert({
       agent_id: input.agentId,
@@ -922,8 +922,8 @@ export async function recomputeAgentReputation(agentId: string, options: Reputat
 }
 
 export async function persistAgentReputationSnapshot(snapshot: AgentReputationSnapshot) {
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('agents')
     .update({
       reputation_snapshot: snapshot,
@@ -944,8 +944,8 @@ export async function recomputeAndPersistAgentReputation(agentId: string, option
 }
 
 export async function getAgentReputationSnapshot(agentId: string, options: ReputationAggregationOptions = {}) {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('agents')
     .select('reputation_snapshot')
     .eq('id', agentId)

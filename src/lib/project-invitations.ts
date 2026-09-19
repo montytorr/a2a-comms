@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '@/app/api/v1/projects/_helpers';
 import { getUserEmail } from '@/lib/email/helpers';
@@ -89,7 +89,7 @@ export async function notifyProjectInvitationCreated(options: {
   invitedByName: string;
   projectTitle: string;
 }): Promise<void> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Notify existing members + invited agent via webhooks.
   const memberIds = await getProjectMemberAgentIds(options.projectId);
@@ -108,7 +108,7 @@ export async function notifyProjectInvitationCreated(options: {
     timestamp: new Date().toISOString(),
   });
 
-  const { data: invitedAgent } = await supabase
+  const { data: invitedAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('id', options.invitedAgentId)
@@ -187,9 +187,9 @@ export async function notifyProjectInvitationReminder(options: {
 export async function expireProjectInvitationIfNeeded(invitation: ProjectInvitationRow): Promise<ProjectInvitationRow> {
   if (!isProjectInvitationExpired(invitation)) return invitation;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
-  const { data: updatedInvitation, error } = await supabase
+  const { data: updatedInvitation, error } = await db
     .from('project_member_invitations')
     .update({
       status: 'expired',
@@ -219,11 +219,11 @@ export async function expireProjectInvitationIfNeeded(invitation: ProjectInvitat
 export async function sendProjectInvitationReminderIfDue(invitation: ProjectInvitationRow): Promise<ProjectInvitationRow> {
   if (!isProjectInvitationReminderDue(invitation)) return invitation;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
   const expiresAt = invitation.expires_at || getProjectInvitationExpiry(invitation.created_at);
 
-  const { data: updatedInvitation, error } = await supabase
+  const { data: updatedInvitation, error } = await db
     .from('project_member_invitations')
     .update({ reminder_sent_at: now, updated_at: now })
     .eq('id', invitation.id)
@@ -245,7 +245,7 @@ export async function sendProjectInvitationReminderIfDue(invitation: ProjectInvi
     expiresAt,
   }).catch(() => {});
 
-  const { data: invitedAgent } = await supabase
+  const { data: invitedAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('id', updatedInvitation.agent_id)

@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getRelatedContracts } from '@/lib/contract-links';
 import { outcomeIsSuccess, resolveCloseOutcome } from '@/lib/contract-closure';
 import type {
@@ -236,7 +236,7 @@ export async function loadProtocolInspector(args: {
   agentIds?: string[];
   isSuperAdmin?: boolean;
 }): Promise<ProtocolInspectorData> {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const contractId = args.contractId?.trim() || null;
   const taskId = args.taskId?.trim() || null;
   const isSuperAdmin = !!args.isSuperAdmin;
@@ -252,7 +252,7 @@ export async function loadProtocolInspector(args: {
   let taskRow: InspectorTaskRow | null = null;
 
   if (taskId) {
-    const { data } = await supabase
+    const { data } = await db
       .from('tasks')
       .select(`
         *,
@@ -268,12 +268,12 @@ export async function loadProtocolInspector(args: {
     // Scope check: verify the user has access to this task's project (member or observer)
     if (taskRow && !isSuperAdmin) {
       const [{ data: memberRows }, { data: observerRows }] = await Promise.all([
-        supabase
+        db
           .from('project_members')
           .select('agent_id')
           .eq('project_id', taskRow.project_id)
           .in('agent_id', agentIds),
-        supabase
+        db
           .from('project_observers')
           .select('agent_id')
           .eq('project_id', taskRow.project_id)
@@ -295,7 +295,7 @@ export async function loadProtocolInspector(args: {
   let contractRow: InspectorContractRow | null = null;
 
   if (contractId) {
-    const { data } = await supabase
+    const { data } = await db
       .from('contracts')
       .select(`
         *,
@@ -323,11 +323,11 @@ export async function loadProtocolInspector(args: {
 
   let taskContracts: Array<{ contract_id: string; task_id: string }> = [];
   if (taskId) {
-    const { data } = await supabase.from('task_contracts').select('contract_id, task_id').eq('task_id', taskId);
+    const { data } = await db.from('task_contracts').select('contract_id, task_id').eq('task_id', taskId);
     taskContracts = data || [];
   }
   if (contractId) {
-    const { data } = await supabase.from('task_contracts').select('contract_id, task_id').eq('contract_id', contractId);
+    const { data } = await db.from('task_contracts').select('contract_id, task_id').eq('contract_id', contractId);
     taskContracts = dedupeById([
       ...taskContracts.map((row, index) => ({ id: `${row.contract_id}:${row.task_id}:${index}`, ...row })),
       ...(data || []).map((row, index) => ({ id: `${row.contract_id}:${row.task_id}:c${index}`, ...row })),
@@ -343,7 +343,7 @@ export async function loadProtocolInspector(args: {
 
   let linkedTasks: InspectorTaskLink[] = [];
   if (linkedTaskIds.length > 0) {
-    const { data } = await supabase
+    const { data } = await db
       .from('tasks')
       .select(`
         id,
@@ -375,12 +375,12 @@ export async function loadProtocolInspector(args: {
     if (!isSuperAdmin && filteredTaskData.length > 0) {
       const projectIds = Array.from(new Set(filteredTaskData.map((row) => row.project_id as string)));
       const [{ data: accessibleMembers }, { data: accessibleObservers }] = await Promise.all([
-        supabase
+        db
           .from('project_members')
           .select('project_id')
           .in('project_id', projectIds)
           .in('agent_id', agentIds),
-        supabase
+        db
           .from('project_observers')
           .select('project_id')
           .in('project_id', projectIds)
@@ -427,7 +427,7 @@ export async function loadProtocolInspector(args: {
 
   let executionRuns: TaskExecutionRun[] = [];
   if (taskIdsForRuns.length > 0) {
-    const { data } = await supabase
+    const { data } = await db
       .from('task_execution_runs')
       .select('*')
       .in('task_id', taskIdsForRuns)
@@ -439,7 +439,7 @@ export async function loadProtocolInspector(args: {
   const runIds = executionRuns.map((row) => row.id);
   let executionCheckpoints: TaskExecutionCheckpoint[] = [];
   if (runIds.length > 0) {
-    const { data } = await supabase
+    const { data } = await db
       .from('task_execution_checkpoints')
       .select('*')
       .in('run_id', runIds)
@@ -450,7 +450,7 @@ export async function loadProtocolInspector(args: {
 
   let messages: InspectorMessage[] = [];
   if (visibleContract) {
-    const { data } = await supabase
+    const { data } = await db
       .from('messages')
       .select(`
         id,
@@ -479,14 +479,14 @@ export async function loadProtocolInspector(args: {
   // Scope webhook deliveries to the user's agents (unless super admin)
   let scopedWebhookIds: string[] | null = null;
   if (!isSuperAdmin && agentIds.length > 0) {
-    const { data: userWebhooks } = await supabase
+    const { data: userWebhooks } = await db
       .from('webhooks')
       .select('id')
       .in('agent_id', agentIds);
     scopedWebhookIds = (userWebhooks || []).map((w) => w.id);
   }
 
-  let deliveryQuery = supabase
+  let deliveryQuery = db
     .from('webhook_deliveries')
     .select(`
       id,
@@ -580,7 +580,7 @@ export async function loadProtocolInspector(args: {
   const relatedContracts = visibleContract ? await getRelatedContracts(visibleContract.id) : [];
   let taskSiblingContractIds: string[] = [];
   if (visibleContract && linkedTasks.length > 0) {
-    const { data: siblingRows } = await supabase
+    const { data: siblingRows } = await db
       .from('task_contracts')
       .select('contract_id')
       .in('task_id', linkedTasks.map((task) => task.id));

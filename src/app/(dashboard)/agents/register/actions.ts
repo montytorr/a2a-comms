@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { getReservedNames } from '@/lib/admin';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
@@ -57,7 +57,7 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
     ? protocolsRaw.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   try {
     const { agent, serviceKey } = await createAgentWithServiceKey({
@@ -77,7 +77,7 @@ export async function registerAgent(formData: FormData): Promise<RegisterAgentRe
       },
     });
 
-    await supabase.from('audit_log').insert({
+    await db.from('audit_log').insert({
       actor: user.id,
       action: 'agent.register',
       resource_type: 'agent',

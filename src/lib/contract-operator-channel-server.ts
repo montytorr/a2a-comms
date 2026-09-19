@@ -5,7 +5,7 @@
  * `pulse.ts` / `pulse-server.ts`, and for the same reason.
  */
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import {
   isOperatorQuestionKind,
   isUuid,
@@ -29,8 +29,8 @@ function notAParticipant(contractId: string): ChannelRefusal {
 }
 
 async function participantRole(contractId: string, agentId: string): Promise<string | undefined> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('contract_participants')
     .select('role')
     .eq('contract_id', contractId)
@@ -168,15 +168,15 @@ export async function getOperatorChannelForContracts(
   const ids = safeIdList(contractIds);
   if (ids.length === 0) return result;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: noteRows } = await supabase
+  const { data: noteRows } = await db
     .from('contract_notes')
     .select(NOTE_SELECT)
     .in('contract_id', ids)
     .order('created_at', { ascending: true });
 
-  const { data: questionRows } = await supabase
+  const { data: questionRows } = await db
     .from('contract_questions')
     .select(QUESTION_SELECT)
     .in('contract_id', ids)
@@ -188,7 +188,7 @@ export async function getOperatorChannelForContracts(
   // One acknowledgement lookup for the whole page rather than one per note.
   const acked = new Set<string>();
   if (viewerAgentId && isUuid(viewerAgentId) && notes.length > 0) {
-    const { data: ackRows } = await supabase
+    const { data: ackRows } = await db
       .from('contract_note_acks')
       .select('note_id')
       .eq('agent_id', viewerAgentId)
@@ -235,8 +235,8 @@ export async function createContractNote(params: {
   authorUserId: string | null;
   authorName: string;
 }): Promise<{ ok: true; id: string } | ({ ok: false } & ChannelRefusal)> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('contract_notes')
     .insert({
       contract_id: params.contractId,
@@ -257,8 +257,8 @@ export async function updateContractNote(
   noteId: string,
   body: string
 ): Promise<ChannelRefusal | null> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('contract_notes')
     .update({ body, updated_at: new Date().toISOString() })
     .eq('id', noteId)
@@ -278,8 +278,8 @@ export async function updateContractNote(
  * into a real table instead of the description string.
  */
 export async function withdrawContractNote(noteId: string): Promise<ChannelRefusal | null> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('contract_notes')
     .update({ withdrawn_at: new Date().toISOString() })
     .eq('id', noteId)
@@ -302,9 +302,9 @@ export async function acknowledgeContractNotes(params: {
   agentId: string;
   noteIds?: string[] | null;
 }): Promise<{ ok: true; acknowledged: number; already: number } | ({ ok: false } & ChannelRefusal)> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: liveRows } = await supabase
+  const { data: liveRows } = await db
     .from('contract_notes')
     .select('id')
     .eq('contract_id', params.contractId)
@@ -330,7 +330,7 @@ export async function acknowledgeContractNotes(params: {
 
   if (live.length === 0) return { ok: true, acknowledged: 0, already: 0 };
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('contract_note_acks')
     .select('note_id')
     .eq('agent_id', params.agentId)
@@ -339,7 +339,7 @@ export async function acknowledgeContractNotes(params: {
 
   const fresh = live.filter((id) => !already.has(id));
   if (fresh.length > 0) {
-    const { error } = await supabase
+    const { error } = await db
       .from('contract_note_acks')
       .insert(fresh.map((id) => ({ note_id: id, agent_id: params.agentId })));
     if (error) {
@@ -357,8 +357,8 @@ export async function createContractQuestion(params: {
   body: string;
   blocking: boolean;
 }): Promise<{ ok: true; id: string } | ({ ok: false } & ChannelRefusal)> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('contract_questions')
     .insert({
       contract_id: params.contractId,
@@ -388,8 +388,8 @@ export async function resolveContractQuestion(params: {
   answeredByUserId: string | null;
   answeredByName: string;
 }): Promise<{ ok: true; question: OperatorQuestionSummary } | ({ ok: false } & ChannelRefusal)> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('contract_questions')
     .update({
       status: params.status,
@@ -426,8 +426,8 @@ export async function getNoteAckCounts(noteIds: string[]): Promise<Record<string
   const ids = safeIdList(noteIds);
   if (ids.length === 0) return {};
 
-  const supabase = createServerClient();
-  const { data } = await supabase.from('contract_note_acks').select('note_id').in('note_id', ids);
+  const db = createServerClient();
+  const { data } = await db.from('contract_note_acks').select('note_id').in('note_id', ids);
 
   const counts: Record<string, number> = {};
   for (const id of ids) counts[id] = 0;

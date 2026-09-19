@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { sessionUser } from '@/lib/auth/session';
 
 export interface NotificationPreferences {
@@ -19,17 +19,17 @@ export async function updateNotificationPreferences(
     const user = await sessionUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const supabase = createServerClient();
+    const db = createServerClient();
     const now = new Date().toISOString();
 
-    const { data: existing } = await supabase
+    const { data: existing } = await db
       .from('notification_preferences')
       .select('updated_at')
       .eq('user_id', user.id)
       .maybeSingle();
 
     if (existing) {
-      const { error, count } = await supabase
+      const { error, count } = await db
         .from('notification_preferences')
         .update({
           welcome: prefs.welcome,
@@ -46,7 +46,7 @@ export async function updateNotificationPreferences(
       if (error) return { success: false, error: error.message };
       if (count === 0) return { success: false, error: 'Preferences were modified by another session. Please reload and try again.' };
     } else {
-      const { error } = await supabase
+      const { error } = await db
         .from('notification_preferences')
         .insert({
           user_id: user.id,

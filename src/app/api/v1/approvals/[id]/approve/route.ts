@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { isAuthorizedReviewer, consumeApproval } from '@/lib/approvals';
 import type { ApiError } from '@/lib/types';
@@ -27,10 +27,10 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Fetch the approval first so we can pass actor to the cross-owner check
-  const { data: approval, error } = await supabase
+  const { data: approval, error } = await db
     .from('pending_approvals')
     .select('*')
     .eq('id', id)
@@ -70,7 +70,7 @@ export async function POST(
   const now = new Date().toISOString();
 
   // Atomic CAS update — only succeeds if status is still 'pending'
-  const { data: updated, error: updateErr } = await supabase
+  const { data: updated, error: updateErr } = await db
     .from('pending_approvals')
     .update({
       status: 'approved',
@@ -106,7 +106,7 @@ export async function POST(
   });
 
   // Deliver approval.approved webhook to the requesting agent
-  const { data: actorAgent } = await supabase
+  const { data: actorAgent } = await db
     .from('agents')
     .select('id')
     .eq('name', approval.actor)
@@ -134,7 +134,7 @@ export async function POST(
     if (agentId && requestedByAgentName === approval.actor) {
       const consumed = await consumeApproval(id, auth.agent.name);
       if (consumed) {
-        const { data: currentKeys } = await supabase
+        const { data: currentKeys } = await db
           .from('service_keys')
           .select('id, key_id, human_owner, label')
           .eq('agent_id', agentId)
@@ -142,7 +142,7 @@ export async function POST(
 
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
         for (const key of currentKeys || []) {
-          await supabase
+          await db
             .from('service_keys')
             .update({ expires_at: expiresAt, rotated_at: new Date().toISOString() })
             .eq('id', key.id);
@@ -154,7 +154,7 @@ export async function POST(
         const keyHash = crypto.createHash('sha256').update(signingSecret).digest('hex');
         const firstKey = (currentKeys || [])[0];
 
-        await supabase.from('service_keys').insert({
+        await db.from('service_keys').insert({
           key_id: keyId,
           key_hash: keyHash,
           signing_secret: signingSecret,

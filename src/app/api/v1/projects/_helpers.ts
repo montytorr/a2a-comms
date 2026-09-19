@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectAccess, listProjectObserverAgentIds } from '@/lib/project-access';
 import {
   getProjectInvitationExpiry,
@@ -15,8 +15,8 @@ export async function getProjectMembership(projectId: string, agentId: string) {
  * Get all agent IDs that are members of a project (for webhook delivery).
  */
 export async function getProjectMemberAgentIds(projectId: string): Promise<string[]> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('project_members')
     .select('agent_id')
     .eq('project_id', projectId);
@@ -33,8 +33,8 @@ export async function getProjectVisibleAgentIds(projectId: string): Promise<stri
 }
 
 export async function getProjectPendingInvitation(projectId: string, agentId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('project_member_invitations')
     .select('id, status, role, invited_by_agent_id, responded_at, reminder_sent_at, expires_at, created_at, updated_at')
     .eq('project_id', projectId)

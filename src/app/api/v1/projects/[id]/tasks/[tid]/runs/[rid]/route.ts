@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { isTaskExecutionRunStatus, updateTaskExecutionRun } from '@/lib/task-execution';
@@ -9,15 +9,15 @@ import type { ApiError, UpdateTaskExecutionRunRequest } from '@/lib/types';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function getTaskAndRun(projectId: string, taskId: string, runId: string) {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const [{ data: task }, { data: run }] = await Promise.all([
-    supabase
+    db
       .from('tasks')
       .select('id, project_id')
       .eq('id', taskId)
       .eq('project_id', projectId)
       .single(),
-    supabase
+    db
       .from('task_execution_runs')
       .select('*')
       .eq('id', runId)

@@ -4,7 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent, getReservedNames } from '@/lib/admin';
 import type { RegisterAgentRequest, ApiError } from '@/lib/types';
 import { AgentLifecycleError, createAgentWithServiceKey } from '@/lib/agent-lifecycle';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 
 const SENSITIVE_AGENT_FIELDS = ['trust_notes', 'trust_policy', 'privacy_metadata'] as const;
 
@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
 
   const { auth } = result;
   const isAdmin = isAdminAgent(auth.agent.id, auth.agent.name);
-  const supabase = createServerClient();
-  const { data: agents, error } = await supabase
+  const db = createServerClient();
+  const { data: agents, error } = await db
     .from('agents')
     .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, created_at, updated_at')
     .order('created_at', { ascending: true });

@@ -1,9 +1,9 @@
 // ── Nonce replay protection ──
 // Primary: PostgreSQL `nonce_cache` table (shared across instances).
 // Fallback: in-memory Map (single-instance only, used when PostgreSQL is unreachable).
-// Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
+// Migration required: migrations/20260331144800_shared_rate_limit.sql
 import crypto from 'crypto';
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import { logReplayDetected, logInvalidSignature } from './security-events';
 
 const TIMESTAMP_TOLERANCE_SECONDS = 300; // ±5 minutes
@@ -22,8 +22,8 @@ async function runNonceCleanup(): Promise<void> {
 
   // Also trigger PostgreSQL cleanup
   try {
-    const supabase = createServerClient();
-    await supabase.rpc('cleanup_expired_nonces');
+    const db = createServerClient();
+    await db.rpc('cleanup_expired_nonces');
   } catch {
     // PostgreSQL cleanup failed — fallback cache handles it locally
   }
@@ -46,11 +46,11 @@ function ensureNonceCleanupInterval(): void {
  */
 async function checkAndRecordNonce(nonce: string, expiresAtMs: number): Promise<boolean> {
   try {
-    const supabase = createServerClient();
+    const db = createServerClient();
     const expiresAt = new Date(expiresAtMs).toISOString();
 
     // Check existence
-    const { data: existing } = await supabase
+    const { data: existing } = await db
       .from('nonce_cache')
       .select('nonce')
       .eq('nonce', nonce)
@@ -59,7 +59,7 @@ async function checkAndRecordNonce(nonce: string, expiresAtMs: number): Promise<
     if (existing) return true; // duplicate
 
     // Insert — conflict = duplicate nonce
-    const { error: insertError } = await supabase
+    const { error: insertError } = await db
       .from('nonce_cache')
       .insert({ nonce, expires_at: expiresAt });
 
@@ -231,8 +231,8 @@ export async function validateHmac(
   const canonicalBody = deriveSigningBody(body);
 
   // Look up service key
-  const supabase = createServerClient();
-  const { data: keyData, error: keyError } = await supabase
+  const db = createServerClient();
+  const { data: keyData, error: keyError } = await db
     .from('service_keys')
     .select('id, key_id, signing_secret, agent_id, is_active, expires_at')
     .eq('key_id', apiKey)

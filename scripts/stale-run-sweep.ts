@@ -11,7 +11,7 @@
  * A silent run is cancelled, not failed. Silence proves a run stopped
  * reporting; it does not prove the work failed.
  */
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 
 type ReapedRun = {
@@ -33,10 +33,10 @@ function log(message: string, details?: Record<string, unknown>) {
 }
 
 async function run() {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const dryRun = process.env.STALE_RUN_SWEEP_DRY_RUN === '1';
 
-  const { data, error } = await supabase.rpc('reap_stale_execution_runs', {
+  const { data, error } = await db.rpc('reap_stale_execution_runs', {
     p_stale_after_minutes: STALE_AFTER_MINUTES,
     p_limit: BATCH_LIMIT,
     p_dry_run: dryRun,
@@ -66,7 +66,7 @@ async function run() {
     const recipients = new Set<string>();
     if (row.agent_id) recipients.add(row.agent_id);
 
-    const { data: members } = await supabase
+    const { data: members } = await db
       .from('project_members')
       .select('agent_id')
       .eq('project_id', row.project_id);

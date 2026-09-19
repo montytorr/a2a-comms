@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { appUrl } from '@/lib/app-url';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectVisibleAgentIds } from '../../../_helpers';
 import { sendTaskAssignedEmail } from '@/lib/email';
@@ -21,7 +21,7 @@ import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-polic
 import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
 
 async function notifyAssigneeOwner(
-  supabase: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
   options: {
     assigneeAgentId: string;
     projectId: string;
@@ -30,7 +30,7 @@ async function notifyAssigneeOwner(
     priority: string;
   }
 ) {
-  const { data: assigneeAgent } = await supabase
+  const { data: assigneeAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('id', options.assigneeAgentId)
@@ -41,7 +41,7 @@ async function notifyAssigneeOwner(
   const email = await getUserEmail(assigneeAgent.owner_user_id);
   if (!email) return;
 
-  const { data: project } = await supabase
+  const { data: project } = await db
     .from('projects')
     .select('title')
     .eq('id', options.projectId)
@@ -243,9 +243,9 @@ export async function GET(
     }
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: task, error } = await supabase
+  const { data: task, error } = await db
     .from('tasks')
     .select('*')
     .eq('id', tid)
@@ -261,26 +261,26 @@ export async function GET(
 
   // Enrich with dependencies, contracts, and agent info
   const [depsBlockingRes, depsBlockedRes, contractsRes, assigneeRes, reporterRes, sprintRes, executionRuns, checkpointRows, attachments, agentsRes] = await Promise.all([
-    supabase
+    db
       .from('task_dependencies')
       .select('*, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status, project_id)')
       .eq('blocked_task_id', tid),
-    supabase
+    db
       .from('task_dependencies')
       .select('*, blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id)')
       .eq('blocking_task_id', tid),
-    supabase
+    db
       .from('task_contracts')
       .select('*, contract:contracts(id, title, status)')
       .eq('task_id', tid),
     task.assignee_agent_id
-      ? supabase.from('agents').select('id, name, display_name').eq('id', task.assignee_agent_id).single()
+      ? db.from('agents').select('id, name, display_name').eq('id', task.assignee_agent_id).single()
       : Promise.resolve({ data: null }),
     task.reporter_agent_id
-      ? supabase.from('agents').select('id, name, display_name').eq('id', task.reporter_agent_id).single()
+      ? db.from('agents').select('id, name, display_name').eq('id', task.reporter_agent_id).single()
       : Promise.resolve({ data: null }),
     task.sprint_id
-      ? supabase.from('sprints').select('id, title, status').eq('id', task.sprint_id).single()
+      ? db.from('sprints').select('id, title, status').eq('id', task.sprint_id).single()
       : Promise.resolve({ data: null }),
     listTaskExecutionRuns(tid).catch(() => []),
     listTaskExecutionRuns(tid)
@@ -296,7 +296,7 @@ export async function GET(
       })
       .catch(() => []),
     listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: true }).catch(() => []),
-    supabase.from('agents').select('id, name, display_name'),
+    db.from('agents').select('id, name, display_name'),
   ]);
 
   // Filter dependencies to same-project tasks only
@@ -329,7 +329,7 @@ export async function GET(
   const contractIds = (contractsRes.data || []).map(d => d.contract?.id).filter(Boolean);
   let visibleContractIds = new Set<string>();
   if (contractIds.length > 0) {
-    const { data: participation } = await supabase
+    const { data: participation } = await db
       .from('contract_participants')
       .select('contract_id')
       .eq('agent_id', auth.agent.id)
@@ -478,10 +478,10 @@ export async function PATCH(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   if ('assignee_agent_id' in updates && updates.assignee_agent_id) {
-    const { data: assigneeMember } = await supabase
+    const { data: assigneeMember } = await db
       .from('project_members')
       .select('id')
       .eq('project_id', id)
@@ -505,7 +505,7 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    const { data: preInviteeAgents, error: preInviteeError } = await supabase
+    const { data: preInviteeAgents, error: preInviteeError } = await db
       .from('agents')
       .select('id, name')
       .in('name', preNormalizedInvitees);
@@ -533,7 +533,7 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    const { data: preBrokerAgents, error: preBrokerError } = await supabase
+    const { data: preBrokerAgents, error: preBrokerError } = await db
       .from('agents')
       .select('id, name')
       .in('name', preNormalizedBrokers);
@@ -554,7 +554,7 @@ export async function PATCH(
   }
 
   // Fetch existing task for change detection (activity feed)
-  const { data: oldTask } = await supabase
+  const { data: oldTask } = await db
     .from('tasks')
     .select('*')
     .eq('id', tid)
@@ -563,7 +563,7 @@ export async function PATCH(
 
   // Validate sprint belongs to same project
   if (updates.sprint_id) {
-    const { data: sprint } = await supabase
+    const { data: sprint } = await db
       .from('sprints')
       .select('id')
       .eq('id', updates.sprint_id as string)
@@ -579,14 +579,14 @@ export async function PATCH(
   }
 
   const taskResult = Object.keys(updates).length > 0
-    ? await supabase
+    ? await db
         .from('tasks')
         .update(updates)
         .eq('id', tid)
         .eq('project_id', id)
         .select()
         .single()
-    : await supabase
+    : await db
         .from('tasks')
         .select('*')
         .eq('id', tid)
@@ -620,7 +620,7 @@ export async function PATCH(
       );
     }
 
-    const { data: inviteeAgents, error: inviteeError } = await supabase
+    const { data: inviteeAgents, error: inviteeError } = await db
       .from('agents')
       .select('id, name, display_name, owner_user_id')
       .in('name', normalizedInvitees);
@@ -654,7 +654,7 @@ export async function PATCH(
     const [runs, attachments, taskContracts] = await Promise.all([
       listTaskExecutionRuns(tid).catch(() => []),
       listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
-      supabase
+      db
         .from('task_contracts')
         .select('contract_id, contract:contracts(id, title, status, description, created_at)')
         .eq('task_id', tid),
@@ -691,7 +691,7 @@ export async function PATCH(
       priorHandoffs,
     });
 
-    const { data: createdContract, error: contractError } = await supabase
+    const { data: createdContract, error: contractError } = await db
       .from('contracts')
       .insert({
         title: contractTitle,
@@ -730,19 +730,19 @@ export async function PATCH(
       })),
     ];
 
-    const { error: participantError } = await supabase.from('contract_participants').insert(participantRows);
+    const { error: participantError } = await db.from('contract_participants').insert(participantRows);
     if (participantError) {
-      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      await db.from('contracts').delete().eq('id', createdContract.id);
       return NextResponse.json(
         { error: 'Failed to create handoff contract participants', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
       );
     }
 
-    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: tid, contract_id: createdContract.id });
+    const { error: linkError } = await db.from('task_contracts').insert({ task_id: tid, contract_id: createdContract.id });
     if (linkError) {
-      await supabase.from('contract_participants').delete().eq('contract_id', createdContract.id);
-      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      await db.from('contract_participants').delete().eq('contract_id', createdContract.id);
+      await db.from('contracts').delete().eq('id', createdContract.id);
       return NextResponse.json(
         { error: 'Failed to link handoff contract to task', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
@@ -761,7 +761,7 @@ export async function PATCH(
     });
 
     async function appendTaskCommentForHandoff() {
-      await supabase.from('task_comments').insert({
+      await db.from('task_comments').insert({
         task_id: tid,
         project_id: id,
         author_agent_id: auth.agent.id,
@@ -818,7 +818,7 @@ export async function PATCH(
       );
     }
 
-    const { data: brokerAgents, error: brokerError } = await supabase
+    const { data: brokerAgents, error: brokerError } = await db
       .from('agents')
       .select('id, name, display_name, owner_user_id')
       .in('name', normalizedBrokers);
@@ -852,7 +852,7 @@ export async function PATCH(
     const [runs, attachments, taskContracts] = await Promise.all([
       listTaskExecutionRuns(tid).catch(() => []),
       listAttachmentsForScope({ projectId: id, taskId: tid, includeSignedUrl: false }).catch(() => []),
-      supabase
+      db
         .from('task_contracts')
         .select('contract_id, contract:contracts(id, title, status, description, created_at)')
         .eq('task_id', tid),
@@ -892,7 +892,7 @@ export async function PATCH(
       brokerAgentNames: normalizedBrokers,
     });
 
-    const { data: createdContract, error: contractError } = await supabase
+    const { data: createdContract, error: contractError } = await db
       .from('contracts')
       .insert({
         title: contractTitle,
@@ -931,19 +931,19 @@ export async function PATCH(
       })),
     ];
 
-    const { error: participantError } = await supabase.from('contract_participants').insert(participantRows);
+    const { error: participantError } = await db.from('contract_participants').insert(participantRows);
     if (participantError) {
-      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      await db.from('contracts').delete().eq('id', createdContract.id);
       return NextResponse.json(
         { error: 'Failed to create escalation contract participants', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
       );
     }
 
-    const { error: linkError } = await supabase.from('task_contracts').insert({ task_id: tid, contract_id: createdContract.id });
+    const { error: linkError } = await db.from('task_contracts').insert({ task_id: tid, contract_id: createdContract.id });
     if (linkError) {
-      await supabase.from('contract_participants').delete().eq('contract_id', createdContract.id);
-      await supabase.from('contracts').delete().eq('id', createdContract.id);
+      await db.from('contract_participants').delete().eq('contract_id', createdContract.id);
+      await db.from('contracts').delete().eq('id', createdContract.id);
       return NextResponse.json(
         { error: 'Failed to link escalation contract to task', code: 'DB_ERROR' } satisfies ApiError,
         { status: 500 }
@@ -1007,7 +1007,7 @@ export async function PATCH(
       }).catch(() => {});
     }
 
-    await supabase.from('task_comments').insert({
+    await db.from('task_comments').insert({
       task_id: tid,
       project_id: id,
       author_agent_id: auth.agent.id,
@@ -1089,7 +1089,7 @@ export async function PATCH(
     if ('assignee_agent_id' in updates && updates.assignee_agent_id !== oldTask.assignee_agent_id) {
       if (updates.assignee_agent_id) {
         // Look up assignee name
-        const { data: assignee } = await supabase
+        const { data: assignee } = await db
           .from('agents')
           .select('name, display_name')
           .eq('id', updates.assignee_agent_id as string)
@@ -1155,7 +1155,7 @@ export async function PATCH(
         author_name: actorName,
         ...c,
       }));
-      await supabase.from('task_comments').insert(rows);
+      await db.from('task_comments').insert(rows);
     }
   }
 
@@ -1198,10 +1198,10 @@ export async function PATCH(
     }).catch(() => {});
   }).catch(() => {});
 
-  await refreshTaskBlockedState(supabase, tid).catch(() => {});
+  await refreshTaskBlockedState(db, tid).catch(() => {});
 
   if ('assignee_agent_id' in updates && updates.assignee_agent_id !== oldTask?.assignee_agent_id && task.assignee_agent_id) {
-    notifyAssigneeOwner(supabase, {
+    notifyAssigneeOwner(db, {
       assigneeAgentId: task.assignee_agent_id,
       projectId: id,
       taskId: tid,
@@ -1210,7 +1210,7 @@ export async function PATCH(
     }).catch(() => {});
   }
 
-  const { data: refreshedTask } = await supabase
+  const { data: refreshedTask } = await db
     .from('tasks')
     .select('*')
     .eq('id', tid)

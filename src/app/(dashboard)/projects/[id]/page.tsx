@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { redirect, notFound } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import KanbanBoard, { type TaskRow } from './kanban-board';
@@ -27,11 +27,11 @@ export default async function ProjectDetailPage({
 
   const { id } = await params;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
   // Fetch project
-  const { data: project, error } = await supabase
+  const { data: project, error } = await db
     .from('projects')
     .select('*')
     .eq('id', id)
@@ -45,19 +45,19 @@ export default async function ProjectDetailPage({
   // Verify access: admin, member, observer, or invitee with an outstanding/resolved invitation.
   if (!user.isSuperAdmin) {
     const [{ data: membership }, { data: observerAccess }, { data: invitationAccess }] = await Promise.all([
-      supabase
+      db
         .from('project_members')
         .select('id')
         .eq('project_id', id)
         .in('agent_id', inviteeScopedQuery)
         .limit(1),
-      supabase
+      db
         .from('project_observers')
         .select('id')
         .eq('project_id', id)
         .in('agent_id', inviteeScopedQuery)
         .limit(1),
-      supabase
+      db
         .from('project_member_invitations')
         .select('id')
         .eq('project_id', id)
@@ -73,14 +73,14 @@ export default async function ProjectDetailPage({
 
   // Determine if user is project owner
   let isOwner = user.isSuperAdmin;
-  const isObserver = !user.isSuperAdmin && !isOwner && !!(await supabase
+  const isObserver = !user.isSuperAdmin && !isOwner && !!(await db
     .from('project_observers')
     .select('id')
     .eq('project_id', id)
     .in('agent_id', auth.agentScope)
     .limit(1)).data?.length;
   if (!isOwner) {
-    const { data: ownerCheck } = await supabase
+    const { data: ownerCheck } = await db
       .from('project_members')
       .select('id, role')
       .eq('project_id', id)
@@ -92,12 +92,12 @@ export default async function ProjectDetailPage({
 
   // Fetch members, invitations, observers, ALL tasks (for completion %), filtered tasks, dependencies, and available agents in parallel
   const [membersRes, invitationsRes, observersRes, tasksRes, depsRes, allAgentsRes] = await Promise.all([
-    supabase
+    db
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
       .eq('project_id', id)
       .order('joined_at', { ascending: true }),
-    supabase
+    db
       .from('project_member_invitations')
       .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
@@ -105,30 +105,30 @@ export default async function ProjectDetailPage({
     // The observer MANAGER is gone (project_observers has never had a row), but
     // these still drive visibility: observerAgentIds below decides what a
     // member can see.
-    supabase
+    db
       .from('project_observers')
       .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
-    supabase
+    db
       .from('tasks')
       .select('id, project_id, title, status, priority, labels, assignee_agent_id, position, created_at, updated_at, blocked_at, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('position', { ascending: true }),
     (async () => {
-      const taskIdsRes = await supabase
+      const taskIdsRes = await db
         .from('tasks')
         .select('id')
         .eq('project_id', id);
       const projectTaskIds = (taskIdsRes.data || []).map((t: { id: string }) => t.id);
       if (projectTaskIds.length === 0) return { data: [], error: null };
-      return supabase
+      return db
         .from('task_dependencies')
         .select('id, blocking_task_id, blocked_task_id, dependency_type, blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status), blocked_task:tasks!task_dependencies_blocked_task_id_fkey(id, title, status, project_id, assignee_agent_id, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status)')
         .or(`blocked_task_id.in.(${projectTaskIds.join(',')}),blocking_task_id.in.(${projectTaskIds.join(',')})`)
         .limit(500);
     })(),
-    supabase.from('agents').select('id, name, display_name').order('name'),
+    db.from('agents').select('id, name, display_name').order('name'),
   ]);
 
   const members = membersRes.data || [];

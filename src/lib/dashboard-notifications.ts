@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { AuthUser } from '@/lib/auth-context';
 import type { AuthActorContext } from '@/lib/auth-actor-context';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
@@ -86,14 +86,14 @@ type ApprovalRow = {
 };
 
 export async function getDashboardNotificationSummary(context: AuthUser | AuthActorContext): Promise<DashboardNotificationSummary> {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const user = 'user' in context ? context.user : context;
   const agentScope = 'agentScope' in context
     ? context.agentScope.length > 0 ? context.agentScope : [EMPTY_UUID]
     : user.agentIds.length > 0 ? user.agentIds : [EMPTY_UUID];
 
   const [contractInvitesRes, assignedTasksRes, projectInvitesRes, blockedTasksRes, approvalsRes] = await Promise.all([
-    supabase
+    db
       .from('contract_participants')
       .select(`
         contract_id,
@@ -105,7 +105,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(25),
-    supabase
+    db
       .from('tasks')
       .select(`
         id,
@@ -118,7 +118,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       .in('status', ['todo', 'in-progress'])
       .order('updated_at', { ascending: false })
       .limit(25),
-    supabase
+    db
       .from('project_member_invitations')
       .select(`
         id,
@@ -129,7 +129,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(25),
-    supabase
+    db
       .from('tasks')
       .select(`
         id,
@@ -156,7 +156,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
       .order('updated_at', { ascending: false })
       .limit(25),
     user.isSuperAdmin
-      ? supabase
+      ? db
           .from('pending_approvals')
           .select('id, action, actor, created_at')
           .eq('status', 'pending')
@@ -267,14 +267,14 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
   // steps rather than an embedded filter: the question is addressed to whoever
   // can answer it, which is every human on the contract and not only the owner
   // of the agent that asked.
-  const { data: myContractRows } = await supabase
+  const { data: myContractRows } = await db
     .from('contract_participants')
     .select('contract_id')
     .in('agent_id', agentScope);
   const myContractIds = [...new Set(((myContractRows || []) as Array<{ contract_id: string }>).map((row) => row.contract_id))];
 
   const { data: questionRows } = myContractIds.length > 0
-    ? await supabase
+    ? await db
         .from('contract_questions')
         .select('id, contract_id, kind, body, blocking, created_at, agent:agents!asked_by_agent_id(name, display_name), contract:contracts!contract_id(title)')
         .eq('status', 'open')

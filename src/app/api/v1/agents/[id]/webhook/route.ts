@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import { ACCEPTED_WEBHOOK_EVENTS, CANONICAL_WEBHOOK_EVENTS, isAcceptedWebhookEvent } from '@/lib/webhook-events';
 import type { ApiError } from '@/lib/types';
@@ -79,9 +79,9 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhook, error } = await supabase
+  const { data: webhook, error } = await db
     .from('webhooks')
     .upsert(
       {
@@ -132,9 +132,9 @@ export async function GET(
     return NextResponse.json(trustGate.body, { status: trustGate.status });
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: webhooks, error } = await supabase
+  const { data: webhooks, error } = await db
     .from('webhooks')
     .select('id, agent_id, url, events, is_active, created_at, updated_at, last_delivery_at, failure_count')
     .eq('agent_id', id)
@@ -192,10 +192,10 @@ export async function DELETE(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Soft-delete: deactivate instead of hard-delete to preserve retry recovery and audit history
-  const { data: existing, error: lookupError } = await supabase
+  const { data: existing, error: lookupError } = await db
     .from('webhooks')
     .select('id')
     .eq('agent_id', id)
@@ -217,7 +217,7 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('webhooks')
     .update({ is_active: false, url: '', updated_at: new Date().toISOString() })
     .eq('id', existing.id);

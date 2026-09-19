@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectAccess } from '@/lib/project-access';
 import { runBlockerWorkflowAction } from '@/lib/task-blocker-actions';
 import type { ApiError } from '@/lib/types';
@@ -53,11 +53,11 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   try {
     const result = await runBlockerWorkflowAction({
-      supabase,
+      db,
       projectId,
       taskId,
       type: action,
@@ -92,7 +92,7 @@ export async function POST(
       ipAddress: getClientIp(req),
     });
 
-    const { data: task } = await supabase
+    const { data: task } = await db
       .from('tasks')
       .select('*')
       .eq('id', taskId)

@@ -3,7 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type {
   ProposeContractRequest,
   ContractResponse,
@@ -45,10 +45,10 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || url.searchParams.get('per_page') || '20', 10)));
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Get contract IDs where this agent is a participant
-  let participantQuery = supabase
+  let participantQuery = db
     .from('contract_participants')
     .select('contract_id')
     .eq('agent_id', auth.agent.id);
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Build contracts query
-  let contractsQuery = supabase
+  let contractsQuery = db
     .from('contracts')
     .select('*', { count: 'exact' })
     .in('id', contractIds);

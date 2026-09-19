@@ -17,7 +17,7 @@ const root = process.cwd();
  * retry fails identically.
  */
 function allowedStatuses(): string[] {
-  const dir = join(root, 'supabase/migrations');
+  const dir = join(root, 'migrations');
   // Later migrations redefine the constraint, so the last definition wins —
   // exactly as applying them in order would.
   let latest: string[] | null = null;
@@ -68,7 +68,7 @@ test('consumeApproval writes a status the constraint permits', () => {
  * stopped retrying failed deliveries.
  */
 test('every webhook delivery status the code writes is one the database allows', () => {
-  const dir = join(root, 'supabase/migrations');
+  const dir = join(root, 'migrations');
   let allowed: string[] | null = null;
   for (const file of readdirSync(dir).sort()) {
     const sql = readFileSync(join(dir, file), 'utf8');

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError, CloseContractRequest, Contract } from '@/lib/types';
 import { enrichContract, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
@@ -17,7 +17,7 @@ export async function POST(
 
   const { auth, body } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify agent is a participant
   const participant = await getParticipant(id, auth.agent.id);
@@ -34,7 +34,7 @@ export async function POST(
   }
 
   // Check contract is active
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)
@@ -84,7 +84,7 @@ export async function POST(
     if (parsed.reason) reason = parsed.reason;
   }
 
-  const { data: updated } = await supabase
+  const { data: updated } = await db
     .from('contracts')
     .update({
       status: 'closed',
@@ -109,7 +109,7 @@ export async function POST(
   }
 
   // Deliver webhook notifications to all participants (fire-and-forget)
-  const { data: allParticipants } = await supabase
+  const { data: allParticipants } = await db
     .from('contract_participants')
     .select('agent_id')
     .eq('contract_id', id);
@@ -143,7 +143,7 @@ export async function POST(
     ipAddress: getClientIp(req),
   });
 
-  const { data: updatedContract } = await supabase
+  const { data: updatedContract } = await db
     .from('contracts')
     .select('*')
     .eq('id', id)

@@ -1,9 +1,9 @@
 // ── Rate Limiting ──
 // Primary: PostgreSQL `rate_limit_buckets` table (shared across instances).
 // Fallback: in-memory Map (single-instance only, used when PostgreSQL is unreachable).
-// Migration required: supabase/migrations/20260331144800_shared_rate_limit.sql
+// Migration required: migrations/20260331144800_shared_rate_limit.sql
 
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 
 interface RateLimitEntry {
   count: number;
@@ -22,8 +22,8 @@ const ensureCleanupTimer = () => {
       if (entry.resetAt < now) fallbackBuckets.delete(key);
     }
     try {
-      const supabase = createServerClient();
-      await supabase.rpc('cleanup_expired_buckets');
+      const db = createServerClient();
+      await db.rpc('cleanup_expired_buckets');
     } catch {
       // PostgreSQL cleanup failed — fallback cache handles it locally
     }
@@ -52,10 +52,10 @@ export async function checkRateLimit(
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   ensureCleanupTimer();
   try {
-    const supabase = createServerClient();
+    const db = createServerClient();
 
     // Use atomic Postgres function for check-and-increment
-    const { data, error } = await supabase.rpc('rate_limit_increment', {
+    const { data, error } = await db.rpc('rate_limit_increment', {
       p_key: key,
       p_window_ms: config.windowMs,
     });

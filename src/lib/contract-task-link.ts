@@ -9,7 +9,7 @@
  * link-at-creation path and the link-after-the-fact path cannot drift apart.
  */
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectAccess } from '@/lib/project-access';
 import type { ApiError } from '@/lib/types';
 
@@ -100,8 +100,8 @@ export async function checkLinkPermission(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: task } = await supabase
+  const db = createServerClient();
+  const { data: task } = await db
     .from('tasks')
     .select('id')
     .eq('id', target.taskId)
@@ -123,8 +123,8 @@ export async function linkContractToTask(
   contractId: string,
   taskId: string
 ): Promise<LinkRefusal | null> {
-  const supabase = createServerClient();
-  const { error } = await supabase
+  const db = createServerClient();
+  const { error } = await db
     .from('task_contracts')
     .insert({ task_id: taskId, contract_id: contractId });
 
@@ -142,8 +142,8 @@ export async function linkContractToTask(
  * earliest, which is the one the attachment path already treats as canonical.
  */
 export async function getLinkedTask(contractId: string): Promise<LinkedTaskSummary | null> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('task_contracts')
     .select(
       'task:tasks!task_contracts_task_id_fkey(id, title, status, project_id, project:projects(id, title))'
@@ -166,8 +166,8 @@ export async function getLinkedTasksForContracts(
   const out = new Map<string, LinkedTaskSummary>();
   if (contractIds.length === 0) return out;
 
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('task_contracts')
     .select(
       'contract_id, task:tasks!task_contracts_task_id_fkey(id, title, status, project_id, project:projects(id, title))'

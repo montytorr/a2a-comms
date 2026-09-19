@@ -3,7 +3,7 @@
  * it from a client component would bundle `pg` for the browser.
  */
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { PULSE_KEYS, PULSE_UNAVAILABLE, type Pulse } from '@/lib/pulse';
 
 let cached: { at: number; pulse: Pulse } | null = null;
@@ -14,8 +14,8 @@ export async function readPulse(now: number = Date.now()): Promise<Pulse> {
   if (cached && now - cached.at < CACHE_MS) return cached.pulse;
 
   try {
-    const supabase = createServerClient();
-    const { data, error } = await supabase.rpc('a2a_pulse');
+    const db = createServerClient();
+    const { data, error } = await db.rpc('a2a_pulse');
     if (error || !data || typeof data !== 'object') return PULSE_UNAVAILABLE;
     const pulse = data as Pulse;
     // A reading missing every key is a shape we do not recognise; treating it

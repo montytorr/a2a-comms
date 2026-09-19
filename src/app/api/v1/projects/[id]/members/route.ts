@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectMembership } from '../../_helpers';
 import type { ApiError } from '@/lib/types';
 import { evaluateProjectMemberListPolicyAccess } from '@/lib/agent-trust-policy';
@@ -33,8 +33,8 @@ export async function GET(
     }
   }
 
-  const supabase = createServerClient();
-  const { data: members, error } = await supabase
+  const db = createServerClient();
+  const { data: members, error } = await db
     .from('project_members')
     .select('id, project_id, agent_id, role, joined_at, agent:agents(id, name, display_name)')
     .eq('project_id', id)

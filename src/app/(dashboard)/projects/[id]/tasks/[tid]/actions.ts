@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { runBlockerWorkflowAction as applyBlockerWorkflowAction, type BlockerWorkflowInput } from '@/lib/task-blocker-actions';
@@ -35,8 +35,8 @@ export async function updateTask(
 ) {
   const user = await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
-  const { data: previousTask } = await supabase
+  const db = createServerClient();
+  const { data: previousTask } = await db
     .from('tasks')
     .select('title, description, priority, assignee_agent_id, labels, due_date, sprint_id')
     .eq('id', taskId)
@@ -53,7 +53,7 @@ export async function updateTask(
   if (data.due_date !== undefined) updates.due_date = data.due_date;
   if (data.sprint_id !== undefined) updates.sprint_id = data.sprint_id;
 
-  const { error } = await supabase
+  const { error } = await db
     .from('tasks')
     .update(updates)
     .eq('id', taskId)
@@ -95,13 +95,13 @@ export async function addComment(
 ) {
   const user = await requireProjectMembership(projectId, { allowObserverCommentary: true });
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Resolve author from the project-member agent (not user.agentIds[0])
   let authorName = 'Dashboard User';
   const authorAgentId: string | null = user.memberAgentId ?? null;
   if (authorAgentId) {
-    const { data: agent } = await supabase
+    const { data: agent } = await db
       .from('agents')
       .select('name, display_name')
       .eq('id', authorAgentId)
@@ -109,7 +109,7 @@ export async function addComment(
     if (agent) authorName = agent.display_name || agent.name;
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('task_comments')
     .insert({
       task_id: taskId,
@@ -155,14 +155,14 @@ async function runDashboardBlockerWorkflowAction(
   input: BlockerWorkflowInput,
 ) {
   const user = await requireProjectMembership(projectId);
-  const supabase = createServerClient();
+  const db = createServerClient();
   const { data: actorAgent } = user.memberAgentId
-    ? await supabase.from('agents').select('name, display_name').eq('id', user.memberAgentId).single()
+    ? await db.from('agents').select('name, display_name').eq('id', user.memberAgentId).single()
     : { data: null };
   const actorName = actorAgent?.display_name || actorAgent?.name || user.displayName || 'Dashboard User';
 
   await applyBlockerWorkflowAction({
-    supabase,
+    db,
     projectId,
     taskId,
     type,
@@ -202,8 +202,8 @@ export async function uploadTaskAttachment(projectId: string, taskId: string, fo
   await ensureAttachmentBucket();
   await uploadAttachmentBinary(storagePath, buffer, validated.mimeType);
 
-  const supabase = createServerClient();
-  const { error } = await supabase.from('task_attachments').insert({
+  const db = createServerClient();
+  const { error } = await db.from('task_attachments').insert({
     project_id: projectId,
     task_id: taskId,
     uploader_agent_id: user.memberAgentId,
@@ -219,7 +219,7 @@ export async function uploadTaskAttachment(projectId: string, taskId: string, fo
   });
   if (error) throw new Error(`Failed to save attachment: ${error.message}`);
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     actor: user.displayName || user.email,
     action: 'attachment.upload',
     resource_type: 'task',
@@ -257,10 +257,10 @@ export async function uploadTaskAttachment(projectId: string, taskId: string, fo
 export async function deleteTask(projectId: string, taskId: string) {
   await requireProjectMembership(projectId);
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Get all task IDs in this project to scope dependency deletion
-  const { data: projectTasks } = await supabase
+  const { data: projectTasks } = await db
     .from('tasks')
     .select('id')
     .eq('project_id', projectId);
@@ -268,12 +268,12 @@ export async function deleteTask(projectId: string, taskId: string) {
 
   // Delete dependencies only where both tasks belong to this project
   if (projectTaskIds.length > 0) {
-    await supabase
+    await db
       .from('task_dependencies')
       .delete()
       .eq('blocked_task_id', taskId)
       .in('blocking_task_id', projectTaskIds);
-    await supabase
+    await db
       .from('task_dependencies')
       .delete()
       .eq('blocking_task_id', taskId)
@@ -281,13 +281,13 @@ export async function deleteTask(projectId: string, taskId: string) {
   }
 
   // Delete task-contract links
-  await supabase
+  await db
     .from('task_contracts')
     .delete()
     .eq('task_id', taskId);
 
   // Delete the task
-  const { error } = await supabase
+  const { error } = await db
     .from('tasks')
     .delete()
     .eq('id', taskId)

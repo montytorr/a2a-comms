@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectMembership, normalizeProjectInvitation } from '../../../_helpers';
 import { isProjectInvitationExpired, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
@@ -34,8 +34,8 @@ export async function PATCH(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: rawInvitation } = await supabase
+  const db = createServerClient();
+  const { data: rawInvitation } = await db
     .from('project_member_invitations')
     .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name), project:projects(id, title)')
     .eq('id', invitationId)
@@ -80,13 +80,13 @@ export async function PATCH(
   // Trust-tier policy check on accept: re-evaluate at acceptance time
   // The inviter is the caller, the invitee is the target
   if (parsed.action === 'accept') {
-    const { data: inviterAgent } = await supabase
+    const { data: inviterAgent } = await db
       .from('agents')
       .select('id, name, owner_user_id, trust_tier')
       .eq('id', invitation.invited_by_agent_id)
       .single();
 
-    const { data: inviteeAgent } = await supabase
+    const { data: inviteeAgent } = await db
       .from('agents')
       .select('id, name, owner_user_id, trust_tier')
       .eq('id', invitation.agent_id)
@@ -124,7 +124,7 @@ export async function PATCH(
       : 'cancelled';
 
   const respondedAt = new Date().toISOString();
-  const { data: updatedInvitation, error } = await supabase
+  const { data: updatedInvitation, error } = await db
     .from('project_member_invitations')
     .update({ status: nextStatus, responded_at: respondedAt, updated_at: respondedAt })
     .eq('id', invitationId)
@@ -148,7 +148,7 @@ export async function PATCH(
   }
 
   if (nextStatus === 'accepted') {
-    const { error: addMemberError } = await supabase
+    const { error: addMemberError } = await db
       .from('project_members')
       .insert({
         project_id: id,
@@ -157,7 +157,7 @@ export async function PATCH(
       });
 
     if (addMemberError && addMemberError.code !== '23505') {
-      await supabase
+      await db
         .from('project_member_invitations')
         .update({ status: 'pending', responded_at: null, updated_at: new Date().toISOString() })
         .eq('id', invitationId);

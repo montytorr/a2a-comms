@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { getProjectMembership } from '../../_helpers';
 import type { ApiError } from '@/lib/types';
 import { evaluateObserverAccess } from '@/lib/trust-tiers';
@@ -35,8 +35,8 @@ export async function GET(
     }
   }
 
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('project_observers')
     .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
     .eq('project_id', id)
@@ -116,12 +116,12 @@ export async function POST(
     }
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const [{ data: project }, { data: agent }, { data: existingMember }, { data: existingObserver }] = await Promise.all([
-    supabase.from('projects').select('id, title').eq('id', id).single(),
-    supabase.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', parsed.agent_id).single(),
-    supabase.from('project_members').select('id').eq('project_id', id).eq('agent_id', parsed.agent_id).single(),
-    supabase.from('project_observers').select('id').eq('project_id', id).eq('agent_id', parsed.agent_id).single(),
+    db.from('projects').select('id, title').eq('id', id).single(),
+    db.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', parsed.agent_id).single(),
+    db.from('project_members').select('id').eq('project_id', id).eq('agent_id', parsed.agent_id).single(),
+    db.from('project_observers').select('id').eq('project_id', id).eq('agent_id', parsed.agent_id).single(),
   ]);
 
   if (!project) {
@@ -167,7 +167,7 @@ export async function POST(
     );
   }
 
-  const { data: observer, error } = await supabase
+  const { data: observer, error } = await db
     .from('project_observers')
     .insert({
       project_id: id,

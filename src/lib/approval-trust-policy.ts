@@ -1,4 +1,4 @@
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import { getApprovalScope } from './email/helpers';
 import { getAdminAgentIds, isAuthorizedDashboardReviewer, isAuthorizedReviewer } from './approvals';
 import type { AuthActorContext } from './auth-actor-context';
@@ -23,7 +23,7 @@ export interface DashboardApprovalVisibilityDecision extends ApprovalVisibilityD
  * - owner-scoped approvals are visible only to the actor and eligible reviewers
  */
 export async function getApprovalVisibilityForAgent(agentId: string, agentName: string): Promise<ApprovalVisibilityDecision> {
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   const canReviewAny = await isAuthorizedReviewer(agentId);
   const visibleActors = [agentName];
@@ -37,7 +37,7 @@ export async function getApprovalVisibilityForAgent(agentId: string, agentName: 
     return { canReview: false, visibleActors };
   }
 
-  const { data: pendingApprovals } = await supabase
+  const { data: pendingApprovals } = await db
     .from('pending_approvals')
     .select('id, actor, action');
 
@@ -53,7 +53,7 @@ export async function getApprovalVisibilityForAgent(agentId: string, agentName: 
 
   const actorOwnerByName = new Map<string, string | null>();
   if (actorNamesNeedingLookup.length > 0) {
-    const { data: actorAgents } = await supabase
+    const { data: actorAgents } = await db
       .from('agents')
       .select('name, owner_user_id')
       .in('name', actorNamesNeedingLookup);
@@ -63,7 +63,7 @@ export async function getApprovalVisibilityForAgent(agentId: string, agentName: 
     }
   }
 
-  const { data: reviewerAgent } = await supabase
+  const { data: reviewerAgent } = await db
     .from('agents')
     .select('owner_user_id')
     .eq('id', agentId)
@@ -103,8 +103,8 @@ export async function getDashboardApprovalVisibility(auth: AuthActorContext): Pr
 
   if (user.isSuperAdmin) {
     const canReview = await isAuthorizedDashboardReviewer(user.id, auth.actingAgent?.name);
-    const supabase = createServerClient();
-    const { data: pendingApprovals } = await supabase
+    const db = createServerClient();
+    const { data: pendingApprovals } = await db
       .from('pending_approvals')
       .select('id, actor, action');
 
@@ -124,7 +124,7 @@ export async function getDashboardApprovalVisibility(auth: AuthActorContext): Pr
 
     const actorOwnerByName = new Map<string, string | null>();
     if (actorNamesNeedingLookup.length > 0) {
-      const { data: actorAgents } = await supabase
+      const { data: actorAgents } = await db
         .from('agents')
         .select('name, owner_user_id')
         .in('name', actorNamesNeedingLookup);

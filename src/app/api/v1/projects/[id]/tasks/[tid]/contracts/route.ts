@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { checkLinkPermission } from '@/lib/contract-task-link';
@@ -11,8 +11,8 @@ async function verifyMembership(projectId: string, agentId: string) {
 }
 
 async function verifyTaskInProject(taskId: string, projectId: string) {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('tasks')
     .select('id')
     .eq('id', taskId)
@@ -47,8 +47,8 @@ export async function GET(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: links, error } = await supabase
+  const db = createServerClient();
+  const { data: links, error } = await db
     .from('task_contracts')
     .select('*, contract:contracts(id, title, status, created_at)')
     .eq('task_id', tid);
@@ -63,7 +63,7 @@ export async function GET(
   // Filter to only contracts where the calling agent is a participant
   if (links && links.length > 0) {
     const contractIds = links.map(l => (l as Record<string, unknown>).contract as { id: string } | null).map(c => c?.id).filter(Boolean) as string[];
-    const { data: participations } = await supabase
+    const { data: participations } = await db
       .from('contract_participants')
       .select('contract_id')
       .in('contract_id', contractIds)
@@ -111,10 +111,10 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify contract exists
-  const { data: contract } = await supabase
+  const { data: contract } = await db
     .from('contracts')
     .select('id')
     .eq('id', parsed.contract_id)
@@ -128,7 +128,7 @@ export async function POST(
   }
 
   // Verify the calling agent is a participant in the contract
-  const { data: participation } = await supabase
+  const { data: participation } = await db
     .from('contract_participants')
     .select('id')
     .eq('contract_id', parsed.contract_id)
@@ -142,7 +142,7 @@ export async function POST(
     );
   }
 
-  const { data: link, error } = await supabase
+  const { data: link, error } = await db
     .from('task_contracts')
     .insert({
       task_id: tid,
@@ -226,9 +226,9 @@ export async function DELETE(
     );
   }
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
-  const { data: callerParticipation } = await supabase
+  const { data: callerParticipation } = await db
     .from('contract_participants')
     .select('id')
     .eq('contract_id', parsed.contract_id)
@@ -242,7 +242,7 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('task_contracts')
     .delete()
     .eq('task_id', tid)

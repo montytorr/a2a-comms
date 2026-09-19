@@ -18,7 +18,7 @@
  * `contract-task-link.ts` exists.
  */
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type {
   ApiError,
   ContractLinkDirection,
@@ -217,8 +217,8 @@ async function participantRoles(
   contractIds: string[],
   agentId: string
 ): Promise<Map<string, string>> {
-  const supabase = createServerClient();
-  const { data: rows } = await supabase
+  const db = createServerClient();
+  const { data: rows } = await db
     .from('contract_participants')
     .select('contract_id, role')
     .eq('agent_id', agentId)
@@ -297,8 +297,8 @@ export async function createContractLink(params: {
   note?: string | null;
   createdByAgentId?: string | null;
 }): Promise<LinkRefusal | null> {
-  const supabase = createServerClient();
-  const { error } = await supabase.from('contract_links').insert({
+  const db = createServerClient();
+  const { error } = await db.from('contract_links').insert({
     from_contract_id: params.fromContractId,
     to_contract_id: params.toContractId,
     link_type: params.linkType,
@@ -335,8 +335,8 @@ export async function deleteContractLink(params: {
   toContractId: string;
   linkType: ContractLinkType;
 }): Promise<{ ok: true; removed: boolean } | ({ ok: false } & LinkRefusal)> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from('contract_links')
     .delete()
     .eq('from_contract_id', params.fromContractId)
@@ -350,8 +350,8 @@ export async function deleteContractLink(params: {
 
 /** Both directions for one contract, newest link first. */
 export async function getRelatedContracts(contractId: string): Promise<RelatedContractSummary[]> {
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('contract_links')
     .select(LINK_SELECT)
     .or(`from_contract_id.eq.${contractId},to_contract_id.eq.${contractId}`)
@@ -374,10 +374,10 @@ export async function getRelatedContractsForContracts(
   const out = new Map<string, RelatedContractSummary[]>();
   if (contractIds.length === 0) return out;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   const list = safeIdList(contractIds);
   if (!list) return out;
-  const { data } = await supabase
+  const { data } = await db
     .from('contract_links')
     .select(LINK_SELECT)
     .or(`from_contract_id.in.(${list}),to_contract_id.in.(${list})`)
@@ -411,8 +411,8 @@ export async function getDelegationMembers(contractIds: string[]): Promise<Set<s
   const list = safeIdList(contractIds);
   if (!list) return members;
 
-  const supabase = createServerClient();
-  const { data } = await supabase
+  const db = createServerClient();
+  const { data } = await db
     .from('contract_links')
     .select('from_contract_id, to_contract_id')
     .eq('link_type', 'delegates_to')

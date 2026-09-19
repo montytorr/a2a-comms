@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { Webhook, Agent } from '@/lib/types';
@@ -18,10 +18,10 @@ export default async function WebhooksPage() {
   const user = auth?.user ?? null;
   if (!user || !auth) redirect('/login');
 
-  const supabase = createServerClient();
+  const db = createServerClient();
   noStore();
 
-  let query = supabase
+  let query = db
     .from('webhooks')
     .select(`
       id,

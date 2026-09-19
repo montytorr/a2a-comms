@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { isAdminAgent } from '@/lib/admin';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import type { ApiError } from '@/lib/types';
 
 export async function POST(
@@ -16,10 +16,10 @@ export async function POST(
   const { auth } = result;
   const { id: agentId } = await params;
 
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Look up the target agent
-  const { data: targetAgent, error: agentError } = await supabase
+  const { data: targetAgent, error: agentError } = await db
     .from('agents')
     .select('id, name')
     .eq('id', agentId)
@@ -41,7 +41,7 @@ export async function POST(
   }
 
   // Find the current active service key for this agent
-  const { data: currentKey, error: keyError } = await supabase
+  const { data: currentKey, error: keyError } = await db
     .from('service_keys')
     .select('*')
     .eq('agent_id', agentId)
@@ -67,7 +67,7 @@ export async function POST(
   const oldKeyExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
   // Set expiry on old key (grace period)
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from('service_keys')
     .update({
       expires_at: oldKeyExpiresAt,
@@ -84,7 +84,7 @@ export async function POST(
 
   // Insert new service key
   const newKeyHash = crypto.createHash('sha256').update(newKeyId).digest('hex');
-  const { data: newKey, error: insertError } = await supabase
+  const { data: newKey, error: insertError } = await db
     .from('service_keys')
     .insert({
       key_id: newKeyId,
@@ -100,7 +100,7 @@ export async function POST(
 
   if (insertError || !newKey) {
     // Attempt to rollback the old key expiry
-    await supabase
+    await db
       .from('service_keys')
       .update({ expires_at: null, rotated_at: null })
       .eq('id', currentKey.id);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateHmac } from './hmac';
 import { checkRateLimit, RATE_LIMITS } from './rate-limit';
 import { logAuthSuccess, logAuthFailure } from './security-events';
-import { createServerClient } from './supabase/server';
+import { createServerClient } from './db/server';
 import type { Agent, ApiError, AuthContext } from './types';
 
 /**
@@ -50,8 +50,8 @@ export async function authenticateApiRequest(
 
   // Check kill switch for write operations
   if (method !== 'GET' && method !== 'HEAD') {
-    const supabase = createServerClient();
-    const { data } = await supabase
+    const db = createServerClient();
+    const { data } = await db
       .from('system_config')
       .select('value')
       .eq('key', 'kill_switch')
@@ -94,8 +94,8 @@ export async function authenticateApiRequest(
     };
   }
 
-  const supabase = createServerClient();
-  const { data: agent } = await supabase
+  const db = createServerClient();
+  const { data: agent } = await db
     .from('agents')
     .select('*')
     .eq('id', hmacResult.agentId)

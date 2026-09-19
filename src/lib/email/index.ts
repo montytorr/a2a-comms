@@ -101,10 +101,10 @@ export async function shouldSendEmail(userId: string, template: string): Promise
 
   try {
     // Dynamic import to avoid circular deps and keep this usable in edge contexts
-    const { createServerClient } = await import('@/lib/supabase/server');
-    const supabase = createServerClient();
+    const { createServerClient } = await import('@/lib/db/server');
+    const db = createServerClient();
 
-    const { data } = await supabase
+    const { data } = await db
       .from('notification_preferences')
       .select(column)
       .eq('user_id', userId)

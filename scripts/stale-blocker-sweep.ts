@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { notifyBlockerAction, staleBlockerNeedsEscalation } from '@/lib/task-blocker-actions';
 
 type BlockingTask = { id: string; title: string; status: string };
@@ -10,11 +10,11 @@ function log(message: string, details?: Record<string, unknown>) {
 }
 
 async function run() {
-  const supabase = createServerClient();
+  const db = createServerClient();
   const now = new Date().toISOString();
   const dryRun = process.env.STALE_BLOCKER_SWEEP_DRY_RUN === '1';
 
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await db
     .from('tasks')
     .select(`
       id,
@@ -65,7 +65,7 @@ async function run() {
       continue;
     }
 
-    const { data: updateData, error: updateError } = await supabase
+    const { data: updateData, error: updateError } = await db
       .from('tasks')
       .update({
         blocker_escalated_at: now,
@@ -86,7 +86,7 @@ async function run() {
     }
 
     try {
-      await supabase.from('task_comments').insert({
+      await db.from('task_comments').insert({
         task_id: row.id,
         project_id: row.project_id,
         author_agent_id: null,
@@ -99,7 +99,7 @@ async function run() {
       log('failed to log stale blocker comment', { taskId: row.id, error: commentError instanceof Error ? commentError.message : String(commentError) });
     }
 
-    await notifyBlockerAction(supabase, {
+    await notifyBlockerAction(db, {
       projectId: row.project_id,
       taskId: row.id,
       taskTitle: row.title,

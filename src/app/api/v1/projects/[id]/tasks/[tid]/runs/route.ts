@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { createTaskExecutionRun, isTaskExecutionRunStatus, listTaskExecutionRuns } from '@/lib/task-execution';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
@@ -10,8 +10,8 @@ import type { ApiError, CreateTaskExecutionRunRequest } from '@/lib/types';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
 
 async function getTaskContext(projectId: string, taskId: string) {
-  const supabase = createServerClient();
-  const { data: task, error } = await supabase
+  const db = createServerClient();
+  const { data: task, error } = await db
     .from('tasks')
     .select('id, project_id, active_run_id')
     .eq('id', taskId)
@@ -123,8 +123,8 @@ export async function POST(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: latestRun } = await supabase
+  const db = createServerClient();
+  const { data: latestRun } = await db
     .from('task_execution_runs')
     .select('attempt')
     .eq('task_id', taskId)

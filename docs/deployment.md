@@ -155,4 +155,4 @@ Skip CI with `[skip ci]` in the commit message.
 
 Set `DATABASE_URL` in the private deployment `.env` and connect the application and worker containers to the PostgreSQL network. Persist `/data/attachments`, set `A2A_ATTACHMENT_SIGNING_KEY`, and keep database, signing, and mail credentials outside version control. `scripts/backup.sh` captures both the portable public-schema dump and the attachment tree; `scripts/restore-drill.sh` verifies the newest pair in a throwaway database.
 
-During a Supabase-to-native cutover, stop every application writer, export PostgreSQL plus Storage object contents, restore and compare tables and users, verify authenticated operations, and retain a tested rollback backup. A database dump contains attachment metadata; it does not contain attachment files.
+A database dump contains attachment metadata; it does not contain attachment files. Back up and restore the two together, or a restore comes up with every row pointing at something that is not there.

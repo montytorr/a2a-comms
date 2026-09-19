@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/db/server';
 import { hydrateProjectInvitations } from '../_helpers';
 import type { UpdateProjectRequest, ApiError } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
@@ -22,7 +22,7 @@ export async function GET(
 
   const { auth } = result;
   const { id } = await params;
-  const supabase = createServerClient();
+  const db = createServerClient();
 
   // Verify membership
   const member = await verifyMembership(id, auth.agent.id);
@@ -43,7 +43,7 @@ export async function GET(
     }
   }
 
-  const { data: project, error } = await supabase
+  const { data: project, error } = await db
     .from('projects')
     .select('*')
     .eq('id', id)
@@ -67,32 +67,32 @@ export async function GET(
 
   // Enrich with members and stats
   const [membersRes, observersRes, tasksRes, sprintsRes, invitationsRes, executionRunsRes] = await Promise.all([
-    supabase
+    db
       .from('project_members')
       .select('*, agent:agents(id, name, display_name)')
       .eq('project_id', id),
     member.accessKind === 'observer'
       ? Promise.resolve({ data: [] as Array<Record<string, unknown>>, error: null })
-      : supabase
+      : db
           .from('project_observers')
           .select('*, agent:agents!project_observers_agent_id_fkey(id, name, display_name, trust_tier), invited_by:agents!project_observers_invited_by_agent_id_fkey(id, name, display_name)')
           .eq('project_id', id)
           .order('created_at', { ascending: false }),
-    supabase
+    db
       .from('tasks')
       .select('id, status')
       .eq('project_id', id),
-    supabase
+    db
       .from('sprints')
       .select('*')
       .eq('project_id', id)
       .order('position', { ascending: true }),
-    supabase
+    db
       .from('project_member_invitations')
       .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
-    supabase
+    db
       .from('task_execution_runs')
       .select('id, task_id, status, checkpoint_count, updated_at, created_at')
       .eq('project_id', id)
@@ -198,8 +198,8 @@ export async function PATCH(
     );
   }
 
-  const supabase = createServerClient();
-  const { data: project, error } = await supabase
+  const db = createServerClient();
+  const { data: project, error } = await db
     .from('projects')
     .update(updates)
     .eq('id', id)
