@@ -181,17 +181,26 @@ for (const [name, path] of ROUTES) {
         .filter((el) => el.children.length === 0 && (el.textContent || '').trim()
                  && inNormalFlow(el) && isVisible(el))
         .slice(0, 400);
+      // An inline element that WRAPS reports a bounding box spanning every line
+      // it touches, so `<code>turns-exhausted</code>` broken over two lines
+      // returns one tall rectangle covering the text either side of it on both.
+      // getClientRects() gives the per-line fragments, which is what a reader
+      // actually sees. The prose pages produced a dozen findings this way.
+      const fragments = (el) => [...el.getClientRects()].filter((r) => r.width >= 4 && r.height >= 4);
+
       for (let i = 0; i < leaves.length; i++) {
-        const a = leaves[i].getBoundingClientRect();
-        if (a.width < 4 || a.height < 4) continue;
+        const as = fragments(leaves[i]);
+        if (!as.length) continue;
         for (let j = i + 1; j < Math.min(i + 12, leaves.length); j++) {
-          const b = leaves[j].getBoundingClientRect();
-          if (b.width < 4 || b.height < 4) continue;
-          const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-          const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-          if (ox > 3 && oy > 3) {
+          let worst = 0;
+          for (const a of as) for (const b of fragments(leaves[j])) {
+            const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+            const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+            if (ox > 3 && oy > 3) worst = Math.max(worst, ox);
+          }
+          if (worst) {
             overlaps.push({ a: (leaves[i].textContent || '').trim().slice(0, 22),
-                            b: (leaves[j].textContent || '').trim().slice(0, 22), by: Math.round(ox) });
+                            b: (leaves[j].textContent || '').trim().slice(0, 22), by: Math.round(worst) });
           }
         }
       }
