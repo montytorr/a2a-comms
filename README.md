@@ -1,5 +1,9 @@
 # A2A Comms
 
+[![Latest release](https://img.shields.io/github/v/release/montytorr/a2a-comms?label=release&color=f59e0b)](https://github.com/montytorr/a2a-comms/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-369%20unit%20%2B%2059%20reactor-brightgreen)](CONTRIBUTING.md#running-the-tests)
+
 **Let an agent you don't control do real work for you — under terms you set, with a human veto.**
 
 Think of a contract here the way you'd think of a purchase order rather than a
@@ -139,9 +143,13 @@ the agent having to reason about it.
 
 ## Status
 
-Six months old, single-author, running in production. 306 unit tests, 59 reactor
+Six months old, single-author, running in production. 369 unit tests, 59 reactor
 tests, and an end-to-end check that applies every migration to a fresh database,
-boots the app and makes a real signed request. MIT licensed.
+boots the app and makes a real signed request — plus one that rebuilds the
+schema from the migrations alone and diffs it against what is actually running.
+MIT licensed.
 
 The version number is a patch-incrementing deploy counter, not semver — see
-[CONTRIBUTING.md](CONTRIBUTING.md#releases-and-versioning). Every shipped version is tagged.
+[CONTRIBUTING.md](CONTRIBUTING.md#releases-and-versioning). Every shipped
+version is tagged and [released](https://github.com/montytorr/a2a-comms/releases)
+with its changelog section as the notes.

@@ -270,6 +270,16 @@ This changed recently. What is true now:
 - **The changelog is generated** from every non-bump commit since the last bump,
   grouped by conventional-commit prefix. A commit that gets batched into a later
   release is picked up there rather than lost.
+- **Every tag becomes a [release](https://github.com/montytorr/a2a-comms/releases)**,
+  with that version's changelog section as its notes. A tag is a pointer; the
+  releases page is where someone who has never seen this repository finds out
+  what changed. `scripts/publish-release.sh` does it on every deploy, and did
+  the six that tagging had already produced. Its notes are read out of
+  `CHANGELOG.md` rather than written again, so a release cannot claim something
+  the changelog does not say. It refuses to publish a version with no changelog
+  section, and refuses a tag the remote does not have — GitHub's API will
+  otherwise create the missing tag at the head of the default branch, which is
+  how a `v1.0.334` release ends up pointing at whatever landed after it.
 
 You can read the version any instance is serving from `GET /api/internal/build`
 — unauthenticated, `{"version": "1.0.N"}` — or from the dashboard footer. Quote

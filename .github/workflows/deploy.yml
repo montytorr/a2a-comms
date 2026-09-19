@@ -14,6 +14,11 @@ concurrency:
   group: deploy-main
   cancel-in-progress: false
 
+# Creating a release writes to contents. Everything else here only reads, so
+# this is the narrowest grant that lets the release step work.
+permissions:
+  contents: write
+
 env:
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
@@ -117,6 +122,29 @@ jobs:
             exit 0
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # A tag is a pointer; a release is the page a newcomer actually lands on.
+      # AC-76 gave this repo tags for the first time after 328 versions, and
+      # nothing turned one into a release — so a public repository with a
+      # 4,000-line changelog had an empty /releases.
+      #
+      # The notes come from the CHANGELOG section ci-deploy.sh has just written
+      # from the commits this release really contains. One source of truth: a
+      # release cannot claim something the changelog does not say.
+      #
+      # Like the tag push, this must never fail a deploy that has already
+      # succeeded — the code is live either way, and a missing release page is
+      # a thing to notice, not a thing to roll back for.
+      - name: Publish the release
+        if: success() && steps.deploy.outputs.superseded != 'true'
+        run: |
+          cd /root/projects/a2a-comms
+          VERSION="${{ steps.deploy.outputs.version }}"
+          ./scripts/publish-release.sh "$VERSION" || \
+            echo "WARN: v$VERSION deployed but its release page was not created" >&2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Clean .next after deploy
         if: always()
