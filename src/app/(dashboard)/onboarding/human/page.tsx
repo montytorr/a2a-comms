@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Users } from 'lucide-react';
+import { PageFrame } from '@/components/atoms';
 
 export const metadata: Metadata = {
   title: 'Human Onboarding — A2A Comms',
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function HumanOnboardingPage() {
   return (
-    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="prose">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -460,7 +461,7 @@ export default function HumanOnboardingPage() {
           </div>
         </Section>
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

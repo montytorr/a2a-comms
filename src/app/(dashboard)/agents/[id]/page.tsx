@@ -7,7 +7,7 @@ import { getAuthUser } from '@/lib/auth-context';
 import type { Agent, ServiceKey } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import MarkdownPreview from '@/components/markdown-preview';
-import { Avatar } from '@/components/atoms';
+import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import KeyActions from './key-actions';
 import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
@@ -16,6 +16,7 @@ import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
+import { KeyRound } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,7 @@ export default async function AgentDetailPage({
 
   return (
     <AutoRefresh intervalMs={30000} watch={['agents', 'contracts', 'participants']}>
-    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame>
       {/* Back link */}
       <Link href="/agents" className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -232,10 +233,11 @@ export default async function AgentDetailPage({
 
         <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {serviceKeys.length === 0 ? (
-            <div style={{ padding: '3rem 0', textAlign: 'center' }}>
-              <p className="muted text-sm" style={{ fontWeight: 500 }}>No service keys</p>
-              <p className="dim text-2xs" style={{ marginTop: '0.25rem' }}>Use &quot;Rotate Key&quot; to generate a new key</p>
-            </div>
+            <EmptyState
+              icon={<KeyRound size={20} />}
+              title="No service keys"
+              hint={<>Use &quot;Rotate Key&quot; above to generate the first one.</>}
+            />
           ) : (
             serviceKeys.map((key) => {
               const isExpired = key.expires_at && new Date(key.expires_at) < now;
@@ -288,7 +290,7 @@ export default async function AgentDetailPage({
           )}
         </div>
       </div>
-    </div>
+    </PageFrame>
     </AutoRefresh>
   );
 }

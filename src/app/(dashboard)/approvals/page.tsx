@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation';
 import ApprovalList from './approval-list';
 import AutoRefresh from '@/components/auto-refresh';
 import { getDashboardApprovalVisibility } from '@/lib/approval-trust-policy';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, AlertTriangle } from 'lucide-react';
+import { PageFrame, EmptyState } from '@/components/atoms';
 export const dynamic = 'force-dynamic';
 
 export default async function ApprovalsPage({
@@ -49,15 +50,20 @@ export default async function ApprovalsPage({
   const { data: approvals, error: queryError } = await query;
   if (queryError) {
     return (
-      <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame width="prose">
         <div style={{ marginBottom: 32 }}>
           <h1 className="h1">Approvals</h1>
+          <p className="muted text-sm">Failed to load approvals</p>
         </div>
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load approvals</div>
-          <div className="dim text-xs" style={{ marginTop: 6 }}>A database error occurred. Please try again later.</div>
+        <div className="card">
+          <EmptyState
+            tone="error"
+            icon={<AlertTriangle size={20} />}
+            title="Failed to load approvals"
+            hint="A database error occurred. The queue is not empty — it could not be read. Please try again later."
+          />
         </div>
-      </div>
+      </PageFrame>
     );
   }
   const rows = (approvals || []) as Array<{
@@ -93,7 +99,7 @@ export default async function ApprovalsPage({
 
   return (
     <AutoRefresh intervalMs={10000} watch={['approvals']}>
-      <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame width="prose">
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -145,7 +151,7 @@ export default async function ApprovalsPage({
           currentUser={user.displayName}
           isSuperAdmin={user.isSuperAdmin}
         />
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

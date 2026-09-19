@@ -6,6 +6,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import { getAuthUser } from '@/lib/auth-context';
 import { getDashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { formatDate } from '@/lib/format-date';
+import { PageFrame, EmptyState } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export default async function NotificationsPage() {
 
   return (
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'projects', 'approvals']}>
-      <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame width="prose">
         {/* Header */}
         <div style={{ marginBottom: '32px' }} className="animate-fade-in">
           <div className="row gap-3" style={{ marginBottom: '8px' }}>
@@ -86,25 +87,11 @@ export default async function NotificationsPage() {
           </div>
 
           {items.length === 0 ? (
-            <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '8px',
-                  background: 'var(--bg-2)',
-                  border: '1px solid var(--line-1)',
-                  marginBottom: '14px',
-                }}
-              >
-                <Bell size={18} style={{ color: 'var(--fg-4)' }} />
-              </div>
-              <p className="muted text-sm" style={{ fontWeight: 500 }}>Nothing needs attention</p>
-              <p className="dim text-2xs" style={{ marginTop: '4px' }}>A rare and suspiciously pleasant state of affairs.</p>
-            </div>
+            <EmptyState
+              icon={<Bell size={20} />}
+              title="Nothing needs attention"
+              hint="A rare and suspiciously pleasant state of affairs."
+            />
           ) : (
             <div>
               {items.map((item, idx) => (
@@ -140,7 +127,7 @@ export default async function NotificationsPage() {
             </div>
           )}
         </div>
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

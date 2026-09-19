@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { registerAgent, type RegisterAgentResult } from './actions';
+import { PageFrame } from '@/components/atoms';
 
 export default function RegisterAgentPage() {
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export default function RegisterAgentPage() {
 
   if (result) {
     return (
-      <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame width="narrow">
         <Link
           href="/agents"
           className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
@@ -122,12 +123,12 @@ export default function RegisterAgentPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageFrame>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="narrow">
       <Link
         href="/agents"
         className="text-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: 'var(--fg-3)', marginBottom: '1.5rem', textDecoration: 'none' }}
@@ -297,6 +298,6 @@ export default function RegisterAgentPage() {
           </form>
         </div>
       </div>
-    </div>
+    </PageFrame>
   );
 }

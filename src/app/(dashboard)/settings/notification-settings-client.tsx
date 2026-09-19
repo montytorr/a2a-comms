@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { updateNotificationPreferences, type NotificationPreferences } from './actions';
+import { PageFrame } from '@/components/atoms';
 
 interface NotificationSettingsClientProps {
   initialPrefs: NotificationPreferences;
@@ -71,7 +72,7 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
   }
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="narrow">
       <div style={{ marginBottom: '32px' }}>
         <h1 className="h1">Settings</h1>
         <p className="muted text-sm" style={{ marginTop: '4px' }}>Manage your notification preferences.</p>
@@ -140,7 +141,7 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
           </div>
         )}
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

@@ -14,7 +14,7 @@ import { categorizeProjectInvitations, type InvitationLike } from './invitation-
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 import { buildProjectCardAccessMap } from '@/lib/project-card-access';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
-import { ProgressBar } from '@/components/atoms';
+import { ProgressBar, PageFrame, EmptyState } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
 import { colorVarForTone, pillClassForTone } from '@/lib/status-tone';
 import { Users, Layers, Eye, Plus, MoreHorizontal, FolderKanban } from 'lucide-react';
@@ -231,7 +231,7 @@ async function renderProjectsPage({
 
   return (
     <AutoRefresh intervalMs={15000} watch={['projects', 'tasks']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Header */}
         <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
           <div className="col gap-1">
@@ -269,10 +269,13 @@ async function renderProjectsPage({
         {/* Project cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginTop: 16 }}>
           {rows.length === 0 ? (
-            <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}>
-              <FolderKanban size={32} style={{ color: 'var(--fg-3)', margin: '0 auto' }} />
-              <div className="h3" style={{ marginTop: 14 }}>No projects found</div>
-              <div className="dim text-sm" style={{ marginTop: 4 }}>Create a project to start organizing tasks</div>
+            <div className="card" style={{ gridColumn: '1 / -1' }}>
+              <EmptyState
+                icon={<FolderKanban size={20} />}
+                title="No projects found"
+                hint="No project matches the current filter. Create one to start organising tasks."
+                action={<Link className="btn btn--primary btn--sm" href="/projects/new">New Project</Link>}
+              />
             </div>
           ) : (
             rows.map((project) => {
@@ -387,7 +390,7 @@ async function renderProjectsPage({
             })
           )}
         </div>
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

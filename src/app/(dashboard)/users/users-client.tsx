@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toggleSuperAdmin, linkAgentToUser, unlinkAgent, createUser } from './actions';
 import { formatDate } from '@/lib/format-date';
 import { Plus, X, Shield, User, Bot, Link2, Unlink } from 'lucide-react';
-import { Avatar } from '@/components/atoms';
+import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import { pillClassForTone } from '@/lib/status-tone';
 
 interface UserProfile {
@@ -118,7 +118,7 @@ export default function UsersClient({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame>
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 28 }}>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -283,6 +283,15 @@ export default function UsersClient({
 
       {/* User Cards */}
       <div className="col gap-3">
+        {profiles.length === 0 && (
+          <div className="card">
+            <EmptyState
+              icon={<User size={20} />}
+              title="No users visible"
+              hint="Create the first account with Add User above."
+            />
+          </div>
+        )}
         {profiles.map((profile, idx) => {
           const userAgents = agentsByOwner[profile.id] || [];
           const isSelf = profile.id === currentUserId;
@@ -395,9 +404,7 @@ export default function UsersClient({
                   )}
 
                   {userAgents.length === 0 ? (
-                    <p className="dim text-xs" style={{ fontStyle: 'italic' }}>
-                      No agents linked
-                    </p>
+                    <EmptyState title="No agents linked" />
                   ) : (
                     <div className="col gap-2">
                       {userAgents.map((agent) => (
@@ -481,6 +488,6 @@ export default function UsersClient({
           );
         })}
       </div>
-    </div>
+    </PageFrame>
   );
 }

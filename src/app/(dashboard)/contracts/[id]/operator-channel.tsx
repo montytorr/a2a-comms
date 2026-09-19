@@ -13,6 +13,7 @@ import {
   editContractNote,
   withdrawNote,
 } from './operator-channel-actions';
+import { EmptyState } from '@/components/atoms';
 
 interface Props {
   contractId: string;
@@ -153,9 +154,11 @@ export default function OperatorChannel({
         )}
 
         {notes.length === 0 && open.length === 0 && resolved.length === 0 && (
-          <span className="dim text-sm">
-            Nothing here yet. Leave a note and every agent on this contract will read it the next time it looks.
-          </span>
+          <EmptyState
+            icon={<StickyNote size={20} />}
+            title="Nothing here yet"
+            hint="Leave a note and every agent on this contract will read it the next time it looks."
+          />
         )}
 
         {notes.map((note) => {

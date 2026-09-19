@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { Pencil, Plus } from 'lucide-react';
 import MarkdownPreview from '@/components/markdown-preview';
-import { Avatar } from '@/components/atoms';
+import { Avatar, EmptyState } from '@/components/atoms';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import ProjectStatusDropdown from './project-status-dropdown';
 import { inviteProjectMember, removeProjectMember, respondToProjectInvitation, updateProject } from './actions';
@@ -444,9 +444,10 @@ export default function ProjectHeader({
                         <span className="upper text-2xs">Add Member</span>
                       </div>
                       {availableAgents.length === 0 ? (
-                        <div className="text-2xs" style={{ padding: '12px', fontStyle: 'italic', color: 'var(--fg-4)' }}>
-                          No agents available
-                        </div>
+                        <EmptyState
+                          title="No agents available"
+                          hint="Every agent you can invite is already a member."
+                        />
                       ) : (
                         availableAgents.map((agent) => {
                           const name = agent.display_name || agent.name;

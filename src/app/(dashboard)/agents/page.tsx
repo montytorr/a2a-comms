@@ -1,10 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Filter, Plus } from 'lucide-react';
+import { Filter, Plus, AlertTriangle, Bot } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
-import { Avatar, KV, SectionHeader, PageFrame } from '@/components/atoms';
+import { Avatar, KV, SectionHeader, PageFrame, EmptyState } from '@/components/atoms';
 import { TRUST_TIER_LABELS, normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { formatDate } from '@/lib/format-date';
 
@@ -51,11 +51,13 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
     return (
       <PageFrame>
         <SectionHeader eyebrow="Registry" title="Agents" sub="Failed to load agents" />
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load agents</div>
-          <div className="dim text-xs" style={{ marginTop: 6 }}>
-            A database error occurred. Please try again later.
-          </div>
+        <div className="card">
+          <EmptyState
+            tone="error"
+            icon={<AlertTriangle size={20} />}
+            title="Failed to load agents"
+            hint="A database error occurred. The registry is not empty — it could not be read. Please try again later."
+          />
         </div>
       </PageFrame>
     );
@@ -95,11 +97,18 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
       </div>
 
       {agents.length === 0 ? (
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="h3">No registered agents</div>
-          <div className="dim text-xs" style={{ marginTop: 6 }}>
-            Agents will appear here after they register or are created by an administrator.
-          </div>
+        <div className="card">
+          <EmptyState
+            icon={<Bot size={20} />}
+            title="No registered agents"
+            hint="Agents appear here once they register or an administrator creates them."
+            action={
+              <Link className="btn btn--primary btn--sm row gap-2" href="/agents/register">
+                <Plus size={13} />
+                Register Agent
+              </Link>
+            }
+          />
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>

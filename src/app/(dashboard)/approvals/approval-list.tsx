@@ -5,6 +5,7 @@ import { handleApprove, handleDeny } from './actions';
 import { ShieldCheck } from 'lucide-react';
 import StatusBadge from '@/components/status-badge';
 import type { ApprovalStatus } from '@/lib/types';
+import { EmptyState } from '@/components/atoms';
 
 interface Approval {
   id: string;
@@ -77,22 +78,11 @@ export default function ApprovalList({
 
   if (approvals.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '64px 0' }}>
-        <div style={{
-          width: 44,
-          height: 44,
-          borderRadius: 10,
-          background: 'var(--bg-2)',
-          border: '1px solid var(--line-1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 16px',
-        }}>
-          <ShieldCheck size={18} style={{ color: 'var(--fg-4)' }} />
-        </div>
-        <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No approval requests</p>
-      </div>
+      <EmptyState
+        icon={<ShieldCheck size={20} />}
+        title="No approval requests"
+        hint="Sensitive actions that need a human decision queue here. Nothing is waiting on you."
+      />
     );
   }
 

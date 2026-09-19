@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { formatDate } from '@/lib/format-date';
 import { FileText } from 'lucide-react';
+import { PageFrame, EmptyState } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,7 @@ export default function ChangelogPage() {
   const entries = parseChangelog();
 
   return (
-    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="prose">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -150,6 +151,15 @@ export default function ChangelogPage() {
         }} />
 
         <div className="col gap-3">
+          {entries.length === 0 && (
+            <div className="card" style={{ marginLeft: 40 }}>
+              <EmptyState
+                icon={<FileText size={20} />}
+                title="No versions tracked yet"
+                hint="Releases appear here as they are added to CHANGELOG.md."
+              />
+            </div>
+          )}
           {entries.map((entry, idx) => (
             <div
               key={entry.version}
@@ -242,6 +252,6 @@ export default function ChangelogPage() {
           {entries.length} versions tracked · Started {entries.length > 0 ? formatDate(entries[entries.length - 1].date) : 'N/A'}
         </p>
       </div>
-    </div>
+    </PageFrame>
   );
 }

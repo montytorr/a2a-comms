@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/format-date';
 import { showAxisLabel } from '@/lib/analytics-derive';
 import { chartFillForTone, chartFillMap, colorVarForTone } from '@/lib/status-tone';
+import { PageFrame, EmptyState } from '@/components/atoms';
+import { BarChart3 } from 'lucide-react';
 
 interface AnalyticsChartsProps {
   contractsByStatus: Record<string, number>;
@@ -108,7 +110,7 @@ export default function AnalyticsCharts({
   const dayTabs = [7, 14, 30, 90];
 
   return (
-    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame>
       {/* Header */}
       <div style={{ marginBottom: '32px' }} className="animate-fade-in">
         <p className="upper" style={{ marginBottom: '6px' }}>Insights</p>
@@ -248,9 +250,11 @@ export default function AnalyticsCharts({
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
           {agentStats.length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <p className="dim text-sm">No messages in this period</p>
-            </div>
+            <EmptyState
+              icon={<BarChart3 size={20} />}
+              title="No messages in this period"
+              hint="Widen the window above to cover a period that has traffic."
+            />
           ) : (
             <div className="col gap-2">
               {agentStats.map((agent, idx) => (
@@ -438,9 +442,11 @@ export default function AnalyticsCharts({
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Top 5 in last {days} days</p>
 
           {topContractsByMessages.length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <p className="dim text-sm">No messages in this period</p>
-            </div>
+            <EmptyState
+              icon={<BarChart3 size={20} />}
+              title="No messages in this period"
+              hint="Widen the window above to cover a period that has traffic."
+            />
           ) : (
             <div className="col gap-2">
               {topContractsByMessages.map((contract, idx) => (
@@ -510,6 +516,6 @@ export default function AnalyticsCharts({
           </div>
         </div>
       </div>
-    </div>
+    </PageFrame>
   );
 }

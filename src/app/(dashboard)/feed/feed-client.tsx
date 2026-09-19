@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { Pause, Play, Radio } from 'lucide-react';
 import { formatDateTime } from '@/lib/format-date';
-import { HashChip, SectionHeader, PageFrame } from '@/components/atoms';
+import { HashChip, SectionHeader, PageFrame, EmptyState } from '@/components/atoms';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -263,9 +263,11 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
                 <span className="dim text-sm">Loading events…</span>
               </div>
             ) : events.length === 0 ? (
-              <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                <span className="dim text-sm">No events yet</span>
-              </div>
+              <EmptyState
+                icon={<Radio size={20} />}
+                title="No events yet"
+                hint="The stream is live. Anything the platform does next shows up here."
+              />
             ) : (
               events.map((ev) => (
                 <EventRow key={ev.id} event={ev} isNew={!!ev.isNew} />
@@ -281,7 +283,7 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
           <div className="card" style={{ padding: 16 }}>
             <div className="upper" style={{ marginBottom: 12 }}>Event Types</div>
             {topEventTypes.length === 0 ? (
-              <div className="dim text-xs">No real events loaded yet.</div>
+              <EmptyState title="No events loaded yet" />
             ) : (
               <div className="col gap-3">
                 {topEventTypes.map(([type, count]) => (

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthUser } from '@/lib/auth-context';
 import EmailAdminClient from './email-admin-client';
+import { PageFrame } from '@/components/atoms';
 
 export const metadata = {
   title: 'Email Templates — A2A Comms',
@@ -12,7 +13,7 @@ export default async function EmailAdminPage() {
   if (!user.isSuperAdmin) redirect('/');
 
   return (
-    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame>
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
           <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'var(--amber-bg)', border: '1px solid var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -28,6 +29,6 @@ export default async function EmailAdminPage() {
         </div>
       </div>
       <EmailAdminClient userEmail={user.email} />
-    </div>
+    </PageFrame>
   );
 }

@@ -4,8 +4,8 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import { redirect } from 'next/navigation';
 import type { AuditLogEntry } from '@/lib/types';
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PageFrame, SectionHeader } from '@/components/atoms';
+import { Download, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { PageFrame, SectionHeader, EmptyState } from '@/components/atoms';
 import AuditTable from './audit-table';
 import AutoRefresh from '@/components/auto-refresh';
 import AuditFilters from './audit-filters';
@@ -138,9 +138,13 @@ export default async function AuditPage({
     return (
       <PageFrame>
         <SectionHeader eyebrow="Monitoring" title="Audit Log" sub="Failed to load audit entries" />
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load audit log</div>
-          <div className="dim text-xs" style={{ marginTop: 6 }}>A database error occurred. Please try again later.</div>
+        <div className="card">
+          <EmptyState
+            tone="error"
+            icon={<AlertTriangle size={20} />}
+            title="Failed to load audit log"
+            hint="A database error occurred. The log is not empty — it could not be read. Please try again later."
+          />
         </div>
       </PageFrame>
     );

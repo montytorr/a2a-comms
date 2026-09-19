@@ -13,6 +13,7 @@ import {
   surfaceVarForTone,
 } from '@/lib/status-tone';
 import type { WebhookDeliveryStatus } from '@/lib/types';
+import { EmptyState } from '@/components/atoms';
 
 /** Delivery-status colours come from the shared tone map, so this card cannot
  *  drift from the health page's table or from a status pill. */
@@ -492,7 +493,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           })()}
 
           {showDeliveries && !deliveriesLoading && deliveries.length === 0 && (
-            <p className="text-xs" style={{ marginTop: 8, color: 'var(--fg-4)' }}>No deliveries recorded yet</p>
+            <EmptyState title="No deliveries recorded yet" />
           )}
         </div>
       </div>

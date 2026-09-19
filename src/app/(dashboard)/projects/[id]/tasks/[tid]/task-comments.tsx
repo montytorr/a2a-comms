@@ -2,7 +2,7 @@
 
 import { useState, useRef, useTransition } from 'react';
 import MarkdownPreview from '@/components/markdown-preview';
-import { Avatar } from '@/components/atoms';
+import { Avatar, EmptyState } from '@/components/atoms';
 import { addComment } from './actions';
 import { formatRelative } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
@@ -188,7 +188,10 @@ export default function TaskComments({
           ))}
         </div>
       ) : (
-        <p className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic', marginBottom: 16 }}>No activity yet.</p>
+        <EmptyState
+          title="No activity yet"
+          hint="Comments and status changes on this task appear here."
+        />
       )}
 
       <div style={{ borderTop: '1px solid var(--line-1)', paddingTop: 16 }}>

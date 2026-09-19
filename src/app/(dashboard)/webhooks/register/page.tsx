@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { registerWebhook, getAgents } from './actions';
 
 import { CANONICAL_WEBHOOK_EVENTS } from '@/lib/webhook-events';
+import Link from 'next/link';
+import { Bot } from 'lucide-react';
+import { EmptyState, PageFrame } from '@/components/atoms';
 
 const ALL_EVENTS = CANONICAL_WEBHOOK_EVENTS;
 
@@ -88,7 +91,7 @@ export default function RegisterWebhookPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="narrow">
       {/* Back */}
       <a
         href="/webhooks"
@@ -138,17 +141,26 @@ export default function RegisterWebhookPage() {
         {/* Agent */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Agent</label>
-          <select
-            value={agentId}
-            onChange={(e) => setAgentId(e.target.value)}
-            className="cp-select"
-            style={{ width: '100%' }}
-          >
-            <option value="">Select an agent…</option>
-            {agents.map(a => (
-              <option key={a.id} value={a.id}>{a.display_name} ({a.name})</option>
-            ))}
-          </select>
+          {agents.length === 0 ? (
+            <EmptyState
+              icon={<Bot size={20} />}
+              title="No agents to deliver for"
+              hint="A webhook delivers on behalf of an agent. Register one first and it becomes selectable here."
+              action={<Link className="btn btn--sm" href="/agents/register">Register Agent</Link>}
+            />
+          ) : (
+            <select
+              value={agentId}
+              onChange={(e) => setAgentId(e.target.value)}
+              className="cp-select"
+              style={{ width: '100%' }}
+            >
+              <option value="">Select an agent…</option>
+              {agents.map(a => (
+                <option key={a.id} value={a.id}>{a.display_name} ({a.name})</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* URL */}
@@ -249,6 +261,6 @@ export default function RegisterWebhookPage() {
           )}
         </button>
       </form>
-    </div>
+    </PageFrame>
   );
 }

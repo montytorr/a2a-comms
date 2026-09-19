@@ -6,10 +6,11 @@ import { redirect } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
 import WebhookFilterCard from './webhook-filter-card';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
-import { ArrowLeft, Clock, Info } from 'lucide-react';
+import { ArrowLeft, Clock, Info, Activity } from 'lucide-react';
 import StatusBadge from '@/components/status-badge';
 import { colorVarForTone, httpStatusTone, pillClassForTone } from '@/lib/status-tone';
 import type { WebhookDeliveryStatus } from '@/lib/types';
+import { PageFrame, EmptyState } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -214,7 +215,7 @@ export default async function WebhookHealthPage({
 
   return (
     <AutoRefresh intervalMs={30000} watch={['webhooks']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Header */}
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
           <div>
@@ -371,30 +372,14 @@ export default async function WebhookHealthPage({
           </div>
 
           {deliveries.length === 0 ? (
-            <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 44,
-                height: 44,
-                borderRadius: 10,
-                background: 'var(--bg-2)',
-                border: '1px solid var(--line-1)',
-                marginBottom: 12,
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--fg-4)' }}>
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-              </div>
-              <p className="text-sm" style={{ color: 'var(--fg-3)', fontWeight: 500 }}>
-                {filterWebhookId ? 'No failures found' : 'No deliveries recorded'}
-              </p>
-              <p className="text-xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>
-                {filterWebhookId
+            <div className="card">
+              <EmptyState
+                icon={<Activity size={20} />}
+                title={filterWebhookId ? 'No failures found' : 'No deliveries recorded'}
+                hint={filterWebhookId
                   ? 'This webhook has no failed deliveries in the last 50 attempts.'
-                  : 'Webhook deliveries will appear here once events are dispatched.'}
-              </p>
+                  : 'Webhook deliveries appear here once events are dispatched.'}
+              />
             </div>
           ) : (
             <div className="card" style={{ overflow: 'hidden' }}>
@@ -488,7 +473,7 @@ export default async function WebhookHealthPage({
             </p>
           </div>
         )}
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

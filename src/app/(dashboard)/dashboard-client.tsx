@@ -19,12 +19,7 @@ import {
   Pencil,
   Webhook,
 } from 'lucide-react';
-import {
-  HashChip,
-  Avatar,
-  SectionHeader,
-  PageFrame,
-} from '@/components/atoms';
+import { HashChip, Avatar, SectionHeader, PageFrame, EmptyState } from '@/components/atoms';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -457,20 +452,11 @@ export const DashboardClient = ({
           {/* Rows */}
           <div style={{ padding: '4px 16px 8px' }}>
             {recentAudit.length === 0 ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '48px 0',
-                  gap: 8,
-                }}
-              >
-                <Clock size={20} style={{ color: 'var(--fg-4)' }} />
-                <span className="muted text-sm">No activity yet</span>
-                <span className="dim text-2xs">Events will appear here as they happen</span>
-              </div>
+              <EmptyState
+                icon={<Clock size={20} />}
+                title="No activity yet"
+                hint="Events appear here as they happen."
+              />
             ) : (
               recentAudit.map(entry => <ActivityRow key={entry.id} entry={entry} />)
             )}

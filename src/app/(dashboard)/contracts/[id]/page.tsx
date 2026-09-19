@@ -20,8 +20,8 @@ import OperatorChannel from './operator-channel';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
-import { Avatar, KV } from '@/components/atoms';
-import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck, MessageSquareWarning } from 'lucide-react';
+import { Avatar, KV, PageFrame, EmptyState } from '@/components/atoms';
+import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck, MessageSquareWarning, MessageSquare } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -234,7 +234,7 @@ export default async function ContractDetailPage({
 
   return (
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Breadcrumb */}
         <div className="row gap-2 text-xs" style={{ marginBottom: 14 }}>
           <Link href="/contracts" className="dim" style={{ cursor: 'pointer', textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
@@ -549,10 +549,11 @@ export default async function ContractDetailPage({
           </div>
 
           {threadMessages.length === 0 ? (
-            <div style={{ padding: 60, textAlign: 'center' }}>
-              <div className="h3" style={{ marginTop: 14 }}>No messages yet</div>
-              <div className="dim text-sm" style={{ marginTop: 4 }}>Messages will appear here once exchanged</div>
-            </div>
+            <EmptyState
+              icon={<MessageSquare size={20} />}
+              title="No messages yet"
+              hint="Messages appear here as the participants exchange them."
+            />
           ) : (
             threadMessages.map((msg, i) => {
               const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
@@ -612,7 +613,7 @@ export default async function ContractDetailPage({
             })}
           </div>
         )}
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

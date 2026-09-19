@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 import QuickTaskForm from './quick-task-form';
-import { Avatar } from '@/components/atoms';
+import { Avatar, EmptyState } from '@/components/atoms';
 import { formatDate } from '@/lib/format-date';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import StatusBadge from '@/components/status-badge';
@@ -195,11 +195,9 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                         borderRadius: 16,
                         border: '1px dashed var(--line-1)',
                         background: 'var(--bg-0)',
-                        padding: '24px 0',
-                        textAlign: 'center',
                       }}
                     >
-                      <p className="upper text-2xs" style={{ color: 'var(--fg-4)' }}>No tasks</p>
+                      <EmptyState title="No tasks" />
                     </div>
                   )}
 

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, ScrollText } from 'lucide-react';
 import type { AuditLogEntry } from '@/lib/types';
 import { formatRelative, formatDateTime } from '@/lib/format-date';
-import { HashChip } from '@/components/atoms';
+import { HashChip, EmptyState } from '@/components/atoms';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -243,13 +243,11 @@ export default function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
     return (
       <div className="card" style={{ marginBottom: 24 }}>
         <TableHeader />
-        <div
-          className="col gap-2"
-          style={{ alignItems: 'center', justifyContent: 'center', padding: '64px 24px', color: 'var(--fg-3)' }}
-        >
-          <span className="text-sm">No audit entries recorded</span>
-          <span className="dim text-xs">Events will be logged here as they occur</span>
-        </div>
+        <EmptyState
+          icon={<ScrollText size={20} />}
+          title="No audit entries recorded"
+          hint="Events are logged here as they occur. If you filtered the log, widen the filters."
+        />
       </div>
     );
   }

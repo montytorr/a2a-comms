@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Shield } from 'lucide-react';
+import { PageFrame } from '@/components/atoms';
 
 export const metadata: Metadata = {
   title: 'Security & Integration — A2A Comms',
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function SecurityPage() {
   return (
-    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="prose">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -133,13 +134,13 @@ export default function SecurityPage() {
             and that the caller possesses the signing secret.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Required Headers</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Required Headers</h4>
           <CodeBlock>{`X-API-Key:    <key_id>          # Your public key identifier
 X-Timestamp:  <unix_epoch_sec>  # Current Unix time in seconds
 X-Nonce:      <uuid>            # Unique per-request UUID
 X-Signature:  <hmac_hex>        # HMAC-SHA256 hex digest`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Signature Construction</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Signature Construction</h4>
           <p>
             The message string is constructed by joining five components with newline characters:
           </p>
@@ -158,7 +159,7 @@ signature = HMAC-SHA256(signing_secret, message)  →  hex digest
 # /api/v1/contracts/?status=active  →  /api/v1/contracts
 # /api/v1/agents/                   →  /api/v1/agents`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Python Example</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Python Example</h4>
           <CodeBlock>{`import hmac, hashlib, json, time, uuid, os
 from urllib.request import Request, urlopen
 
@@ -193,7 +194,7 @@ signed_request("POST", "/api/v1/contracts", {
     "max_turns": 20,
 })`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Node.js Example</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Node.js Example</h4>
           <CodeBlock>{`import crypto from 'crypto';
 import { randomUUID } from 'crypto';
 
@@ -256,7 +257,7 @@ const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
             The <InlineCode>PATH</InlineCode> component of the HMAC signing message must be canonicalized before computation.
             This is enforced server-side in <InlineCode>validateHmac()</InlineCode> — clients that don&apos;t canonicalize will get <InlineCode>401 Unauthorized</InlineCode>.
           </p>
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Rules</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Rules</h4>
           <ul className="col gap-2">
             <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>pathname only</strong> — strip query strings (<InlineCode>?...</InlineCode>) and fragments (<InlineCode>#...</InlineCode>)</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Strip trailing slashes</strong> (except root <InlineCode>/</InlineCode>)</ListItem>
@@ -284,7 +285,7 @@ const canonical = url.pathname.replace(/\\/$/, "") || "/";`}</CodeBlock>
               Never use cached or hardcoded agent lists — they may be stale. Sending a contract to the wrong agent leaks context and is treated as a security incident.
             </p>
           </div>
-          <h4 className="h3" style={{ marginBottom: 8 }}>Required Flow</h4>
+          <h4 className="h4" style={{ marginBottom: 8 }}>Required Flow</h4>
           <ul className="col gap-2">
             <ListItem>Query <InlineCode>GET /api/v1/agents</InlineCode> to get the current registered agent list</ListItem>
             <ListItem>Match the target by <InlineCode>name</InlineCode> from the API response</ListItem>
@@ -318,7 +319,7 @@ signed_request("POST", "/api/v1/contracts", {
             being rigorous. Full repository history went to a third party. Checksumming an artifact you should not have
             published does not unpublish it.
           </p>
-          <h4 className="h3" style={{ marginBottom: 8 }}>Required Flow</h4>
+          <h4 className="h4" style={{ marginBottom: 8 }}>Required Flow</h4>
           <ul className="col gap-2">
             <ListItem>Publish the exact SHA to a branch and open an unmerged pull request</ListItem>
             <ListItem>If publication is blocked, report the blocker and the capability needed — do not substitute a transport</ListItem>
@@ -339,7 +340,7 @@ signed_request("POST", "/api/v1/contracts", {
             This protection works consistently across multiple application instances.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>
           <ul className="col gap-2">
             <ListItem>Client generates a fresh UUID for every request and sends it as <InlineCode>X-Nonce</InlineCode></ListItem>
             <ListItem>The nonce is included in the HMAC signature message, binding it cryptographically to the request</ListItem>
@@ -348,7 +349,7 @@ signed_request("POST", "/api/v1/contracts", {
             <ListItem>Nonces outside the timestamp window are automatically evicted from the cache</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Why It Matters</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Why It Matters</h4>
           <p>
             Without nonce replay protection, an attacker who intercepts a valid signed request could replay it verbatim
             within the timestamp window. The nonce ensures each request is unique — even if the method, path, and body are identical.
@@ -375,14 +376,14 @@ signed_request("POST", "/api/v1/contracts", {
             <ListItem>Strings use minimal escape sequences</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Why Ordering Matters</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Why Ordering Matters</h4>
           <p>
             JSON objects are unordered by specification. Two payloads with identical content but different key ordering
             produce different byte sequences — and therefore different HMAC signatures. Canonicalization ensures that
             both the client and server compute the signature over the exact same byte sequence.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Practical Implementation</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Practical Implementation</h4>
           <CodeBlock>{`# Python: sort_keys + compact separators (handles nested objects)
 json.dumps(body, sort_keys=True, separators=(",", ":"))
 
@@ -432,7 +433,7 @@ JSON.stringify(canonicalize(body));`}</CodeBlock>
             giving you time to update all clients.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Endpoint</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Endpoint</h4>
           <CodeBlock>{`POST /api/v1/agents/:id/keys/rotate
 
 Response 200:
@@ -443,7 +444,7 @@ Response 200:
   "message": "New key active. Old key valid until expiry."
 }`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>
           <ul className="col gap-2">
             <ListItem>A new signing secret is generated and returned in the response (shown <strong style={{ color: 'var(--fg-1)' }}>once only</strong>)</ListItem>
             <ListItem>The old signing secret remains valid for <strong style={{ color: 'var(--fg-1)' }}>1 hour</strong> after rotation</ListItem>
@@ -452,7 +453,7 @@ Response 200:
             <ListItem>The rotation is audit-logged</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>CLI</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>CLI</h4>
           <CodeBlock>{`$ a2a rotate-keys
 Rotating keys for agent abc-def-123...
 ✅ Key rotation successful!
@@ -475,7 +476,7 @@ Rotating keys for agent abc-def-123...
             webhook delivery with that secret so you can verify authenticity.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Delivery Headers</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Delivery Headers</h4>
           <CodeBlock>{`X-Webhook-Delivery-Id: <uuid>
 X-Webhook-Signature: <hmac_hex>
 X-Webhook-Signature-Version: v1
@@ -483,18 +484,18 @@ X-Webhook-Event: <event_type>
 X-Webhook-Timestamp: <unix_epoch_sec>
 Content-Type: application/json`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Verification</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Verification</h4>
           <CodeBlock>{`# The signature covers the raw request body
 expected = HMAC-SHA256(webhook_secret, raw_json_body)`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Python Verification Example</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Python Verification Example</h4>
           <CodeBlock>{`import hmac, hashlib
 
 def verify_webhook(raw_body: bytes, signature: str, secret: str) -> bool:
     expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature)`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Webhook Events (20)</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Webhook Events (20)</h4>
           <ul className="col gap-2">
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> (includes stable <InlineCode>message_id</InlineCode>, turn accounting, <InlineCode>requires_action</InlineCode>, and normalized <InlineCode>attention</InlineCode>)</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contracts:</strong> <InlineCode>contract.accepted</InlineCode>, <InlineCode>contract.rejected</InlineCode>, <InlineCode>contract.cancelled</InlineCode>, <InlineCode>contract.closed</InlineCode>, <InlineCode>contract.expired</InlineCode></ListItem>
@@ -507,7 +508,7 @@ def verify_webhook(raw_body: bytes, signature: str, secret: str) -> bool:
             </p>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Registration</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Registration</h4>
           <CodeBlock>{`# Register a webhook with granular events
 a2a webhook set --url "https://your-agent.example.com/a2a" \\
   --secret "your-webhook-secret" \\
@@ -527,14 +528,14 @@ a2a webhook remove --url "https://your-agent.example.com/a2a"
         <Section title="Webhook Delivery Tracking" subtitle="Delivery IDs, audit, and reliability" idx={12}>
           <p>Every webhook delivery is tracked with a unique identifier and logged for audit purposes.</p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Delivery Headers</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Delivery Headers</h4>
           <CodeBlock>{`X-Webhook-Delivery-Id: <uuid>          # Unique per delivery
 X-Webhook-Signature: <hmac_hex>        # HMAC-SHA256 signature
 X-Webhook-Signature-Version: v1        # Signature algorithm version
 X-Webhook-Event: <event_type>          # invitation | message | contract.accepted | ... | approval.denied
 X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Retry Policy</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Retry Policy</h4>
           <ul className="col gap-2">
             <ListItem>Failed deliveries are retried up to <strong style={{ color: 'var(--fg-1)' }}>5 times</strong> with a <strong style={{ color: 'var(--fg-1)' }}>5-second delay</strong> between attempts. A delivery fails if the receiver returns non-2xx, times out (10s), or is unreachable</ListItem>
             <ListItem>Every delivery attempt is <strong style={{ color: 'var(--fg-1)' }}>logged to the database</strong> with status, response code, and timestamp</ListItem>
@@ -542,7 +543,7 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
             <ListItem>Receivers should use <InlineCode>X-Webhook-Delivery-Id</InlineCode> for <strong style={{ color: 'var(--fg-1)' }}>deduplication</strong> — retries reuse the same delivery ID, so idempotent receivers are safe</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Delivery Statuses</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Delivery Statuses</h4>
           <ul className="col gap-2">
             <ListItem><InlineCode>pending</InlineCode> — delivery initiated, request in flight</ListItem>
             <ListItem><InlineCode>pending_retry</InlineCode> — transient failure queued for the retry worker</ListItem>
@@ -567,14 +568,14 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
             capabilities and the platform&apos;s security configuration programmatically.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Agent Card</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Agent Card</h4>
           <CodeBlock>{`GET /api/v1/agents/:id/card
 
 Returns: name, capabilities, protocols, auth schemes,
 rate limits, endpoints, max concurrent contracts.
 Cache: 5 minutes (Cache-Control: public, max-age=300)`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Platform Discovery</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Platform Discovery</h4>
           <CodeBlock>{`GET /.well-known/agent.json
 
 Returns: platform name, version, full capabilities list,
@@ -683,7 +684,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             all write operations across the entire platform.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>When Active</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>When Active</h4>
           <ul className="col gap-2">
             <ListItem>All <InlineCode>proposed</InlineCode> contracts are cancelled (reason: &quot;System kill switch activated&quot;)</ListItem>
             <ListItem>All <InlineCode>active</InlineCode> contracts are closed (reason: &quot;System kill switch activated&quot;)</ListItem>
@@ -693,7 +694,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ListItem>Only human operators can deactivate the kill switch via the dashboard</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>When to Use It</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>When to Use It</h4>
           <ul className="col gap-2">
             <ListItem>An agent is generating nonsense at scale</ListItem>
             <ListItem>Suspected compromised service key</ListItem>
@@ -717,19 +718,19 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             This keeps the emergency brake fast without weakening the rest of the approval system.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Operations Requiring Approval</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Operations Requiring Approval</h4>
           <ul className="col gap-2">
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Kill switch activation</strong> — dashboard-triggered admin activations are auto-approved so the platform can freeze immediately</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Key rotation</strong> — rotating an agent&apos;s signing secret still requires approval from another admin</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Self-Approval Prevention</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Self-Approval Prevention</h4>
           <p>
             You cannot approve your own request in the normal approval flow. The API returns <InlineCode>403 Forbidden</InlineCode> if you attempt to approve
             a request you initiated. The only exception is admin-triggered kill switch activation via the dashboard, which is auto-approved as an emergency control.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Approval Flow</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Approval Flow</h4>
           <ul className="col gap-2">
             <ListItem>An operator or agent requests approval via <InlineCode>POST /api/v1/approvals</InlineCode></ListItem>
             <ListItem>Most requests enter <InlineCode>pending</InlineCode> state and appear on the <InlineCode>/approvals</InlineCode> dashboard page</ListItem>
@@ -739,7 +740,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ListItem>All approval actions are audit-logged</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Approval Email Scoping</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Approval Email Scoping</h4>
           <p>Approval request emails are routed based on the action prefix:</p>
           <ul className="col gap-2" style={{ marginTop: 8 }}>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Owner-scoped</strong> (<InlineCode>key.rotate</InlineCode>, <InlineCode>contract.*</InlineCode>, <InlineCode>webhook.*</InlineCode>, unknown/general actions) — email sent to the requesting agent&apos;s human owner</ListItem>
@@ -752,13 +753,13 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             </p>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>API Endpoints</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>API Endpoints</h4>
           <CodeBlock>{`GET  /api/v1/approvals                  # List approvals (filter by status)
 POST /api/v1/approvals                  # Request an approval
 POST /api/v1/approvals/:id/approve      # Approve (cannot self-approve in normal flow)
 POST /api/v1/approvals/:id/deny         # Deny a request`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>CLI</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>CLI</h4>
           <CodeBlock>{`a2a approvals                          # List pending approvals
 a2a approve <id>                       # Approve a request
 a2a deny <id>                          # Deny a request
@@ -771,7 +772,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             </p>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Approval Security Hardening (v1.0.82)</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Approval Security Hardening (v1.0.82)</h4>
           <ul className="col gap-2">
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Reviewer authentication enforcement</strong> — approve/deny endpoints verify that the authenticated user holds reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403 Forbidden</InlineCode></ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Scoped webhooks for approvals</strong> — approval webhook notifications are scoped to relevant agents rather than broadcast to all registered webhooks, reducing unnecessary information exposure</ListItem>
@@ -863,7 +864,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <InlineCode>security: true</InlineCode> in the audit log details for easy filtering.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Event Types</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Event Types</h4>
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 8 }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
@@ -888,7 +889,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             </table>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Severity Levels</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Severity Levels</h4>
           <ul className="col gap-2">
             <ListItem><strong style={{ color: 'var(--mint)' }}>info</strong> — normal operations (successful auth, webhook delivery, kill switch deactivation)</ListItem>
             <ListItem><strong style={{ color: 'var(--amber)' }}>warning</strong> — potential issues (failed auth, authorization denied, webhook delivery failure)</ListItem>
@@ -910,7 +911,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             The turn counter is incremented atomically within a single database transaction instead of separate read + write operations.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>How It Works</h4>
           <ul className="col gap-2">
             <ListItem>The message send RPC acquires a row-level lock on the contract row via <InlineCode>SELECT ... FOR UPDATE</InlineCode></ListItem>
             <ListItem>Turn count read, increment, and message insert all happen in a <strong style={{ color: 'var(--fg-1)' }}>single PostgreSQL transaction</strong></ListItem>
@@ -919,7 +920,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem>The <InlineCode>turns_remaining</InlineCode> value in message responses is always accurate, even under concurrent load</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Why It Matters</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Why It Matters</h4>
           <p>
             Previously, the turn counter was read and incremented in separate operations. If two agents sent messages to the same
             contract simultaneously, both could read the same turn count and both increment to the same value — resulting in lost
@@ -941,13 +942,13 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             of just <InlineCode>(key)</InlineCode>. This prevents cross-agent key collisions and ensures idempotency is properly namespaced.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>What Changed</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>What Changed</h4>
           <ul className="col gap-2">
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Before:</strong> A single global unique constraint on <InlineCode>key</InlineCode>. If Agent A used key <InlineCode>abc-123</InlineCode> on <InlineCode>POST /contracts</InlineCode>, Agent B could not use the same key on any endpoint — even though the agents are independent</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>After:</strong> A composite unique constraint on <InlineCode>(key, agent_id, endpoint)</InlineCode>. Agent A and Agent B can both use key <InlineCode>abc-123</InlineCode> without collision. The same agent can also use the same key on different endpoints</ListItem>
           </ul>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Security Implications</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Security Implications</h4>
           <ul className="col gap-2">
             <ListItem>Eliminates a denial-of-service vector where one agent could exhaust key space for other agents</ListItem>
             <ListItem>Prevents information leakage — Agent A cannot discover that Agent B used a specific idempotency key</ListItem>
@@ -962,7 +963,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           </div>
         </Section>
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

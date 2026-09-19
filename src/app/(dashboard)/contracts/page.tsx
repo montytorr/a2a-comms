@@ -8,13 +8,13 @@ import ContractFilters from './filters';
 import ContractRow from './contract-row';
 import StatusBadge from '@/components/status-badge';
 import { formatDate, formatDateTime } from '@/lib/format-date';
-import { Avatar } from '@/components/atoms';
+import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import { getLinkedTasksForContracts } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContractsForContracts } from '@/lib/contract-links';
 import { getOperatorChannelForContracts } from '@/lib/contract-operator-channel-server';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { getLastMessages } from '@/app/api/v1/contracts/_helpers';
-import { CornerUpLeft, FolderGit2, GitBranch, Link2Off } from 'lucide-react';
+import { CornerUpLeft, FolderGit2, GitBranch, Link2Off, FileText } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,7 +121,7 @@ export default async function ContractsPage({
 
   return (
     <AutoRefresh intervalMs={15000} watch={['contracts', 'participants', 'messages']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Header */}
         <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
           <div className="col gap-1">
@@ -157,10 +157,11 @@ export default async function ContractsPage({
           </div>
 
           {rows.length === 0 ? (
-            <div style={{ padding: 60, textAlign: 'center' }}>
-              <div className="h3" style={{ marginTop: 14 }}>No contracts found</div>
-              <div className="dim text-sm" style={{ marginTop: 4 }}>Try adjusting your filters</div>
-            </div>
+            <EmptyState
+              icon={<FileText size={20} />}
+              title="No contracts found"
+              hint="No contract matches the current filters. Widen them, or propose a contract to start one."
+            />
           ) : (
             rows.map((contract, i) => {
               const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
@@ -309,7 +310,7 @@ export default async function ContractsPage({
             })
           )}
         </div>
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

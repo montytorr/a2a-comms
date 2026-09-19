@@ -13,6 +13,7 @@ import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visib
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import ProjectPrivacyControls from './privacy-controls';
 import { BLOCKER_TONE, DUE_STATE_TONE, pillClassForTone } from '@/lib/status-tone';
+import { PageFrame } from '@/components/atoms';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -276,7 +277,7 @@ export default async function ProjectDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000} watch={['projects', 'tasks', 'contracts']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Project Header */}
         <ProjectHeader
           project={{ ...project, privacy_metadata: projectPrivacy }}
@@ -411,7 +412,7 @@ export default async function ProjectDetailPage({
           projectId={id}
           members={members}
         />
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
-import { ListChecks } from 'lucide-react';
+import { ListChecks, AlertTriangle } from 'lucide-react';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { listMyTasks, OPEN_STATUSES } from '@/lib/my-tasks';
 import { createServerClient } from '@/lib/supabase/server';
 import { formatDate } from '@/lib/format-date';
-import { PageFrame, SectionHeader, Avatar } from '@/components/atoms';
+import { PageFrame, SectionHeader, Avatar, EmptyState } from '@/components/atoms';
 import AutoRefresh from '@/components/auto-refresh';
 import StatusBadge from '@/components/status-badge';
 import { colorVarForTone, taskPriorityTone } from '@/lib/status-tone';
@@ -65,18 +65,23 @@ export default async function TasksPage({
         <TaskFilters projects={projects} />
 
         {error && (
-          <div className="card" style={{ padding: 16, marginTop: 16, borderColor: 'var(--rose-line)' }}>
-            <div className="text-sm" style={{ color: 'var(--rose)' }}>Could not load tasks: {error}</div>
+          <div className="card" style={{ marginTop: 16, borderColor: 'var(--rose-line)' }}>
+            <EmptyState
+              tone="error"
+              icon={<AlertTriangle size={20} />}
+              title="Could not load tasks"
+              hint={`The list is not empty — it could not be read. ${error}`}
+            />
           </div>
         )}
 
         {!error && tasks.length === 0 && (
-          <div className="card" style={{ padding: 40, marginTop: 16, textAlign: 'center' }}>
-            <ListChecks size={22} style={{ color: 'var(--fg-4)', margin: '0 auto 10px' }} />
-            <div className="text-sm muted" style={{ fontWeight: 500 }}>Nothing open</div>
-            <div className="text-2xs dim" style={{ marginTop: 4 }}>
-              No tasks match this filter.
-            </div>
+          <div className="card" style={{ marginTop: 16 }}>
+            <EmptyState
+              icon={<ListChecks size={20} />}
+              title="Nothing open"
+              hint="No task matches this filter. Widen it to see tasks in other states or other projects."
+            />
           </div>
         )}
 

@@ -3,11 +3,20 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
+/**
+ * Every option here must be a status a task can actually hold. `Blocked` was
+ * offered and could never match: `tasks.status` has never permitted it. The two
+ * that do exist, `backlog` and `in-review`, were the ones missing.
+ *
+ * A task IS shown as blocked elsewhere, but that is derived from its
+ * dependencies rather than stored on the row, so it is not a filter value.
+ */
 const statuses = [
   { value: 'open', label: 'Open' },
+  { value: 'backlog', label: 'Backlog' },
   { value: 'todo', label: 'To do' },
   { value: 'in-progress', label: 'In progress' },
-  { value: 'blocked', label: 'Blocked' },
+  { value: 'in-review', label: 'In review' },
   { value: 'done', label: 'Done' },
   { value: 'cancelled', label: 'Cancelled' },
   { value: 'all', label: 'Any status' },

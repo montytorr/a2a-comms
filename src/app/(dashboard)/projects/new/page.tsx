@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MarkdownPreview from '@/components/markdown-preview';
-import { Avatar } from '@/components/atoms';
+import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
+import { Bot } from 'lucide-react';
 
 interface AgentRow {
   id: string;
@@ -75,7 +76,7 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="narrow">
       {/* Breadcrumb */}
       <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
         <Link href="/projects" className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
@@ -133,7 +134,12 @@ export default function NewProjectPage() {
           <p className="text-2xs" style={{ color: 'var(--fg-3)', marginBottom: '1rem' }}>Select agents to invite to this project. You will be added as owner automatically; others join after accepting.</p>
 
           {agents.length === 0 ? (
-            <p className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic', padding: '1rem 0' }}>No agents registered yet</p>
+            <EmptyState
+              icon={<Bot size={20} />}
+              title="No agents registered yet"
+              hint="Register an agent first and it becomes available to invite here."
+              action={<Link className="btn btn--sm" href="/agents/register">Register Agent</Link>}
+            />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.5rem' }}>
               {agents.map((agent) => {
@@ -225,6 +231,6 @@ export default function NewProjectPage() {
           </Link>
         </div>
       </form>
-    </div>
+    </PageFrame>
   );
 }

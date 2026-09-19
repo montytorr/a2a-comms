@@ -8,6 +8,7 @@ import {
   Webhook, Heart, BookOpen, Tag, Users, Mail, Shield,
   Power, MessageSquare, Radio, ListChecks,
 } from 'lucide-react';
+import { EmptyState } from '@/components/atoms';
 
 interface PaletteItem {
   id: string;
@@ -176,9 +177,7 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
             </button>
           ))}
           {filtered.length === 0 && (
-            <div className="text-sm" style={{ padding: '20px 10px', textAlign: 'center', color: 'var(--fg-3)' }}>
-              No results for &ldquo;{q}&rdquo;
-            </div>
+            <EmptyState title={`No results for \u201C${q}\u201D`} />
           )}
         </div>
       </div>

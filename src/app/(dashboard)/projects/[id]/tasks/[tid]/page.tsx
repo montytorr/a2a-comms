@@ -11,9 +11,7 @@ import {
   EditableDescription,
   AssigneePicker,
   LabelsEditor,
-  DueDatePicker,
   PriorityPicker,
-  SprintPicker,
   DeleteTaskButton,
 } from './task-editor';
 import TaskComments from './task-comments';
@@ -33,6 +31,7 @@ import {
   type DependencyKind,
   type Tone,
 } from '@/lib/status-tone';
+import { PageFrame, EmptyState } from '@/components/atoms';
 export const dynamic = 'force-dynamic';
 
 /* Labels here, colours from DEPENDENCY_KIND_TONE — kanban-board.tsx renders the
@@ -276,22 +275,31 @@ export default async function TaskDetailPage({
         />
       ),
     },
-    {
-      label: 'Sprint',
-      value: hasReadOnlyObserverAccess ? (
-        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{_sprint ? _sprint.title : 'Backlog'}</span>
-      ) : (
-        <SprintPicker currentSprintId={task.sprint_id} sprints={sprints} projectId={projectId} taskId={tid} />
-      ),
-    },
-    {
-      label: 'Due date',
-      value: hasReadOnlyObserverAccess ? (
-        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{task.due_date || 'None'}</span>
-      ) : (
-        <DueDatePicker value={task.due_date} projectId={projectId} taskId={tid} isOverdue={!!isOverdue} />
-      ),
-    },
+    // Sprint and due date are shown when they have a value and are not
+    // editable here. Sprints were last touched in April and `due_date` is set
+    // on 0 of 94 tasks, so the pickers were controls for fields nobody uses —
+    // while an empty "Due date: None" row appeared on every task in the
+    // product. Both are still writable through the API and the CLI
+    // (`a2a task-update --sprint`, `--due-date`); only the editors went.
+    ...(_sprint
+      ? [{
+          label: 'Sprint',
+          value: <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{_sprint.title}</span>,
+        }]
+      : []),
+    ...(task.due_date
+      ? [{
+          label: 'Due date',
+          value: (
+            <span
+              className="text-sm"
+              style={{ color: isOverdue ? 'var(--rose)' : 'var(--fg-1)', fontWeight: 500 }}
+            >
+              {formatDate(task.due_date)}
+            </span>
+          ),
+        }]
+      : []),
   ];
 
   const secondaryDetailItems = [
@@ -315,7 +323,7 @@ export default async function TaskDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000} watch={['tasks', 'projects', 'contracts', 'participants']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 animate-fade-in">
           <Link href="/projects" className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
@@ -456,7 +464,7 @@ export default async function TaskDetailPage({
               >
                 <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--peri)' }}>Observer mode</p>
                 <p className="text-xs" style={{ color: 'var(--fg-1)', marginTop: '0.5rem' }}>
-                  You can inspect execution state, checkpoints, attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state.
+                  You can inspect this task, its dependencies and attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state. Execution runs and checkpoints are in the protocol inspector.
                 </p>
               </div>
             )}
@@ -658,7 +666,7 @@ export default async function TaskDetailPage({
               <div className="card--inset" style={{ padding: '0.75rem' }}>
                 <p className="upper text-2xs" style={{ color: 'var(--fg-3)', marginBottom: '0.75rem' }}>Activity feed</p>
                 {taskActivity.length === 0 ? (
-                  <p className="text-xs" style={{ color: 'var(--fg-3)' }}>No activity events captured yet.</p>
+                  <EmptyState title="No activity captured yet" />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {taskActivity.map((event) => (
@@ -684,7 +692,7 @@ export default async function TaskDetailPage({
             )}
           </aside>
         </div>
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

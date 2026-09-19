@@ -12,6 +12,7 @@ import { describeContractLink } from '@/lib/contract-links';
 import { requeueWebhookDelivery } from './actions';
 import type { TaskExecutionCheckpoint, TaskExecutionRun } from '@/lib/types';
 import { Search, RotateCcw, GitBranch } from 'lucide-react';
+import { PageFrame, EmptyState } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -193,7 +194,7 @@ export default async function ProtocolInspectorPage({
     // refreshed: it renders live contract status, turn counts and webhook
     // delivery, and only re-submitting the form ever changed any of it.
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks', 'webhooks']}>
-    <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <p className="upper" style={{ marginBottom: 6 }}>Debugging Cockpit</p>
@@ -386,7 +387,10 @@ export default async function ProtocolInspectorPage({
                     <div className="card" style={{ marginTop: 12, padding: 16 }}>
                       <p className="upper" style={{ marginBottom: 12 }}>Message timeline</p>
                       {data.messages.length === 0 ? (
-                        <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No messages visible.</p>
+                        <EmptyState
+                          title="No messages visible"
+                          hint="Either none have been exchanged yet, or your trust tier hides them."
+                        />
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {data.messages.map((message) => (
@@ -421,18 +425,17 @@ export default async function ProtocolInspectorPage({
                 </div>
 
                 {!data.conformance.contractFound ? (
-                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No contract in scope.</p>
+                  <EmptyState
+                    title="No contract in scope"
+                    hint="Inspect a contract to trace what it links to."
+                  />
                 ) : data.relatedContracts.length === 0 ? (
-                  <>
-                    <p className="text-sm" style={{ color: 'var(--fg-3)' }}>
-                      No contract-to-contract link recorded.
-                    </p>
-                    <p className="text-xs" style={{ marginTop: 6, color: 'var(--fg-4)' }}>
-                      {data.conformance.endedWithoutCompleting
-                        ? 'This contract ended without the work being accepted. If it carried on elsewhere, a2a contract-relate <new> --to <this> --type continues records where.'
-                        : 'Succession, replacement and delegation are recorded here when they happen.'}
-                    </p>
-                  </>
+                  <EmptyState
+                    title="No contract-to-contract link recorded"
+                    hint={data.conformance.endedWithoutCompleting
+                      ? 'This contract ended without the work being accepted. If it carried on elsewhere, a2a contract-relate <new> --to <this> --type continues records where.'
+                      : 'Succession, replacement and delegation are recorded here when they happen.'}
+                  />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.relatedContracts.map((related) => (
@@ -474,7 +477,10 @@ export default async function ProtocolInspectorPage({
                 </div>
 
                 {data.linkedTasks.length === 0 ? (
-                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No linked tasks found.</p>
+                  <EmptyState
+                    title="No linked tasks"
+                    hint="Nothing in the delivery board references this contract."
+                  />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.linkedTasks.map((task) => {
@@ -518,7 +524,7 @@ export default async function ProtocolInspectorPage({
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {data.executionRuns.length === 0 ? (
-                    <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No execution runs found.</p>
+                    <EmptyState title="No execution runs" />
                   ) : (
                     data.executionRuns.map((run) => <RunCard key={run.id} run={run} />)
                   )}
@@ -526,7 +532,7 @@ export default async function ProtocolInspectorPage({
 
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {data.executionCheckpoints.length === 0 ? (
-                    <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No checkpoints found.</p>
+                    <EmptyState title="No checkpoints" />
                   ) : (
                     data.executionCheckpoints.map((checkpoint) => <CheckpointCard key={checkpoint.id} checkpoint={checkpoint} />)
                   )}
@@ -546,7 +552,10 @@ export default async function ProtocolInspectorPage({
                 </div>
 
                 {data.webhookDeliveries.length === 0 ? (
-                  <p className="text-sm" style={{ color: 'var(--fg-3)' }}>No matching webhook deliveries found in the recent audit window.</p>
+                  <EmptyState
+                    title="No matching webhook deliveries"
+                    hint="Nothing for this contract appears in the recent audit window."
+                  />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.webhookDeliveries.map((delivery) => (
@@ -610,7 +619,7 @@ export default async function ProtocolInspectorPage({
           </div>
         </>
       )}
-    </div>
+    </PageFrame>
     </AutoRefresh>
   );
 }

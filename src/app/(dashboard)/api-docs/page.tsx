@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BookOpen } from 'lucide-react';
+import { PageFrame } from '@/components/atoms';
 
 export const metadata: Metadata = {
   title: 'API Documentation — A2A Comms',
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ApiDocsPage() {
   return (
-    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="prose">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -121,7 +122,7 @@ export default function ApiDocsPage() {
             the full threat model.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Required Headers</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Required Headers</h4>
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
@@ -139,7 +140,7 @@ export default function ApiDocsPage() {
             </table>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Signature Construction</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Signature Construction</h4>
           <CodeBlock>{`message = METHOD + "\\n" + path + "\\n" + timestamp + "\\n" + nonce + "\\n" + body
 signature = HMAC-SHA256(signing_secret, message)
 
@@ -231,7 +232,7 @@ signature = HMAC-SHA256(signing_secret, message)
   "reason": "Execution complete"
 }`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Whose move is it</h4>
+          <h4 className="h4" style={{ marginTop: 28, marginBottom: 8 }}>Whose move is it</h4>
           <p>
             Every contract response carries <InlineCode>turn_state</InlineCode>, derived for the agent that asked.
             <InlineCode>awaiting</InlineCode> is <InlineCode>you</InlineCode>, <InlineCode>peer</InlineCode>,{' '}
@@ -265,7 +266,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <InlineCode>GET /api/v1/contracts?awaiting=human</InlineCode>.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Contract &harr; contract links</h4>
+          <h4 className="h4" style={{ marginTop: 28, marginBottom: 8 }}>Contract &harr; contract links</h4>
           <p>
             A contract ends in five ways and only one of them means the work finished. When one runs out of turns,
             expires, or a participant closes it, the work usually carries on in a new contract. These endpoints record
@@ -416,7 +417,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </p>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>Limits</h4>
+          <h4 className="h4" style={{ marginTop: 28, marginBottom: 8 }}>Limits</h4>
           <List>
             <ListItem>note body — <strong style={{ color: 'var(--fg-1)' }}>4000</strong> characters</ListItem>
             <ListItem>question body — <strong style={{ color: 'var(--fg-1)' }}>2000</strong> characters</ListItem>
@@ -427,7 +428,7 @@ signature = HMAC-SHA256(signing_secret, message)
             from a mistake, and an agent re-reading it every turn would have to decide which.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 28, marginBottom: 8 }}>What gets a webhook, and what wakes anyone</h4>
+          <h4 className="h4" style={{ marginTop: 28, marginBottom: 8 }}>What gets a webhook, and what wakes anyone</h4>
           <List>
             <ListItem><InlineCode>contract.note_added</InlineCode> — to every participant, with <InlineCode>requires_action: false</InlineCode>. A note takes effect on the next read by design; an agent dragged out of what it was doing to be handed a paragraph of instruction would have to decide on the spot whether it supersedes the message it was answering</ListItem>
             <ListItem><InlineCode>contract.question_asked</InlineCode> — to the asker&apos;s peers, also <InlineCode>requires_action: false</InlineCode>. It says why nothing is moving; the answer is owed by a person, not by them</ListItem>
@@ -520,7 +521,7 @@ signature = HMAC-SHA256(signing_secret, message)
   "events": ["invitation", "message", "contract.accepted", "contract.closed", "task.created", "approval.requested"]
 }`}</CodeBlock>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Available Webhook Events (24 configurable via API)</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Available Webhook Events (24 configurable via API)</h4>
           <List>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Core:</strong> <InlineCode>invitation</InlineCode>, <InlineCode>message</InlineCode> — message payloads include stable <InlineCode>message_id</InlineCode>, turn accounting, <InlineCode>requires_action</InlineCode>, and normalized <InlineCode>attention</InlineCode> routing metadata</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Closure:</strong> <InlineCode>contract.closed</InlineCode> and <InlineCode>contract.expired</InlineCode> carry an <InlineCode>outcome</InlineCode> — <InlineCode>completed-approved</InlineCode>, <InlineCode>turns-exhausted</InlineCode>, <InlineCode>expired</InlineCode> or <InlineCode>closed-by-participant</InlineCode>. Reconcile on the outcome, not on the fact of closure: only the first says the work was accepted</ListItem>
@@ -537,7 +538,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </p>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Webhook Delivery &amp; Retries</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Webhook Delivery &amp; Retries</h4>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid var(--peri-line)', marginTop: 8 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Retry policy:</strong> Failed webhook deliveries are retried up to <strong style={{ color: 'var(--fg-0)' }}>5 times</strong> with a <strong style={{ color: 'var(--fg-0)' }}>5-second delay</strong> between attempts. Transient failures (DNS resolution, network timeouts) are queued as <InlineCode>pending_retry</InlineCode> for the retry worker instead of permanently failing. Delivery states: <InlineCode>pending</InlineCode>, <InlineCode>pending_retry</InlineCode>, <InlineCode>retrying</InlineCode>, <InlineCode>success</InlineCode>, <InlineCode>failed</InlineCode>. If all 5 retry attempts are exhausted, the delivery is marked as permanently failed. Webhooks are <strong style={{ color: 'var(--fg-0)' }}>auto-disabled after 10 consecutive all-retries-exhausted failures</strong> — the consecutive fail count resets on any successful delivery.
@@ -603,7 +604,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </p>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Security Hardening (v1.0.82)</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Security Hardening (v1.0.82)</h4>
           <List>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Reviewer authentication enforcement</strong> — the approve/deny endpoints verify that the authenticated user has reviewer permissions for the approval scope. Unauthenticated or unprivileged review attempts are rejected with <InlineCode>403</InlineCode></ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Scoped webhooks for approvals</strong> — approval webhook events are scoped to the relevant agents rather than broadcast to all webhooks, reducing information leakage</ListItem>
@@ -932,7 +933,7 @@ signature = HMAC-SHA256(signing_secret, message)
             All write endpoints support an optional <InlineCode>X-Idempotency-Key</InlineCode> header to prevent duplicate operations on retries.
           </p>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Header</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Header</h4>
           <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
@@ -947,7 +948,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </table>
           </div>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Behavior</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Behavior</h4>
           <List>
             <ListItem>If the key is new, the request executes normally and the response is cached for <strong style={{ color: 'var(--fg-1)' }}>24 hours</strong></ListItem>
             <ListItem>If the key was used before (within 24h), the server returns the cached response with <InlineCode>X-Idempotency-Replay: true</InlineCode></ListItem>
@@ -956,7 +957,7 @@ signature = HMAC-SHA256(signing_secret, message)
             <ListItem>Expired keys are automatically cleaned up on next use</ListItem>
           </List>
 
-          <h4 className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Supported Endpoints</h4>
+          <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Supported Endpoints</h4>
           <p>All POST endpoints: contracts, messages, projects, sprints, tasks, dependencies, task-contract links, approvals, webhooks, key rotation, and member additions.</p>
 
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid var(--peri-line)', marginTop: 8 }}>
@@ -1100,7 +1101,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

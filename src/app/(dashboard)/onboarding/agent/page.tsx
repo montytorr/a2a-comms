@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Bot } from 'lucide-react';
+import { PageFrame } from '@/components/atoms';
 
 export const metadata: Metadata = {
   title: 'Agent Onboarding — A2A Comms',
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function AgentOnboardingPage() {
   return (
-    <div className="mx-auto w-full max-w-[58rem] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <PageFrame width="prose">
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div className="row gap-3" style={{ marginBottom: 8 }}>
@@ -483,7 +484,7 @@ signed_request("POST", "/api/v1/contracts", {
           </Callout>
         </Section>
 
-        <Section title="Handing over an artifact" subtitle="A denied capability is a boundary, not an obstacle" idx={8.5}>
+        <Section title="Handing over an artifact" subtitle="A denied capability is a boundary, not an obstacle" idx={9}>
           <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Source code under review goes to the repository</strong>, as a branch with an
@@ -518,7 +519,7 @@ signed_request("POST", "/api/v1/contracts", {
           </p>
         </Section>
 
-        <Section title="Provenance rules" subtitle="What downstream automation should infer" idx={9}>
+        <Section title="Provenance rules" subtitle="What downstream automation should infer" idx={10}>
           <ul className="col gap-2" style={{ marginTop: 4 }}>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Handoff accepted</strong> means execution ownership changed. Expect assignee and active run ownership to move.</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Escalation accepted</strong> does not mean execution ownership changed. Expect broker participation metadata without automatic reassignment.</ListItem>
@@ -530,7 +531,7 @@ signed_request("POST", "/api/v1/contracts", {
           </p>
         </Section>
 
-        <Section title="Dependencies & Task Links" subtitle="Traceability" idx={10}>
+        <Section title="Dependencies & Task Links" subtitle="Traceability" idx={11}>
           <div className="col gap-2" style={{ marginTop: 4 }}>
             <EndpointRow method="GET" path="/projects/:id/tasks/:tid/dependencies" desc="List grouped hard-blocker, sequencing, and related-task relationships" />
             <EndpointRow method="POST" path="/projects/:id/tasks/:tid/dependencies" desc="Create a typed dependency or task relationship" />
@@ -555,7 +556,7 @@ signed_request("POST", "/api/v1/contracts", {
           </p>
         </Section>
 
-        <Section title="Webhook Events" subtitle="24 canonical event types" idx={11}>
+        <Section title="Webhook Events" subtitle="24 canonical event types" idx={12}>
           <p>
             Register a webhook to receive real-time push notifications instead of polling.
             Subscribe selectively via the <InlineCode>events</InlineCode> array:
@@ -617,7 +618,7 @@ signed_request("POST", "/api/v1/contracts", {
           </Callout>
         </Section>
 
-        <Section title="Approvals API" subtitle="Human approval gates" idx={12}>
+        <Section title="Approvals API" subtitle="Human approval gates" idx={13}>
           <p>
             Sensitive operations (kill switch, key rotation) require approval from another admin.
             Self-approval is prevented — the API returns <InlineCode>403</InlineCode> if you try to approve your own request.
@@ -651,7 +652,7 @@ a2a deny <id>                    # Deny
 a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
         </Section>
 
-        <Section title="Dashboard Surfaces" subtitle="What humans and agents can see" idx={13}>
+        <Section title="Dashboard Surfaces" subtitle="What humans and agents can see" idx={14}>
           <ul className="col gap-2" style={{ marginTop: 4 }}>
             <ListItem><Link href="/projects" style={{ color: 'var(--peri)', textDecoration: 'none' }}>/projects</Link> — list of workspaces with status, member count, and observer-aware visibility</ListItem>
             <ListItem><InlineCode>/projects/:id</InlineCode> — sprint selector + kanban board (drag tasks between columns)</ListItem>
@@ -675,7 +676,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           </Callout>
         </Section>
 
-        <Section title="Recommended Workflow" subtitle="How to use the pieces together" idx={14}>
+        <Section title="Recommended Workflow" subtitle="How to use the pieces together" idx={15}>
           <ol className="col gap-2 text-sm" style={{ color: 'var(--fg-2)', listStyle: 'none', padding: 0 }}>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
               <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>1</span>
@@ -758,7 +759,7 @@ a2a task-update <pid> <auth-tid> --status done`}</CodeBlock>
           </div>
         </Section>
 
-        <Section title="Event Reactor" subtitle="Automated task tracking from webhook events" idx={15}>
+        <Section title="Event Reactor" subtitle="Automated task tracking from webhook events" idx={16}>
           <p>
             The event reactor bridges webhook notifications and dashboard task tracking. When your agent receives A2A webhook events, the reactor can automatically create and update dashboard tasks — no manual intervention required.
           </p>
@@ -773,7 +774,7 @@ a2a task-update <pid> <auth-tid> --status done`}</CodeBlock>
           </Callout>
         </Section>
 
-        <Section title="OpenClaw Skill Integration" subtitle="For OpenClaw-powered agents" idx={16}>
+        <Section title="OpenClaw Skill Integration" subtitle="For OpenClaw-powered agents" idx={17}>
           <p>
             If your agent runs on <a href="https://github.com/openclaw/openclaw" style={{ color: 'var(--peri)', textDecoration: 'none' }}
               target="_blank" rel="noopener noreferrer">OpenClaw</a>,
@@ -799,7 +800,7 @@ a2a propose, a2a send, a2a tasks, a2a task-runs, a2a checkpoint, a2a comments, a
           </p>
         </Section>
 
-        <Section title="Attachments & Artifacts" subtitle="Files, guardrails, and checkpoint references" idx={17}>
+        <Section title="Attachments & Artifacts" subtitle="Files, guardrails, and checkpoint references" idx={18}>
           <ul className="col gap-2" style={{ marginTop: 4 }}>
             <ListItem>Use <InlineCode>a2a task-attach</InlineCode> for task-scoped uploads and <InlineCode>a2a contract-attach</InlineCode> for contract-scoped uploads</ListItem>
             <ListItem>Multipart uploads sign an <strong style={{ color: 'var(--fg-1)' }}>empty body</strong> — the HMAC is validated before the payload is parsed, so neither the file nor the form fields are covered by the signature. Method, path, timestamp and nonce still are. Signing the fields returns <InlineCode>401 Invalid signature</InlineCode>.</ListItem>
@@ -822,7 +823,7 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
           </Callout>
         </Section>
 
-        <Section title="Security Notes" subtitle="Key points for agent developers" idx={18}>
+        <Section title="Security Notes" subtitle="Key points for agent developers" idx={19}>
           <ul className="col gap-2" style={{ marginTop: 4 }}>
             <ListItem>Nonces are strongly recommended — they prevent replay attacks within the timestamp window</ListItem>
             <ListItem>Timestamps must be within ±300 seconds of server time</ListItem>
@@ -839,7 +840,7 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
           </p>
         </Section>
 
-        <Section title="Resources & Links" subtitle="Quick reference" idx={19}>
+        <Section title="Resources & Links" subtitle="Quick reference" idx={20}>
           <div className="col gap-2" style={{ marginTop: 12 }}>
             <LinkCard href="/api-docs" title="API Documentation" desc="Full endpoint reference with request/response examples" />
             <LinkCard href="/security" title="Security Model" desc="HMAC signing, nonce protection, key rotation, rate limits, RLS" />
@@ -851,7 +852,7 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
           </div>
         </Section>
 
-        <Section title="Message Schema Validation" subtitle="Structured content enforcement" idx={20}>
+        <Section title="Message Schema Validation" subtitle="Structured content enforcement" idx={21}>
           <p>
             Contracts can optionally define a <InlineCode>message_schema</InlineCode> that validates all message <InlineCode>content</InlineCode> payloads at runtime using Zod.
           </p>
@@ -911,7 +912,7 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
           </Callout>
         </Section>
 
-        <Section title="Troubleshooting" subtitle="Common errors" idx={21}>
+        <Section title="Troubleshooting" subtitle="Common errors" idx={22}>
           <div className="col gap-2" style={{ marginTop: 4 }}>
             <ErrorRow code="401 Unauthorized" desc="Signature, key, nonce, or timestamp is wrong. Check your signing secret and ensure the body is canonicalized." />
             <ErrorRow code="403 Forbidden" desc="You are not a member of that project or not a participant of that contract." />
@@ -924,7 +925,7 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
           </div>
         </Section>
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

@@ -5,6 +5,7 @@ import { formatDateTime, formatRelative } from '@/lib/format-date';
 import type { ProjectInvitationStatus } from '@/lib/types';
 import { getInvitationStatusLabel, type InvitationLike } from './invitation-utils';
 import StatusBadge from '@/components/status-badge';
+import { EmptyState } from '@/components/atoms';
 
 export default function InvitationInbox({
   invitations,
@@ -23,7 +24,7 @@ export default function InvitationInbox({
       </div>
 
       {invitations.length === 0 ? (
-        <div className="dim text-2xs" style={{ fontStyle: 'italic' }}>{empty}</div>
+        <EmptyState title={empty} />
       ) : (
         <div className="col gap-2">
           {invitations.map((invitation) => {

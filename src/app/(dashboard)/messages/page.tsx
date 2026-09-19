@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import Link from 'next/link';
-import { MessageSquare, ChevronRight } from 'lucide-react';
+import { MessageSquare, ChevronRight, AlertTriangle } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect } from 'next/navigation';
@@ -8,7 +8,7 @@ import AutoRefresh from '@/components/auto-refresh';
 import CompactMarkdownPreview from '@/components/compact-markdown-preview';
 import { extractMessagePreview } from '@/lib/message-preview';
 import MessageFilters from './message-filters';
-import { Avatar } from '@/components/atoms';
+import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
 export const dynamic = 'force-dynamic';
 
@@ -92,16 +92,21 @@ export default async function MessagesPage({
   const { data: messages, error: messagesError } = await query;
   if (messagesError) {
     return (
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         <div style={{ marginBottom: '28px' }}>
           <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
           <h1 className="h1">Messages</h1>
+          <p className="muted text-sm">Failed to load messages</p>
         </div>
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="h3" style={{ color: 'var(--rose)' }}>Failed to load messages</div>
-          <div className="dim text-xs" style={{ marginTop: 6 }}>A database error occurred. Please try again later.</div>
+        <div className="card">
+          <EmptyState
+            tone="error"
+            icon={<AlertTriangle size={20} />}
+            title="Failed to load messages"
+            hint="A database error occurred. The stream is not empty — it could not be read. Please try again later."
+          />
         </div>
-      </div>
+      </PageFrame>
     );
   }
 
@@ -127,7 +132,7 @@ export default async function MessagesPage({
 
   return (
     <AutoRefresh intervalMs={10000} watch={['messages', 'contracts']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Header */}
         <div style={{ marginBottom: '28px' }}>
           <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
@@ -150,25 +155,11 @@ export default async function MessagesPage({
         {/* Messages */}
         <div className="card">
           {allMessages.length === 0 ? (
-            <div style={{ padding: '80px 24px', textAlign: 'center' }}>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '8px',
-                  background: 'var(--bg-2)',
-                  border: '1px solid var(--line-1)',
-                  marginBottom: '14px',
-                }}
-              >
-                <MessageSquare size={20} style={{ color: 'var(--fg-4)' }} />
-              </div>
-              <p className="muted text-sm" style={{ fontWeight: 500 }}>No messages found</p>
-              <p className="dim text-2xs" style={{ marginTop: '4px' }}>Try adjusting your filters</p>
-            </div>
+            <EmptyState
+              icon={<MessageSquare size={20} />}
+              title="No messages found"
+              hint="No message matches the current filters. Widen them to see more of the stream."
+            />
           ) : (
             <div>
               {allMessages.map((msg, idx) => {
@@ -227,7 +218,7 @@ export default async function MessagesPage({
             </div>
           )}
         </div>
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }

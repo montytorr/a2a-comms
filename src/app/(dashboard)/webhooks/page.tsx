@@ -6,8 +6,8 @@ import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { Webhook, Agent } from '@/lib/types';
 import WebhookCard from './webhook-card';
 import AutoRefresh from '@/components/auto-refresh';
-import { Activity, Plus } from 'lucide-react';
-import { Avatar } from '@/components/atoms';
+import { Activity, Plus, BellRing } from 'lucide-react';
+import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +58,7 @@ export default async function WebhooksPage() {
 
   return (
     <AutoRefresh intervalMs={30000} watch={['webhooks']}>
-      <div className="mx-auto w-full max-w-[var(--content-max)] px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <PageFrame>
         {/* Header */}
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
           <div>
@@ -80,36 +80,30 @@ export default async function WebhooksPage() {
 
         {/* Content */}
         {rows.length === 0 ? (
-          <div className="card" style={{ padding: '64px 24px', textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: 'var(--bg-2)',
-              border: '1px solid var(--line-1)',
-              marginBottom: 16,
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--fg-4)' }}>
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
-            <p className="text-sm" style={{ color: 'var(--fg-3)', fontWeight: 500 }}>No webhooks configured</p>
-            <p className="text-xs" style={{ color: 'var(--fg-4)', marginTop: 6 }}>
-              Register webhooks via the CLI:{' '}
-              <code className="mono text-2xs" style={{
-                color: 'var(--amber)',
-                background: 'var(--amber-bg)',
-                padding: '1px 6px',
-                borderRadius: 4,
-                
-              }}>
-                a2a webhook set --url &lt;url&gt; --secret &lt;s&gt;
-              </code>
-            </p>
+          <div className="card">
+            <EmptyState
+              icon={<BellRing size={20} />}
+              title="No webhooks configured"
+              hint={
+                <>
+                  Register one here, or from the CLI:{' '}
+                  <code className="mono text-2xs" style={{
+                    color: 'var(--amber)',
+                    background: 'var(--amber-bg)',
+                    padding: '1px 6px',
+                    borderRadius: 'var(--radius-1)',
+                  }}>
+                    a2a webhook set --url &lt;url&gt; --secret &lt;s&gt;
+                  </code>
+                </>
+              }
+              action={
+                <Link className="btn btn--primary btn--sm row gap-2" href="/webhooks/register">
+                  <Plus size={13} />
+                  Register Webhook
+                </Link>
+              }
+            />
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -148,7 +142,7 @@ export default async function WebhooksPage() {
             ))}
           </div>
         )}
-      </div>
+      </PageFrame>
     </AutoRefresh>
   );
 }
