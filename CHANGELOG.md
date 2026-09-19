@@ -6,6 +6,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.336] - 2026-09-19
+### Added
+- give the project a home page
+- AC-81: a public repository had nowhere to send anyone who clicked through. `/` 307'd to `/login` — a form for an account a stranger cannot create — and the console was the only surface, so the README's argument could be read on github.com and nowhere else. It is why `homepageUrl` was still empty.
+- WHAT IT IS. A dark operator-console landing page in the house style Cal pointed at (quarry.montytorr.com, montytorr.com): near-black ground with a faint engineering grid, one hot accent carrying the payoff clause of every headline, mono uppercase eyebrows, hairline card grids with no shadows, and a product mock as the hero visual. The accent is amber because that is already this product's brand — AC-75 built the whole token layer around it.
+- IT IS THE CONSOLE'S OWN DESIGN SYSTEM, not a second visual language. Every colour, space and radius is a token the dashboard already uses, so a visitor recognises the contract in the hero when they later sign in, because it IS that card — drawn, not screenshotted, so it cannot go stale on the next deploy. It follows the theme toggle for the same reason: light is contrast-audited and shipped, and a marketing page that ignored it would be advertising a look the product does not have.
+- Every claim on it is true of the running product. The turn budget, the operator note, `awaiting: human`, the trust tiers and both code blocks are things you can go and do. "What it is not" is on there too — not Google's A2A, not MCP, not a workflow engine, not for a chatbot wrapper — because the fastest way to lose someone's trust is to let them find that out after installing it.
+- ROUTING, chosen so no existing URL moves. proxy.ts REWRITES an anonymous `/` to a new public `/home`; a signed-in visitor at `/` still gets their dashboard, and every other path gates exactly as before. A rewrite rather than a redirect so the homepage keeps the URL a homepage should have.
+- The boot screen is suppressed there. "booting control plane" is the right greeting for an operator opening their console and the wrong one for a stranger from GitHub, who gets 1.1s of black screen and concludes it is broken. Done in CSS via `body:has(.mkt)`, because the rewrite means usePathname() sees `/` and cannot tell the two apart.
+- THREE THINGS A BROWSER FOUND, and only a browser could have:
+- The page was 1197px wide inside a 1440px window. `#app-root` is a row flex container above 48rem — it normally holds the sidebar beside the console — and a lone flex child is sized by its content.
+- THE QUICKSTART WAS DESTROYED ON A PHONE. A one-column grid has one track, `1fr` resolves its minimum to the widest content in it, and the <pre> below therefore set the width of the prose above: 618px of it, laid out inside a 390px viewport and then clipped. `overflow-x: auto` on the <pre> cannot save that — the track was already that wide before the scroll container had a say. Every grid here is `minmax(0, 1fr)` now.
+- One CLI line ran past the right edge of its slab on desktop, silently, because the slab scrolls. Shortened. Below the two-column breakpoint 65 characters of monospace will not fit at any legible size, so there the right edge fades into the slab's own background to say there is more.
+- Zero horizontal scroll at 390px, verified with the same harness as the AC-78 mobile pass.
+- Guarded: public-landing.test.ts checks the door that opened AND the walls that did not move — /contracts, /settings, /users, /kill-switch and /audit still require a session, and `/homepage` and `/home/x` are not public. Mutation- tested: dropping the rewrite fails the first test, and widening the allowlist from `=== '/home'` to `startsWith('/home')` fails the last one.
+- Not one inline style: geometry-ratchet's inlineStyleProps ceiling sits exactly on the real count, and a landing page is precisely where a hundred one-off paddings would otherwise be born.
+- 373 tests, verify-e2e 69/69, lint and build clean.
+- AC-82
+
 ## [1.0.335] - 2026-09-19
 ### Added
 - turn every tag into a release
