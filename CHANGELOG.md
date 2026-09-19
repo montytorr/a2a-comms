@@ -6,6 +6,63 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.331] - 2026-09-19
+### Added
+- one meaning per colour, a light theme that is a design, and a brand
+- STATUS COLOUR. Four maps disagreed with each other. A contract reading `active` was amber on /contracts and mint in /analytics; `expired` was rose on one and amber on the other. A task `in-progress` was peri on /tasks, amber on the kanban and amber again in the dropdown; `todo` was neutral in one place and peri in two others; `blocked` had no kanban entry at all and fell through to undefined. Seven different ways of rendering a chip, one of which — the avatar colour — is a HASH OF A NAME, sitting next to chips where colour is meaning.
+- src/lib/status-tone.ts is now the only source, exhaustive over each status union as a Record so a new status is a type error rather than a silent gap. One rule, stated at the top: mint is done, amber is in flight or needs you, peri is queued, rose is failed or blocked, neutral is inert. StatusBadge covers every call site.
+- LIGHT MODE was a mechanical inversion of a theme whose own header calls it a "warm-cool near-black operator console", and it looked like one. It is now a warm paper instrument deck: surfaces moved from cool grey to hue 85 cream while text and lines stay cool, so the warm/cool tension survives the switch instead of flipping — and amber stops reading as a stain on cold grey. Cards are white sheets earning separation from a real shadow rather than from being brighter than their neighbours, which is dark's trick and does not transfer. The wash's brightest layer is now white and lit from the same corner as dark's.
+- The text ramp was re-cut rather than nudged: --fg-3 and --fg-4 sat 0.02 apart, a step nobody can see, because both had been pushed up to clear 4.5:1 on a ground too dark for them. Accent tints went from washes to painted chips, and all four still clear 4.5:1 as text on their own tint. Dark moved in two places only.
+- THE BRAND. --brand-mark was a grey gradient in both themes — the one piece of pure identity in the product had no colour in it. It is an amber-lit instrument tile now, same geometry and same light direction in both, polarity the only difference: anodised bronze at night, gold leaf by day. Rendered both to check.
+- DEFINED-BUT-MISSING, all of which rendered as nothing:
+- `spin` was referenced by FIVE inline spinners and never defined — five frozen rings. `ping` by a sixth. Both defined.
+- `.btn--peri`, used three times, never defined.
+- `.h4`, with 53 <h4> tags in the app and no class, so every subsection heading rendered at section size. Removed `.nowrap` (0 class uses) and the [data-density] blocks (nothing ever set the attribute). --pad/--gap/--row-h had zero call sites and became a real scale: six spacing steps and five radii, reachable from an inline style, which is where all 99 padding values actually live and where a utility cannot go.
+- AND THE LIST NOW SHOWS WHAT MATTERS. /contracts rendered 6 of 18 contract fields. It showed how OLD each contract was and never how long it had left — the least urgent fact available, in the one column that could carry a deadline. It now counts down, in rose under a day. And an agent that has stopped to ask a person, the most actionable state a row can be in, was visible only by opening each contract in turn; it is a chip on the row.
+- 353 tests, build and lint clean.
+- AC-75
+- one frame, one empty state, and a filter that can match something
+- PAGE FRAME. PageFrame existed and 25 of 30 routes ignored it, and the copies did not merely duplicate it — they rendered differently. PageFrame nests padding OUTSIDE the max-width; each hand-rolled copy collapsed both onto one element, so the padding came out of the width instead. Two pages nominally sharing --content-max differed by 32px at mobile and 64px at lg, which is the "is everything aligned" question answered with a measurement. All 30 routes now share it, including /kill-switch which had no frame at all.
+- EMPTY STATES. There were zero loading.tsx, error.tsx, not-found.tsx or Suspense boundaries in the app, and the 20 routes that had an empty state used eight different markup shapes across four text sizes and three greys. One EmptyState component now covers 46 call sites, plus the routes that had none. Failure stays distinguishable from emptiness — /agents and /audit already did this and the pattern is now consistent. The protocol inspector's "Nothing obviously cursed." keeps its mint all-clear on purpose: that is a verdict, not an absence.
+- A FILTER THAT COULD NEVER MATCH. MyTaskStatus declared `blocked` and OPEN_STATUSES filtered on it, but the tasks.status CHECK has never permitted `blocked` — so /tasks offered an option guaranteed to return nothing. Worse, the same list omitted `backlog` and `in-review`, which are real: a task waiting on a person in review never appeared in "my open tasks", the most actionable state there is. MyTaskStatus is now an alias of TaskStatus so the three lists cannot drift, and a test reads the CHECK constraint out of the migration and pins all three against it. Mutation-tested by putting `blocked` back.
+- FINISHING THE CUT I REPORTED AS DONE. The task page still had a sprint picker and a due-date picker — I had removed the sprint selector from the project page only. `due_date` is set on 0 of 94 tasks, so an empty "Due date: None" row rendered on every task in the product. Both now show their value when there is one and are not editable here; both remain writable through the API and the CLI.
+- Also: `idx={8.5}` in the agent onboarding rendered a section numbered "9.5" between 9 and 10 — someone inserted a section and avoided the renumber. And the observer banner on the task page still promised "execution state, checkpoints", panels that are gone; it now points at the protocol inspector, which has them.
+- The 53 <h4> tags that carried className="h3" — rendering every subsection heading at section size — now use the .h4 that exists.
+- Checked and NOT a defect, contrary to a report I was given: the api-docs TOC numbers match their sections. Section renders {idx + 1}, so num={11} against idx={10} is correct. All 20 verified.
+- 358 tests, 59 reactor tests, build and lint clean.
+- AC-74 AC-75
+### Changed
+- test: check that documentation links resolve
+- Moving four sections out of the README into docs/ left reactor/README.md pointing at an anchor that no longer existed, and moved two `reactor/` links into docs/ where they resolved to docs/reactor/. Nothing caught any of it: the pre-push hook enforces that duplicated doc copies stay in SYNC, but nothing checked that their links resolve.
+- The checker walks every tracked markdown file, resolves relative targets, and verifies the anchor against GitHub's heading-slug rules. It skips CHANGELOG.md, which is generated and 2,000 lines, and it skips targets with no slash, dot or anchor — `[Links](url)` in AGENTS.md is prose about markdown syntax rather than a link, and the first version of this test flagged it.
+### Fixed
+- escape an apostrophe that failed the lint gate
+- react/no-unescaped-entities is an error, not a warning, so this would have failed CI before it deployed.
+### Docs
+- say what this is, and stop pointing strangers at my deployment
+- The README opened as an internal-team tool — "for teams that want more than loose chat logs and vibes" — while the actual pitch is third-party agents working under enforced terms. "safe contract" appeared zero times and "third-party" first at line 138 of 930. Two `## Quick Start` headings and neither was one: the first ran 233 lines of release notes, a quarter of the file. The Security Model, the strongest content for the pitch, sat at 92% depth.
+- 930 lines becomes 147, leading with what it is and a quickstart that works. Everything cut moved to docs/deployment.md, docs/concepts.md and docs/security-model.md rather than being deleted. New docs/glossary.md covers the ~40-term vocabulary and, more usefully, the collisions: "approval" means three unrelated things and the dashboard's Approvals page is only one of them.
+- The quickstart was run exactly as written before it was published: 49 migrations applied, health 200, seed credentials printed. The diagram was rendered headless to check it parses.
+- AND THE PART THAT IS NOT COSMETIC. Four call sites fell back to https://a2a.playground.montytorr.com when NEXT_PUBLIC_APP_URL was unset, so anyone else deploying this and missing one variable sent project invitations and blocker alerts whose links pointed at MY install — recipients clicking through to a stranger's data, with nothing but a log warning. Centralised in app-url.ts falling back to localhost: a wrong-but-obviously-local link is a bug report, a wrong-but-plausible-remote one is a silent misdirection. The email From: header did the same thing on a domain nobody else controls.
+- Worse, ci-deploy.sh health-checked that same hardcoded domain after switching Traefik. A fork's deploy would have verified MY site was up and passed whether or not its own deploy worked. A gate that can only succeed is not a gate; it now reads the URL from .env and refuses if it is unset.
+- Also: timestamps defaulted to Europe/Paris and fr-FR, so an install that did not set them rendered in the author's timezone and language.
+- A test greps the tracked source so no deployment-specific host comes back, allowing github.com links, which are where the project lives rather than where an instance runs.
+- Separately, found while a parallel audit was reading the status unions: webhook_deliveries declares CHECK (status IN ('pending','success','failed')) and no migration widens it, while webhooks.ts writes 'pending_retry' and 'retrying'. Production accepts them only because the constraint was widened there BY HAND and never came back into the ledger — so the repo and the live database disagreed, and a fresh deploy would have silently stopped retrying failed deliveries. Same shape as the 'consumed' approval status, except that one had never fired and this one fires on every failed delivery. Migration added and applied; the guard test now covers both tables and was mutation-tested.
+- AC-77
+- describe the dashboard that exists, not the one that was removed
+- The UI cut left four documents promising panels that are gone: the sprint selector, the observer manager, the reputation panel, the execution panel and the blocker-workflow grid. The API routes, the schema and the CLI are all untouched, so the fix is to say "this is available through the API; the dashboard does not surface it" rather than to delete the concept.
+- MY OWN SUMMARY OF THE CUT WAS WRONG IN FOUR PLACES, and the docs are now written against the code rather than against my description of it:
+- The task detail page still renders a sprint picker and a due-date picker. I removed the sprint selector from the PROJECT page only.
+- The project page still renders a full "Blocker radar" card listing blocked tasks with owner, expected follow-up and the logged unblock plan. What went is the per-task grid and the write actions, not the data.
+- The task "Blocked" badge has three states, not one.
+- Runs and checkpoints still render in /protocol-inspector, which was never touched — so readers are pointed there rather than told "API only".
+- That last one is the right shape and worth keeping on purpose: the everyday view stays light and the inspector holds everything.
+- Found while reading, all pre-existing:
+- reputation-scoring-spec.md contradicted itself and the code — "Security hygiene, weight 0.15" against its own table and REPUTATION_SIGNAL_WEIGHTS, both 0.25. At 0.15 the weights sum to 0.90, not the stated 1.00. It also said "the five score components" of four, and still called itself a draft though it shipped, with no inbound link from anywhere in the doc set.
+- concepts.md listed the Discord receiver as a dashboard surface; it is an optional external sidecar and nothing in this repo renders it.
+- The human onboarding page listed "Agent reputation review" as an email notification. It is not an email and had no twin in the markdown.
+- AC-74
+
 ## [1.0.330] - 2026-09-18
 ### Added
 - make the repo runnable by a stranger, and cut the UI nobody uses
