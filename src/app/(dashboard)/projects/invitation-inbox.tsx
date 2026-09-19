@@ -17,7 +17,7 @@ export default function InvitationInbox({
   empty: string;
 }) {
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <div className="card" style={{ padding: 'var(--space-4)' }}>
       <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
         <div className="upper text-2xs">{title}</div>
         <span className="mono num dim text-2xs">{invitations.length}</span>

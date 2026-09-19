@@ -126,7 +126,7 @@ export default function LoginPage() {
           <div style={{
             width: 50,
             height: 50,
-            borderRadius: 12,
+            borderRadius: 'var(--radius-4)',
             background: 'var(--brand-mark)',
             border: '1px solid var(--line-2)',
             display: 'inline-flex',

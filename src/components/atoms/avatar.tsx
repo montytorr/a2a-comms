@@ -57,7 +57,7 @@ export const Avatar = ({ name, tone, size = 28 }: AvatarProps) => {
     <span style={{
       width: size,
       height: size,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: bg,
       color: fg,
       display: 'inline-flex',

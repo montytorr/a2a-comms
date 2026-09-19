@@ -73,10 +73,10 @@ function JsonBlock({ value }: { value: unknown }) {
   return (
     <pre className="mono text-2xs" style={{
       overflowX: 'auto',
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       border: '1px solid var(--line-1)',
       background: 'var(--bg-0)',
-      padding: 12,
+      padding: 'var(--space-3)',
       
       lineHeight: 1.6,
       color: 'var(--fg-2)',
@@ -119,7 +119,7 @@ function RunCard({ run }: { run: TaskExecutionRun }) {
   const stale = isExecutionStale(run.status, run.heartbeat_at);
   const tone = getExecutionStatusTone(run.status, stale, 'task-execution-run');
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <div className="card" style={{ padding: 'var(--space-4)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>Attempt #{run.attempt}</p>
@@ -151,7 +151,7 @@ function RunCard({ run }: { run: TaskExecutionRun }) {
 
 function CheckpointCard({ checkpoint }: { checkpoint: TaskExecutionCheckpoint }) {
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <div className="card" style={{ padding: 'var(--space-4)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{checkpoint.summary || checkpoint.checkpoint_key}</p>
@@ -317,7 +317,7 @@ export default async function ProtocolInspectorPage({
                   ))}
                 </div>
 
-                <div className="card--inset" style={{ marginTop: 16, padding: '12px 16px', borderRadius: 6 }}>
+                <div className="card--inset" style={{ marginTop: 16, padding: '12px 16px', borderRadius: 'var(--radius-2)' }}>
                   <p className="upper" style={{ marginBottom: 8 }}>Drift flags</p>
                   {data.conformance.driftFlags.length === 0 ? (
                     <p className="text-sm" style={{ color: 'var(--mint)' }}>Nothing obviously cursed.</p>
@@ -325,7 +325,7 @@ export default async function ProtocolInspectorPage({
                     <ul className="text-xs" style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8, color: 'var(--rose)' }}>
                       {data.conformance.driftFlags.map((flag) => (
                         <li key={flag} style={{
-                          borderRadius: 6,
+                          borderRadius: 'var(--radius-2)',
                           border: '1px solid var(--rose-line)',
                           background: 'var(--rose-bg)',
                           padding: '8px 12px',
@@ -369,11 +369,11 @@ export default async function ProtocolInspectorPage({
                       ))}
                     </div>
 
-                    <div className="card" style={{ marginTop: 12, padding: 16 }}>
+                    <div className="card" style={{ marginTop: 12, padding: 'var(--space-4)' }}>
                       <p className="upper" style={{ marginBottom: 12 }}>Participants</p>
                       <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                         {data.contract.participants.map((participant) => (
-                          <div key={participant.id} className="card--inset" style={{ padding: '8px 12px', borderRadius: 6 }}>
+                          <div key={participant.id} className="card--inset" style={{ padding: '8px 12px', borderRadius: 'var(--radius-2)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                               <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{participant.agent?.display_name || participant.agent?.name || 'Unknown agent'}</p>
                               <StatusBadge domain="participant" status={participant.status} dot="none" size="lg" />
@@ -384,7 +384,7 @@ export default async function ProtocolInspectorPage({
                       </div>
                     </div>
 
-                    <div className="card" style={{ marginTop: 12, padding: 16 }}>
+                    <div className="card" style={{ marginTop: 12, padding: 'var(--space-4)' }}>
                       <p className="upper" style={{ marginBottom: 12 }}>Message timeline</p>
                       {data.messages.length === 0 ? (
                         <EmptyState
@@ -394,7 +394,7 @@ export default async function ProtocolInspectorPage({
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {data.messages.map((message) => (
-                            <div key={message.id} className="card--inset" style={{ padding: 16, borderRadius: 6 }}>
+                            <div key={message.id} className="card--inset" style={{ padding: 'var(--space-4)', borderRadius: 'var(--radius-2)' }}>
                               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                                 <div>
                                   <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{message.sender?.display_name || message.sender?.name || 'Unknown sender'}</p>
@@ -442,7 +442,7 @@ export default async function ProtocolInspectorPage({
                       <div
                         key={`${related.link_type}-${related.direction}-${related.contract_id}`}
                         className="card"
-                        style={{ padding: 16 }}
+                        style={{ padding: 'var(--space-4)' }}
                       >
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                           <GitBranch size={13} style={{ color: 'var(--peri)', flexShrink: 0 }} />
@@ -487,7 +487,7 @@ export default async function ProtocolInspectorPage({
                       const stale = isExecutionStale(task.execution_status || undefined, task.execution_heartbeat_at || undefined);
                       const tone = getExecutionStatusTone(task.execution_status, stale);
                       return (
-                        <div key={task.id} className="card" style={{ padding: 16 }}>
+                        <div key={task.id} className="card" style={{ padding: 'var(--space-4)' }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                             <div>
                               <Link href={`/projects/${task.project_id}/tasks/${task.id}`} className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)', textDecoration: 'none' }}>
@@ -559,7 +559,7 @@ export default async function ProtocolInspectorPage({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.webhookDeliveries.map((delivery) => (
-                      <div key={delivery.id} className="card" style={{ padding: 16 }}>
+                      <div key={delivery.id} className="card" style={{ padding: 'var(--space-4)' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                           <div>
                             <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{delivery.event}</p>
@@ -574,7 +574,7 @@ export default async function ProtocolInspectorPage({
                           <p>Related IDs: <span className="mono" style={{ color: 'var(--fg-2)' }}>contract={delivery.related_contract_id || '—'} task={delivery.related_task_id || '—'}</span></p>
                         </div>
 
-                        <div className="card--inset" style={{ marginTop: 14, padding: '12px 16px', borderRadius: 6 }}>
+                        <div className="card--inset" style={{ marginTop: 14, padding: '12px 16px', borderRadius: 'var(--radius-2)' }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                             <p className="upper">Replay / debug</p>
                             {delivery.replay_debug.can_operator_requeue ? (
@@ -606,7 +606,7 @@ export default async function ProtocolInspectorPage({
                           </div>
                         </div>
 
-                        <div className="card--inset" style={{ marginTop: 10, padding: '12px 16px', borderRadius: 6 }}>
+                        <div className="card--inset" style={{ marginTop: 10, padding: '12px 16px', borderRadius: 'var(--radius-2)' }}>
                           <p className="upper" style={{ marginBottom: 12 }}>Stored event payload</p>
                           <JsonBlock value={delivery.payload} />
                         </div>

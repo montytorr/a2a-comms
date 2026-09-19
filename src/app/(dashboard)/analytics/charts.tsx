@@ -182,7 +182,7 @@ export default function AnalyticsCharts({
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         {/* Donut Chart — Contracts by Status */}
-        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.1s' }}>
+        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.1s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts by Status</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Created in last {days} days</p>
 
@@ -245,7 +245,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Per Agent Messages */}
-        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.15s' }}>
+        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.15s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Agent</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -263,11 +263,11 @@ export default function AnalyticsCharts({
                     <span className="text-2xs" style={{ fontWeight: 500, color: 'var(--fg-2)', width: '96px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {agent.name}
                     </span>
-                    <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: 'var(--radius-1)', overflow: 'hidden', position: 'relative' }}>
                       <div
                         style={{
                           height: '100%',
-                          borderRadius: '4px',
+                          borderRadius: 'var(--radius-1)',
                           transition: 'width 0.7s ease-out',
                           width: `${Math.max(4, (agent.count / maxAgentCount) * 100)}%`,
                           background: barColorVars[idx % barColorVars.length],
@@ -284,7 +284,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Messages per Day */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.2s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.2s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Day</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -330,7 +330,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Contracts Created per Day */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.25s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.25s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts Created per Day</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -376,7 +376,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Donut Chart — Task Status Distribution */}
-        <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.3s' }}>
+        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.3s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Task Status Distribution</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Updated in last {days} days</p>
 
@@ -437,7 +437,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Horizontal Bar Chart — Top Contracts by Messages */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.35s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.35s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Top Contracts by Messages</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Top 5 in last {days} days</p>
 
@@ -458,11 +458,11 @@ export default function AnalyticsCharts({
                     >
                       {contract.title}
                     </span>
-                    <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ flex: 1, height: '22px', background: 'var(--bg-2)', borderRadius: 'var(--radius-1)', overflow: 'hidden', position: 'relative' }}>
                       <div
                         style={{
                           height: '100%',
-                          borderRadius: '4px',
+                          borderRadius: 'var(--radius-1)',
                           transition: 'width 0.7s ease-out',
                           width: `${Math.max(4, (contract.count / maxTopContractMessages) * 100)}%`,
                           background: barColorVars[idx % barColorVars.length],
@@ -479,7 +479,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Hourly Activity Heatmap */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: '24px', animationDelay: '0.4s' }}>
+        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.4s' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Hourly Activity Heatmap</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Message distribution by hour (UTC) — last {days} days</p>
 

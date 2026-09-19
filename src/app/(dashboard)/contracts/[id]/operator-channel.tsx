@@ -66,7 +66,7 @@ export default function OperatorChannel({
         )}
       </div>
 
-      <div className="col" style={{ padding: 16, gap: 14 }}>
+      <div className="col" style={{ padding: 'var(--space-4)', gap: 14 }}>
         {canWrite && drafting && (
           <form
             action={async (formData: FormData) => {

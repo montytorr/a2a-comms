@@ -61,7 +61,7 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
         style={{
           display: 'block',
           cursor: 'pointer',
-          borderRadius: 8,
+          borderRadius: 'var(--radius-3)',
           border: dragActive ? '1px solid var(--mint)' : '1px solid var(--line-1)',
           padding: '12px 14px',
           background: dragActive ? 'var(--mint-bg)' : 'var(--bg-2)',
@@ -80,7 +80,7 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <div style={{
             marginTop: 2,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             border: '1px solid var(--line-2)',
             background: 'var(--bg-3)',
             padding: 7,
@@ -100,7 +100,7 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
                   display: 'inline-flex',
                   alignItems: 'center',
                   maxWidth: '100%',
-                  borderRadius: 4,
+                  borderRadius: 'var(--radius-1)',
                   border: '1px solid var(--line-2)',
                   background: 'var(--bg-3)',
                   padding: '2px 8px',

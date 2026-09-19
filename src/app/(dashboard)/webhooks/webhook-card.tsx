@@ -132,7 +132,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           <div className="text-xs" style={{
             marginBottom: 12,
             padding: '8px 12px',
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--rose-bg)',
             border: '1px solid var(--rose-line)',
             
@@ -268,7 +268,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
           <div style={{
             marginBottom: 16,
             padding: '10px 14px',
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--rose-bg)',
             border: '1px solid var(--rose-line)',
             display: 'flex',
@@ -298,7 +298,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
         {testResult && (
           <div className="text-xs" style={{
             marginBottom: 16,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
@@ -418,7 +418,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                 <div className="row gap-4" style={{
                   padding: '8px 12px',
                   marginBottom: 4,
-                  borderRadius: 6,
+                  borderRadius: 'var(--radius-2)',
                   background: 'var(--bg-2)',
                   border: '1px solid var(--line-1)',
                 }}>
@@ -461,7 +461,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                         gridTemplateColumns: '1fr 80px 90px 80px 100px',
                         gap: 8,
                         padding: '8px 12px',
-                        borderRadius: 6,
+                        borderRadius: 'var(--radius-2)',
                         background: rowBg,
                         border: `1px solid ${rowBorder}`,
                       }}

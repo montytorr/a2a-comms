@@ -280,7 +280,7 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
         <div className="col gap-3">
 
           {/* Event counts card */}
-          <div className="card" style={{ padding: 16 }}>
+          <div className="card" style={{ padding: 'var(--space-4)' }}>
             <div className="upper" style={{ marginBottom: 12 }}>Event Types</div>
             {topEventTypes.length === 0 ? (
               <EmptyState title="No events loaded yet" />

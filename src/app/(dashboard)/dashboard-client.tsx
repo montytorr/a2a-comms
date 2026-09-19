@@ -104,7 +104,7 @@ const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileP
     <div
       className="card"
       style={{
-        padding: 16,
+        padding: 'var(--space-4)',
         position: 'relative',
         cursor: 'pointer',
         transition: 'border-color 0.15s',
@@ -126,7 +126,7 @@ const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileP
           style={{
             width: 28,
             height: 28,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: `${iconColor}22`,
             display: 'inline-flex',
             alignItems: 'center',
@@ -173,7 +173,7 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
       <div
         className="card"
         style={{
-          padding: 16,
+          padding: 'var(--space-4)',
           cursor: 'pointer',
           height: '100%',
           display: 'flex',
@@ -188,7 +188,7 @@ const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean 
             style={{
               width: 28,
               height: 28,
-              borderRadius: 6,
+              borderRadius: 'var(--radius-2)',
               background: `${color}22`,
               display: 'inline-flex',
               alignItems: 'center',
@@ -465,7 +465,7 @@ export const DashboardClient = ({
 
         {/* ── Right column ── */}
         <div className="col gap-3">
-          <div className="card" style={{ padding: 16 }}>
+          <div className="card" style={{ padding: 'var(--space-4)' }}>
             <div className="col gap-2">
               <span className="h3">Live Data Only</span>
               <span className="dim text-xs">
@@ -474,7 +474,7 @@ export const DashboardClient = ({
             </div>
           </div>
 
-          <div className="card" style={{ padding: 16 }}>
+          <div className="card" style={{ padding: 'var(--space-4)' }}>
             <div className="col gap-1">
               <span className="upper text-2xs">Latest Webhook Delivery</span>
               <div

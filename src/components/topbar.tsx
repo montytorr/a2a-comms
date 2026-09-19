@@ -107,7 +107,7 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
           padding: '0 10px',
           background: 'var(--bg-1)',
           border: '1px solid var(--line-1)',
-          borderRadius: 6,
+          borderRadius: 'var(--radius-2)',
           color: 'var(--fg-3)',
           fontFamily: 'var(--sans)',
           cursor: 'pointer',

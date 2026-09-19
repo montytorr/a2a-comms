@@ -350,7 +350,7 @@ export default async function ProjectDetailPage({
                     href={`/projects/${id}/tasks/${task.id}`}
                     style={{
                       display: 'block',
-                      borderRadius: '0.75rem',
+                      borderRadius: 'var(--radius-4)',
                       border: `1px solid ${cardBorder}`,
                       background: cardBg,
                       padding: '0.75rem 1rem',

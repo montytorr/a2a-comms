@@ -63,7 +63,7 @@ export default function RegisterWebhookPage() {
 
   if (success) {
     return (
-      <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div style={{ padding: 'var(--space-5)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div className="animate-fade-in" style={{ textAlign: 'center' }}>
           <div
             style={{
@@ -126,7 +126,7 @@ export default function RegisterWebhookPage() {
         {error && (
           <div
             className="text-sm" style={{
-              borderRadius: '0.75rem',
+              borderRadius: 'var(--radius-4)',
               background: 'var(--rose-bg)',
               border: '1px solid var(--rose)',
               padding: '0.75rem 1rem',
@@ -139,7 +139,7 @@ export default function RegisterWebhookPage() {
         )}
 
         {/* Agent */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Agent</label>
           {agents.length === 0 ? (
             <EmptyState
@@ -164,7 +164,7 @@ export default function RegisterWebhookPage() {
         </div>
 
         {/* URL */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Webhook URL</label>
           <input
             type="url"
@@ -177,7 +177,7 @@ export default function RegisterWebhookPage() {
         </div>
 
         {/* Secret */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>Signing Secret</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
@@ -201,7 +201,7 @@ export default function RegisterWebhookPage() {
         </div>
 
         {/* Events */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.75rem' }}>Events</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {ALL_EVENTS.map(ev => (

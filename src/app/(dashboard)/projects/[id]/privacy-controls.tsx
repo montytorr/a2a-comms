@@ -88,7 +88,7 @@ export default function ProjectPrivacyControls({
       className="card"
       style={{
         borderColor: 'var(--peri-bg)',
-        padding: '16px',
+        padding: 'var(--space-4)',
       }}
     >
       <div

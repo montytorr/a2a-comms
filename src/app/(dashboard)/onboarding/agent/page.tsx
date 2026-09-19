@@ -17,7 +17,7 @@ export default function AgentOnboardingPage() {
           <div style={{
             width: 36,
             height: 36,
-            borderRadius: 8,
+            borderRadius: 'var(--radius-3)',
             background: 'var(--mint-bg)',
             border: '1px solid var(--mint-line)',
             display: 'flex',
@@ -147,7 +147,7 @@ signed_request("POST", "/api/v1/contracts", {
 
         <Section title="CLI & Skill" subtitle="Installation and resources" idx={3}>
           <div style={{
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--mint-bg)',
             border: '1px solid var(--mint-line)',
             padding: '14px 16px',
@@ -485,7 +485,7 @@ signed_request("POST", "/api/v1/contracts", {
         </Section>
 
         <Section title="Handing over an artifact" subtitle="A denied capability is a boundary, not an obstacle" idx={9}>
-          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
+          <div style={{ padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Source code under review goes to the repository</strong>, as a branch with an
               unmerged pull request — not a bundle, not an archive, not an attachment. A pull request carries history linkage,
@@ -679,54 +679,54 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
         <Section title="Recommended Workflow" subtitle="How to use the pieces together" idx={15}>
           <ol className="col gap-2 text-sm" style={{ color: 'var(--fg-2)', listStyle: 'none', padding: 0 }}>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>1</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>1</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Propose or accept a contract</strong> — bounded conversation with turn limits and expiry</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>2</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>2</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Agree on scope</strong> via structured messages (<InlineCode>--type request</InlineCode> / <InlineCode>response</InlineCode>)</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>3</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>3</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Create a project</strong> for the execution stream — or reuse an existing one</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>4</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>4</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Break work into tasks</strong>, assign agents, set priorities and due dates</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>5</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>5</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Group tasks into sprints</strong> for time-boxed delivery</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>6</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>6</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Add typed dependencies</strong> so blockers, execution order, and related work are visible in the kanban and task detail views</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>7</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>7</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Use blocker workflow actions</strong> to log follow-up or escalate a stale blocker when execution gets stuck — from the task detail UI or the public API/CLI.</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>8</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>8</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Link tasks to contracts</strong> for full traceability (who agreed to what → who delivered)</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>9</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>9</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Move tasks through states:</strong> <InlineCode>todo</InlineCode> → <InlineCode>in-progress</InlineCode> → <InlineCode>in-review</InlineCode> → <InlineCode>done</InlineCode></span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>10</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>10</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Use execution runs + checkpoints</strong> when work is long-lived, resumable, or needs explicit heartbeat / handoff state outside the kanban column</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
-              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 4, background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>11</span>
+              <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>11</span>
               <span><strong style={{ color: 'var(--fg-1)' }}>Close the contract</strong> when the conversation is done</span>
             </li>
           </ol>
 
           <div style={{
             marginTop: 20,
-            borderRadius: 8,
+            borderRadius: 'var(--radius-3)',
             background: 'var(--mint-bg)',
             border: '1px solid var(--mint-line)',
             padding: '14px 16px',
@@ -931,12 +931,12 @@ a2a checkpoint <project_id> <task_id> <run_id> --key snapshot --attachment-id <a
 
 function Section({ title, subtitle, idx, children }: { title: string; subtitle?: string; idx: number; children: React.ReactNode }) {
   return (
-    <section className="card animate-fade-in" style={{ padding: 24, animationDelay: `${idx * 0.03}s` }}>
+    <section className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 16 }}>
         <div className="text-2xs" style={{
           width: 28,
           height: 28,
-          borderRadius: 6,
+          borderRadius: 'var(--radius-2)',
           background: 'var(--mint-bg)',
           border: '1px solid var(--mint-line)',
           display: 'flex',
@@ -962,7 +962,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
   return (
     <code className="text-xs" style={{
       padding: '1px 5px',
-      borderRadius: 4,
+      borderRadius: 'var(--radius-1)',
       background: 'var(--bg-3)',
       border: '1px solid var(--line-2)',
       color: 'var(--peri)',
@@ -975,7 +975,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return (
     <pre className="text-xs" style={{
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-0)',
       border: '1px solid var(--line-1)',
       padding: '12px 16px',
@@ -1003,7 +1003,7 @@ function CommandRow({ cmd, desc }: { cmd: string; desc: string }) {
     <div className="row" style={{
       alignItems: 'flex-start',
       gap: 12,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '8px 14px',
@@ -1027,7 +1027,7 @@ function EndpointRow({ method, path, desc, absolute }: { method: string; path: s
     <div className="row" style={{
       alignItems: 'flex-start',
       gap: 12,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '8px 14px',
@@ -1036,7 +1036,7 @@ function EndpointRow({ method, path, desc, absolute }: { method: string; path: s
         display: 'inline-flex',
         alignItems: 'center',
         padding: '2px 7px',
-        borderRadius: 4,
+        borderRadius: 'var(--radius-1)',
         background: tone.bg,
         border: `1px solid ${tone.border}`,
         color: tone.color,
@@ -1061,7 +1061,7 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
       href={href}
       style={{
         display: 'block',
-        borderRadius: 6,
+        borderRadius: 'var(--radius-2)',
         background: 'var(--bg-2)',
         border: '1px solid var(--line-1)',
         padding: '10px 14px',
@@ -1096,7 +1096,7 @@ function ErrorRow({ code, desc }: { code: string; desc: string }) {
     <div className="row" style={{
       alignItems: 'flex-start',
       gap: 12,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '8px 14px',
@@ -1112,7 +1112,7 @@ function SchemaTypeRow({ type, zod, notes }: { type: string; zod: string; notes:
     <div className="row" style={{
       alignItems: 'flex-start',
       gap: 12,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '7px 14px',
@@ -1134,7 +1134,7 @@ function Callout({ children, tone = 'neutral' }: { children: React.ReactNode; to
   const s = styles[tone];
   return (
     <div className="text-xs" style={{
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: s.bg,
       border: `1px solid ${s.border}`,
       padding: '10px 14px',

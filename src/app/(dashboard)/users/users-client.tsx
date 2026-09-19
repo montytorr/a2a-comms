@@ -149,7 +149,7 @@ export default function UsersClient({
 
       {/* Add User Form */}
       {showAddUser && (
-        <div className="card animate-fade-in" style={{ marginBottom: 20, padding: 24 }}>
+        <div className="card animate-fade-in" style={{ marginBottom: 20, padding: 'var(--space-5)' }}>
           <h3 className="h3" style={{ marginBottom: 16 }}>Create New User</h3>
 
           {addUserError && (
@@ -158,7 +158,7 @@ export default function UsersClient({
               padding: '10px 14px',
               background: 'var(--rose-bg)',
               border: '1px solid var(--rose-line)',
-              borderRadius: 6,
+              borderRadius: 'var(--radius-2)',
               
               color: 'var(--rose)',
             }}>
@@ -273,7 +273,7 @@ export default function UsersClient({
           padding: '10px 14px',
           background: 'var(--rose-bg)',
           border: '1px solid var(--rose-line)',
-          borderRadius: 6,
+          borderRadius: 'var(--radius-2)',
           
           color: 'var(--rose)',
         }}>
@@ -302,7 +302,7 @@ export default function UsersClient({
               className="card animate-fade-in"
               style={{ animationDelay: `${idx * 0.08}s` }}
             >
-              <div style={{ padding: 24 }}>
+              <div style={{ padding: 'var(--space-5)' }}>
                 {/* User header */}
                 <div className="row row--split" style={{ alignItems: 'flex-start', marginBottom: 20 }}>
                   <div className="row gap-3">
@@ -414,14 +414,14 @@ export default function UsersClient({
                           style={{
                             background: 'var(--bg-2)',
                             border: '1px solid var(--line-1)',
-                            borderRadius: 6,
+                            borderRadius: 'var(--radius-2)',
                             padding: '8px 12px',
                           }}
                         >
                           <div style={{
                             width: 28,
                             height: 28,
-                            borderRadius: 6,
+                            borderRadius: 'var(--radius-2)',
                             background: 'var(--peri-bg)',
                             border: '1px solid var(--peri-line)',
                             display: 'flex',

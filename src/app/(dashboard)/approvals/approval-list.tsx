@@ -91,7 +91,7 @@ export default function ApprovalList({
       {error && (
         <div className="text-xs" style={{
           padding: '10px 14px',
-          borderRadius: 6,
+          borderRadius: 'var(--radius-2)',
           background: 'var(--rose-bg)',
           border: '1px solid var(--rose-line)',
           
@@ -133,8 +133,8 @@ export default function ApprovalList({
                 {a.details && Object.keys(a.details).length > 0 && (
                   <div className="card--inset" style={{
                     marginTop: 12,
-                    padding: 12,
-                    borderRadius: 6,
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-2)',
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {Object.entries(a.details)

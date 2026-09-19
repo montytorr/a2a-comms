@@ -91,7 +91,7 @@ export default function NewProjectPage() {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Title */}
-        <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.05s' }}>
+        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.05s' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
             Title <span style={{ color: 'var(--rose)' }}>*</span>
           </label>
@@ -106,7 +106,7 @@ export default function NewProjectPage() {
         </div>
 
         {/* Description */}
-        <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.1s' }}>
+        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.1s' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>
             Description
           </label>
@@ -127,7 +127,7 @@ export default function NewProjectPage() {
         </div>
 
         {/* Members */}
-        <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.15s' }}>
+        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.15s' }}>
           <label className="text-2xs" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
             Initial Members
           </label>
@@ -154,7 +154,7 @@ export default function NewProjectPage() {
                       alignItems: 'center',
                       gap: '0.75rem',
                       padding: '0.625rem 0.75rem',
-                      borderRadius: '0.75rem',
+                      borderRadius: 'var(--radius-4)',
                       border: `1px solid ${isSelected ? 'var(--peri)' : 'var(--line-1)'}`,
                       background: isSelected ? 'var(--peri-bg)' : 'var(--bg-1)',
                       cursor: 'pointer',
@@ -194,7 +194,7 @@ export default function NewProjectPage() {
         {error && (
           <div
             style={{
-              borderRadius: '0.75rem',
+              borderRadius: 'var(--radius-4)',
               background: 'var(--rose-bg)',
               border: '1px solid var(--rose)',
               padding: '0.75rem 1rem',
@@ -220,7 +220,7 @@ export default function NewProjectPage() {
               padding: '0.75rem 1.5rem',
               
               fontWeight: 500,
-              borderRadius: '0.75rem',
+              borderRadius: 'var(--radius-4)',
               border: '1px solid var(--line-1)',
               color: 'var(--fg-2)',
               textDecoration: 'none',

@@ -48,7 +48,7 @@ export default function KeyActions({ agentId }: { agentId: string }) {
 
       {/* New credentials card (shown after rotation) */}
       {result && (
-        <div style={{ borderRadius: '0.75rem', background: 'var(--amber-bg)', border: '1px solid var(--amber)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+        <div style={{ borderRadius: 'var(--radius-4)', background: 'var(--amber-bg)', border: '1px solid var(--amber)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', marginBottom: '0.5rem' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--amber)', flexShrink: 0, marginTop: '0.125rem' }}>
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -104,7 +104,7 @@ export default function KeyActions({ agentId }: { agentId: string }) {
           />
           <div className="card" style={{ position: 'relative', width: '100%', maxWidth: '28rem', margin: '0 1rem', overflow: 'hidden' }}>
             <div style={{ padding: '1.75rem' }}>
-              <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: '0.75rem', background: 'var(--amber-bg)', border: '1px solid var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: 'var(--radius-4)', background: 'var(--amber-bg)', border: '1px solid var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--amber)' }}>
                   <polyline points="23 4 23 10 17 10" />
                   <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
@@ -115,7 +115,7 @@ export default function KeyActions({ agentId }: { agentId: string }) {
                 This will generate a new signing secret and expire the current key in 1 hour. The agent will need to update its credentials.
               </p>
               {error && (
-                <div className="text-xs" style={{ marginTop: '1rem', borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', color: 'var(--rose)' }}>
+                <div className="text-xs" style={{ marginTop: '1rem', borderRadius: 'var(--radius-4)', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', color: 'var(--rose)' }}>
                   {error}
                 </div>
               )}

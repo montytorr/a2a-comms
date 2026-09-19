@@ -106,7 +106,7 @@ export default async function ApprovalsPage({
             <div style={{
               width: 36,
               height: 36,
-              borderRadius: 8,
+              borderRadius: 'var(--radius-3)',
               background: 'var(--amber-bg)',
               border: '1px solid var(--amber-line)',
               display: 'flex',

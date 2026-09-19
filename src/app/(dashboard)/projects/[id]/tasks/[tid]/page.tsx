@@ -338,7 +338,7 @@ export default async function TaskDetailPage({
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)] 2xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.9fr)]">
           <div className="space-y-6">
             {/* Main task card */}
-            <section className="card animate-fade-in" style={{ padding: '1.5rem' }}>
+            <section className="card animate-fade-in" style={{ padding: 'var(--space-5)' }}>
               <div style={{ minWidth: 0 }}>
                 {hasReadOnlyObserverAccess ? (
                   <h1 className="text-2xl" style={{ fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>{task.title}</h1>
@@ -472,7 +472,7 @@ export default async function TaskDetailPage({
             <div className="space-y-6">
               {/* Dependencies */}
               {dependencySections.length > 0 && (
-                <div className="card animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.12s' }}>
+                <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.12s' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                     <div>
                       <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Task links and dependency graph</p>
@@ -507,10 +507,10 @@ export default async function TaskDetailPage({
                       <div
                         key={section.key}
                         style={{
-                          borderRadius: '0.75rem',
+                          borderRadius: 'var(--radius-4)',
                           border: `1px solid ${section.config.cardBorder}`,
                           background: section.config.cardBg,
-                          padding: '1rem',
+                          padding: 'var(--space-4)',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -568,7 +568,7 @@ export default async function TaskDetailPage({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }} className="xl:grid-cols-1">
                 {detailItems.map((item) => (
-                  <div key={`rail-${item.label}`} className="card--inset" style={{ padding: '0.75rem' }}>
+                  <div key={`rail-${item.label}`} className="card--inset" style={{ padding: 'var(--space-3)' }}>
                     <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
                     <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
                   </div>
@@ -657,13 +657,13 @@ export default async function TaskDetailPage({
               <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Timeline</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }} className="xl:grid-cols-1">
                 {secondaryDetailItems.map((item) => (
-                  <div key={`secondary-${item.label}`} className="card--inset" style={{ padding: '0.75rem' }}>
+                  <div key={`secondary-${item.label}`} className="card--inset" style={{ padding: 'var(--space-3)' }}>
                     <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
                     <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
-              <div className="card--inset" style={{ padding: '0.75rem' }}>
+              <div className="card--inset" style={{ padding: 'var(--space-3)' }}>
                 <p className="upper text-2xs" style={{ color: 'var(--fg-3)', marginBottom: '0.75rem' }}>Activity feed</p>
                 {taskActivity.length === 0 ? (
                   <EmptyState title="No activity captured yet" />

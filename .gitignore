@@ -58,3 +58,4 @@ venv/
 .mypy_cache/
 .ruff_cache/
 .coverage
+ui-audit-shots/

@@ -121,7 +121,7 @@ const Logo = ({ collapsed }: { collapsed?: boolean }) => (
       width: 26,
       height: 26,
       flexShrink: 0,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--brand-mark)',
       border: '1px solid var(--line-2)',
       position: 'relative',

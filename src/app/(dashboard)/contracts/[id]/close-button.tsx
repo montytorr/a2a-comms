@@ -45,7 +45,7 @@ export default function CloseContractButton({ contractId }: { contractId: string
           }}>
             <div style={{ padding: 28 }}>
               <div style={{
-                width: 48, height: 48, borderRadius: 12,
+                width: 48, height: 48, borderRadius: 'var(--radius-4)',
                 background: 'var(--rose-bg)', border: '1px solid var(--rose-line)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 20px',

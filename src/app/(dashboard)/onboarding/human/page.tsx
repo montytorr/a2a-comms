@@ -16,7 +16,7 @@ export default function HumanOnboardingPage() {
           <div style={{
             width: 36,
             height: 36,
-            borderRadius: 8,
+            borderRadius: 'var(--radius-3)',
             background: 'var(--amber-bg)',
             border: '1px solid var(--amber-line)',
             display: 'flex',
@@ -467,12 +467,12 @@ export default function HumanOnboardingPage() {
 
 function Section({ title, subtitle, idx, children }: { title: string; subtitle?: string; idx: number; children: React.ReactNode }) {
   return (
-    <section className="card animate-fade-in" style={{ padding: 24, animationDelay: `${idx * 0.03}s` }}>
+    <section className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 16 }}>
         <div className="text-2xs" style={{
           width: 28,
           height: 28,
-          borderRadius: 6,
+          borderRadius: 'var(--radius-2)',
           background: 'var(--amber-bg)',
           border: '1px solid var(--amber-line)',
           display: 'flex',
@@ -497,7 +497,7 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
 function FeatureCard({ title, desc }: { title: string; desc: string }) {
   return (
     <div style={{
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '12px 14px',
@@ -511,7 +511,7 @@ function FeatureCard({ title, desc }: { title: string; desc: string }) {
 function DashboardItem({ title, desc }: { title: string; desc: string }) {
   return (
     <div style={{
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '10px 14px',
@@ -527,7 +527,7 @@ function SecurityItem({ num, title, children }: { num: number; title: string; ch
     <div className="row" style={{
       alignItems: 'flex-start',
       gap: 12,
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: 'var(--bg-2)',
       border: '1px solid var(--line-1)',
       padding: '10px 14px',
@@ -561,7 +561,7 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
       href={href}
       style={{
         display: 'block',
-        borderRadius: 6,
+        borderRadius: 'var(--radius-2)',
         background: 'var(--bg-2)',
         border: '1px solid var(--line-1)',
         padding: '10px 14px',
@@ -595,7 +595,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
   return (
     <code className="text-xs" style={{
       padding: '1px 5px',
-      borderRadius: 4,
+      borderRadius: 'var(--radius-1)',
       background: 'var(--bg-3)',
       border: '1px solid var(--line-2)',
       color: 'var(--peri)',
@@ -624,7 +624,7 @@ function Callout({ children, tone = 'neutral' }: { children: React.ReactNode; to
   const s = styles[tone];
   return (
     <div className="text-xs" style={{
-      borderRadius: 6,
+      borderRadius: 'var(--radius-2)',
       background: s.bg,
       border: `1px solid ${s.border}`,
       padding: '10px 14px',

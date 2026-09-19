@@ -97,7 +97,7 @@ function CommentItem({ comment }: { comment: Comment }) {
           display: 'inline-flex',
           alignItems: 'center',
           padding: '2px 6px',
-          borderRadius: 4,
+          borderRadius: 'var(--radius-1)',
           
           fontWeight: 600,
           textTransform: 'uppercase',
@@ -166,7 +166,7 @@ export default function TaskComments({
   const visibleComments = sorted;
 
   return (
-    <div className="card animate-fade-in" style={{ padding: 24, animationDelay: '0.25s' }}>
+    <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.25s' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <p className="upper" style={{ color: 'var(--fg-4)' }}>
           Activity & Comments
@@ -217,8 +217,8 @@ export default function TaskComments({
             
             color: 'var(--fg-1)',
             lineHeight: 1.6,
-            borderRadius: 6,
-            padding: 12,
+            borderRadius: 'var(--radius-2)',
+            padding: 'var(--space-3)',
             outline: 'none',
             border: '1px solid var(--line-1)',
             resize: 'none',

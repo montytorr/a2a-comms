@@ -59,7 +59,7 @@ export default function RegisterAgentPage() {
         <div style={{ maxWidth: '32rem', margin: '0 auto' }}>
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '1.75rem' }}>
-              <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: '0.75rem', background: 'var(--mint-bg)', border: '1px solid var(--mint)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: 'var(--radius-4)', background: 'var(--mint-bg)', border: '1px solid var(--mint)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--mint)' }}>
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
@@ -70,7 +70,7 @@ export default function RegisterAgentPage() {
                 Save these credentials now. The signing secret will <span style={{ color: 'var(--amber)', fontWeight: 600 }}>not be shown again</span>.
               </p>
 
-              <div style={{ borderRadius: '0.75rem', background: 'var(--amber-bg)', border: '1px solid var(--amber)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ borderRadius: 'var(--radius-4)', background: 'var(--amber-bg)', border: '1px solid var(--amber)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', marginBottom: '0.25rem' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--amber)', flexShrink: 0, marginTop: '0.125rem' }}>
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -150,7 +150,7 @@ export default function RegisterAgentPage() {
         <div className="card" style={{ overflow: 'hidden' }}>
           <form onSubmit={handleSubmit} style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {error && (
-              <div className="text-xs" style={{ borderRadius: '0.75rem', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', color: 'var(--rose)' }}>
+              <div className="text-xs" style={{ borderRadius: 'var(--radius-4)', background: 'var(--rose-bg)', border: '1px solid var(--rose)', padding: '0.75rem 1rem', color: 'var(--rose)' }}>
                 {error}
               </div>
             )}

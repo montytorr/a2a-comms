@@ -87,7 +87,7 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
             left: 0,
             zIndex: 50,
             minWidth: 160,
-            borderRadius: 8,
+            borderRadius: 'var(--radius-3)',
             border: '1px solid var(--line-1)',
             background: 'var(--bg-1)',
             backdropFilter: 'blur(12px)',

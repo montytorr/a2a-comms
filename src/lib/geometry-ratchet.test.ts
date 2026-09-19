@@ -52,9 +52,9 @@ function distinct(property: string): Set<string> {
  * --space-* and --radius-* scales; never raise one to make a commit pass.
  */
 const CEILING = {
-  inlineStyleProps: 2633,
-  distinctPadding: 87,
-  distinctBorderRadius: 27,
+  inlineStyleProps: 2627,
+  distinctPadding: 82,
+  distinctBorderRadius: 22,
   distinctGap: 32,
   distinctFontWeight: 4,
   distinctIconSizes: 18,

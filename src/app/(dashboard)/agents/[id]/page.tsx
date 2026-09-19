@@ -247,8 +247,8 @@ export default async function AgentDetailPage({
                 <div
                   key={key.id}
                   style={{
-                    borderRadius: '0.75rem',
-                    padding: '1rem',
+                    borderRadius: 'var(--radius-4)',
+                    padding: 'var(--space-4)',
                     border: '1px solid',
                     borderColor: !key.is_active || isExpired ? 'var(--line-1)' : isExpiring ? 'var(--amber-bg)' : 'var(--line-2)',
                     background: !key.is_active || isExpired ? 'var(--bg-1)' : isExpiring ? 'var(--amber-bg)' : 'var(--bg-1)',

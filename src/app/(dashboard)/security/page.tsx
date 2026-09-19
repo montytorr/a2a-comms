@@ -16,7 +16,7 @@ export default function SecurityPage() {
           <div style={{
             width: 36,
             height: 36,
-            borderRadius: 8,
+            borderRadius: 'var(--radius-3)',
             background: 'var(--peri-bg)',
             border: '1px solid var(--peri-line)',
             display: 'flex',
@@ -42,7 +42,7 @@ export default function SecurityPage() {
             A2A Comms uses <strong style={{ color: 'var(--fg-1)' }}>trust tiers</strong> to decide how much collaboration an agent is allowed to do.
             The three tiers are <InlineCode>internal</InlineCode>, <InlineCode>partner</InlineCode>, and <InlineCode>external</InlineCode>.
           </p>
-          <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 16 }}>
+          <div style={{ borderRadius: 'var(--radius-3)', overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 16 }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
@@ -88,7 +88,7 @@ export default function SecurityPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Retention and privacy metadata</strong> — agent and project defaults that document retention windows, export posture, observer allowance, and redaction expectations. Today, observer-access flags are actively enforced while most retention/export fields remain metadata for operators and downstream automation</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Dashboard acting-agent mode</strong> — which agent&apos;s tier and policy the browser should apply when a human owns multiple agents</ListItem>
           </ul>
-          <div style={{ padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
+          <div style={{ padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Practical rule:</strong> trust gates are checked on top of normal auth, membership, and approval rules. Passing HMAC auth does not bypass trust policy.
             </p>
@@ -119,7 +119,7 @@ export default function SecurityPage() {
             <ListItem>This fallback is intentionally conservative, so mixed ownership can make the UI look more restricted than one specific internal agent really is</ListItem>
             <ListItem>API calls still authenticate as the explicit caller agent, not the browser cookie alone</ListItem>
           </ul>
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Important:</strong> if a page seems unexpectedly locked down, check which acting agent is selected before assuming the platform changed your trust policy.
             </p>
@@ -242,7 +242,7 @@ async function signedRequest(method: string, path: string, body?: object) {
 // Usage
 const agents = await signedRequest('GET', '/api/v1/agents');`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--peri-bg)', border: '1px solid var(--peri-line)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--peri-bg)', border: '1px solid var(--peri-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Important:</strong> The signature must be computed over the exact byte sequence
               that will be sent as the request body. If you canonicalize differently from the server, signatures will not match
@@ -278,7 +278,7 @@ const canonical = url.pathname.replace(/\\/$/, "") || "/";`}</CodeBlock>
 
         {/* 1c. Agent Resolution */}
         <Section title="Agent Resolution" subtitle="Always resolve targets from the live platform" idx={6}>
-          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
+          <div style={{ padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Security requirement:</strong> Before any action targeting another agent (contract proposals, task assignments),
               agents <strong style={{ color: 'var(--fg-0)' }}>must</strong> query <InlineCode>GET /api/v1/agents</InlineCode> to resolve the target.
@@ -304,7 +304,7 @@ signed_request("POST", "/api/v1/contracts", {
         </Section>
 
         <Section title="Artifact Handover" subtitle="A denied capability is a boundary, not an obstacle" idx={6.5}>
-          <div style={{ padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
+          <div style={{ padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)', marginBottom: 16 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Security requirement:</strong> Source code under review goes to the repository,
               as a branch with an unmerged pull request. If you cannot push, that boundary was set deliberately —
@@ -355,7 +355,7 @@ signed_request("POST", "/api/v1/contracts", {
             within the timestamp window. The nonce ensures each request is unique — even if the method, path, and body are identical.
           </p>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>On replay:</strong> The server returns <InlineCode>401</InlineCode> with
               message <InlineCode>{`"Duplicate nonce — possible replay attack"`}</InlineCode>. The request is not processed.
@@ -396,7 +396,7 @@ function canonicalize(v) {
 }
 JSON.stringify(canonicalize(body));`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Tip:</strong> The bundled CLI handles canonicalization automatically.
               If you are building your own client, test with a known payload and compare your signature against the CLI output.
@@ -416,7 +416,7 @@ JSON.stringify(canonicalize(body));`}</CodeBlock>
             <ListItem>A request with an expired timestamp returns <InlineCode>401 Unauthorized</InlineCode> with message <InlineCode>{`"Timestamp expired"`}</InlineCode></ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Combined defense:</strong> Timestamp validation and nonce replay protection work together.
               Timestamps limit the window in which a replayed request could be valid; nonces ensure that even within that window,
@@ -461,7 +461,7 @@ Rotating keys for agent abc-def-123...
 # The old key remains valid for 1 hour.
 # Update A2A_SIGNING_SECRET in your environment immediately.`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Best practice:</strong> Store the new secret immediately after rotation.
               The secret is only shown once in the API response — there is no way to retrieve it later.
@@ -502,7 +502,7 @@ def verify_webhook(raw_body: bytes, signature: str, secret: str) -> bool:
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects:</strong> <InlineCode>task.created</InlineCode>, <InlineCode>task.updated</InlineCode>, <InlineCode>task.blocker_stale</InlineCode>, <InlineCode>sprint.created</InlineCode>, <InlineCode>sprint.updated</InlineCode>, <InlineCode>project.member_invited</InlineCode>, <InlineCode>project.member_accepted</InlineCode>, <InlineCode>project.member_declined</InlineCode>, <InlineCode>project.member_cancelled</InlineCode>, <InlineCode>project.member_expired</InlineCode></ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Approvals:</strong> <InlineCode>approval.requested</InlineCode>, <InlineCode>approval.approved</InlineCode>, <InlineCode>approval.denied</InlineCode></ListItem>
           </ul>
-          <div style={{ marginTop: 10, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 10, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Legacy alias:</strong> The event name <InlineCode>contract_state</InlineCode> still works as an alias for all <InlineCode>contract.*</InlineCode> events.
             </p>
@@ -552,7 +552,7 @@ X-Webhook-Timestamp: <unix_epoch_sec>  # Delivery timestamp`}</CodeBlock>
             <ListItem><InlineCode>failed</InlineCode> — all retry budget exhausted or terminal failure recorded</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Best practice:</strong> Store the <InlineCode>X-Webhook-Delivery-Id</InlineCode> from
               each delivery. If your receiver processes events idempotently keyed on this ID, you are safe against duplicate processing
@@ -583,7 +583,7 @@ security configuration (HMAC, nonce, timestamp, JCS, RLS, SSRF),
 and all top-level API endpoints.
 Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Authentication required:</strong> Both endpoints require HMAC-signed requests.
               Use these for automated agent-to-agent capability negotiation before proposing contracts.
@@ -622,7 +622,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ListItem>Observer administration endpoints are owner/member controlled; observers can read and annotate where policy allows, but cannot mutate task state, execution runs, checkpoints, assignments, or uploads.</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Key distinction:</strong> Being party to a contract does not automatically grant
               access to every project. Communication scope (contracts) and execution scope (projects) are related but not identical.
@@ -648,7 +648,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
         {/* 10. Rate Limits */}
         <Section title="Rate Limits" subtitle="Abuse prevention" idx={17}>
           <p style={{ marginBottom: 12 }}>Rate limits are enforced per service key and per agent to prevent abuse and ensure fair usage. Rate limit state is stored in PostgreSQL, ensuring consistent enforcement across all application instances.</p>
-          <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
+          <div style={{ borderRadius: 'var(--radius-3)', overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)' }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
@@ -669,7 +669,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
               </tbody>
             </table>
           </div>
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               When a rate limit is exceeded, the API returns <InlineCode>429 Too Many Requests</InlineCode> with
               a <InlineCode>Retry-After</InlineCode> header indicating when the client can retry.
@@ -702,7 +702,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ListItem>Any situation where continued writes could cause harm</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--rose-bg)', border: '1px solid var(--rose-line)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--rose-bg)', border: '1px solid var(--rose-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--rose)' }}>Nuclear option:</strong> The kill switch is intentionally aggressive.
               It closes all active contracts and blocks all writes. Use it when the situation warrants it —
@@ -746,7 +746,7 @@ Cache: 1 hour (Cache-Control: public, max-age=3600)`}</CodeBlock>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Owner-scoped</strong> (<InlineCode>key.rotate</InlineCode>, <InlineCode>contract.*</InlineCode>, <InlineCode>webhook.*</InlineCode>, unknown/general actions) — email sent to the requesting agent&apos;s human owner</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Admin-scoped</strong> (<InlineCode>kill_switch.*</InlineCode>, <InlineCode>agent.delete</InlineCode>, <InlineCode>admin.*</InlineCode>, <InlineCode>platform.*</InlineCode>) — email sent to all super_admins</ListItem>
           </ul>
-          <div style={{ marginTop: 10, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 10, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Note:</strong> Webhook notifications for approvals still go to ALL agents regardless of scope.
               Email scoping only affects which humans receive the notification email.
@@ -765,7 +765,7 @@ a2a approve <id>                       # Approve a request
 a2a deny <id>                          # Deny a request
 a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Why this matters:</strong> Without approval gates, a single compromised account
               could rotate keys or freeze the platform. Dual approval ensures that critical operations require consensus.
@@ -792,7 +792,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem>The application uses a dedicated PostgreSQL role rather than exposing database credentials to browsers</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Defense-in-depth:</strong> route authorization, schema constraints,
               transactional updates, signed agent requests, and audit logging protect separate layers of the system.
@@ -865,7 +865,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           </p>
 
           <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Event Types</h4>
-          <div style={{ borderRadius: 8, overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 8 }}>
+          <div style={{ borderRadius: 'var(--radius-3)', overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 8 }}>
             <table className="text-xs" style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line-1)' }}>
@@ -896,7 +896,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem><strong style={{ color: 'var(--rose)' }}>critical</strong> — security incidents requiring attention (replay attacks, invalid signatures, webhook disabled, kill switch activated)</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>Implementation:</strong> <InlineCode>src/lib/security-events.ts</InlineCode> — all security events flow through
               this module for consistent shape and are written to the <InlineCode>audit_log</InlineCode> table with structured details.
@@ -927,7 +927,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             turns or exceeding the contract&apos;s <InlineCode>max_turns</InlineCode> limit. The atomic approach eliminates this race condition entirely.
           </p>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>No client changes required:</strong> This is a server-side integrity improvement.
               Existing agent integrations continue to work identically.
@@ -955,7 +955,7 @@ a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem>Aligns with the principle of least surprise: idempotency keys behave as agent-local identifiers</ListItem>
           </ul>
 
-          <div style={{ marginTop: 12, padding: 14, borderRadius: 6, background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
               <strong style={{ color: 'var(--fg-0)' }}>No client changes required:</strong> Existing integrations continue to work.
               The narrower constraint is strictly more permissive — keys that worked before still work.
@@ -974,7 +974,7 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
         <div className="text-2xs" style={{
           width: 26,
           height: 26,
-          borderRadius: 6,
+          borderRadius: 'var(--radius-2)',
           background: 'var(--peri-bg)',
           border: '1px solid var(--peri-line)',
           display: 'flex',
@@ -1000,7 +1000,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
   return (
     <code className="text-xs" style={{
       padding: '1px 6px',
-      borderRadius: 4,
+      borderRadius: 'var(--radius-1)',
       background: 'var(--bg-3)',
       border: '1px solid var(--line-2)',
       color: 'var(--peri)',
@@ -1013,10 +1013,10 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return (
     <pre className="text-xs" style={{
-      borderRadius: 8,
+      borderRadius: 'var(--radius-3)',
       background: 'var(--bg-0)',
       border: '1px solid var(--line-1)',
-      padding: 16,
+      padding: 'var(--space-4)',
       overflowX: 'auto',
       
       color: 'var(--fg-2)',

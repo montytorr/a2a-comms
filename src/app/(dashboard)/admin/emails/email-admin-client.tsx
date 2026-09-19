@@ -62,9 +62,9 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
           display: 'flex',
           flexDirection: 'column',
           gap: 6,
-          padding: 8,
+          padding: 'var(--space-2)',
           border: '1px solid var(--line-1)',
-          borderRadius: 12,
+          borderRadius: 'var(--radius-4)',
           background: 'color-mix(in oklch, var(--bg-1) 72%, transparent)',
         }}
       >
@@ -112,7 +112,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                 style={{
                   width: 30,
                   height: 30,
-                  borderRadius: 8,
+                  borderRadius: 'var(--radius-3)',
                   display: 'grid',
                   placeItems: 'center',
                   color: selected ? 'var(--amber)' : 'var(--fg-3)',
@@ -185,7 +185,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                 style={{
                   width: '3rem',
                   height: '3rem',
-                  borderRadius: '0.75rem',
+                  borderRadius: 'var(--radius-4)',
                   background: 'var(--bg-2)',
                   border: '1px solid var(--line-1)',
                   display: 'flex',

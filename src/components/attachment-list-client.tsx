@@ -92,22 +92,22 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
 
   if (isImageAttachment(attachment)) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 'var(--space-2)' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={href} alt={attachment.original_name} style={{ display: 'block', maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 6 }} />
+        <img src={href} alt={attachment.original_name} style={{ display: 'block', maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 'var(--radius-2)' }} />
       </div>
     );
   }
 
   if (isPdfAttachment(attachment)) {
-    return <iframe src={href} title={attachment.original_name} style={{ height: '100%', minHeight: 0, width: '100%', borderRadius: 8, border: '1px solid var(--line-1)' }} />;
+    return <iframe src={href} title={attachment.original_name} style={{ height: '100%', minHeight: 0, width: '100%', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)' }} />;
   }
   if (isVideoAttachment(attachment)) {
-    return <video src={href} controls style={{ height: '100%', minHeight: 0, width: '100%', borderRadius: 8, border: '1px solid var(--line-1)', background: 'black' }} />;
+    return <video src={href} controls style={{ height: '100%', minHeight: 0, width: '100%', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'black' }} />;
   }
   if (isAudioAttachment(attachment)) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 260, width: '100%', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-2)', padding: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 260, width: '100%', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-2)', padding: 'var(--space-5)' }}>
         <audio src={href} controls style={{ width: '100%', maxWidth: 600 }} />
       </div>
     );
@@ -117,20 +117,20 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
     if (textContent === null) return <p className="dim text-sm">Loading text preview…</p>;
     if (isMd) {
       return (
-        <div style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20 }}>
+        <div style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20 }}>
           <MarkdownPreview content={textContent} className="" />
         </div>
       );
     }
     return (
-      <pre className="mono text-xs" style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20, lineHeight: 1.6, color: 'var(--fg-1)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+      <pre className="mono text-xs" style={{ height: '100%', minHeight: 0, width: '100%', overflow: 'auto', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-0)', padding: 20, lineHeight: 1.6, color: 'var(--fg-1)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
         {textContent}
       </pre>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 260, width: '100%', borderRadius: 8, border: '1px dashed var(--line-2)', background: 'var(--bg-2)', padding: 32, textAlign: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 260, width: '100%', borderRadius: 'var(--radius-3)', border: '1px dashed var(--line-2)', background: 'var(--bg-2)', padding: 'var(--space-6)', textAlign: 'center' }}>
       <div className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>No inline preview for this file type yet.</div>
       <div className="dim text-sm" style={{ marginTop: 8 }}>Open it in a new tab or download it to inspect locally.</div>
     </div>
@@ -140,27 +140,27 @@ const InlinePreview = ({ attachment }: { attachment: TaskAttachment }) => {
 const PreviewMetaPanel = ({ attachment }: { attachment: TaskAttachment }) => (
   <div className="col gap-4">
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-      <div className="card" style={{ padding: 12 }}>
+      <div className="card" style={{ padding: 'var(--space-3)' }}>
         <div className="upper text-2xs">Type</div>
         <div className="text-sm" style={{ marginTop: 8, fontWeight: 500, color: 'var(--fg-1)' }}>{typeLabel(attachment)}</div>
       </div>
-      <div className="card" style={{ padding: 12 }}>
+      <div className="card" style={{ padding: 'var(--space-3)' }}>
         <div className="upper text-2xs">Size</div>
         <div className="text-sm" style={{ marginTop: 8, fontWeight: 500, color: 'var(--fg-1)' }}>{humanSize(attachment.size_bytes)}</div>
       </div>
     </div>
-    <div className="card" style={{ padding: 16 }}>
+    <div className="card" style={{ padding: 'var(--space-4)' }}>
       <div className="upper text-2xs">Added</div>
       <div className="mono num text-sm" style={{ marginTop: 8, color: 'var(--fg-1)' }}>{formatDateTime(attachment.created_at)}</div>
     </div>
     {typeof attachment.metadata?.note === 'string' && attachment.metadata.note.length > 0 && (
-      <div className="card" style={{ padding: 16, borderColor: 'var(--mint-line)' }}>
+      <div className="card" style={{ padding: 'var(--space-4)', borderColor: 'var(--mint-line)' }}>
         <div className="upper text-2xs" style={{ color: 'var(--mint)' }}>Attachment note</div>
         <div className="text-sm" style={{ marginTop: 8, color: 'var(--fg-1)', whiteSpace: 'pre-wrap' }}>{attachment.metadata.note}</div>
       </div>
     )}
     {typeof attachment.metadata?.observer_note === 'string' && attachment.metadata.observer_note.length > 0 && (
-      <div className="card" style={{ padding: 16 }}>
+      <div className="card" style={{ padding: 'var(--space-4)' }}>
         <div className="upper text-2xs">Observer note</div>
         <div className="text-sm" style={{ marginTop: 8, color: 'var(--peri)', whiteSpace: 'pre-wrap' }}>{attachment.metadata.observer_note}</div>
       </div>
@@ -222,7 +222,7 @@ const AttachmentPreviewModal = ({
 
         {/* Preview area */}
         <div style={{ flex: 1, minHeight: 0, padding: '0 8px 8px', display: 'flex' }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-2)', padding: 8 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-2)', padding: 'var(--space-2)' }}>
             <InlinePreview attachment={attachment} />
           </div>
         </div>
@@ -290,19 +290,19 @@ export default function AttachmentListClient({ attachments }: { attachments: Tas
 
           return (
             <div key={attachment.id} className="card" style={{ overflow: 'hidden' }}>
-              <div className="row gap-4" style={{ padding: 16, alignItems: 'flex-start' }}>
+              <div className="row gap-4" style={{ padding: 'var(--space-4)', alignItems: 'flex-start' }}>
                 {isImage && href ? (
                   <button
                     type="button"
                     onClick={() => { setPreview(attachment); setDetailsOpen(false); }}
-                    style={{ width: 64, height: 64, overflow: 'hidden', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-0)', flexShrink: 0, cursor: 'pointer', padding: 0 }}
+                    style={{ width: 64, height: 64, overflow: 'hidden', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-0)', flexShrink: 0, cursor: 'pointer', padding: 0 }}
                     aria-label={`Preview ${attachment.original_name}`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={href} alt={attachment.original_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </button>
                 ) : (
-                  <div className="upper text-2xs" style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--line-1)', background: 'var(--bg-2)', flexShrink: 0 }}>
+                  <div className="upper text-2xs" style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-3)', border: '1px solid var(--line-1)', background: 'var(--bg-2)', flexShrink: 0 }}>
                     {typeLabel(attachment)}
                   </div>
                 )}

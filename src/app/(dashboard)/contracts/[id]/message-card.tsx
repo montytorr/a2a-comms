@@ -25,8 +25,8 @@ function SyntaxJson({ data }: { data: unknown }) {
         
         background: 'var(--bg-0)',
         border: '1px solid var(--line-1)',
-        borderRadius: '0.75rem',
-        padding: '1rem',
+        borderRadius: 'var(--radius-4)',
+        padding: 'var(--space-4)',
         overflowX: 'auto',
         whiteSpace: 'pre-wrap',
         lineHeight: 1.6,
@@ -112,7 +112,7 @@ function TaskList({ tasks }: { tasks: Array<Record<string, unknown>> }) {
         const hasHeader = id || title || taskStatus || priority;
 
         return (
-          <div key={i} style={{ borderRadius: '0.5rem', background: 'var(--bg-2)', border: '1px solid var(--line-1)', padding: '0.75rem' }}>
+          <div key={i} style={{ borderRadius: '0.5rem', background: 'var(--bg-2)', border: '1px solid var(--line-1)', padding: 'var(--space-3)' }}>
             {hasHeader && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                 {id && <span className="mono text-2xs" style={{ color: 'var(--fg-3)' }}>{id.slice(0, 8)}</span>}

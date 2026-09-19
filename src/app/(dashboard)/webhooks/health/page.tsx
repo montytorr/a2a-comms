@@ -239,7 +239,7 @@ export default async function WebhookHealthPage({
         {isSuperAdmin ? (
           <div className="row gap-2" style={{
             marginBottom: 16,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--amber-bg)',
             border: '1px solid var(--amber-line)',
             padding: '10px 16px',
@@ -252,7 +252,7 @@ export default async function WebhookHealthPage({
         ) : !hasWebhooks ? (
           <div className="row gap-2" style={{
             marginBottom: 16,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--bg-2)',
             border: '1px solid var(--line-1)',
             padding: '10px 16px',
@@ -265,7 +265,7 @@ export default async function WebhookHealthPage({
         ) : (
           <div className="row gap-2" style={{
             marginBottom: 16,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--peri-bg)',
             border: '1px solid var(--peri-line)',
             padding: '10px 16px',
@@ -341,7 +341,7 @@ export default async function WebhookHealthPage({
         {filterWebhookId && (
           <div style={{
             marginBottom: 16,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--peri-bg)',
             border: '1px solid var(--peri-line)',
             padding: '10px 16px',
@@ -463,7 +463,7 @@ export default async function WebhookHealthPage({
         {(totalPending > 0 || totalRetrying > 0) && !filterWebhookId && (
           <div style={{
             marginTop: 16,
-            borderRadius: 6,
+            borderRadius: 'var(--radius-2)',
             background: 'var(--amber-bg)',
             border: '1px solid var(--amber-line)',
             padding: '10px 16px',

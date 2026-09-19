@@ -146,6 +146,39 @@ the change stream or is listed as deliberately static, with a reason).
 
 ---
 
+## Changing how something looks
+
+Two things guard the design system, and they cover different failures.
+
+**On every commit — the ratchets.** `src/lib/color-contrast.test.ts` converts
+the OKLCH tokens to sRGB and computes real WCAG ratios, so a palette change that
+drops text below 4.5:1 fails. `src/lib/css-cascade.test.ts` keeps every rule
+inside `@layer components`, because unlayered CSS silently beats every Tailwind
+utility. `src/lib/geometry-ratchet.test.ts` fixes the count of distinct padding,
+radius, gap, font-weight and icon-size values as ceilings that may only come
+down.
+
+That last one is a ratchet, not a rule: it does not claim the numbers are right,
+only that they do not get worse. When you converge a page onto `--space-*` and
+`--radius-*`, lower the ceiling in the same commit. Never raise one to make a
+commit pass — and note the test checks its own honesty, failing if a ceiling
+drifts more than a few above the real count, because a ceiling with slack in it
+is a comment rather than a ratchet.
+
+**When you change a layout — the browser.** `scripts/ui-audit.mjs` logs into a
+running instance and walks every dashboard route at 390px and 1280px, reporting
+pages that scroll sideways, boxes narrower than their text, and text that
+overlaps other text. It needs a stack, a seeded super-admin and about fifteen
+minutes, so it is not in `npm test`; run it when you touch a layout.
+
+Load production-shaped data into the instance first. An empty table cannot
+overlap, so an empty database will tell you everything is fine.
+
+The reason both exist: a percentage-width column does not *overflow* on a phone,
+it shrinks until its contents collide. The page reports a clean `scrollWidth`
+the whole time. That is how `/contracts` shipped a header reading
+`PROPOSEPARTICIPANTSTURNSCREATED` without a single test noticing.
+
 ## Branches and pull requests
 
 The workflow is a fork, a branch and a pull request. **Please do not push to

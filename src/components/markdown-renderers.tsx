@@ -23,7 +23,7 @@ const blockCodeStyle: CSSProperties = {
   ...baseCodeStyle,
   display: 'block',
   padding: '0.95rem 1rem',
-  borderRadius: 8,
+  borderRadius: 'var(--radius-3)',
   fontSize: 12,
   lineHeight: 1.65,
   color: 'var(--fg-1)',
@@ -113,7 +113,7 @@ export const markdownComponents: Components = {
     </a>
   ),
   table: ({ children }) => (
-    <div style={{ overflowX: 'auto', margin: '12px 0', border: '1px solid var(--line-1)', borderRadius: 8 }}>
+    <div style={{ overflowX: 'auto', margin: '12px 0', border: '1px solid var(--line-1)', borderRadius: 'var(--radius-3)' }}>
       <div style={{ overflowX: 'auto' }}>
         <table className="text-xs" style={{ width: '100%', minWidth: 420, borderCollapse: 'collapse' }}>{children}</table>
       </div>

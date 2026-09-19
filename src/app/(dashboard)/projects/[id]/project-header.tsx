@@ -151,8 +151,8 @@ function EditableProjectDescription({
     return (
       <div
         style={{
-          borderRadius: 8,
-          padding: 8,
+          borderRadius: 'var(--radius-3)',
+          padding: 'var(--space-2)',
           margin: -8,
           transition: 'background 0.1s',
           minHeight: 24,
@@ -346,7 +346,7 @@ export default function ProjectHeader({
                       key={m.id}
                       style={{ position: 'relative', marginLeft: m.id === members[0]?.id ? 0 : -8 }}
                     >
-                      <span title={`${name} (${m.role})`} style={{ display: 'inline-flex', border: '2px solid var(--bg-0)', borderRadius: 8 }}>
+                      <span title={`${name} (${m.role})`} style={{ display: 'inline-flex', border: '2px solid var(--bg-0)', borderRadius: 'var(--radius-3)' }}>
                         <Avatar name={name} size={32} />
                       </span>
                       {isOwner && m.role !== 'owner' && (
@@ -535,7 +535,7 @@ export default function ProjectHeader({
                 key={invitation.id}
                 className="card"
                 style={{
-                  padding: 16,
+                  padding: 'var(--space-4)',
                   borderColor: 'var(--peri-bg)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -595,7 +595,7 @@ export default function ProjectHeader({
           })}
 
           {!isOwner && canSeeObserverInvitationSummary && hiddenPendingInvitationCount > 0 && (
-            <div className="card" style={{ padding: 16 }}>
+            <div className="card" style={{ padding: 'var(--space-4)' }}>
               <p className="upper text-2xs" style={{ marginBottom: 8 }}>Invitation summary</p>
               <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
                 {hiddenPendingInvitationCount} pending invitation
@@ -610,7 +610,7 @@ export default function ProjectHeader({
           )}
 
           {isOwner && invitations.length > 0 && (
-            <div className="card" style={{ padding: 16 }}>
+            <div className="card" style={{ padding: 'var(--space-4)' }}>
               <p className="upper text-2xs" style={{ marginBottom: 12 }}>Invitation Timeline</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {invitations.map((invitation) => {

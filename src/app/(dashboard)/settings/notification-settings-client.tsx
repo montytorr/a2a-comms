@@ -128,7 +128,7 @@ export default function NotificationSettingsClient({ initialPrefs }: Notificatio
             className="text-sm" style={{
               marginTop: '12px',
               padding: '10px 14px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-2)',
               
               fontWeight: 500,
               transition: 'all 0.2s',

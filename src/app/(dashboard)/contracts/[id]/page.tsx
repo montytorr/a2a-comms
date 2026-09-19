@@ -319,7 +319,7 @@ export default async function ContractDetailPage({
                 style={{
                   display: 'block',
                   padding: '8px 10px',
-                  borderRadius: 6,
+                  borderRadius: 'var(--radius-2)',
                   background: 'var(--bg-0)',
                   border: '1px solid var(--line-1)',
                   color: 'var(--fg-2)',
@@ -415,7 +415,7 @@ export default async function ContractDetailPage({
                     className="col gap-1"
                     style={{
                       padding: '10px 12px',
-                      borderRadius: 8,
+                      borderRadius: 'var(--radius-3)',
                       border: '1px solid var(--line-1)',
                       background: 'var(--bg-0)',
                     }}
@@ -445,7 +445,7 @@ export default async function ContractDetailPage({
           )}
 
           {isObserverParticipant && (
-            <div className="card card--inset" style={{ padding: 12, marginTop: 14, borderColor: 'var(--peri-line)' }}>
+            <div className="card card--inset" style={{ padding: 'var(--space-3)', marginTop: 14, borderColor: 'var(--peri-line)' }}>
               <div className="text-2xs" style={{ color: 'var(--peri)' }}>
                 You are attached as a read-only observer on this contract.
               </div>

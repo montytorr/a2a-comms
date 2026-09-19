@@ -110,7 +110,7 @@ export default function ChangelogPage() {
           <div style={{
             width: 36,
             height: 36,
-            borderRadius: 8,
+            borderRadius: 'var(--radius-3)',
             background: 'var(--peri-bg)',
             border: '1px solid var(--peri-line)',
             display: 'flex',
@@ -179,14 +179,14 @@ export default function ChangelogPage() {
                 zIndex: 10,
               }} />
 
-              <div className="card" style={{ marginLeft: 40, padding: 24 }}>
+              <div className="card" style={{ marginLeft: 40, padding: 'var(--space-5)' }}>
                 {/* Version header */}
                 <div className="row gap-3" style={{ marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span className="text-sm" style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     padding: '4px 10px',
-                    borderRadius: 6,
+                    borderRadius: 'var(--radius-2)',
                     background: 'var(--peri-bg)',
                     border: '1px solid var(--peri-line)',
                     color: 'var(--peri)',
@@ -222,7 +222,7 @@ export default function ChangelogPage() {
                           <span className={`pill ${tone.pill}`}>{section.type}</span>
                         </div>
                         <div style={{
-                          borderRadius: 6,
+                          borderRadius: 'var(--radius-2)',
                           background: tone.bg,
                           border: `1px solid ${tone.border}`,
                           padding: '12px 16px',

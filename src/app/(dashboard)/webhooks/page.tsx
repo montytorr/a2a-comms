@@ -121,7 +121,7 @@ export default async function WebhooksPage() {
                     
                     background: 'var(--bg-2)',
                     padding: '2px 8px',
-                    borderRadius: 4,
+                    borderRadius: 'var(--radius-1)',
                     border: '1px solid var(--line-1)',
                   }}>
                     {group.webhooks.length} webhook{group.webhooks.length !== 1 ? 's' : ''}

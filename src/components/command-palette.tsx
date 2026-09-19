@@ -163,7 +163,7 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
                 background: idx === activeIdx ? 'var(--bg-2)' : 'transparent',
                 border: 'none',
                 color: 'var(--fg-1)',
-                borderRadius: 6,
+                borderRadius: 'var(--radius-2)',
                 cursor: 'pointer',
                 textAlign: 'left',
                 fontFamily: 'var(--sans)',
