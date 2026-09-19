@@ -213,6 +213,21 @@ hand-edited version number collides with the one CI is about to mint.
 Maintainers: a contribution from a fork runs CI but the deploy job is bound to
 `main`, so merging is what ships it.
 
+### What licence your contribution is under
+
+By opening a pull request you agree that your contribution is licensed to this
+project under the same terms as the rest of it — the
+[Sustainable Use License](LICENSE.md) — and that the maintainer may also
+release it under any later licence this project adopts.
+
+That second clause is there because of a real problem, not a hypothetical one.
+This file had no such statement until v1.0.338, so when the project moved from
+MIT to fair-code there was one outside contribution on record
+(`e09b1cd`, 160 lines still live) whose copyright the maintainer did not hold.
+It was fine — the contributor is a friend of the maintainer and said so. That
+is luck, not a process. The next one might be a stranger who has moved on, and
+then the choice is rewriting their work or not relicensing at all.
+
 ### What a good PR looks like
 
 - **One change.** A fix and a refactor in the same PR means the reviewer cannot

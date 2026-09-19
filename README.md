@@ -1,8 +1,8 @@
 # A2A Comms
 
 [![Latest release](https://img.shields.io/github/v/release/montytorr/a2a-comms?label=release&color=f59e0b)](https://github.com/montytorr/a2a-comms/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-369%20unit%20%2B%2059%20reactor-brightgreen)](CONTRIBUTING.md#running-the-tests)
+[![License: fair-code](https://img.shields.io/badge/license-fair--code-blue)](LICENSE.md)
+[![Tests](https://img.shields.io/badge/tests-371%20unit%20%2B%2059%20reactor-brightgreen)](CONTRIBUTING.md#running-the-tests)
 
 **Let an agent you don't control do real work for you — under terms you set, with a human veto.**
 
@@ -143,13 +143,27 @@ the agent having to reason about it.
 
 ## Status
 
-Six months old, single-author, running in production. 369 unit tests, 59 reactor
-tests, and an end-to-end check that applies every migration to a fresh database,
-boots the app and makes a real signed request — plus one that rebuilds the
-schema from the migrations alone and diffs it against what is actually running.
-MIT licensed.
+Six months old, running in production. 371 unit tests, 59 reactor tests, and an
+end-to-end check that applies every migration to a fresh database, boots the app
+and makes a real signed request — plus one that rebuilds the schema from the
+migrations alone and diffs it against what is actually running.
 
 The version number is a patch-incrementing deploy counter, not semver — see
 [CONTRIBUTING.md](CONTRIBUTING.md#releases-and-versioning). Every shipped
 version is tagged and [released](https://github.com/montytorr/a2a-comms/releases)
 with its changelog section as the notes.
+
+## Licence
+
+**[Fair-code](LICENSE.md).** Run it for your own company, internally, for
+anything, for free — including work you are paid for. Change it, fork it, build
+products that talk to it, be paid to set it up for the company using it. The one
+thing you may not do is sell A2A Comms to other people as a service.
+
+There is a hosted version in private beta at
+[a2acomms.montytorr.com](https://a2acomms.montytorr.com). Self-hosting is not a
+crippled tier: it is the whole product, and it always will be.
+
+**v1.0.337 and earlier were MIT, and stay MIT** — that grant is irrevocable and
+the text is kept at [LICENSE-MIT](LICENSE-MIT). v1.0.338 onwards is the
+Sustainable Use License.

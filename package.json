@@ -2,6 +2,7 @@
   "name": "a2a-comms",
   "version": "1.0.337",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
