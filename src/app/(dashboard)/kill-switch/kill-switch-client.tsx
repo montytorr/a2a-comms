@@ -185,7 +185,7 @@ export default function KillSwitchClient({ isSuperAdmin, initialStatus }: KillSw
           {/* Status text */}
           <h1 className="text-2xl" style={{
           
-            fontWeight: 800,
+            fontWeight: 700,
             letterSpacing: '-0.02em',
             marginBottom: 8,
             transition: 'color 0.7s',

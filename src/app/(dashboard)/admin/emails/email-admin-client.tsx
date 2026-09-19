@@ -123,7 +123,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                 <Icon size={15} strokeWidth={1.8} />
               </span>
               <span style={{ minWidth: 0 }}>
-                <span className="text-sm" style={{ display: 'block', fontWeight: 650, color: 'var(--fg-0)', lineHeight: 1.2 }}>
+                <span className="text-sm" style={{ display: 'block', fontWeight: 600, color: 'var(--fg-0)', lineHeight: 1.2 }}>
                   {tpl.label}
                 </span>
                 <span className="dim text-2xs" style={{ display: 'block', marginTop: 3, lineHeight: 1.25 }}>

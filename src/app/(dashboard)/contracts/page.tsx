@@ -28,6 +28,15 @@ interface ContractWithRelations extends Contract {
 }
 
 /**
+ * The six columns, as one string so the header and every row cannot disagree.
+ *
+ * Below `md` they are not columns at all: the row stacks, because 15% of a
+ * 390px phone is 58px and the cells were overlapping each other rather than
+ * overflowing — which is why no horizontal-scroll check ever caught it.
+ */
+const GRID_COLS = 'md:grid md:grid-cols-[3fr_1.5fr_2fr_1fr_1fr_1.5fr] md:items-center';
+
+/**
  * How long a live contract has left, or null when the question does not apply.
  *
  * Only `proposed` and `active` contracts can still expire; on anything else an
@@ -138,22 +147,23 @@ export default async function ContractsPage({
         {/* Table */}
         <div className="card" style={{ overflow: 'hidden', marginTop: 16 }}>
           {/* Header row */}
-          <div className="row text-2xs" style={{
+          {/* Column headings only make sense beside columns. Below `md` each
+              row is a stack, so the header is hidden rather than crushed. */}
+          <div className={`hidden text-2xs ${GRID_COLS}`} style={{
             padding: '8px 18px',
             background: 'var(--bg-2)',
             borderBottom: '1px solid var(--line-1)',
             fontFamily: 'var(--mono)',
-            
             color: 'var(--fg-3)',
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
           }}>
-            <span style={{ width: '30%' }}>Title · Project</span>
-            <span style={{ width: '15%' }}>Proposer</span>
-            <span style={{ width: '20%' }}>Participants</span>
-            <span style={{ width: '10%' }}>Status</span>
-            <span style={{ width: '10%' }}>Turns</span>
-            <span style={{ width: '15%', textAlign: 'right' }}>Created</span>
+            <span>Title · Project</span>
+            <span>Proposer</span>
+            <span>Participants</span>
+            <span>Status</span>
+            <span>Turns</span>
+            <span style={{ textAlign: 'right' }}>Created</span>
           </div>
 
           {rows.length === 0 ? (
@@ -194,16 +204,14 @@ export default async function ContractsPage({
 
               return (
                 <ContractRow key={contract.id} id={contract.id}>
-                  <div className="row text-xs" style={{
+                  <div className={`flex flex-col gap-2 text-xs ${GRID_COLS} md:gap-0`} style={{
                     padding: '10px 18px',
                     borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--line-1)',
-                    alignItems: 'center',
-                    
                     cursor: 'pointer',
                     transition: 'background 0.1s',
                     width: '100%',
                   }}>
-                    <span style={{ width: '30%', minWidth: 0, paddingRight: 12 }}>
+                    <span style={{ minWidth: 0, paddingRight: 12 }}>
                       <span className="row gap-2" style={{ alignItems: 'center', minWidth: 0 }}>
                         <span style={{ color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {contract.title}
@@ -263,8 +271,12 @@ export default async function ContractsPage({
                         </span>
                       )}
                     </span>
-                    <span className="mono" style={{ width: '15%', color: 'var(--fg-2)' }}>{proposerName}</span>
-                    <span style={{ width: '20%' }}>
+                    {/* `md:contents` dissolves this wrapper back into the grid
+                        on desktop, so the same five cells are a wrapped meta
+                        line on a phone and five columns on a monitor. */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:contents">
+                    <span className="mono" style={{ color: 'var(--fg-2)' }}>{proposerName}</span>
+                    <span>
                       <div className="row gap-1">
                         {participants.slice(0, 3).map((p, j) => (
                           <Avatar key={j} name={p!.name} size={20} />
@@ -274,7 +286,7 @@ export default async function ContractsPage({
                         )}
                       </div>
                     </span>
-                    <span style={{ width: '10%' }} className="row gap-1">
+                    <span className="row gap-1">
                       <StatusBadge domain="contract" status={contract.status} dot="static" />
                       {(channels.get(contract.id)?.counts.open_questions ?? 0) > 0 && (
                         <span
@@ -286,10 +298,10 @@ export default async function ContractsPage({
                         </span>
                       )}
                     </span>
-                    <span className="mono num" style={{ width: '10%', color: 'var(--fg-1)' }}>
+                    <span className="mono num" style={{ color: 'var(--fg-1)' }}>
                       {contract.current_turns}/{contract.max_turns}
                     </span>
-                    <span className="mono num text-2xs" style={{ width: '15%', textAlign: 'right' }}>
+                    <span className="mono num text-2xs md:text-right">
                       {/* A live contract with an expiry is the one row on this
                           page with a deadline, and the column used to show only
                           how old it was — the least urgent fact available. */}
@@ -304,6 +316,7 @@ export default async function ContractsPage({
                         <span className="dim">{formatDate(contract.created_at)}</span>
                       )}
                     </span>
+                    </div>
                   </div>
                 </ContractRow>
               );

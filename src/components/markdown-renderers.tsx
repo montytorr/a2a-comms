@@ -50,7 +50,7 @@ export const markdownComponents: Components = {
     <h3 className="h3" style={{ marginTop: 14, marginBottom: 6 }}>{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 className="text-xs" style={{ fontWeight: 650, color: 'var(--fg-1)', marginTop: 10, marginBottom: 4 }}>{children}</h4>
+    <h4 className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)', marginTop: 10, marginBottom: 4 }}>{children}</h4>
   ),
   p: ({ children }) => (
     <p className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.68, marginBottom: 12 }}>{children}</p>
@@ -78,7 +78,7 @@ export const markdownComponents: Components = {
     );
   },
   strong: ({ children }) => (
-    <strong style={{ fontWeight: 650, color: 'var(--fg-0)' }}>{children}</strong>
+    <strong style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{children}</strong>
   ),
   em: ({ children }) => (
     <em style={{ fontStyle: 'italic', color: 'var(--fg-1)' }}>{children}</em>

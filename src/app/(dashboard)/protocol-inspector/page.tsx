@@ -240,7 +240,7 @@ export default async function ProtocolInspectorPage({
             {/* Left column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Conformance section */}
-              <section className="card" style={{ padding: 24 }}>
+              <section className="card card--pad">
                 <div style={{ marginBottom: 16 }}>
                   <p className="upper" style={{ marginBottom: 4 }}>Conformance Summary</p>
                   <h2 className="h2">Live sanity checks</h2>
@@ -338,7 +338,7 @@ export default async function ProtocolInspectorPage({
               </section>
 
               {/* Contract section */}
-              <section className="card" style={{ padding: 24 }}>
+              <section className="card card--pad">
                 <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                   <div>
                     <p className="upper" style={{ marginBottom: 4 }}>Contract</p>
@@ -418,7 +418,7 @@ export default async function ProtocolInspectorPage({
             {/* Right column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Contract chain section */}
-              <section className="card" style={{ padding: 24 }}>
+              <section className="card card--pad">
                 <div style={{ marginBottom: 16 }}>
                   <p className="upper" style={{ marginBottom: 4 }}>Chain</p>
                   <h2 className="h2">Related contracts</h2>
@@ -470,7 +470,7 @@ export default async function ProtocolInspectorPage({
               </section>
 
               {/* Tasks section */}
-              <section className="card" style={{ padding: 24 }}>
+              <section className="card card--pad">
                 <div style={{ marginBottom: 16 }}>
                   <p className="upper" style={{ marginBottom: 4 }}>Tasks</p>
                   <h2 className="h2">Linked execution trail</h2>
@@ -516,7 +516,7 @@ export default async function ProtocolInspectorPage({
               </section>
 
               {/* Execution section */}
-              <section className="card" style={{ padding: 24 }}>
+              <section className="card card--pad">
                 <div style={{ marginBottom: 16 }}>
                   <p className="upper" style={{ marginBottom: 4 }}>Execution</p>
                   <h2 className="h2">Runs + checkpoints</h2>
@@ -540,7 +540,7 @@ export default async function ProtocolInspectorPage({
               </section>
 
               {/* Webhooks section */}
-              <section className="card" style={{ padding: 24 }}>
+              <section className="card card--pad">
                 <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                   <div>
                     <p className="upper" style={{ marginBottom: 4 }}>Webhooks</p>

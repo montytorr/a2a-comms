@@ -937,7 +937,16 @@ input[type="checkbox"], input[type="radio"] {
   border-radius: var(--radius-2);
   background: var(--bg-1);
   padding: 2px;
+  /* Seven status filters are ~478px of buttons, which pushed a 390px phone
+     into horizontal scroll — the whole PAGE slid sideways, not just the
+     control. Clamping and scrolling inside keeps the pill intact; wrapping
+     would split the rounded container down the middle. */
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { flex: 0 0 auto; white-space: nowrap; }
 .seg button {
   height: 24px;
   padding: 0 10px;
@@ -966,6 +975,15 @@ input[type="checkbox"], input[type="radio"] {
    Tailwind's whitespace-nowrap already covers the className case. */
 .scroll { overflow: auto; }
 .row { display: flex; align-items: center; }
+/* Content on the left, actions on the right — and on a narrow screen the
+   actions drop to their own line instead of pushing the page sideways. There
+   are 23 header rows hand-writing `justifyContent: 'space-between'` with no
+   wrap; each one is an overflow waiting for a long enough title. */
+.row--split {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
 .col { display: flex; flex-direction: column; }
 .truncate-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

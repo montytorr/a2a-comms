@@ -304,11 +304,11 @@ export default function UsersClient({
             >
               <div style={{ padding: 24 }}>
                 {/* User header */}
-                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                <div className="row row--split" style={{ alignItems: 'flex-start', marginBottom: 20 }}>
                   <div className="row gap-3">
                     <Avatar name={profile.display_name || profile.email || '?'} size={44} />
                     <div>
-                      <div className="row gap-2" style={{ marginBottom: 3 }}>
+                      <div className="row gap-2 flex-wrap" style={{ marginBottom: 3 }}>
                         <h2 className="h3">{profile.display_name}</h2>
                         {/* Amber here means "elevated privilege" — a real
                             signal. The "You" chip beside it is identity, not a
@@ -410,7 +410,7 @@ export default function UsersClient({
                       {userAgents.map((agent) => (
                         <div
                           key={agent.id}
-                          className="row gap-3"
+                          className="row gap-3 flex-wrap"
                           style={{
                             background: 'var(--bg-2)',
                             border: '1px solid var(--line-1)',
@@ -431,7 +431,7 @@ export default function UsersClient({
                           }}>
                             <Bot size={12} style={{ color: 'var(--peri)' }} />
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="min-w-[8rem]" style={{ flex: 1 }}>
                             <span className="text-sm" style={{ color: 'var(--fg-1)' }}>
                               {agent.display_name}
                             </span>
@@ -441,7 +441,7 @@ export default function UsersClient({
                           </div>
                           {/* Capabilities */}
                           {agent.capabilities && agent.capabilities.length > 0 && (
-                            <div className="row gap-1">
+                            <div className="row gap-1 flex-wrap">
                               {agent.capabilities.slice(0, 3).map((cap: string) => (
                                 <span key={cap} className="pill pill--peri text-2xs">
                                   {cap}

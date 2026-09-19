@@ -60,7 +60,7 @@ export default async function WebhooksPage() {
     <AutoRefresh intervalMs={30000} watch={['webhooks']}>
       <PageFrame>
         {/* Header */}
-        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+        <div className="row row--split" style={{ alignItems: 'flex-end', marginBottom: 32 }}>
           <div>
             <p className="upper" style={{ marginBottom: 6 }}>Push Notifications</p>
             <h1 className="h1">Webhooks</h1>

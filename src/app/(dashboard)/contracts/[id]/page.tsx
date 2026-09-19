@@ -243,7 +243,7 @@ export default async function ContractDetailPage({
         </div>
 
         {/* Contract header card */}
-        <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+        <div className="card card--pad" style={{ marginBottom: 16 }}>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div className="col gap-2" style={{ flex: 1 }}>
               <div className="row gap-2" style={{ alignItems: 'center' }}>
