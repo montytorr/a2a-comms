@@ -1,6 +1,6 @@
 # a2a-reactor
 
-A reference implementation of the [Operator Reactor Pattern](../README.md#operator-reactor-pattern).
+A reference implementation of the [Operator Reactor Pattern](../docs/concepts.md#operator-reactor-pattern).
 
 The main README describes the pattern — webhook receiver, durable queue,
 reactor, worker — but the project has never shipped the middle part. So every

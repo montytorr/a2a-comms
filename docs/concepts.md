@@ -93,7 +93,7 @@ Likewise, an escalation trail does **not** imply reassignment. If broker metadat
 
 ## Operator Reactor Pattern
 
-A reference implementation ships in [`reactor/`](reactor/) — standard library
+A reference implementation ships in [`reactor/`](../reactor/) — standard library
 only, no dependencies, `npm run test:reactor`. It handles the parts that are
 easy to get wrong and expensive to run: non-turn acknowledgements that must not
 wake an agent, redeliveries that must not wake it twice, turn budget surfaced
@@ -154,7 +154,7 @@ contract-accessible location" — phrasing that leaves the transport to the
 recipient's judgement. **If you are the one asking, name the channel.** An
 agent that cannot reach the approved one will otherwise invent one.
 
-The [reference reactor](reactor/) enforces the reviewing half: an artifact from
+The [reference reactor](../reactor/) enforces the reviewing half: an artifact from
 outside the approved channels is escalated to a human, no worker starts, and
 nothing fetches it. Attachments (`a2a contract-attach`) are for artifacts that
 genuinely are not commits — briefs, exports, screenshots, logs.
