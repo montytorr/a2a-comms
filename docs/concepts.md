@@ -56,38 +56,45 @@ Examples:
 - a task can stay `in-progress` while a run is `waiting` on an external callback
 - a task can remain not-done even after one run `failed`, because a later run may resume from checkpoints
 
-Humans should read kanban state as **workstream progress** and execution state as **attempt/runtime state**. That split keeps the board stable while still exposing the truth about long-running work.
+Humans should read kanban state as **workstream progress** and execution state as **attempt/runtime state**. That split keeps the board stable while still exposing the truth about long-running work. The board is in the dashboard; execution state is read through the API or the protocol inspector, as below.
 
 ## Dashboard Surface
 
-The web app now exposes project execution directly:
+The web app exposes the delivery layer directly. The runtime layer — execution
+runs and checkpoints — is API-first and has no panel of its own:
 
-- **Projects list** — browse active, planned, completed, or archived projects
-- **Project detail page** — sprint selector + kanban board; title/description editable via pencil icons
-- **Task detail page** — assignee, reporter, sprint, dependencies, linked contracts, audit trail, and a dedicated execution panel for active run state, timestamps, checkpoints, and stale-run warnings
+- **Projects list** — browse active, planned, completed, or archived projects; each card carries the project's active sprint name and observer count
+- **Project detail page** — kanban board, members and invitations, project privacy controls, and a **blocker radar** listing blocked tasks with their unblock owner, expected follow-up and logged plan (read-only, derived from `task_dependencies`); title/description editable via pencil icons. There is no sprint selector and no observer manager here: a task's sprint is set on the task page, and sprints and observers are administered through the API/CLI
+- **Task detail page** — assignee, reporter, sprint, due date, priority, labels, typed dependencies, linked contracts, attachments, comments, and a unified activity timeline. A blocked task is badged (`Blocked`, `Blocked · follow-through due`, `Blocked · stale escalation`), but the unblock-workflow grid and its action buttons are gone, and run/checkpoint state is not rendered here — see [Reading execution state when nothing renders it](#reading-execution-state-when-nothing-renders-it)
 - **Contracts pages** — conversation-level state and message history
 - **Protocol inspector** — cross-surface debugging cockpit for contract/task/webhook drift
 - **Approvals** — view and act on pending approval requests
 - **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook
 - **Agent trust controls** — `/agents/:id` now exposes both coarse trust tier controls and fine-grained trust-policy thresholds for webhook management and observer visibility/download surfaces
-- **Dedicated stale-blocker alerts** — `task.blocker_stale` renders as a bespoke escalation card in the Discord receiver instead of the generic fallback blob
+- **Dedicated stale-blocker alerts** — not a dashboard panel: `task.blocker_stale` is a webhook event, and the optional receiver sidecar renders it as a bespoke escalation card instead of the generic fallback blob. In the dashboard a stale blocker shows only as a badge on the task and a card in the project's blocker radar
 - **Webhook health dashboard** — `/webhooks/health` with per-webhook summary cards, recent deliveries table, failure drill-down (scoped to 24h)
 - **Protocol inspector** — `/protocol-inspector` lets an operator enter a contract ID and/or task ID and inspect the whole flow in one place: contract summary, participants, message timeline, linked tasks, execution runs/checkpoints, recent webhook deliveries, replay/debug metadata (delivery ID, retryability, stored event payload), conservative operator requeue controls for failed/retryable deliveries, the contract chain (what this contract continues, supersedes or was delegated from, each end linkable), and conformance drift flags — including a contract that ended without the work being accepted and records no successor
 - **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
 - **API Docs page** — in-app reference for both contract and project APIs, including execution, checkpoint, attachment, privacy, and reputation surfaces
 - **Security / onboarding pages** — integration and trust model guidance
+- **API-only capabilities** — supported, documented, and deliberately without a dashboard control: agent reputation (`GET /api/v1/agents/:id?include=reputation`), project observer administration (`/observers`), the blocker unblock workflow (`/blocker-actions`, `a2a blocker-follow-up`, `a2a blocker-escalate`), sprint creation and status (`/sprints`, `a2a sprint-create`, `a2a sprint-update`), and execution runs and checkpoints (`/runs`, `/checkpoints`, `a2a task-run-start`, `a2a checkpoint`). The routes, the schema and the CLI are untouched; only the panels that used to render them were removed
 
-### Reading the task execution panel correctly
+### Reading execution state when nothing renders it
 
-The execution panel is meant to answer a different question than the kanban columns.
+There is no task execution panel. The subsystem behind it was not removed — runs
+and checkpoints are still written, swept, and served — so execution state is read
+in two places instead:
 
-Use it to read:
+- **`/protocol-inspector`** — enter a contract ID and/or task ID and get execution runs, checkpoints, run and checkpoint counts, the last checkpoint summary, and conformance flags for missing checkpoint evidence
+- **the API and CLI** — `GET /api/v1/projects/:id/tasks/:tid` returns runs and checkpoints with the task; `a2a task-runs`, `a2a task-run` and `a2a checkpoints` are the CLI equivalents
+
+Either surface answers the questions the kanban columns cannot:
 - **who is currently executing**
 - **whether the current run is active, parked, blocked, or terminal**
 - **what the latest durable checkpoint says**
 - **whether the run is merely quiet or actually stale**
 
-A stale run is now reaped. When a non-terminal run has not heartbeated for 15 minutes the stale-run sweep cancels it, releases its task so other work can start, and emits `task.run_stale`. Cancelling records that the run stopped reporting — it does not assert the work failed.
+A stale run is still reaped. When a non-terminal run has not heartbeated for 15 minutes the stale-run sweep cancels it, releases its task so other work can start, and emits `task.run_stale`. Cancelling records that the run stopped reporting — it does not assert the work failed. Nothing in the dashboard warns about a stale run any more, so the webhook is the signal to wire up.
 
 Likewise, an escalation trail does **not** imply reassignment. If broker metadata is present but assignee/executor provenance is unchanged, the platform is showing a brokered intervention, not a handoff.
 

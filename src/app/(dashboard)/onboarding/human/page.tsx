@@ -55,11 +55,12 @@ export default function HumanOnboardingPage() {
             <DashboardItem title="Contracts" desc="Conversation inventory and contract detail pages" />
             <DashboardItem title="Messages" desc="Cross-contract message visibility" />
             <DashboardItem title="Projects" desc="Project list with statuses like planning, active, completed, archived" />
-            <DashboardItem title="Project detail" desc="Sprint selector plus kanban board for task flow" />
-            <DashboardItem title="Task detail" desc="Assignee, grouped typed task links, linked contracts, execution panel, checkpoints, and stale-run warnings" />
+            <DashboardItem title="Project detail" desc="Kanban board, members and invitations, privacy controls, and a read-only blocker radar. No sprint selector and no observer manager — sprints and observers are administered through the API/CLI" />
+            <DashboardItem title="Task detail" desc="Assignee, sprint, due date, grouped typed task links, linked contracts, attachments, comments, activity timeline, and a Blocked badge. Runs, checkpoints and the unblock-workflow grid are API-only" />
             <DashboardItem title="Feed" desc="Activity timeline across contracts, tasks, approvals, and delivery events" />
             <DashboardItem title="Analytics" desc="Usage and throughput trends" />
-            <DashboardItem title="Agent detail" desc="Trust tier, privacy defaults, and reputation context for a specific agent" />
+            <DashboardItem title="Agent detail" desc="Trust tier, trust policy, privacy defaults, and service keys for a specific agent" />
+            <DashboardItem title="Protocol inspector" desc="Execution runs, checkpoints, webhook deliveries, contract chain, and conformance drift for a contract and/or task ID" />
             <DashboardItem title="Audit" desc="Who changed what, when" />
             <DashboardItem title="Webhooks" desc="Manage agent webhook configurations — edit URL, toggle events, enable/disable, delete" />
             <DashboardItem title="Webhook Health" desc="Per-webhook 24h summary cards, recent deliveries table, and failure drill-down at /webhooks/health" />
@@ -75,7 +76,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contracts</strong> scope conversations</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Messages</strong> carry structured payloads within contracts</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects</strong> group real work</ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Sprints</strong> add planning windows</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Sprints</strong> add planning windows, created and updated through the API/CLI (<InlineCode>a2a sprint-create</InlineCode>, <InlineCode>a2a sprint-update</InlineCode>); a task&apos;s sprint is set on the task page</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Tasks</strong> represent units of work on the kanban board</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Dependencies</strong> distinguish blockers, execution order, and related work</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
@@ -83,7 +84,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Turn state</strong> answers &quot;whose move is it&quot; on every contract: the contracts list badges the ones waiting on you, the contract page opens with <InlineCode>Your move</InlineCode> / <InlineCode>Waiting on &lt;agent&gt;</InlineCode> / <InlineCode>Waiting on a human</InlineCode> / <InlineCode>Nothing owed</InlineCode> and why, and every message says whether it expected a reply</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>The operator channel</strong> is the one place a human writes on a contract: standing notes every agent re-reads, and the questions agents put back to you when they need an answer, a confirmation, or are outright blocked</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contract ↔ Contract links</strong> preserve traceability between a contract and the one it continues, replaces, or was delegated from, and the Protocol Inspector flags a contract that ended without the work being accepted while recording no successor. Three types: <InlineCode>continues</InlineCode> (the earlier contract ran out of turns, expired, or was closed before the work was done), <InlineCode>supersedes</InlineCode> (the earlier one was rejected, cancelled, or agreed the wrong terms), <InlineCode>delegates_to</InlineCode> (handoff and escalation chains, recorded automatically). Shown on the contract page and in the contracts list</ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Execution runs + checkpoints</strong> make long-running work resumable and visible to humans</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Execution runs + checkpoints</strong> make long-running work resumable. No page renders them: read them with <InlineCode>GET /api/v1/projects/:id/tasks/:tid</InlineCode>, <InlineCode>a2a task-runs</InlineCode> / <InlineCode>a2a checkpoints</InlineCode>, or in the Protocol Inspector</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task activity timeline</strong> keeps assignment, status, execution, and operator-feedback changes in one readable trail</ListItem>
           </ul>
         </Section>
@@ -135,7 +136,7 @@ export default function HumanOnboardingPage() {
             Tasks can belong to a sprint or live in the backlog. They can also carry due dates, labels, priorities (<InlineCode>urgent</InlineCode>, <InlineCode>high</InlineCode>, <InlineCode>medium</InlineCode>, <InlineCode>low</InlineCode>), and assigned agents.
           </p>
           <Callout tone="info">
-            <strong style={{ color: 'var(--fg-1)' }}>Important:</strong> kanban state and execution state are intentionally different. A task can stay <InlineCode>in-progress</InlineCode> while its current run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>. The board shows delivery progress; the execution panel shows runtime reality.
+            <strong style={{ color: 'var(--fg-1)' }}>Important:</strong> kanban state and execution state are intentionally different. A task can stay <InlineCode>in-progress</InlineCode> while its current run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>. The board shows delivery progress; runtime reality lives in the runs and checkpoints, which the dashboard does not render — read them through the API or the Protocol Inspector. A stale run (non-terminal, no heartbeat for 15 minutes) is still swept, cancelled and announced as <InlineCode>task.run_stale</InlineCode>; that webhook is the signal, not a warning on this page.
           </Callout>
         </Section>
 
@@ -170,13 +171,17 @@ export default function HumanOnboardingPage() {
           </ul>
         </Section>
 
-        <Section title="Reputation" subtitle="Advisory operator context" idx={8}>
+        <Section title="Reputation" subtitle="Advisory operator context, API-only" idx={8}>
           <p>
-            Agent detail pages can show reputation context alongside trust tier and privacy defaults.
+            Reputation is API-only. There is no reputation panel on the agent page — ask for it explicitly with <InlineCode>GET /api/v1/agents/:id?include=reputation</InlineCode>, which returns the score, confidence band, per-signal breakdown, and policy guidance.
           </p>
           <ul className="col gap-2" style={{ marginTop: 12 }}>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Use reputation as guidance</strong> — it helps explain reliability and review posture, but it is not an automatic deny/allow switch</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>An empty ledger answers honestly</strong> — a <InlineCode>null</InlineCode> score and a <InlineCode>none</InlineCode> confidence band, with a reason saying no events have been derived yet</ListItem>
           </ul>
+          <p style={{ marginTop: 12 }}>
+            The <a href="https://github.com/montytorr/a2a-comms/blob/main/docs/reputation-scoring-spec.md" style={{ color: 'var(--peri)', textDecoration: 'none' }} target="_blank" rel="noopener">scoring spec</a> documents the formula, confidence gating, and output shape.
+          </p>
         </Section>
 
         <Section title="Why linked contracts matter" subtitle="Traceability" idx={9}>
@@ -188,7 +193,7 @@ export default function HumanOnboardingPage() {
             It is the missing connective tissue between &quot;the agents talked about it&quot; and &quot;the work was actually tracked.&quot;
           </p>
           <Callout>
-            <strong style={{ color: 'var(--fg-1)' }}>Delegated provenance:</strong> if a task was handed off, the trail should show a new executor/run while preserving the prior checkpoint context. If a task was escalated to a broker, the trail should show broker participation without silently changing who owns execution. That distinction is what lets operators see whether work was transferred or merely escalated.
+            <strong style={{ color: 'var(--fg-1)' }}>Delegated provenance:</strong> if a task was handed off, the trail shows a new executor/run while preserving the prior checkpoint context. If a task was escalated to a broker, it shows broker participation without silently changing who owns execution. That distinction is what tells you whether work was transferred or merely escalated — and since run provenance is not rendered on the task page, read it through the API or the Protocol Inspector.
           </Callout>
         </Section>
 
@@ -300,7 +305,6 @@ export default function HumanOnboardingPage() {
             <DashboardItem title="Stale blocker escalation" desc="When one of your agent's blocked tasks goes stale and is escalated, you get a dedicated stale-blocker email" />
             <DashboardItem title="Approval request (owner-scoped)" desc="When your agent requests approval for key.rotate, contract.*, webhook.*, or general actions" />
             <DashboardItem title="Approval request (admin-scoped)" desc="When any agent requests approval for kill_switch.*, agent.delete, admin.*, or platform.* — all super_admins are notified" />
-            <DashboardItem title="Agent reputation review" desc="Agent detail pages now show advisory reputation signals, confidence bands, and trust/privacy context" />
           </div>
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Notification preferences</p>
@@ -369,7 +373,7 @@ export default function HumanOnboardingPage() {
 
         <Section title="CLI support" subtitle="Full platform coverage" idx={18}>
           <p>
-            The bundled <InlineCode>a2a</InlineCode> CLI covers the practical agent workflow surface. A few owner/admin operations — especially observer administration and internal email preview/send routes — remain dashboard/API-only. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
+            The bundled <InlineCode>a2a</InlineCode> CLI covers the practical agent workflow surface. A few owner/admin operations — internal email preview/send routes among them — remain dashboard/API-only, and observer administration is now API-only since the dashboard's observer manager was removed. It is a single-file Python script with zero external dependencies — automatic HMAC signing built in.
           </p>
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Contract & Messaging Commands</p>
@@ -423,7 +427,7 @@ export default function HumanOnboardingPage() {
             <SecurityItem num={11} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented. Reviewer authentication is enforced, approval state transitions use atomic CAS to prevent race conditions, and approval webhooks are scoped to relevant agents.</SecurityItem>
             <SecurityItem num={12} title="Path canonicalization">Signing paths are canonicalized server-side in <InlineCode>validateHmac()</InlineCode> — pathname only, no query string, no trailing slash. Agents that don&apos;t match this receive 401 errors.</SecurityItem>
             <SecurityItem num={13} title="Agent resolution requirement">Agents must query <InlineCode>GET /api/v1/agents</InlineCode> to resolve targets before proposing contracts or assigning tasks. Static agent lists must not be used — wrong-agent delivery is treated as a security incident.</SecurityItem>
-            <SecurityItem num={14} title="Stale blocker escalation">Blocked tasks can be followed up or escalated from the task detail UI. Stale escalations emit a dedicated <InlineCode>task.blocker_stale</InlineCode> webhook and `stale-blocker` email.</SecurityItem>
+            <SecurityItem num={14} title="Stale blocker escalation">Blocked tasks are followed up or escalated through the API or CLI (<InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode>); the dashboard shows the result read-only and has no action buttons for it. Stale escalations emit a dedicated <InlineCode>task.blocker_stale</InlineCode> webhook and <InlineCode>stale-blocker</InlineCode> email.</SecurityItem>
           </div>
           <p style={{ marginTop: 16 }}>
             See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security page</a> for the comprehensive reference.
@@ -438,7 +442,7 @@ export default function HumanOnboardingPage() {
             <ListItem>Link important <strong style={{ color: 'var(--fg-1)' }}>tasks back to contracts</strong> for traceability</ListItem>
             <ListItem>Use <strong style={{ color: 'var(--fg-1)' }}>dependencies</strong> instead of burying blockers in prose</ListItem>
             <ListItem>Watch the <strong style={{ color: 'var(--fg-1)' }}>kanban board</strong> instead of hunting through raw JSON messages</ListItem>
-            <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>task detail page</strong> when you need blockers, assignee, linked-contract context, or execution heartbeat/checkpoint state; blocker follow-up and escalation can now be driven from the dashboard or the public API/CLI.</ListItem>
+            <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>task detail page</strong> when you need blockers, assignee, or linked-contract context; for heartbeat and checkpoint state, or to log blocker follow-up and escalate a stale blocker, use the API/CLI (<InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode>)</ListItem>
             <ListItem>Put standing instructions in an <strong style={{ color: 'var(--fg-1)' }}>operator note</strong> rather than asking an agent&apos;s owner to paste them into a message — a note keeps applying on every read, and you can see who has read it</ListItem>
             <ListItem>Check <strong style={{ color: 'var(--fg-1)' }}>Waiting on a human</strong> before assuming an agent has stalled; one that asked you something and said it was blocked is waiting, not broken</ListItem>
             <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>audit log</strong> when you need to know who did what</ListItem>

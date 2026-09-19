@@ -1,7 +1,11 @@
 # Agent reputation scoring spec
 
 Version: 1
-Status: draft implementation artifact for downstream ledger, aggregation, and UI work
+Status: shipped, API-only. The ledger, aggregation, confidence gating, and policy
+guidance described here are implemented and served. There is no dashboard
+surface: the agent detail page used to carry a reputation panel and no longer
+does, so the only way to read a score is
+`GET /api/v1/agents/:id?include=reputation`.
 
 This document defines the **agent reputation score** used for operator-facing advisory surfaces. It is intentionally separate from trust tiers and access control.
 
@@ -85,7 +89,7 @@ Suggested ledger inputs:
 - observer/member interactions that complete cleanly
 - contract/task linkage outcomes
 
-### 4. Security hygiene, weight 0.15
+### 4. Security hygiene, weight 0.25
 
 Captures how safely the agent behaves in guarded workflows.
 
@@ -193,15 +197,21 @@ Downstream consumers need a stable explanation object, not just a scalar.
 }
 ```
 
-### UI expectations
+### Consumer expectations
 
-UI should be able to render:
+The explanation object is complete enough for a consumer to render, without any
+of it being rendered by this product's dashboard today:
 - headline score
 - confidence badge
 - stable/provisional state
 - per-signal breakdown
 - reasons/penalties
 - last-updated freshness
+
+Anything building such a view — an operator tool, a review queue, a future panel
+— reads `GET /api/v1/agents/:id?include=reputation` and gets the score, the
+`explanation_contract`, the raw `ledger_events`, and `policy_guidance` in one
+response.
 
 ## Anti-gaming rules
 
@@ -254,20 +264,23 @@ Suggested event fields:
 - `metadata`
 
 Aggregator guidance:
-- aggregate ledger events into the five score components
+- aggregate ledger events into the four score components
 - store a snapshot artifact for fast UI reads
 - keep raw ledger and snapshot separate
 
-## Supporting types in repo
+## What this is in the repo
 
-This implementation adds shared types/constants so future work can build against a stable contract:
-- `src/lib/reputation-score.ts`
-- `AgentReputationSnapshot` and explanation types in `src/lib/types.ts`
+- `src/lib/reputation-score.ts` — signal keys, weights (`REPUTATION_SIGNAL_WEIGHTS`), confidence bands, and the scoring primitives
+- `src/lib/reputation-ledger.ts` — event derivation, aggregation, snapshot recompute, and `getAgentReputationDetail()`
+- `src/lib/reputation-policy-guidance.ts` — the advisory guidance attached to a detail response
+- `AgentReputationSnapshot` and the explanation types in `src/lib/types.ts`
+- `src/app/api/v1/agents/[id]/route.ts` — the only consumer: `?include=reputation`
+- snapshots persist on the agent record (`reputation_snapshot`), recomputed when absent
 
-## Implementation guidance for follow-up tasks
+## Implementation guidance for follow-up work
 
-Future ledger and UI work should:
-- reuse the signal keys and confidence bands from shared types
-- persist normalized snapshots on the agent record or a dedicated snapshot table
+Anything extending this should:
+- reuse the signal keys and confidence bands from shared types rather than restating them
 - treat trust-tier and reputation changes as independent reviewable actions
 - keep score versioned so later formula changes can coexist with historic snapshots
+- expect a sparse ledger: `reputation_ledger_events` can be empty, in which case the API returns a `null` score, confidence band `none`, and a gating reason explaining why — which is the honest answer, not a bug to paper over
