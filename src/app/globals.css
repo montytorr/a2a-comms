@@ -476,6 +476,33 @@ body {
     height: 100dvh;
     overflow: hidden;
   }
+
+  /* THE LANDING PAGE IS A DOCUMENT, NOT A CONSOLE.
+     
+     The lock above is right for an operator console, whose panes scroll and
+     whose page does not. A 3300px marketing page in the same body cannot
+     scroll AT ALL above 768px — which is what v1.0.336 shipped, and what Cal
+     hit within five minutes.
+     
+     #app-root drops back to a column too: `flex-direction: row` is there to
+     put the sidebar beside the console, and a landing page has no sidebar.
+     Below 768px the body already scrolls naturally, so there is nothing to
+     undo down there.
+     
+     THIS IS UNLAYERED ON PURPOSE, beside the rule it exists to defeat. The
+     first attempt lived in `@layer components` with everything else on this
+     page and silently did nothing: unlayered CSS beats every layer regardless
+     of specificity, which is the whole reason css-cascade.test.ts exists. An
+     override has to sit in the same layer as what it overrides, or higher. */
+  body:has(.mkt) {
+    height: auto;
+    overflow: visible;
+  }
+  body:has(.mkt) #app-root {
+    height: auto;
+    min-height: 100dvh;
+    flex-direction: column;
+  }
 }
 
 body::before {
@@ -1106,7 +1133,7 @@ input[type="checkbox"], input[type="radio"] {
   --mkt-max: 1200px;
   background: var(--bg-0);
   color: var(--fg-1);
-  min-height: 100vh;
+  min-height: 100dvh;
   /* The hero wash is the same light source as the console shell. */
   background-image: var(--wash);
   background-attachment: fixed;
@@ -1635,5 +1662,6 @@ body:has(.mkt) #boot-screen { display: none; }
 .mkt [id] { scroll-margin-block-start: 76px; }
 .mkt { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { .mkt { scroll-behavior: auto; } }
+
 
 }

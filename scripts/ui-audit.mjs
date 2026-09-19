@@ -215,6 +215,46 @@ for (const [name, path] of ROUTES) {
       };
     });
 
+    // CAN A PERSON ACTUALLY SCROLL THIS PAGE?
+    //
+    // AC-83: the landing page shipped unscrollable on every desktop and this
+    // audit called it fine, because it moved the page with window.scrollTo().
+    // When `overflow: hidden` propagates from body to the viewport, the
+    // viewport stays PROGRAMMATICALLY scrollable and only USER INPUT is
+    // blocked — so the script saw all 3302px, screenshotted every section,
+    // and reported no findings while a human saw the hero and nothing else.
+    //
+    // So this drives the wheel. It also does not assume the DOCUMENT is what
+    // scrolls: the console is a fixed shell whose panes scroll internally, and
+    // that is correct. The question is only whether anything moved.
+    const scrollable = await page.evaluate(() => {
+      const more = (el) => el.scrollHeight - el.clientHeight > 4;
+      const panes = [...document.querySelectorAll('*')].filter((el) => {
+        const o = getComputedStyle(el).overflowY;
+        return (o === 'auto' || o === 'scroll') && more(el);
+      });
+      return {
+        hasMore: more(document.scrollingElement) || panes.length > 0,
+        before: [window.scrollY, ...panes.map((el) => el.scrollTop)].join(','),
+      };
+    });
+    if (scrollable.hasMore) {
+      await page.mouse.move(size.width / 2, size.height / 2);
+      for (let i = 0; i < 3; i++) { await page.mouse.wheel(0, 700); await page.waitForTimeout(120); }
+      const after = await page.evaluate(() => {
+        const more = (el) => el.scrollHeight - el.clientHeight > 4;
+        const panes = [...document.querySelectorAll('*')].filter((el) => {
+          const o = getComputedStyle(el).overflowY;
+          return (o === 'auto' || o === 'scroll') && more(el);
+        });
+        return [window.scrollY, ...panes.map((el) => el.scrollTop)].join(',');
+      });
+      if (after === scrollable.before) {
+        findings.push({ route: name, vp, theme, unscrollable: true });
+      }
+      await page.evaluate(() => window.scrollTo(0, 0));
+    }
+
     if (m.overflow > 1 || m.clipped.length || m.overlaps.length) findings.push({ route: name, vp, theme, ...m });
     if (m.empty) findings.push({ route: name, vp, theme, empty: true });
     await page.screenshot({ path: `ui-audit-shots/${theme}-${vp}-${name}.png`, fullPage: vp === 'phone' });
@@ -227,6 +267,7 @@ console.log(`${findings.length} findings`);
 for (const f of findings) {
   if (f.unreachable) { console.log(`  UNREACHABLE ${f.route} @${f.vp} — ${f.unreachable}`); continue; }
   if (f.empty) { console.log(`  EMPTY    ${f.route} @${f.vp}`); continue; }
+  if (f.unscrollable) { console.log(`  NO SCROLL ${f.route} @${f.vp} — content below the fold, and the wheel does not move it`); continue; }
   if (f.overflow > 1) {
     console.log(`  OVERFLOW ${f.route} @${f.vp} by ${f.overflow}px (viewport ${f.clientWidth})`);
     for (const c of f.culprits) console.log(`             <${c.tag} class="${c.cls}"> w=${c.w} right=${c.right} "${c.txt}"`);
