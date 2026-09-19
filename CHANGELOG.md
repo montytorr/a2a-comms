@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.337] - 2026-09-19
+### Fixed
+- the homepage could not be scrolled on any desktop
+- v1.0.336 shipped the landing page stuck on its hero above 768px. Cal hit it within five minutes.
+- THE CAUSE. The console is a fixed shell by design: at >=48rem, `body { height: 100dvh; overflow: hidden }` with `#app-root` the same. That is correct for an operator console, whose panes scroll and whose page does not. The landing page is a 3302px document in that same body, so there was nothing for the wheel to move. Below 768px the body scrolls naturally, which is why the phone was fine and why every mobile check passed.
+- WHY MY OWN AUDIT PASSED IT, which is the part worth keeping. The script moved the page with `window.scrollTo()`. When `overflow: hidden` propagates from body to the viewport, the viewport stays PROGRAMMATICALLY scrollable and only USER INPUT is blocked — so the script reached every section, screenshotted all of them, and reported "no horizontal scroll, height 3302" while a person with a mouse wheel saw the hero and nothing else. scripts/ui-audit.mjs now drives `page.mouse.wheel()` on every route and viewport, and reports NO SCROLL when there is content below the fold that the wheel cannot reach. It does not assume the DOCUMENT is what scrolls — the console's panes scroll internally and that is correct — only that something moves.
+- AND THE FIX WAS WRITTEN WRONG FIRST. It went into `@layer components` with the rest of the landing page's CSS, where it lost to the very unlayered rule it existed to undo, and the second build looked identical to the first. Unlayered CSS beats every layer regardless of specificity — which is the whole reason css-cascade.test.ts exists, and I walked into it anyway. The override now sits unlayered beside the rule it defeats, with the reasoning written where the next person will be tempted to tidy it away.
+- Guarded both ways: a new test asserts `body:has(.mkt)` stays OUTSIDE the layer, and the existing "every class rule is inside the layer" test carries a narrow, reasoned exemption for it rather than being loosened. Mutation-tested — moving the override back into the layer fails the new test.
+- Verified by wheel, not by API: 1440, 1280, 768 and 390 all scroll to the footer, and /login still has the fixed shell at every desktop width, so the console is untouched.
+- 374 tests, lint and build clean.
+- AC-83
+
 ## [1.0.336] - 2026-09-19
 ### Added
 - give the project a home page
