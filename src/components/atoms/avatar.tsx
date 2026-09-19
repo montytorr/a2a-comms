@@ -28,6 +28,22 @@ export function toneForName(name: string): AvatarTone {
   return avatarTones[hashString(name || '?') % avatarTones.length];
 }
 
+/**
+ * A pill coloured by a hash of a name — identity, not state.
+ *
+ * It draws from the SAME four classes the status palette uses, so anywhere it
+ * appears beside a status chip the colour reads as a status and lies: a
+ * participant called "Zed" came out mint (the "finished well" tone) whether
+ * the participant had accepted or been rejected. Both call sites it had —
+ * contract participants and the "You" chip on /users — sat next to status
+ * chips, and both now use a tone that means something.
+ *
+ * Kept because per-name colour is a real idea, but it needs a visual language
+ * of its own before it is used again. `Avatar` is that language today: it
+ * paints the tone as a solid glyph, which no status chip ever does, so it can
+ * never be mistaken for one. Prefer an `Avatar`; if you need a chip, give it a
+ * tone from `@/lib/status-tone` and let the Avatar inside carry the identity.
+ */
 export function pillClassForName(name: string) {
   return `pill pill--${toneForName(name)}`;
 }

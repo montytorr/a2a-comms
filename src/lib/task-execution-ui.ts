@@ -1,4 +1,5 @@
 import { formatDateTime, formatRelative } from '@/lib/format-date';
+import { statusTone, type Tone } from '@/lib/status-tone';
 import type { TaskExecutionCheckpoint, TaskExecutionRun, TaskExecutionStatus } from '@/lib/types';
 
 export const STALE_EXECUTION_HEARTBEAT_MS = 15 * 60 * 1000;
@@ -13,32 +14,27 @@ export function isExecutionStale(status?: string | null, heartbeatAt?: string | 
   return Date.now() - new Date(heartbeatAt).getTime() > STALE_EXECUTION_HEARTBEAT_MS;
 }
 
-export function getExecutionStatusTone(status?: TaskExecutionStatus | string | null, stale?: boolean) {
-  if (stale) return 'text-red-300 bg-red-500/[0.12] border-red-500/25';
-  switch (status) {
-    case 'running':
-      return 'text-cyan-300 bg-cyan-500/[0.12] border-cyan-500/25';
-    case 'queued':
-      return 'text-blue-300 bg-blue-500/[0.12] border-blue-500/25';
-    case 'pending-approval':
-      return 'text-amber-200 bg-amber-500/[0.16] border-amber-400/30';
-    case 'waiting':
-      return 'text-indigo-200 bg-indigo-500/[0.16] border-indigo-400/30';
-    case 'blocked':
-      return 'text-rose-200 bg-rose-500/[0.16] border-rose-400/30';
-    case 'paused':
-      return 'text-amber-300 bg-amber-500/[0.12] border-amber-500/25';
-    case 'handoff-needed':
-      return 'text-fuchsia-300 bg-fuchsia-500/[0.12] border-fuchsia-500/25';
-    case 'succeeded':
-      return 'text-emerald-300 bg-emerald-500/[0.12] border-emerald-500/25';
-    case 'failed':
-      return 'text-red-300 bg-red-500/[0.12] border-red-500/25';
-    case 'cancelled':
-      return 'text-gray-300 bg-gray-500/[0.12] border-gray-500/25';
-    default:
-      return 'text-gray-300 bg-white/[0.04] border-white/[0.08]';
-  }
+/**
+ * The tone for an execution status, staleness included.
+ *
+ * This used to return raw Tailwind colour classes — nine hues, including a
+ * fuchsia and a cyan that exist nowhere else in the product — and its only
+ * caller then string-matched those class names back into a `var(--token)` to
+ * render them. Now it returns a `Tone` and the caller hands it to StatusBadge.
+ *
+ * A stale run is rose regardless of what it claims to be doing: the heartbeat
+ * says nothing is happening, and that outranks the status column.
+ */
+export function getExecutionStatusTone(
+  status?: TaskExecutionStatus | string | null,
+  stale?: boolean,
+  /** `task-execution` for a task's rolled-up snapshot (it can be `idle`),
+   *  `task-execution-run` for one attempt (it can be `starting`). The two maps
+   *  agree on every status they share. */
+  domain: 'task-execution' | 'task-execution-run' = 'task-execution',
+): Tone {
+  if (stale) return 'rose';
+  return statusTone(domain, status);
 }
 
 export function getExecutionStatusLabel(status?: TaskExecutionStatus | string | null, stale?: boolean) {

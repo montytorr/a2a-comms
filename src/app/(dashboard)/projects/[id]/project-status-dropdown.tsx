@@ -4,17 +4,20 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import type { ProjectStatus } from '@/lib/types';
 import { updateProjectStatus } from './actions';
+import {
+  dotClassForTone,
+  pillClassForTone,
+  statusLabel,
+  statusTone,
+  statusesOf,
+  tonePulses,
+} from '@/lib/status-tone';
 
-type StatusTone = 'amber' | 'mint' | 'peri' | 'ghost';
-
-const statusConfig: Record<ProjectStatus, { tone: StatusTone; dotClass: string }> = {
-  planning: { tone: 'amber', dotClass: 'dot dot--amber' },
-  active:   { tone: 'mint',  dotClass: 'dot dot--mint' },
-  completed:{ tone: 'mint',  dotClass: 'dot dot--mint' },
-  archived: { tone: 'ghost', dotClass: 'dot' },
-};
-
-const allStatuses: ProjectStatus[] = ['planning', 'active', 'completed', 'archived'];
+/* This map used to paint `active` and `completed` the same mint, so the control
+   could not tell you whether the project was finished — while /projects painted
+   `planning` and `active` the same amber, so it could not tell you whether it
+   had started. Both now read from status-tone.ts. */
+const allStatuses = statusesOf('project') as ProjectStatus[];
 
 interface ProjectStatusDropdownProps {
   projectId: string;
@@ -26,7 +29,7 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
   const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
 
-  const sc = statusConfig[currentStatus as ProjectStatus] || statusConfig.planning;
+  const tone = statusTone('project', currentStatus);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -56,11 +59,14 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className={`pill pill--${sc.tone}`}
+        className={pillClassForTone(tone)}
         style={{ opacity: isPending ? 0.5 : 1, cursor: 'pointer' }}
       >
-        <span className={sc.dotClass} style={isPending ? { animation: 'pulse 1s infinite' } : undefined} />
-        {isPending ? 'Updating…' : currentStatus}
+        <span
+          className={`${dotClassForTone(tone)}${!isPending && tonePulses(tone) ? ' pulse' : ''}`}
+          style={isPending ? { animation: 'pulse 1s infinite' } : undefined}
+        />
+        {isPending ? 'Updating…' : statusLabel(currentStatus)}
         <ChevronDown
           size={10}
           style={{ transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -81,7 +87,7 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
           }}
         >
           {allStatuses.map((status) => {
-            const sOpt = statusConfig[status];
+            const optTone = statusTone('project', status);
             const isSelected = status === currentStatus;
             return (
               <button
@@ -115,8 +121,8 @@ export default function ProjectStatusDropdown({ projectId, currentStatus }: Proj
                   }
                 }}
               >
-                <span className={sOpt.dotClass} />
-                <span className="upper text-2xs">{status}</span>
+                <span className={dotClassForTone(optTone)} />
+                <span className="upper text-2xs">{statusLabel(status)}</span>
                 {isSelected && <Check size={12} style={{ marginLeft: 'auto' }} />}
               </button>
             );

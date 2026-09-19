@@ -19,58 +19,50 @@ import {
 import TaskComments from './task-comments';
 import AttachmentList from '@/components/attachment-list';
 import AttachmentUpload from './attachment-upload';
-import type { TaskStatus, TaskPriority, TaskAttachment, TaskActivityEvent } from '@/lib/types';
+import type { TaskPriority, TaskAttachment, TaskActivityEvent } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { listTaskActivityEvents } from '@/lib/task-activity';
+import {
+  BLOCKER_TONE,
+  DEPENDENCY_KIND_TONE,
+  colorVarForTone,
+  pillClassForTone,
+  statusTone,
+  surfaceVarForTone,
+  type DependencyKind,
+  type Tone,
+} from '@/lib/status-tone';
 export const dynamic = 'force-dynamic';
 
-const dependencySectionStyles: Record<string, { label: string; accentColor: string; pillTone: string; cardBorder: string; cardBg: string }> = {
-  blockedBy: {
-    label: 'Blocked by',
-    accentColor: 'var(--rose)',
-    pillTone: 'rose',
-    cardBorder: 'var(--rose)',
-    cardBg: 'var(--rose-bg)',
-  },
-  blocks: {
-    label: 'Blocks',
-    accentColor: 'var(--amber)',
-    pillTone: 'amber',
-    cardBorder: 'var(--amber)',
-    cardBg: 'var(--amber-bg)',
-  },
-  sequenceAfter: {
-    label: 'Sequence after',
-    accentColor: 'var(--peri)',
-    pillTone: 'peri',
-    cardBorder: 'var(--peri)',
-    cardBg: 'var(--peri-bg)',
-  },
-  sequenceBefore: {
-    label: 'Sequence before',
-    accentColor: 'var(--peri)',
-    pillTone: 'peri',
-    cardBorder: 'var(--peri)',
-    cardBg: 'var(--peri-bg)',
-  },
-  related: {
-    label: 'Related tasks',
-    accentColor: 'var(--mint)',
-    pillTone: 'mint',
-    cardBorder: 'var(--mint)',
-    cardBg: 'var(--mint-bg)',
-  },
+/* Labels here, colours from DEPENDENCY_KIND_TONE — kanban-board.tsx renders the
+   same five kinds and the two copies used to disagree about `related`. */
+const dependencySectionLabels: Record<DependencyKind, string> = {
+  blockedBy: 'Blocked by',
+  blocks: 'Blocks',
+  sequenceAfter: 'Sequence after',
+  sequenceBefore: 'Sequence before',
+  related: 'Related tasks',
 };
 
-const statusDotColor: Record<string, string> = {
-  backlog: 'var(--fg-3)',
-  todo: 'var(--peri)',
-  'in-progress': 'var(--mint)',
-  'in-review': 'var(--amber)',
-  done: 'var(--mint)',
-  cancelled: 'var(--rose)',
-};
+const dependencySectionStyles: Record<string, { label: string; accentColor: string; pillTone: Tone; cardBorder: string; cardBg: string }> =
+  Object.fromEntries(
+    (Object.keys(dependencySectionLabels) as DependencyKind[]).map((kind) => {
+      const tone = DEPENDENCY_KIND_TONE[kind];
+      return [kind, {
+        label: dependencySectionLabels[kind],
+        accentColor: colorVarForTone(tone),
+        pillTone: tone,
+        cardBorder: colorVarForTone(tone),
+        cardBg: surfaceVarForTone(tone),
+      }];
+    }),
+  );
+
+/* This map had `in-progress` mint and `done` mint — the same colour for
+   "still going" and "finished" — and `cancelled` rose, which is the failure
+   tone. It now reads from status-tone.ts. */
+const taskStatusColor = (status: string | null | undefined) => colorVarForTone(statusTone('task', status));
 
 export default async function TaskDetailPage({
   params,
@@ -358,7 +350,7 @@ export default async function TaskDetailPage({
                         fontWeight: 600,
                         textTransform: 'uppercase',
                         letterSpacing: '0.08em',
-                        color: statusDotColor[task.status as TaskStatus] ?? 'var(--fg-2)',
+                        color: taskStatusColor(task.status),
                         background: 'var(--bg-2)',
                         border: '1px solid var(--line-1)',
                       }}
@@ -368,7 +360,7 @@ export default async function TaskDetailPage({
                           width: '0.375rem',
                           height: '0.375rem',
                           borderRadius: '50%',
-                          background: statusDotColor[task.status as TaskStatus] ?? 'var(--fg-3)',
+                          background: taskStatusColor(task.status),
                           display: 'inline-block',
                         }}
                       />
@@ -493,7 +485,7 @@ export default async function TaskDetailPage({
                       ))}
                       {blockerState && (
                         <span
-                          className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'} text-2xs`}
+                          className={`${pillClassForTone(BLOCKER_TONE[blockerState.tone])} text-2xs`}
                           style={{ fontWeight: 600 }}
                         >
                           {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
@@ -523,7 +515,7 @@ export default async function TaskDetailPage({
                           {section.items.map((dep) => {
                             const t = dep.tasks;
                             if (!t) return null;
-                            const dotColor = statusDotColor[t.status as TaskStatus] ?? 'var(--fg-3)';
+                            const dotColor = taskStatusColor(t.status);
                             return (
                               <Link
                                 key={`${section.key}-${dep.id}-${t.id}`}

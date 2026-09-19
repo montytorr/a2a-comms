@@ -3,13 +3,15 @@
 import { useState, useTransition } from 'react';
 import { handleApprove, handleDeny } from './actions';
 import { ShieldCheck } from 'lucide-react';
+import StatusBadge from '@/components/status-badge';
+import type { ApprovalStatus } from '@/lib/types';
 
 interface Approval {
   id: string;
   action: string;
   actor: string;
   details: Record<string, unknown>;
-  status: 'pending' | 'approved' | 'denied' | 'consumed';
+  status: ApprovalStatus;
   reviewed_by: string | null;
   created_at: string;
   reviewed_at: string | null;
@@ -21,20 +23,6 @@ function formatAction(action: string): string {
     'key.rotate': 'Key Rotation',
   };
   return map[action] || action;
-}
-
-function statusPill(status: string) {
-  const toneClass: Record<string, string> = {
-    pending: 'pill--amber',
-    approved: 'pill--mint',
-    consumed: 'pill--peri',
-    denied: 'pill--rose',
-  };
-  return (
-    <span className={`pill ${toneClass[status] || ''}`}>
-      {status}
-    </span>
-  );
 }
 
 function timeAgo(dateStr: string): string {
@@ -132,7 +120,7 @@ export default function ApprovalList({
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="row gap-2" style={{ marginBottom: 8 }}>
-                  {statusPill(a.status)}
+                  <StatusBadge domain="approval" status={a.status} size="lg" />
                   <span className="h3">{formatAction(a.action)}</span>
                 </div>
                 <div className="row gap-3 text-xs" style={{ color: 'var(--fg-3)' }}>

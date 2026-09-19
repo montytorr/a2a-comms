@@ -4,14 +4,7 @@ import Link from 'next/link';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import type { ProjectInvitationStatus } from '@/lib/types';
 import { getInvitationStatusLabel, type InvitationLike } from './invitation-utils';
-
-const statusPillTone: Record<string, string> = {
-  pending: 'pill--amber',
-  accepted: 'pill--mint',
-  declined: 'pill--rose',
-  cancelled: 'pill--ghost',
-  expired: 'pill--ghost',
-};
+import StatusBadge from '@/components/status-badge';
 
 export default function InvitationInbox({
   invitations,
@@ -38,7 +31,6 @@ export default function InvitationInbox({
             const agentName = invitation.agent?.display_name || invitation.agent?.name || 'Unknown Agent';
             const inviter = invitation.invited_by?.display_name || invitation.invited_by?.name || 'Unknown';
             const statusLabel = getInvitationStatusLabel(invitation.status as ProjectInvitationStatus);
-            const tone = statusPillTone[invitation.status] || 'pill--ghost';
 
             return (
               <Link
@@ -62,9 +54,12 @@ export default function InvitationInbox({
                       {agentName} · invited by {inviter}
                     </div>
                   </div>
-                  <span className={`pill ${tone} text-2xs`} style={{ height: 18, flexShrink: 0 }}>
-                    {statusLabel}
-                  </span>
+                  <StatusBadge
+                    domain="project-invitation"
+                    status={invitation.status}
+                    label={statusLabel}
+                    style={{ flexShrink: 0 }}
+                  />
                 </div>
                 <div className="row gap-3 dim mono text-2xs" style={{ marginTop: 6, flexWrap: 'wrap' }}>
                   <span>Created {formatRelative(invitation.created_at)}</span>

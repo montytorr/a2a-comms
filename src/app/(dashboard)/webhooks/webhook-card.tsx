@@ -5,6 +5,20 @@ import { testWebhook, updateWebhook, deleteWebhook, getDeliveries, type WebhookT
 import { formatDate } from '@/lib/format-date';
 import { CANONICAL_WEBHOOK_EVENTS } from '@/lib/webhook-events';
 import { Send, Edit2, Pause, Play, Trash2, ChevronRight, Check, X } from 'lucide-react';
+import {
+  colorVarForTone,
+  httpStatusTone,
+  lineVarForTone,
+  statusTone,
+  surfaceVarForTone,
+} from '@/lib/status-tone';
+import type { WebhookDeliveryStatus } from '@/lib/types';
+
+/** Delivery-status colours come from the shared tone map, so this card cannot
+ *  drift from the health page's table or from a status pill. */
+const deliveryColor = (status: WebhookDeliveryStatus) =>
+  colorVarForTone(statusTone('webhook-delivery', status));
+
 
 const ALL_EVENTS = CANONICAL_WEBHOOK_EVENTS;
 
@@ -408,13 +422,13 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   border: '1px solid var(--line-1)',
                 }}>
                   <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Last {deliveries.length} deliveries:</span>
-                  <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--mint)' }}>{successCount} OK</span>
-                  {failedCount > 0 && <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--rose)' }}>{failedCount} failed</span>}
+                  <span className="text-2xs" style={{ fontWeight: 600, color: deliveryColor('success') }}>{successCount} OK</span>
+                  {failedCount > 0 && <span className="text-2xs" style={{ fontWeight: 600, color: deliveryColor('failed') }}>{failedCount} failed</span>}
                   {deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length > 0 && (
-                    <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length} retrying</span>
+                    <span className="text-2xs" style={{ fontWeight: 600, color: deliveryColor('retrying') }}>{deliveries.filter(d => d.status === 'retrying' || d.status === 'pending_retry').length} retrying</span>
                   )}
                   {deliveries.filter(d => d.status === 'pending').length > 0 && (
-                    <span className="text-2xs" style={{ fontWeight: 600, color: 'var(--amber)' }}>{deliveries.filter(d => d.status === 'pending').length} pending</span>
+                    <span className="text-2xs" style={{ fontWeight: 600, color: deliveryColor('pending') }}>{deliveries.filter(d => d.status === 'pending').length} pending</span>
                   )}
                   <span className="mono num text-2xs" style={{ color: 'var(--fg-4)', marginLeft: 'auto' }}>
                     {Math.round((successCount / deliveries.length) * 100)}% success rate
@@ -433,16 +447,11 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                   const maxRetries = d.max_retries ?? 1;
                   const isFailed = d.status === 'failed';
                   const isSuccess = d.status === 'success';
-                  const rowBg = isFailed
-                    ? 'var(--rose-bg)'
-                    : isSuccess
-                      ? 'var(--bg-2)'
-                      : 'var(--amber-bg)';
-                  const rowBorder = isFailed
-                    ? 'var(--rose-line)'
-                    : isSuccess
-                      ? 'var(--line-1)'
-                      : 'var(--amber-line)';
+                  const rowTone = statusTone('webhook-delivery', d.status);
+                  // A successful row is the quiet one: the tint is there to find
+                  // the deliveries that are not fine.
+                  const rowBg = isSuccess ? 'var(--bg-2)' : surfaceVarForTone(rowTone);
+                  const rowBorder = isSuccess ? 'var(--line-1)' : lineVarForTone(rowTone);
                   return (
                     <div
                       key={d.id}
@@ -457,7 +466,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                       }}
                     >
                       <span className="mono text-xs" style={{ color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.event}</span>
-                      <span className="text-xs" style={{ fontWeight: 600, color: isSuccess ? 'var(--mint)' : isFailed ? 'var(--rose)' : 'var(--amber)' }}>
+                      <span className="text-xs" style={{ fontWeight: 600, color: colorVarForTone(rowTone) }}>
                         {isSuccess
                           ? d.attempts > 1 ? `Attempt ${d.attempts}` : 'OK'
                           : isFailed
@@ -466,7 +475,7 @@ export default function WebhookCard({ webhook: wh, animationDelay }: WebhookCard
                               ? `Retry ${d.attempts}/${maxRetries}`
                               : 'Pending'}
                       </span>
-                      <span className="mono num text-xs" style={{ color: d.response_status && d.response_status >= 200 && d.response_status < 300 ? 'var(--mint)' : d.response_status ? 'var(--rose)' : 'var(--fg-4)' }}>
+                      <span className="mono num text-xs" style={{ color: colorVarForTone(httpStatusTone(d.response_status)) }}>
                         {d.response_status ? d.response_status : d.status === 'failed' ? 'Network' : '—'}
                       </span>
                       <span className="mono num text-xs" style={{ color: 'var(--fg-3)' }}>

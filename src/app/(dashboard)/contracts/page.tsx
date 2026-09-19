@@ -6,10 +6,12 @@ import type { Contract, ContractStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
 import ContractFilters from './filters';
 import ContractRow from './contract-row';
-import { formatDate } from '@/lib/format-date';
+import StatusBadge from '@/components/status-badge';
+import { formatDate, formatDateTime } from '@/lib/format-date';
 import { Avatar } from '@/components/atoms';
 import { getLinkedTasksForContracts } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContractsForContracts } from '@/lib/contract-links';
+import { getOperatorChannelForContracts } from '@/lib/contract-operator-channel-server';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { getLastMessages } from '@/app/api/v1/contracts/_helpers';
 import { CornerUpLeft, FolderGit2, GitBranch, Link2Off } from 'lucide-react';
@@ -25,14 +27,25 @@ interface ContractWithRelations extends Contract {
   }>;
 }
 
-const statusTone: Record<string, string> = {
-  proposed: 'amber',
-  active: 'amber',
-  completed: 'mint',
-  closed: 'ghost',
-  expired: 'rose',
-  rejected: 'rose',
-};
+/**
+ * How long a live contract has left, or null when the question does not apply.
+ *
+ * Only `proposed` and `active` contracts can still expire; on anything else an
+ * `expires_at` in the past is history, not a deadline. "Soon" is under a day,
+ * which is the point at which an operator can still do something about it.
+ */
+function describeExpiry(status: string, expiresAt: string | null): { label: string; soon: boolean; at: string } | null {
+  if (!expiresAt || !['proposed', 'active'].includes(status)) return null;
+
+  const msLeft = new Date(expiresAt).getTime() - Date.now();
+  if (Number.isNaN(msLeft)) return null;
+  if (msLeft <= 0) return { label: 'overdue', soon: true, at: expiresAt };
+
+  const hours = msLeft / 3_600_000;
+  if (hours < 1) return { label: `${Math.max(1, Math.round(msLeft / 60_000))}m left`, soon: true, at: expiresAt };
+  if (hours < 24) return { label: `${Math.round(hours)}h left`, soon: true, at: expiresAt };
+  return { label: `${Math.round(hours / 24)}d left`, soon: false, at: expiresAt };
+}
 
 export default async function ContractsPage({
   searchParams,
@@ -100,6 +113,9 @@ export default async function ContractsPage({
   // One query for the whole page rather than one per row.
   const linkedTasks = await getLinkedTasksForContracts(rows.map((r) => r.id));
   const relatedContracts = await getRelatedContractsForContracts(rows.map((r) => r.id));
+  // An agent that has stopped to ask a person is the most actionable thing on
+  // this page, and it was only visible by opening each contract in turn.
+  const channels = await getOperatorChannelForContracts(rows.map((r) => r.id), null);
   // One query for the page, same as the links above.
   const lastMessages = await getLastMessages(rows.map((r) => r.id));
 
@@ -155,9 +171,9 @@ export default async function ContractsPage({
                   return { name: label, role: p.role, status: p.status };
                 })
                 .filter(Boolean);
-              const tone = statusTone[contract.status] || 'ghost';
               const linked = linkedTasks.get(contract.id);
               const related = relatedContracts.get(contract.id) || [];
+              const expiry = describeExpiry(contract.status, contract.expires_at);
               const viewerAgentId =
                 contract.contract_participants.find((p) => p.agent?.id && auth.agentScope.includes(p.agent.id))
                   ?.agent?.id ?? null;
@@ -194,10 +210,14 @@ export default async function ContractsPage({
                         {/* The one thing a list of contracts could never tell
                             you: which of them are waiting on you. */}
                         {turnState?.awaiting === 'you' && (
-                          <span className="pill pill--amber text-2xs" style={{ height: 17, flexShrink: 0 }} title={turnState.reason}>
-                            <CornerUpLeft size={10} />
-                            your move
-                          </span>
+                          <StatusBadge
+                            status="your move"
+                            tone="amber"
+                            dot="none"
+                            style={{ flexShrink: 0 }}
+                            title={turnState.reason}
+                            label={<><CornerUpLeft size={10} />your move</>}
+                          />
                         )}
                       </span>
                       {/* The project this contract tracks work in. Shown even when
@@ -253,17 +273,35 @@ export default async function ContractsPage({
                         )}
                       </div>
                     </span>
-                    <span style={{ width: '10%' }}>
-                      <span className={`pill pill--${tone} text-2xs`} style={{ height: 18}}>
-                        <span className={`dot dot--${tone}`} style={{ width: 4, height: 4 }} />
-                        {contract.status}
-                      </span>
+                    <span style={{ width: '10%' }} className="row gap-1">
+                      <StatusBadge domain="contract" status={contract.status} dot="static" />
+                      {(channels.get(contract.id)?.counts.open_questions ?? 0) > 0 && (
+                        <span
+                          className="pill pill--rose text-2xs"
+                          title="An agent on this contract is waiting for a person to answer."
+                          style={{ height: 18, padding: '0 6px' }}
+                        >
+                          asking
+                        </span>
+                      )}
                     </span>
                     <span className="mono num" style={{ width: '10%', color: 'var(--fg-1)' }}>
                       {contract.current_turns}/{contract.max_turns}
                     </span>
-                    <span className="mono dim num text-2xs" style={{ width: '15%', textAlign: 'right' }}>
-                      {formatDate(contract.created_at)}
+                    <span className="mono num text-2xs" style={{ width: '15%', textAlign: 'right' }}>
+                      {/* A live contract with an expiry is the one row on this
+                          page with a deadline, and the column used to show only
+                          how old it was — the least urgent fact available. */}
+                      {expiry ? (
+                        <span
+                          style={{ color: expiry.soon ? 'var(--rose)' : 'var(--fg-2)' }}
+                          title={`Expires ${formatDateTime(expiry.at)}`}
+                        >
+                          {expiry.label}
+                        </span>
+                      ) : (
+                        <span className="dim">{formatDate(contract.created_at)}</span>
+                      )}
                     </span>
                   </div>
                 </ContractRow>

@@ -5,6 +5,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { markdownComponents } from '@/components/markdown-renderers';
 import { normalizeMarkdownSource } from '@/components/markdown-source';
+import StatusBadge from '@/components/status-badge';
+import { looseStatusTone } from '@/lib/status-tone';
 
 // ── Types ──
 
@@ -81,35 +83,14 @@ function Field({ label, children, accent }: { label: string; children: React.Rea
 
 // ── Helper: status pill ──
 
+/* The statuses here come out of agent-authored message payloads, so they are
+   free text in whatever casing and separator the agent picked — `in_progress`,
+   `both_tasks_done`. `looseStatusTone` normalises and resolves them against the
+   real status maps, so a payload saying `failed` is the same rose as a run that
+   failed. This used to carry its own five-row map whose fallback tone was `fg`,
+   interpolated into a `var(--fg)` that does not exist. */
 function StatusPill({ status }: { status: string }) {
-  const toneMap: Record<string, string> = {
-    accepted: 'mint',
-    confirmed: 'mint',
-    done: 'mint',
-    completed: 'mint',
-    both_tasks_done: 'mint',
-    rejected: 'rose',
-    failed: 'rose',
-    pending: 'amber',
-    in_progress: 'peri',
-  };
-  const tone = toneMap[status.toLowerCase()] || 'fg';
-  return (
-    <span
-      className="text-2xs" style={{
-        
-        fontWeight: 600,
-        padding: '0.125rem 0.5rem',
-        borderRadius: '0.375rem',
-        border: `1px solid var(--${tone})`,
-        background: `var(--${tone}-bg, var(--bg-2))`,
-        color: `var(--${tone})`,
-        display: 'inline-block',
-      }}
-    >
-      {status.replace(/_/g, ' ')}
-    </span>
-  );
+  return <StatusBadge status={status} tone={looseStatusTone(status)} dot="none" size="lg" />;
 }
 
 // ── Helper: render array of tasks/items ──
@@ -257,21 +238,7 @@ export default function MessageCard({ content }: { content: unknown }) {
       {/* Header: type badge + status + from */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
         {msgType && (
-          <span
-            className="text-2xs" style={{
-              
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'var(--peri)',
-              background: 'var(--peri-bg)',
-              border: '1px solid var(--peri)',
-              padding: '0.125rem 0.5rem',
-              borderRadius: '0.375rem',
-            }}
-          >
-            {msgType.replace(/_/g, ' ')}
-          </span>
+          <StatusBadge domain="message-type" status={msgType} dot="none" size="lg" />
         )}
         {(status || payloadStatus) && <StatusPill status={(status || payloadStatus)!} />}
         {sender && (

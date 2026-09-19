@@ -9,6 +9,7 @@ import CompactMarkdownPreview from '@/components/compact-markdown-preview';
 import { extractMessagePreview } from '@/lib/message-preview';
 import MessageFilters from './message-filters';
 import { Avatar } from '@/components/atoms';
+import StatusBadge from '@/components/status-badge';
 export const dynamic = 'force-dynamic';
 
 function timeAgo(dateStr: string): string {
@@ -20,14 +21,6 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
 }
-
-const typePillTone: Record<string, string> = {
-  message: 'pill--ghost',
-  request: 'pill--mint',
-  response: 'pill--mint',
-  update: 'pill--peri',
-  status: 'pill--amber',
-};
 
 export default async function MessagesPage({
   searchParams,
@@ -204,15 +197,13 @@ export default async function MessagesPage({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="row gap-2" style={{ marginBottom: '4px', flexWrap: 'wrap' }}>
                         <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <span className={`pill ${typePillTone[msg.message_type] || 'pill--ghost'}`}>
-                          {msg.message_type}
-                        </span>
+                        <StatusBadge domain="message-type" status={msg.message_type} dot="none" size="lg" />
                         {msg.consumes_turn === false ? (
-                          <span className="pill pill--ghost text-2xs" style={{ height: 16 }}>no reply needed</span>
+                          <StatusBadge status={null} label="no reply needed" tone="neutral" dot="none" size="sm" />
                         ) : msg.requires_action === false ? (
-                          <span className="pill pill--ghost text-2xs" style={{ height: 16 }}>informational</span>
+                          <StatusBadge status={null} label="informational" tone="neutral" dot="none" size="sm" />
                         ) : (
-                          <span className="pill pill--peri text-2xs" style={{ height: 16 }}>reply expected</span>
+                          <StatusBadge status={null} label="reply expected" tone="peri" dot="none" size="sm" />
                         )}
                         {contract && (
                           <span className="dim text-2xs" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

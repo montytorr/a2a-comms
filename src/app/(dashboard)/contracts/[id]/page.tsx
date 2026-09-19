@@ -9,6 +9,7 @@ import { getNoteAckCounts, getOperatorChannel } from '@/lib/contract-operator-ch
 import { createServerClient } from '@/lib/supabase/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
+import { type Tone } from '@/lib/status-tone';
 import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
@@ -19,7 +20,7 @@ import OperatorChannel from './operator-channel';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
-import { Avatar, KV, pillClassForName } from '@/components/atoms';
+import { Avatar, KV } from '@/components/atoms';
 import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck, MessageSquareWarning } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -113,11 +114,14 @@ interface ContractMessage {
 }
 
 /** What a message asks of whoever receives it. */
-function expectationOf(msg: Pick<ContractMessage, 'message_type' | 'requires_action' | 'consumes_turn'>) {
-  if (msg.consumes_turn === false) return { label: 'no reply needed', tone: 'ghost' as const };
-  if (msg.requires_action === false) return { label: 'informational', tone: 'ghost' as const };
-  if (msg.message_type === 'request') return { label: 'reply expected', tone: 'amber' as const };
-  return { label: 'reply expected', tone: 'peri' as const };
+function expectationOf(msg: Pick<ContractMessage, 'message_type' | 'requires_action' | 'consumes_turn'>): {
+  label: string;
+  tone: Tone;
+} {
+  if (msg.consumes_turn === false) return { label: 'no reply needed', tone: 'neutral' };
+  if (msg.requires_action === false) return { label: 'informational', tone: 'neutral' };
+  if (msg.message_type === 'request') return { label: 'reply expected', tone: 'amber' };
+  return { label: 'reply expected', tone: 'peri' };
 }
 
 /**
@@ -348,15 +352,22 @@ export default async function ContractDetailPage({
                     <span>{linkedTask.project_title || 'Project'}</span>
                   </Link>
                 ) : (
-                  <span className="pill pill--amber">Not linked</span>
+                  <StatusBadge status={null} label="Not linked" tone="amber" dot="none" size="lg" />
                 )}
               </KV>
               <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
               {contract.completion_requires_approval && (
                 <KV label="Completion gate">
-                  <span className={`pill ${contract.completion_approved_at ? 'pill--peri' : 'pill--amber'}`}>
-                    {contract.completion_approved_at ? 'Approved' : 'Approval required'}
-                  </span>
+                  {/* An approved completion gate is a good end (mint); an
+                      unapproved one is waiting on a person (amber). It used to
+                      paint the approved case peri, the "queued" tone. */}
+                  <StatusBadge
+                    status={null}
+                    label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
+                    tone={contract.completion_approved_at ? 'mint' : 'amber'}
+                    dot="none"
+                    size="lg"
+                  />
                 </KV>
               )}
               <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
@@ -372,10 +383,20 @@ export default async function ContractDetailPage({
                 const name = p.agent?.display_name || p.agent?.name || 'Unknown';
                 const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
                 return (
-                  <span key={p.id} className={pillClassForName(name)}>
-                    <Avatar name={name} size={14} />
-                    {name} · {desc}
-                  </span>
+                  /* This chip spells the participant's status in its own text
+                     ("invitee · accepted"), and it sits inches from the
+                     contract's status pill — so it has to be coloured by that
+                     status, not by a hash of the agent's name. The Avatar
+                     inside it still carries the per-name colour, which is where
+                     identity belongs. */
+                  <StatusBadge
+                    key={p.id}
+                    domain="participant"
+                    status={p.status}
+                    dot="none"
+                    size="lg"
+                    label={<><Avatar name={name} size={14} />{name} · {desc}</>}
+                  />
                 );
               })}
             </div>
@@ -441,12 +462,13 @@ export default async function ContractDetailPage({
                       {formatCloser(contract.closed_by)}
                     </span>
                     {contract.closed_by_kind && (
-                      <span
-                        className={`pill text-2xs ${contract.closed_by_kind === 'system' ? 'pill--ghost' : 'pill--peri'}`}
-                        style={{ height: 16, marginLeft: 6 }}
-                      >
-                        {contract.closed_by_kind}
-                      </span>
+                      <StatusBadge
+                        status={contract.closed_by_kind}
+                        tone={contract.closed_by_kind === 'system' ? 'neutral' : 'peri'}
+                        dot="none"
+                        size="sm"
+                        style={{ marginLeft: 6 }}
+                      />
                     )}
                   </KV>
                 )}
@@ -470,7 +492,7 @@ export default async function ContractDetailPage({
             <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
               <div className="row gap-2" style={{ marginBottom: 8, alignItems: 'center' }}>
                 <div className="upper">Message Schema</div>
-                <span className="pill pill--mint text-2xs" style={{ height: 16 }}>Zod Enforced</span>
+                <StatusBadge status={null} label="Zod Enforced" tone="mint" dot="none" size="sm" />
               </div>
               <div className="card card--inset" style={{ padding: 14, overflow: 'auto' }}>
                 <SchemaDisplay schema={contract.message_schema} />
@@ -481,7 +503,7 @@ export default async function ContractDetailPage({
             <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
               <div className="row gap-2" style={{ alignItems: 'center' }}>
                 <div className="upper">Message Schema</div>
-                <span className="pill pill--ghost text-2xs" style={{ height: 16 }}>None — Free-form</span>
+                <StatusBadge status={null} label="None — Free-form" tone="neutral" dot="none" size="sm" />
               </div>
             </div>
           )}
@@ -541,10 +563,14 @@ export default async function ContractDetailPage({
                     <div className="col" style={{ flex: 1, gap: 8 }}>
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <StatusBadge status={msg.message_type} variant="message" />
-                        <span className={`pill pill--${expectationOf(msg).tone} text-2xs`} style={{ height: 16 }}>
-                          {expectationOf(msg).label}
-                        </span>
+                        <StatusBadge domain="message-type" status={msg.message_type} />
+                        <StatusBadge
+                          status={null}
+                          label={expectationOf(msg).label}
+                          tone={expectationOf(msg).tone}
+                          dot="none"
+                          size="sm"
+                        />
                         <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
                       </div>
                       <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
@@ -573,7 +599,7 @@ export default async function ContractDetailPage({
                     <div className="col" style={{ flex: 1, gap: 8 }}>
                       <div className="row gap-2" style={{ alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <span className="pill pill--peri text-2xs" style={{ height: 16 }}>observer note</span>
+                        <StatusBadge status={null} label="observer note" tone="peri" dot="none" size="sm" />
                         <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
                       </div>
                       <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>

@@ -12,6 +12,7 @@ import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notification
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import ProjectPrivacyControls from './privacy-controls';
+import { BLOCKER_TONE, DUE_STATE_TONE, pillClassForTone } from '@/lib/status-tone';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -360,7 +361,7 @@ export default async function ProjectDetailPage({
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.375rem' }}>
                           <span
-                            className="pill pill--rose text-2xs"
+                            className={`${pillClassForTone(BLOCKER_TONE[state.tone])} text-2xs`}
                             style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}
                           >
                             {state.tone === 'stale' ? 'stale blocker' : state.tone === 'follow-through' ? 'follow-through due' : 'blocked'}
@@ -381,17 +382,17 @@ export default async function ProjectDetailPage({
                         </div>
                         <p className="text-xs" style={{ marginTop: '0.5rem', color: 'var(--fg-1)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>{state.blockerResolutionAction || 'No unblock plan logged yet'}</p>
                         <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="pill text-2xs" style={{ fontWeight: 500 }}>{state.statusLabel}</span>
+                          <span className={`${pillClassForTone('neutral')} text-2xs`} style={{ fontWeight: 500 }}>{state.statusLabel}</span>
                           {state.dueStateLabel && (
                             <span
-                              className={`pill pill--${state.dueState === 'overdue' ? 'rose' : state.dueState === 'due-soon' ? 'amber' : 'mint'} text-2xs`}
+                              className={`${pillClassForTone(DUE_STATE_TONE[state.dueState])} text-2xs`}
                               style={{ fontWeight: 500 }}
                             >
                               {state.dueStateLabel}
                             </span>
                           )}
                           {state.escalationLabel && (
-                            <span className="pill pill--rose text-2xs" style={{ fontWeight: 500 }}>{state.escalationLabel}</span>
+                            <span className={`${pillClassForTone('rose')} text-2xs`} style={{ fontWeight: 500 }}>{state.escalationLabel}</span>
                           )}
                         </div>
                       </div>

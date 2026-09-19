@@ -9,7 +9,28 @@
 
 /* ══════════════════════════════════════════════
    DESIGN TOKENS — A2A Control Plane
-   Warm-cool near-black operator console
+
+   Two themes, one instrument, deliberately NOT inversions of each other.
+
+   DARK (primary, the bare root block below) — a warm-cool near-black operator
+   console: cool blue-black surfaces, lit from the top right by an amber wash.
+   This is the theme the product is designed in; light follows it, not the
+   reverse.
+
+   LIGHT (the `.light` class on the root element, below) — a warm paper
+   instrument deck. The ground is cream, not cool grey; cards are pure white
+   SHEETS lying on that ground, lifted by a real soft shadow rather than by
+   being merely brighter than their surroundings; and the ink is cool, which
+   keeps the dark theme's warm/cool tension rather than flipping it. The amber accent is native to a warm ground, so the brand
+   reads as the light source in both themes: dark is the console at night,
+   light is the same console under daylight.
+
+   What that rules out, and why the light values below are not the dark ones
+   negated: light does NOT get dark's radial washes with the lightness flipped
+   (they read as grey clouds on white), does NOT get a black inset
+   `--highlight` (a grubby line on a white card — light comes from above, so
+   the highlight is white), and does NOT get pale 6%-chroma accent tints (a
+   status chip has to read as a painted chip, not a stain).
    ══════════════════════════════════════════════ */
 
 :root {
@@ -21,6 +42,14 @@
   --bg-hover: oklch(0.22 0.014 250);
   /* the sidebar rail and .card--inset both used this literal directly */
   --bg-inset: oklch(0.13 0.012 250);
+  /* Nav row hover and selected faces. These were --bg-1 and --bg-2, which is
+     a clear two-step lift off the --bg-inset rail here and almost nothing in
+     light, where the rail, bg-1 and bg-2 all sit within 0.04 lightness of each
+     other: the selected page was identifiable only by its amber edge. Named so
+     light can answer differently without moving anything in dark — these two
+     values ARE --bg-1 and --bg-2. */
+  --nav-hover: oklch(0.17 0.013 250);
+  --nav-active: oklch(0.20 0.014 250);
   /* modal/drawer backdrop */
   --scrim: oklch(0.05 0.01 250 / 0.8);
 
@@ -66,6 +95,9 @@
   --peri: oklch(0.78 0.10 265);
   --peri-bg: oklch(0.30 0.04 265 / 0.4);
   --peri-line: oklch(0.50 0.08 265 / 0.5);
+  /* Hover face for .btn--peri, the tinted-outline submit button. A hover that
+     only changed the border read as nothing at all on a full-width control. */
+  --peri-bg-2: oklch(0.355 0.055 265);
   --rose: oklch(0.74 0.14 25);
   --rose-bg: oklch(0.30 0.06 25 / 0.4);
   --rose-line: oklch(0.55 0.10 25 / 0.55);
@@ -76,9 +108,44 @@
   --highlight: oklch(1 0 0 / 0.05);
   /* Zebra stripe for dense tables: a touch darker than --bg-1, not a new surface. */
   --bg-stripe: oklch(0.155 0.013 250 / 0.5);
-  /* The square brand mark in the sidebar and on every auth page. */
-  --brand-mark: linear-gradient(135deg, oklch(0.32 0.02 250), oklch(0.20 0.01 250));
+
+  /* Status-LED halos. These were literal oklch glows inside the .dot--* rules,
+     which meant a 0.70-lightness halo was still being painted in light mode,
+     where it sits on white and shows as nothing. Tokenised so each theme can
+     say how a lit indicator looks on its own ground. */
+  --glow-amber: oklch(0.70 0.16 60 / 0.6);
+  --glow-mint: oklch(0.70 0.13 165 / 0.6);
+  --glow-rose: oklch(0.65 0.15 25 / 0.6);
+
+  /* A background-image in a data: URI cannot read a custom property, so the
+     select chevron was a hardcoded #888 that belonged to neither theme. The
+     whole url() is the token instead, with the stroke baked to --fg-3 for
+     this theme. */
+  --select-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238d9399' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  /* Elevation. In dark a card separates from its ground by its hairline —
+     a drop shadow on a near-black surface is invisible work — so the card
+     elevation is deliberately `none` here and carries a real shadow only in
+     light, where a white sheet on a cream ground needs one to be a sheet. */
+  --shadow-card: none;
   --shadow-strong: oklch(0 0 0 / 0.5);
+
+  /* ── brand mark ──────────────────────────────────────────────────────────
+     The square tile behind the amber chevron glyph, in the sidebar and on
+     every auth page. It was a neutral grey gradient in both themes, which
+     made the one piece of pure identity in the product the one piece with no
+     colour in it.
+
+     It is now an amber-lit instrument tile: a hard ink-to-bronze diagonal
+     with a warm specular highlight off the top-left corner, so the tile looks
+     lit by the same amber the console is lit by. The geometry and light
+     direction are identical in both themes and only the polarity changes —
+     anodised bronze at night, gold leaf by day — which is what lets it read
+     as one object across a theme switch. The glyph stays var(--amber) and
+     clears 3:1 against every stop of the tile in both themes. */
+  --brand-mark:
+    radial-gradient(130% 130% at 16% 4%, oklch(0.46 0.10 72 / 0.85), transparent 58%),
+    linear-gradient(152deg, oklch(0.29 0.055 68), oklch(0.165 0.022 258));
 
   /* ambient wash behind the shell */
   --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.30 0.04 65 / 0.10), transparent 60%),
@@ -88,11 +155,55 @@
   --sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* density — comfortable default */
-  --row-h: 36px;
-  --gap: 14px;
-  --pad: 18px;
-  --radius: 8px;
+  /* ── space & radius scale ────────────────────────────────────────────────
+     --row-h, --gap and --pad used to live here, and a [data-density] block
+     below swapped all three. Nothing anywhere consumed any of it: the app
+     carries 99 distinct padding values and 26 distinct border-radius values,
+     every one of them written as a number in an inline style, so the density
+     switch could not have worked and the tokens could not have been adopted.
+
+     These six steps replace them. They are the values the inline styles
+     should converge on, and they are reachable from an inline style —
+     `padding: 'var(--space-4)'` — which is where the 99 values actually live
+     and where a Tailwind utility cannot go. Where a utility CAN go the same
+     six steps already exist as p-1 / p-2 / p-3 / p-4 / p-6 / p-8, because
+     --spacing is 0.25rem against a 16px root.
+
+       --space-1   4px   icon↔label, chip internals, hairline insets
+       --space-2   8px   dense stacks, control gaps, table cell padding
+       --space-3  12px   compact panel padding, list row padding
+       --space-4  16px   tile padding, the default gap between blocks
+       --space-5  24px   card padding (.card--pad), gap between sections
+       --space-6  32px   page gutter, major section break
+
+     Deliberately absent: a 6px, a 10px, a 14px, a 18px and a 20px step. The
+     control paddings in this file that use those numbers (.btn, .btn--sm,
+     .cp-input, .pill) are optical — tuned against a fixed 32px/26px/22px
+     control height — and are not layout. The scale governs layout. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radius, five steps, from the chip to the modal. Unlike the space scale
+     these are consumed by every rule in this file already, and are bridged
+     into Tailwind below so `rounded-md` and `var(--radius-2)` are the same
+     6px whichever side of the wall a call site is on.
+
+       --radius-1    4px   chips, checkboxes, swatches, stripes
+       --radius-2    6px   controls: buttons, inputs, selects, segmented
+       --radius-3    8px   cards and panels  (--radius, the default)
+       --radius-4   12px   modals, drawers, the auth brand mark
+       --radius-pill 999px badges, dots, anything capsule-shaped */
+  --radius-1: 4px;
+  --radius-2: 6px;
+  --radius-3: 8px;
+  --radius-4: 12px;
+  --radius-pill: 999px;
+  --radius: var(--radius-3);
+
   --sidebar-w: 232px;
   /* Outer bound on page content. Was a hardcoded 1400 in dashboard-shell, with
      nine further per-page caps stacked under it — the narrowest of which left
@@ -105,60 +216,128 @@
 }
 
 /* ── light ─────────────────────────────────────
-   Authored against the same hue angles as the dark set. The signal hues are
-   darkened substantially: the dark palette's pastels measure ~2.2–2.6 against
-   white, well under the 4.5 readable line. */
+   A warm paper instrument deck, authored as its own theme rather than as the
+   dark set with the lightness flipped. Three decisions drive every value:
+
+   1. THE GROUND IS WARM, THE INK IS COOL. Surfaces sit at hue 85 with 0.006–
+      0.010 chroma — cream, a shade of paper rather than a shade of grey —
+      while text, lines and scrims stay at hue 250. Dark is a cool room lit
+      warm; light is a warm sheet marked in cool ink. The tension survives the
+      switch, which is what stops light reading as the "off" state of dark.
+      It also makes amber native here: on the old cool-grey ground every amber
+      accent read as a stain on the page.
+   2. CARDS ARE SHEETS. --bg-1 is pure white and the only surface brighter
+      than the ground; it earns its separation from a real soft shadow
+      (--shadow-card) plus a crisper hairline, the way paper on a desk does.
+      Dark stacks surfaces by lightness because light travels up out of a
+      screen; light mode cannot borrow that and needs the shadow instead.
+   3. LIGHT COMES FROM ABOVE. --wash is an overhead sheet-light with one warm
+      brand flare at the top right and a cool bounce in the bottom-left
+      corner — the same geometry as the dark wash, so the shell is lit from
+      the same place in both themes. --highlight is white for the same reason.
+
+   The text ramp was re-cut rather than nudged: the previous fg-3/fg-4 pair sat
+   0.02 apart in lightness, a step nobody could see, because both had been
+   pushed up to clear 4.5:1 against a ground that was too dark for them. On the
+   lighter cream ground the ramp measures 16.8 / 12.2 / 7.5 / 5.6 / 4.8 against
+   --bg-0, within a tenth of dark's own ramp at every tier.
+
+   The signal hues are darkened substantially — the dark palette's pastels
+   measure ~2.2–2.6 against white — and their tints are darkened WITH them.
+   The tints were 0.94–0.95 lightness at 0.035–0.055 chroma, which is a wash,
+   not a chip; at 0.925–0.935 and 0.060–0.080 a status pill reads as painted
+   at a glance and still clears 4.5:1 against its own accent as text. */
 :root.light {
-  --bg-0: oklch(0.97 0.004 250);
+  --bg-0: oklch(0.975 0.006 85);
   --bg-1: oklch(1 0 0);
-  --bg-2: oklch(0.955 0.005 250);
-  --bg-3: oklch(0.92 0.008 250);
-  --bg-hover: oklch(0.945 0.006 250);
-  --bg-inset: oklch(0.945 0.005 250);
-  --scrim: oklch(0.30 0.01 250 / 0.4);
+  --bg-2: oklch(0.963 0.006 85);
+  --bg-3: oklch(0.935 0.009 85);
+  --bg-hover: oklch(0.955 0.008 85);
+  --bg-inset: oklch(0.958 0.007 85);
+  /* The selected row becomes a white tab lying on the cream rail — the same
+     figure/ground move the cards make — and hover is a half-step of the same
+     lift. Reusing bg-1/bg-2 here would have put the selected row 0.005 away
+     from the rail it sits on. */
+  --nav-hover: oklch(0.985 0.005 85);
+  --nav-active: oklch(1 0 0);
+  /* Cool ink, not black: a neutral scrim over a warm page looks like a dead
+     monitor. 0.40 alpha is enough with the backdrop blurs the modals use. */
+  --scrim: oklch(0.26 0.020 255 / 0.40);
 
-  --line-1: oklch(0.90 0.006 250);
-  --line-2: oklch(0.84 0.008 250);
-  --line-strong: oklch(0.70 0.010 250);
+  /* Crisper than the dark set in relative terms. A hairline on white has to
+     carry the whole edge of a card, since it has no lightness step to help. */
+  --line-1: oklch(0.888 0.006 250);
+  --line-2: oklch(0.830 0.008 250);
+  --line-strong: oklch(0.680 0.012 250);
 
-  --fg-0: oklch(0.22 0.012 250);   /* 15.9 : 1 */
-  --fg-1: oklch(0.32 0.012 250);   /* 11.6 : 1 */
-  --fg-2: oklch(0.44 0.012 250);   /*  7.1 : 1 */
-  --fg-3: oklch(0.52 0.012 250);   /*  5.0 : 1 */
-  --fg-4: oklch(0.54 0.012 250);   /*  4.64 : 1 — was 0.55, which measured
-                                        4.46 against --bg-0 while claiming 4.5 */
+  --fg-0: oklch(0.20 0.014 250);   /* 16.8 : 1 on --bg-0 */
+  --fg-1: oklch(0.31 0.014 250);   /* 12.2 : 1 */
+  --fg-2: oklch(0.43 0.014 250);   /*  7.5 : 1 */
+  --fg-3: oklch(0.50 0.014 250);   /*  5.6 : 1 */
+  --fg-4: oklch(0.535 0.014 250);  /*  4.8 : 1 — the faintest ink offered */
 
-  /* 0.56 measured 3.93:1 as text on --amber-bg, the pill and banner pairing. */
-  --amber: oklch(0.52 0.14 65);
-  --amber-2: oklch(0.48 0.15 55);
-  --amber-bg: oklch(0.94 0.055 65);
-  --amber-line: oklch(0.72 0.11 60);
+  --amber: oklch(0.505 0.145 65);
+  --amber-2: oklch(0.465 0.150 55);
+  --amber-bg: oklch(0.925 0.080 65);   /* 4.66 : 1 with --amber as text */
+  --amber-line: oklch(0.720 0.130 60);
   --on-amber: oklch(1 0 0);
   --on-mint: oklch(1 0 0);
   --on-peri: oklch(1 0 0);
   --on-rose: oklch(1 0 0);
-  --mint-deep: oklch(0.93 0.04 165);
-  --rose-deep: oklch(0.93 0.05 25);
-  --rose-line-strong: oklch(0.68 0.13 25 / 0.5);
-  --mint: oklch(0.50 0.12 165);
-  --mint-2: oklch(0.43 0.12 165);
-  --mint-bg: oklch(0.94 0.05 165);
-  --mint-line: oklch(0.74 0.09 165);
-  --peri: oklch(0.50 0.14 265);
-  --peri-bg: oklch(0.95 0.035 265);
-  --peri-line: oklch(0.76 0.08 265);
-  --rose: oklch(0.52 0.18 25);
-  --rose-bg: oklch(0.95 0.045 25);
-  --rose-line: oklch(0.76 0.11 25);
+  --mint-deep: oklch(0.915 0.060 165);
+  --rose-deep: oklch(0.920 0.070 25);
+  --rose-line-strong: oklch(0.640 0.150 25 / 0.55);
+  --mint: oklch(0.475 0.125 165);
+  --mint-2: oklch(0.430 0.125 165);
+  --mint-bg: oklch(0.925 0.075 165);   /* 5.01 : 1 */
+  --mint-line: oklch(0.700 0.110 165);
+  --peri: oklch(0.485 0.150 265);
+  --peri-bg: oklch(0.930 0.060 265);   /* 5.26 : 1 */
+  --peri-line: oklch(0.720 0.100 265);
+  --peri-bg-2: oklch(0.885 0.075 265); /* 4.58 : 1 — .btn--peri hover */
+  --rose: oklch(0.495 0.185 25);
+  --rose-bg: oklch(0.935 0.070 25);    /* 5.16 : 1 */
+  --rose-line: oklch(0.720 0.130 25);
 
-  --focus-ring: oklch(0.56 0.14 65 / 0.22);
-  --highlight: oklch(0 0 0 / 0.04);
-  --bg-stripe: oklch(0.965 0.005 250 / 0.7);
-  --brand-mark: linear-gradient(135deg, oklch(0.90 0.010 250), oklch(0.80 0.012 250));
-  --shadow-strong: oklch(0.30 0.01 250 / 0.22);
+  --focus-ring: oklch(0.505 0.145 65 / 0.25);
+  /* White, not black. `inset 0 0 0 1px var(--highlight)` is a top-light
+     highlight; inverting it to black drew a grubby line inside every raised
+     surface, which is the single tell that a light theme was made by negation. */
+  --highlight: oklch(1 0 0 / 0.75);
+  /* Zebra on a white card: warm, and only ~3% off the card so a dense table
+     reads as ruled paper rather than as two alternating surfaces. */
+  --bg-stripe: oklch(0.968 0.010 85 / 0.9);
 
-  --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.80 0.05 65 / 0.18), transparent 60%),
-          radial-gradient(900px 500px at -10% 110%, oklch(0.82 0.04 250 / 0.28), transparent 60%);
+  /* A lit indicator on a bright ground is a tight saturated halo, not a broad
+     glow — a 0.70-lightness bloom simply disappears here. */
+  --glow-amber: oklch(0.620 0.160 65 / 0.35);
+  --glow-mint: oklch(0.580 0.140 165 / 0.32);
+  --glow-rose: oklch(0.580 0.190 25 / 0.35);
+
+  --select-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235d646b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  /* The whole reason a white card reads as a card here. Two layers: a 1px
+     contact shadow that draws the edge, and a wide, heavily-offset ambient
+     one that lifts the sheet. Both are cool-tinted, because the shadow of a
+     warm sheet under a cool ink palette is not grey. */
+  --shadow-card:
+    0 1px 2px oklch(0.55 0.020 255 / 0.07),
+    0 8px 24px -12px oklch(0.45 0.030 255 / 0.16);
+  --shadow-strong: oklch(0.30 0.030 255 / 0.18);
+
+  /* Gold leaf: the same tile, the same light direction, the other polarity. */
+  --brand-mark:
+    radial-gradient(130% 130% at 16% 4%, oklch(1 0 0 / 0.85), transparent 56%),
+    linear-gradient(152deg, oklch(0.945 0.050 80), oklch(0.875 0.075 62));
+
+  /* Sheet-light from above, a warm brand flare at the top right, a cool bounce
+     off the bottom-left floor. The old light wash was the dark wash with its
+     stops lightened, which painted two grey-blue clouds across a white page;
+     the brightest layer here is white, so the page is LIT rather than shaded. */
+  --wash:
+    radial-gradient(760px 420px at 86% -8%, oklch(0.86 0.090 72 / 0.22), transparent 58%),
+    radial-gradient(1200px 640px at 50% -22%, oklch(1 0 0 / 0.90), transparent 64%),
+    radial-gradient(980px 520px at -8% 112%, oklch(0.80 0.035 258 / 0.14), transparent 62%);
 }
 
 /* ══════════════════════════════════════════════
@@ -175,6 +354,8 @@
   --color-bg-3: var(--bg-3);
   --color-bg-hover: var(--bg-hover);
   --color-bg-inset: var(--bg-inset);
+  --color-nav-hover: var(--nav-hover);
+  --color-nav-active: var(--nav-active);
   --color-scrim: var(--scrim);
 
   --color-line-1: var(--line-1);
@@ -198,6 +379,7 @@
   --color-mint-line: var(--mint-line);
   --color-peri: var(--peri);
   --color-peri-bg: var(--peri-bg);
+  --color-peri-bg-2: var(--peri-bg-2);
   --color-peri-line: var(--peri-line);
   --color-rose: var(--rose);
   --color-rose-bg: var(--rose-bg);
@@ -235,21 +417,21 @@
      matching the hand-rolled .gap-* rules this replaces. */
   --spacing: 0.25rem;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: var(--radius);
+  /* The radius scale, bridged so `rounded-md` in a className and
+     `var(--radius-2)` in an inline style are the same 6px. */
+  --radius-sm: var(--radius-1);
+  --radius-md: var(--radius-2);
+  --radius-lg: var(--radius-3);
+  --radius-xl: var(--radius-4);
+  --radius-full: var(--radius-pill);
 }
 
-[data-density="compact"] {
-  --row-h: 30px;
-  --gap: 10px;
-  --pad: 14px;
-}
-[data-density="spacious"] {
-  --row-h: 44px;
-  --gap: 18px;
-  --pad: 24px;
-}
+/* [data-density="compact"] and ="spacious" used to sit here, redefining
+   --row-h/--gap/--pad. Nothing set the attribute and nothing read the tokens,
+   so the feature was three dead rules pretending to be a density control; a
+   real one has to start from the space scale above. Removed with them.
+
+   [data-sidebar] stays — sidebar.tsx sets it and --sidebar-w is read. */
 [data-sidebar="icons"] { --sidebar-w: 64px; }
 [data-sidebar="wide"]  { --sidebar-w: 264px; }
 
@@ -315,7 +497,7 @@ body::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--line-1);
-  border-radius: 6px;
+  border-radius: var(--radius-2);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -350,8 +532,8 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: var(--text-2xs);
-  /* 500 at 11px uppercase reads as grey mush; 600 gives the label weight to
-     act as a divider without needing to be larger. */
+  /* 500 at this size, uppercased, reads as grey mush; 600 gives the label the
+     weight to act as a divider without needing to be larger. */
   font-weight: 600;
   color: var(--fg-3);
 }
@@ -374,6 +556,20 @@ body::before {
   letter-spacing: -0.01em;
   color: var(--fg-0);
 }
+/* The fourth step: 30 / 24 / 18 / 16. There are 53 <h4> elements in the app
+   and every one of them was given className="h3", so a subsection heading
+   rendered at exactly the size of the section heading above it and the
+   document had no hierarchy below the panel title. 16px is the smallest
+   heading that can still be a heading — it is body size, so it leans on
+   weight and colour rather than scale, and the eyebrow (.upper) remains the
+   step below it for anything smaller. */
+.h4 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--fg-0);
+  line-height: 1.4;
+}
 .muted { color: var(--fg-2); }
 .dim { color: var(--fg-3); }
 
@@ -386,9 +582,9 @@ body::before {
   align-items: center;
   gap: 6px;
   height: 22px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 1px solid var(--line-1);
-  border-radius: 4px;
+  border-radius: var(--radius-1);
   font-family: var(--mono);
   font-size: var(--text-2xs);
   color: var(--fg-1);
@@ -413,8 +609,8 @@ body::before {
   justify-content: center;
   min-width: 14px;
   height: 14px;
-  padding: 0 4px;
-  border-radius: 999px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
   background: var(--amber);
   color: var(--on-amber);
   font-family: var(--sans);
@@ -432,9 +628,9 @@ body::before {
   background: var(--fg-3);
   flex-shrink: 0;
 }
-.dot--mint  { background: var(--mint); box-shadow: 0 0 8px oklch(0.70 0.13 165 / 0.6); }
-.dot--amber { background: var(--amber); box-shadow: 0 0 8px oklch(0.70 0.16 60 / 0.6); }
-.dot--rose  { background: var(--rose); box-shadow: 0 0 8px oklch(0.65 0.15 25 / 0.6); }
+.dot--mint  { background: var(--mint); box-shadow: 0 0 8px var(--glow-mint); }
+.dot--amber { background: var(--amber); box-shadow: 0 0 8px var(--glow-amber); }
+.dot--rose  { background: var(--rose); box-shadow: 0 0 8px var(--glow-rose); }
 .dot--peri  { background: var(--peri); }
 .pulse { animation: pulse 2s ease-in-out infinite; }
 
@@ -447,10 +643,10 @@ body::before {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 32px;
   padding: 0 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-2);
   border: 1px solid var(--line-2);
   background: var(--bg-2);
   color: var(--fg-1);
@@ -462,6 +658,13 @@ body::before {
   white-space: nowrap;
 }
 .btn:hover { background: var(--bg-3); border-color: var(--line-strong); color: var(--fg-0); }
+/* The one rule in the file that paints colour literals instead of tokens, and
+   it has to stay that way: the brand button is deliberately the SAME bright
+   amber in both themes — it is the product's one fixed object, and a token
+   would let it drift — and color-contrast.test.ts reads these stops out of
+   this rule by regex to measure --on-brand against them. Move them into a
+   token and the test that exists to guard this exact control stops seeing it.
+   Both stops, and both hover stops, clear 7:1 against --on-brand. */
 .btn--primary {
   background: linear-gradient(180deg, oklch(0.82 0.16 65), oklch(0.72 0.16 60));
   color: var(--on-brand);
@@ -477,6 +680,27 @@ body::before {
 .btn--ghost:hover { background: var(--bg-2); color: var(--fg-0); }
 .btn--sm { height: 26px; padding: 0 10px; font-size: var(--text-xs); }
 .btn--icon { width: 32px; padding: 0; justify-content: center; }
+/* Peri is the "generate / register / create" action: a tinted-outline button,
+   the same construction as .btn--danger. It was used on three controls —
+   including the full-width submit on webhook registration — and had never
+   been defined, so all three rendered as a plain .btn.
+
+   Filling it solid was the wrong call even though it is a submit: two of the
+   three sites put a `2px solid var(--peri)` spinner INSIDE the button while it
+   loads, and a peri spinner on a peri face is invisible. The tinted face keeps
+   that pairing legible, and it is the pairing the contrast test already
+   guards — --peri on --peri-bg clears 4.5:1 in both themes. */
+.btn--peri {
+  background: var(--peri-bg);
+  border-color: var(--peri-line);
+  color: var(--peri);
+  font-weight: 600;
+}
+.btn--peri:hover {
+  background: var(--peri-bg-2);
+  border-color: var(--peri);
+  color: var(--peri);
+}
 .btn--danger { color: var(--rose); border-color: var(--rose-line); }
 .btn--danger:hover { background: var(--rose-bg); color: var(--rose); }
 
@@ -496,14 +720,14 @@ body::before {
   text-decoration: none;
   transition: background 0.1s, color 0.1s;
 }
-.nav-item:hover { background: var(--bg-1); color: var(--fg-1); }
+.nav-item:hover { background: var(--nav-hover); color: var(--fg-1); }
 .nav-item--active {
-  background: var(--bg-2);
+  background: var(--nav-active);
   border-left-color: var(--amber);
   color: var(--fg-0);
   font-weight: 500;
 }
-.nav-item--active:hover { background: var(--bg-2); color: var(--fg-0); }
+.nav-item--active:hover { background: var(--nav-active); color: var(--fg-0); }
 
 /* Icon-rail mode. The label and any trailing badge cannot fit in 64px, so
    they are removed and the icon centres; the group heading becomes a rule so
@@ -529,7 +753,7 @@ input[type="checkbox"], input[type="radio"] {
   padding: 0 10px;
   background: var(--bg-1);
   border: 1px solid var(--line-1);
-  border-radius: 6px;
+  border-radius: var(--radius-2);
   color: var(--fg-1);
   font-family: var(--sans);
   font-size: var(--text-sm);
@@ -539,12 +763,17 @@ input[type="checkbox"], input[type="radio"] {
 /* A native select cannot be styled past a point — the browser draws its own
    chevron and metrics, which is why an otherwise-matching select still looked
    foreign next to the inputs. appearance:none removes that chrome; the chevron
-   is redrawn as a background image so sizing, border and focus ring match. */
+   is redrawn as a background image so sizing, border and focus ring match.
+
+   The chevron comes from --select-chevron rather than being inlined here,
+   because a data: URI cannot read a custom property: the stroke was a literal
+   #888 that was too dim for the dark theme and too heavy for the light one,
+   and it was the last hardcoded colour in the file outside the token blocks. */
 .cp-select {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 30px;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: var(--select-chevron);
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
@@ -552,7 +781,7 @@ input[type="checkbox"], input[type="radio"] {
 .cp-textarea {
   height: auto;
   min-height: 72px;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   line-height: 1.55;
   resize: vertical;
 }
@@ -568,13 +797,13 @@ input[type="checkbox"], input[type="radio"] {
   margin: 0;
   background: var(--bg-1);
   border: 1px solid var(--line-2);
-  border-radius: 4px;
+  border-radius: var(--radius-1);
   cursor: pointer;
   display: inline-grid;
   place-content: center;
   transition: background 0.12s, border-color 0.12s;
 }
-.cp-check[type="radio"] { border-radius: 999px; }
+.cp-check[type="radio"] { border-radius: var(--radius-pill); }
 .cp-check::before {
   content: "";
   width: 9px;
@@ -586,7 +815,7 @@ input[type="checkbox"], input[type="radio"] {
 }
 .cp-check[type="radio"]::before {
   clip-path: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   width: 6px;
   height: 6px;
 }
@@ -599,13 +828,16 @@ input[type="checkbox"], input[type="radio"] {
 .cp-check:focus-visible {
   outline: none;
   border-color: var(--amber);
-  box-shadow: 0 0 0 3px oklch(0.70 0.16 60 / 0.15);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .cp-check:disabled { opacity: 0.5; cursor: not-allowed; }
+/* --focus-ring exists for exactly this and was bypassed by a literal copy of
+   its dark value, so in light mode the ring was a dark-theme glow at 0.15
+   alpha on a white field: present in the DOM, invisible on screen. */
 .cp-input:focus, .cp-select:focus, .cp-textarea:focus {
   outline: none;
   border-color: var(--amber);
-  box-shadow: 0 0 0 3px oklch(0.70 0.16 60 / 0.15);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .cp-input::placeholder, .cp-textarea::placeholder { color: var(--fg-3); }
 
@@ -615,10 +847,29 @@ input[type="checkbox"], input[type="radio"] {
   border: 1px solid var(--line-1);
   border-radius: var(--radius);
   overflow: hidden;
+  /* `none` in dark, a two-layer soft shadow in light. See --shadow-card:
+     a white sheet on a cream ground needs the shadow to be a sheet, and a
+     near-black card does not. */
+  box-shadow: var(--shadow-card);
 }
+/* .card deliberately declares NO padding, and cannot: 42 of its ~150 call
+   sites are full-bleed containers whose children paint to the card edge — the
+   audit table, the message list, the contracts table, every table wrapped in
+   `card` + overflow:hidden. A default here would inset all of them.
+
+   .card--pad is the opt-in the other ~108 sites want. They currently write
+   padding: 16 / 18 / 20 / 24 / 28 inline, which is most of the 99 distinct
+   padding values in the app; this is the one value a padded card should have,
+   and `p-4` remains the step below it for a dense tile. */
+.card--pad { padding: var(--space-5); }
+/* An inset card is recessed, so it takes no elevation. It also gains the
+   border and radius it never had: three call sites use .card--inset WITHOUT
+   .card, and were getting a tinted rectangle with square corners and no edge. */
 .card--inset {
   background: var(--bg-inset);
-  border-color: var(--line-1);
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius);
+  box-shadow: none;
 }
 
 /* kbd */
@@ -631,7 +882,7 @@ input[type="checkbox"], input[type="radio"] {
   padding: 0 4px;
   border: 1px solid var(--line-2);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-1);
   background: var(--bg-2);
   font-family: var(--mono);
   font-size: var(--text-2xs);
@@ -648,7 +899,7 @@ input[type="checkbox"], input[type="radio"] {
   color: var(--fg-2);
   background: var(--bg-2);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-1);
   border: 1px solid var(--line-1);
   cursor: pointer;
   transition: all 0.12s;
@@ -683,7 +934,7 @@ input[type="checkbox"], input[type="radio"] {
 .seg {
   display: inline-flex;
   border: 1px solid var(--line-1);
-  border-radius: 6px;
+  border-radius: var(--radius-2);
   background: var(--bg-1);
   padding: 2px;
 }
@@ -697,7 +948,7 @@ input[type="checkbox"], input[type="radio"] {
   font-size: var(--text-xs);
   font-weight: 500;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-1);
 }
 .seg button.active { background: var(--bg-3); color: var(--fg-0); }
 .seg button:hover:not(.active) { color: var(--fg-1); }
@@ -708,12 +959,14 @@ input[type="checkbox"], input[type="radio"] {
    a 16px root, Tailwind's gap-1..6 resolve to exactly 4/8/12/16/24px, so the
    deletion is pixel-identical. .grow differed for real (flex: 1 vs
    flex-grow: 1) and its single call site now uses flex-1.
-   .row/.col/.nowrap/.truncate-text/.scroll collide with nothing and stay —
-   they are terser than their utility equivalents and carry 290+ uses. */
+   .row/.col/.truncate-text/.scroll collide with nothing and stay — they are
+   terser than their utility equivalents and carry 290+ uses.
+   .nowrap is gone: zero call sites, and the ~20 places that do want it write
+   whiteSpace: 'nowrap' in an inline style, where a class cannot reach them.
+   Tailwind's whitespace-nowrap already covers the className case. */
 .scroll { overflow: auto; }
 .row { display: flex; align-items: center; }
 .col { display: flex; flex-direction: column; }
-.nowrap { white-space: nowrap; }
 .truncate-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ══════════════════════════════════════════════
@@ -774,5 +1027,33 @@ input[type="checkbox"], input[type="radio"] {
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* `spin` was referenced by five inline spinners — the agent and webhook
+   registration submits, the webhook card, the key actions dialog and the kill
+   switch — and was never defined anywhere, so every one of them rendered a
+   static three-quarter ring. A loading state that does not move reads as a
+   frozen app. */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Same story for `ping`, referenced once by the live-activity halo on the
+   dashboard. The element carries opacity: 0.35 inline as its resting value;
+   the animation takes over both properties while it runs. */
+@keyframes ping {
+  from { transform: scale(1); opacity: 0.35; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Under reduced motion the decorative loops stop and the entrance fade becomes
+   an instant reveal. The dot pulse and the cursor blink are decoration — the
+   colour, not the movement, carries the status — so stilling them loses no
+   information. The spinners are NOT stilled: a spinner that stops reads as a
+   hung request, and in any case they set `animation` in an inline style, which
+   no rule here can reach without !important. */
+@media (prefers-reduced-motion: reduce) {
+  .pulse, .blink { animation: none; }
+  .animate-fade-in { animation-duration: 0.01ms; }
 }
 }

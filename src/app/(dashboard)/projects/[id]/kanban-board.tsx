@@ -6,6 +6,22 @@ import QuickTaskForm from './quick-task-form';
 import { Avatar } from '@/components/atoms';
 import { formatDate } from '@/lib/format-date';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
+import StatusBadge from '@/components/status-badge';
+import {
+  BLOCKER_TONE,
+  DEPENDENCY_KIND_TONE,
+  DUE_STATE_TONE,
+  colorVarForTone,
+  dotClassForTone,
+  lineVarForTone,
+  pillClassForTone,
+  statusTone,
+  surfaceVarForTone,
+  taskPriorityTone,
+  tonePulses,
+  type DependencyKind,
+  type Tone,
+} from '@/lib/status-tone';
 
 const columns: { id: TaskStatus; label: string }[] = [
   { id: 'backlog',     label: 'Backlog' },
@@ -16,27 +32,13 @@ const columns: { id: TaskStatus; label: string }[] = [
   { id: 'cancelled',   label: 'Cancelled' },
 ];
 
-// Map each status to design-system tokens
-const statusMeta: Record<TaskStatus, {
-  dotClass: string;
-  headingColor: string;
-  panelBg: string;
-  countTone: string;
-}> = {
-  backlog:     { dotClass: 'dot',           headingColor: 'var(--fg-3)',  panelBg: 'var(--bg-1)', countTone: 'ghost' },
-  todo:        { dotClass: 'dot dot--peri', headingColor: 'var(--peri)',  panelBg: 'var(--bg-1)', countTone: 'peri'  },
-  'in-progress':{ dotClass: 'dot dot--amber pulse', headingColor: 'var(--amber)', panelBg: 'var(--amber-bg)', countTone: 'amber' },
-  'in-review': { dotClass: 'dot dot--amber', headingColor: 'var(--amber)', panelBg: 'var(--bg-1)', countTone: 'amber' },
-  done:        { dotClass: 'dot dot--mint', headingColor: 'var(--mint)',  panelBg: 'var(--mint-bg)', countTone: 'mint'  },
-  cancelled:   { dotClass: 'dot dot--rose', headingColor: 'var(--rose)',  panelBg: 'var(--bg-1)', countTone: 'rose'  },
-};
-
-const priorityTone: Record<TaskPriority, string> = {
-  urgent: 'rose',
-  high:   'amber',
-  medium: 'peri',
-  low:    'ghost',
-};
+/* Columns whose panel carries its tone as a tint. This is board emphasis, not
+   a colour decision: the two columns worth finding at a glance are the work
+   happening now and the work that landed. Every actual colour comes from
+   status-tone.ts, so the board can never disagree with a pill again — it used
+   to paint `in-progress` amber while /tasks painted it peri, and it had no row
+   at all for a status two other maps did have. */
+const TINTED_COLUMNS: readonly TaskStatus[] = ['in-progress', 'done'];
 
 const priorityLabel: Record<TaskPriority, string> = {
   urgent: 'Urgent',
@@ -45,13 +47,16 @@ const priorityLabel: Record<TaskPriority, string> = {
   low:    'Low',
 };
 
-const dependencyTypeConfig = {
-  blockedBy:     { label: 'Blocked by',  tone: 'rose',  previewLabel: 'Waiting on' },
-  blocks:        { label: 'Blocking',    tone: 'amber', previewLabel: 'Blocking' },
-  sequenceAfter: { label: 'After',       tone: 'peri',  previewLabel: 'Follows' },
-  sequenceBefore:{ label: 'Before',      tone: 'peri',  previewLabel: 'Leads into' },
-  related:       { label: 'Related',     tone: 'ghost', previewLabel: 'Related to' },
-} as const;
+/* Labels are this board's own (it has less room than the task page); the tones
+   come from DEPENDENCY_KIND_TONE so the two views cannot disagree, which they
+   did — `related` was grey here and mint on the task page. */
+const dependencyTypeConfig: Record<DependencyKind, { label: string; tone: Tone; previewLabel: string }> = {
+  blockedBy:     { label: 'Blocked by', tone: DEPENDENCY_KIND_TONE.blockedBy,      previewLabel: 'Waiting on' },
+  blocks:        { label: 'Blocking',   tone: DEPENDENCY_KIND_TONE.blocks,         previewLabel: 'Blocking' },
+  sequenceAfter: { label: 'After',      tone: DEPENDENCY_KIND_TONE.sequenceAfter,  previewLabel: 'Follows' },
+  sequenceBefore:{ label: 'Before',     tone: DEPENDENCY_KIND_TONE.sequenceBefore, previewLabel: 'Leads into' },
+  related:       { label: 'Related',    tone: DEPENDENCY_KIND_TONE.related,        previewLabel: 'Related to' },
+};
 
 function renderDependencyPreview(items: Array<{ id: string; title: string; status: string }>, maxItems = 2) {
   return items.slice(0, maxItems).map((item) => item.title).join(', ');
@@ -136,7 +141,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
         <div style={{ display: 'flex', minWidth: 'max-content', alignItems: 'flex-start', gap: 16 }}>
           {columns.map((col) => {
             const colTasks = tasksByStatus[col.id] || [];
-            const meta = statusMeta[col.id];
+            const colTone = statusTone('task', col.id);
 
             return (
               <div
@@ -150,7 +155,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   maxHeight: 720,
                   borderRadius: 20,
                   border: '1px solid var(--line-1)',
-                  background: meta.panelBg,
+                  background: TINTED_COLUMNS.includes(col.id) ? surfaceVarForTone(colTone) : 'var(--bg-1)',
                   padding: 10,
                 }}
               >
@@ -169,15 +174,15 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                    <span className={meta.dotClass} />
+                    <span className={`${dotClassForTone(colTone)}${tonePulses(colTone) ? ' pulse' : ''}`} />
                     <span
                       className="upper text-2xs"
-                      style={{ color: meta.headingColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      style={{ color: colorVarForTone(colTone), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
                       {col.label}
                     </span>
                   </div>
-                  <span className={`pill pill--${meta.countTone} text-2xs`} style={{ fontFamily: 'var(--mono)' }}>
+                  <span className={`${pillClassForTone(colTone)} text-2xs`} style={{ fontFamily: 'var(--mono)' }}>
                     {colTasks.length}
                   </span>
                 </div>
@@ -199,7 +204,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   )}
 
                   {colTasks.map((task) => {
-                    const prioTone = priorityTone[task.priority as TaskPriority] || 'ghost';
+                    const prioTone = taskPriorityTone(task.priority);
                     const prioLabel = priorityLabel[task.priority as TaskPriority] || task.priority;
                     const assigneeName = task.assignee?.display_name || task.assignee?.name;
                     const isOverdue =
@@ -258,22 +263,26 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                           {/* Top row: priority + labels + due */}
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
-                              <span className={`pill pill--${prioTone} text-2xs`}>
-                                {prioLabel}
-                              </span>
+                              <StatusBadge
+                                status={task.priority}
+                                label={prioLabel}
+                                tone={prioTone}
+                                dot="none"
+                                size="lg"
+                              />
                               {task.labels && task.labels.length > 0 && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
                                   {task.labels.slice(0, 3).map((label) => (
                                     <span
                                       key={label}
-                                      className="pill pill--peri text-2xs"
+                                      className={`${pillClassForTone('neutral')} text-2xs`}
                                       style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
                                     >
                                       {label}
                                     </span>
                                   ))}
                                   {task.labels.length > 3 && (
-                                    <span className="pill pill--ghost text-2xs">
+                                    <span className={`${pillClassForTone('neutral')} text-2xs`}>
                                       +{task.labels.length - 3}
                                     </span>
                                   )}
@@ -283,14 +292,14 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               {task.due_date && (
                                 <span
-                                  className={`${isOverdue ? 'pill pill--rose' : 'pill pill--ghost'} text-2xs`}
+                                  className={`${pillClassForTone(isOverdue ? 'rose' : 'neutral')} text-2xs`}
                                   style={{ fontFamily: 'var(--mono)' }}
                                 >
                                   {compactDate(task.due_date)}
                                 </span>
                               )}
                               {isOverdue && (
-                                <span className="pill pill--rose text-2xs">
+                                <span className={`${pillClassForTone('rose')} text-2xs`}>
                                   Overdue
                                 </span>
                               )}
@@ -324,28 +333,24 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                 <div
                                   style={{
                                     borderRadius: 10,
-                                    border: '1px solid var(--rose-bg)',
-                                    background: 'var(--rose-bg)',
+                                    border: `1px solid ${lineVarForTone(BLOCKER_TONE[blockerState.tone])}`,
+                                    background: surfaceVarForTone(BLOCKER_TONE[blockerState.tone]),
                                     padding: 10,
                                   }}
                                 >
                                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-                                    <span
-                                      className={`pill pill--${blockerState.tone === 'stale' ? 'rose' : blockerState.tone === 'follow-through' ? 'amber' : 'rose'} text-2xs`}
-                                    >
+                                    <span className={`${pillClassForTone(BLOCKER_TONE[blockerState.tone])} text-2xs`}>
                                       {blockerState.tone === 'stale'
                                         ? 'Stale blocker'
                                         : blockerState.tone === 'follow-through'
                                         ? 'Follow-up due'
                                         : 'Blocked'}
                                     </span>
-                                    <span className="pill pill--ghost text-2xs">
+                                    <span className={`${pillClassForTone('neutral')} text-2xs`}>
                                       {blockerState.statusLabel}
                                     </span>
                                     {blockerState.dueStateLabel && (
-                                      <span
-                                        className={`pill pill--${blockerState.dueState === 'overdue' ? 'rose' : blockerState.dueState === 'due-soon' ? 'amber' : 'mint'} text-2xs`}
-                                      >
+                                      <span className={`${pillClassForTone(DUE_STATE_TONE[blockerState.dueState])} text-2xs`}>
                                         {blockerState.dueStateLabel}
                                       </span>
                                     )}
@@ -398,7 +403,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                   return (
                                     <span
                                       key={group.key}
-                                      className={`pill pill--${config.tone} text-2xs`}
+                                      className={`${pillClassForTone(config.tone)} text-2xs`}
                                     >
                                       {config.label} {group.items.length}
                                     </span>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { formatDate } from '@/lib/format-date';
 import { showAxisLabel } from '@/lib/analytics-derive';
+import { chartFillForTone, chartFillMap, colorVarForTone } from '@/lib/status-tone';
 
 interface AnalyticsChartsProps {
   contractsByStatus: Record<string, number>;
@@ -26,32 +27,26 @@ interface AnalyticsChartsProps {
   allTimeContracts: number;
 }
 
-const statusColors: Record<string, string> = {
-  active: 'var(--mint)',
-  proposed: 'var(--amber)',
-  closed: 'var(--fg-4)',
-  rejected: 'var(--rose)',
-  expired: 'var(--amber-2)',
-  cancelled: 'var(--fg-4)',
-};
+// The donuts used to carry their own status→colour maps, and they disagreed
+// with every pill in the product: `active` was mint here and amber everywhere
+// else, `expired` was amber here and rose everywhere else. Both now come from
+// status-tone.ts. Where two statuses legitimately share a tone under the rule
+// (`proposed`/`active` are both amber, `rejected`/`expired` both rose),
+// chartFillMap shades the second so the slices stay tellable apart without the
+// hue lying about what the state means.
+const contractStatusFills = chartFillMap('contract');
+const taskStatusFills = chartFillMap('task');
+const unknownStatusFill = chartFillForTone('neutral');
 
-
-const taskStatusColors: Record<string, string> = {
-  backlog: 'var(--fg-4)',
-  todo: 'var(--amber)',
-  'in-progress': 'var(--mint)',
-  'in-review': 'var(--peri)',
-  done: 'var(--mint)',
-  cancelled: 'var(--fg-4)',
-};
-
+// Agent/contract rankings are not statuses — the colour only separates
+// neighbouring bars — so this stays a plain rotation.
 const barColorVars = [
-  'var(--mint)',
-  'var(--peri)',
-  'var(--amber)',
-  'var(--rose)',
-  'var(--mint-2)',
-  'var(--amber-2)',
+  colorVarForTone('mint'),
+  colorVarForTone('peri'),
+  colorVarForTone('amber'),
+  colorVarForTone('rose'),
+  chartFillForTone('mint', 1),
+  chartFillForTone('amber', 1),
 ];
 
 function buildConicGradient(data: Record<string, number>, colorMap: Record<string, string>): string {
@@ -63,7 +58,7 @@ function buildConicGradient(data: Record<string, number>, colorMap: Record<strin
 
   for (const [status, count] of Object.entries(data)) {
     const deg = (count / total) * 360;
-    const color = colorMap[status] || 'var(--fg-4)';
+    const color = colorMap[status] || unknownStatusFill;
     segments.push(`${color} ${currentDeg}deg ${currentDeg + deg}deg`);
     currentDeg += deg;
   }
@@ -207,7 +202,7 @@ export default function AnalyticsCharts({
                   width: '144px',
                   height: '144px',
                   borderRadius: '50%',
-                  background: buildConicGradient(contractsByStatus, statusColors),
+                  background: buildConicGradient(contractsByStatus, contractStatusFills),
                   mask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                   WebkitMask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                 }}
@@ -230,7 +225,7 @@ export default function AnalyticsCharts({
                       height: '8px',
                       borderRadius: '2px',
                       flexShrink: 0,
-                      background: statusColors[status] || 'var(--fg-4)',
+                      background: contractStatusFills[status] || unknownStatusFill,
                     }}
                   />
                   <span className="text-2xs" style={{ fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>
@@ -398,7 +393,7 @@ export default function AnalyticsCharts({
                     width: '144px',
                     height: '144px',
                     borderRadius: '50%',
-                    background: buildConicGradient(tasksByStatus, taskStatusColors),
+                    background: buildConicGradient(tasksByStatus, taskStatusFills),
                     mask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                     WebkitMask: 'radial-gradient(circle at center, transparent 42px, black 43px)',
                   }}
@@ -420,7 +415,7 @@ export default function AnalyticsCharts({
                         height: '8px',
                         borderRadius: '2px',
                         flexShrink: 0,
-                        background: taskStatusColors[status] || 'var(--fg-4)',
+                        background: taskStatusFills[status] || unknownStatusFill,
                       }}
                     />
                     <span className="text-2xs" style={{ fontWeight: 500, flex: 1, textTransform: 'capitalize', color: 'var(--fg-1)' }}>

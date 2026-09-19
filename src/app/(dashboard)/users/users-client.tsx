@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { toggleSuperAdmin, linkAgentToUser, unlinkAgent, createUser } from './actions';
 import { formatDate } from '@/lib/format-date';
 import { Plus, X, Shield, User, Bot, Link2, Unlink } from 'lucide-react';
-import { Avatar, pillClassForName } from '@/components/atoms';
+import { Avatar } from '@/components/atoms';
+import { pillClassForTone } from '@/lib/status-tone';
 
 interface UserProfile {
   id: string;
@@ -300,14 +301,20 @@ export default function UsersClient({
                     <div>
                       <div className="row gap-2" style={{ marginBottom: 3 }}>
                         <h2 className="h3">{profile.display_name}</h2>
+                        {/* Amber here means "elevated privilege" — a real
+                            signal. The "You" chip beside it is identity, not a
+                            state, so it is neutral: hashing the name to one of
+                            the four status tones meant it could come out amber
+                            and read as a second privilege badge. The Avatar
+                            alongside already carries the hashed colour. */}
                         {profile.is_super_admin && (
-                          <span className="pill pill--amber">
+                          <span className={pillClassForTone('amber')}>
                             <Shield size={9} />
                             Super Admin
                           </span>
                         )}
                         {isSelf && (
-                          <span className={pillClassForName(profile.display_name || profile.email || 'You')}>
+                          <span className={pillClassForTone('neutral')}>
                             <User size={9} />
                             You
                           </span>

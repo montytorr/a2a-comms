@@ -1,4 +1,5 @@
 import type { ProjectInvitationStatus } from '@/lib/types';
+import { pillClassForTone, statusTone } from '@/lib/status-tone';
 
 export interface InvitationLike {
   id: string;
@@ -16,19 +17,10 @@ export interface InvitationLike {
   project?: { id: string; title: string } | null;
 }
 
+/** Delegates to status-tone.ts. It used to paint `expired` grey while a
+ *  contract's `expired` was rose, though the word means the same thing. */
 export function getInvitationStatusTone(status: ProjectInvitationStatus): string {
-  switch (status) {
-    case 'pending':
-      return 'pill--amber';
-    case 'accepted':
-      return 'pill--mint';
-    case 'declined':
-      return 'pill--rose';
-    case 'cancelled':
-      return 'pill--ghost';
-    case 'expired':
-      return 'pill--ghost';
-  }
+  return pillClassForTone(statusTone('project-invitation', status));
 }
 
 export function getInvitationStatusLabel(status: ProjectInvitationStatus): string {

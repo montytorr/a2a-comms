@@ -14,6 +14,15 @@ export type ProjectMemberRole = 'owner' | 'member' | 'observer';
 export type ProjectInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
 export type ParticipantRole = 'proposer' | 'invitee' | 'observer';
 export type ParticipantStatus = 'pending' | 'accepted' | 'rejected';
+/** Mirrors the `pending_approvals.status` CHECK constraint (see
+ *  20260918170000_allow_consumed_approval_status.sql). `consumed` is an
+ *  approval that was granted and then spent on the action it gated. */
+export type ApprovalStatus = 'pending' | 'approved' | 'denied' | 'consumed';
+/** The `webhook_deliveries.status` values the delivery pipeline actually
+ *  writes. NOTE: the table's CHECK constraint still only permits
+ *  ('pending','success','failed') — `pending_retry` and `retrying` are written
+ *  by src/lib/webhooks.ts and have no migration behind them. */
+export type WebhookDeliveryStatus = 'pending' | 'pending_retry' | 'retrying' | 'success' | 'failed';
 /** `receipt` and `approval` are non-turn types: they never consume a contract
  *  turn, stay available once the turn cap is reached, and never trigger the
  *  max-turn auto-close. See AC-47. */

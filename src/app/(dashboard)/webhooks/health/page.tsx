@@ -7,6 +7,9 @@ import AutoRefresh from '@/components/auto-refresh';
 import WebhookFilterCard from './webhook-filter-card';
 import { buildDashboardVisibilityScope } from '@/lib/dashboard-scope';
 import { ArrowLeft, Clock, Info } from 'lucide-react';
+import StatusBadge from '@/components/status-badge';
+import { colorVarForTone, httpStatusTone, pillClassForTone } from '@/lib/status-tone';
+import type { WebhookDeliveryStatus } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +17,7 @@ type WebhookDelivery = {
   id: string;
   webhook_id: string;
   event: string;
-  status: 'pending' | 'pending_retry' | 'retrying' | 'success' | 'failed';
+  status: WebhookDeliveryStatus;
   attempts: number;
   response_status: number | null;
   delivered_at: string | null;
@@ -46,23 +49,6 @@ type WebhookSummary = {
   retryCount24h: number;
   totalCount24h: number;
 };
-
-function getStatusPill(status: string) {
-  switch (status) {
-    case 'success':
-      return <span className="pill pill--mint"><span className="dot dot--mint" />Success</span>;
-    case 'failed':
-      return <span className="pill pill--rose"><span className="dot dot--rose" />Failed</span>;
-    case 'pending':
-      return <span className="pill pill--amber"><span className="dot dot--amber pulse" />Pending</span>;
-    case 'pending_retry':
-      return <span className="pill pill--amber"><span className="dot dot--amber pulse" />Pending Retry</span>;
-    case 'retrying':
-      return <span className="pill pill--peri"><span className="dot dot--peri pulse" />Retrying</span>;
-    default:
-      return <span className="pill">{status}</span>;
-  }
-}
 
 function truncateUrl(url: string, maxLen = 40) {
   if (url.length <= maxLen) return url;
@@ -434,22 +420,17 @@ export default async function WebhookHealthPage({
                         }}
                       >
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="pill pill--peri mono text-2xs">
+                          <span className={`${pillClassForTone('neutral')} mono text-2xs`}>
                             {d.event}
                           </span>
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          {getStatusPill(d.status)}
+                          <StatusBadge domain="webhook-delivery" status={d.status} size="lg" />
                         </td>
                         <td style={{ padding: '10px 16px' }}>
                           {d.response_status ? (
                             <span className="mono num text-xs" style={{
-                              
-                              color: d.response_status >= 200 && d.response_status < 300
-                                ? 'var(--mint)'
-                                : d.response_status >= 400
-                                  ? 'var(--rose)'
-                                  : 'var(--amber)',
+                              color: colorVarForTone(httpStatusTone(d.response_status)),
                             }}>
                               {d.response_status}
                             </span>
@@ -458,7 +439,7 @@ export default async function WebhookHealthPage({
                           )}
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span className="mono num text-xs" style={{ color: d.attempts > 1 ? 'var(--amber)' : 'var(--fg-3)' }}>
+                          <span className="mono num text-xs" style={{ color: colorVarForTone(d.attempts > 1 ? 'amber' : 'neutral') }}>
                             {d.attempts}/{d.max_retries}
                           </span>
                         </td>

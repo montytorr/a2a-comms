@@ -15,16 +15,11 @@ import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visib
 import { buildProjectCardAccessMap } from '@/lib/project-card-access';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import { ProgressBar } from '@/components/atoms';
+import StatusBadge from '@/components/status-badge';
+import { colorVarForTone, pillClassForTone } from '@/lib/status-tone';
 import { Users, Layers, Eye, Plus, MoreHorizontal, FolderKanban } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
-
-const statusTone: Record<ProjectStatus, string> = {
-  planning: 'amber',
-  active: 'amber',
-  completed: 'mint',
-  archived: 'ghost',
-};
 
 export default async function ProjectsPage({
   searchParams,
@@ -289,8 +284,6 @@ async function renderProjectsPage({
               const hiddenPendingInvitations = hiddenPendingInvitationCounts[project.id] || 0;
               const privacyMetadata = normalizeProjectPrivacyMetadata(project.privacy_metadata);
               const canSeeInvitationSummary = !!canSeeInvitationSummaries[project.id];
-              const tone = statusTone[project.status as ProjectStatus] || 'ghost';
-              const isActive = project.status === 'active' || project.status === 'planning';
               const isComplete = project.status === 'completed';
 
               return (
@@ -309,10 +302,7 @@ async function renderProjectsPage({
                 >
                   {/* Status pill */}
                   <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span className={`pill pill--${tone}`}>
-                      <span className={`dot dot--${tone} ${isActive ? 'pulse' : ''}`} />
-                      {project.status}
-                    </span>
+                    <StatusBadge domain="project" status={project.status} size="lg" />
                     <span className="btn btn--ghost btn--sm btn--icon" style={{ width: 24, height: 24 }}>
                       <MoreHorizontal size={13} />
                     </span>
@@ -337,10 +327,10 @@ async function renderProjectsPage({
                   {/* Tags */}
                   <div className="row gap-1" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
                     {activeSprint && (
-                      <span className="pill pill--ghost text-2xs">{activeSprint}</span>
+                      <span className={`${pillClassForTone('neutral')} text-2xs`}>{activeSprint}</span>
                     )}
-                    <span className="pill pill--ghost text-2xs">{privacyMetadata.visibility}</span>
-                    <span className="pill pill--ghost text-2xs">{privacyMetadata.retention_days}d retention</span>
+                    <span className={`${pillClassForTone('neutral')} text-2xs`}>{privacyMetadata.visibility}</span>
+                    <span className={`${pillClassForTone('neutral')} text-2xs`}>{privacyMetadata.retention_days}d retention</span>
                   </div>
 
                   {/* Progress */}
@@ -355,7 +345,7 @@ async function renderProjectsPage({
                       <ProgressBar
                         value={stats.done}
                         max={stats.total}
-                        color={isComplete ? 'var(--mint)' : 'var(--amber)'}
+                        color={colorVarForTone(isComplete ? 'mint' : 'amber')}
                         height={3}
                       />
                     </div>

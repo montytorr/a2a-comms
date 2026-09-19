@@ -4,12 +4,15 @@ import { useState, useRef, useEffect, useTransition } from 'react';
 import { Plus, MoreHorizontal } from 'lucide-react';
 import type { TaskPriority } from '@/lib/types';
 import { createTask } from './actions';
+import { pillClassForTone, taskPriorityTone } from '@/lib/status-tone';
 
-const priorities: { id: TaskPriority; label: string; tone: string }[] = [
-  { id: 'low',    label: 'Low',    tone: 'ghost' },
-  { id: 'medium', label: 'Medium', tone: 'peri'  },
-  { id: 'high',   label: 'High',   tone: 'amber' },
-  { id: 'urgent', label: 'Urgent', tone: 'rose'  },
+/* Third copy of the priority→colour map in the tree; the tone now comes from
+   status-tone.ts, so only the label lives here. */
+const priorities: { id: TaskPriority; label: string }[] = [
+  { id: 'low',    label: 'Low'    },
+  { id: 'medium', label: 'Medium' },
+  { id: 'high',   label: 'High'   },
+  { id: 'urgent', label: 'Urgent' },
 ];
 
 interface QuickTaskFormProps {
@@ -210,7 +213,7 @@ export default function QuickTaskForm({
                 key={p.id}
                 type="button"
                 onClick={() => setPriority(p.id)}
-                className={`text-2xs ${priority === p.id ? `pill pill--${p.tone}` : 'pill pill--ghost'}`}
+                className={`text-2xs ${pillClassForTone(priority === p.id ? taskPriorityTone(p.id) : 'neutral')}`}
                 style={{
                   padding: '2px 6px',
                   opacity: priority === p.id ? 1 : 0.5,

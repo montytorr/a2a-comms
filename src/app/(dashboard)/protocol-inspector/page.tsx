@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { formatDateTime, formatRelative } from '@/lib/format-date';
 import { getExecutionStatusLabel, getExecutionStatusTone, isExecutionStale } from '@/lib/task-execution-ui';
+import StatusBadge from '@/components/status-badge';
+import { colorVarForTone, pillClassForTone } from '@/lib/status-tone';
 import { loadProtocolInspector } from '@/lib/protocol-inspector';
 import AutoRefresh from '@/components/auto-refresh';
 import { describeContractLink } from '@/lib/contract-links';
@@ -84,14 +86,7 @@ function JsonBlock({ value }: { value: unknown }) {
 }
 
 function DeliveryBadge({ status }: { status: string }) {
-  const toneClass = status === 'success'
-    ? 'pill--mint'
-    : status === 'failed'
-      ? 'pill--rose'
-      : status === 'pending_retry' || status === 'retrying'
-        ? 'pill--amber'
-        : '';
-  return <span className={`pill ${toneClass}`}>{status}</span>;
+  return <StatusBadge domain="webhook-delivery" status={status} dot="none" size="lg" />;
 }
 
 function RequeueDeliveryButton({
@@ -119,17 +114,9 @@ function RequeueDeliveryButton({
   );
 }
 
-function executionStatusToneColor(toneClass: string): string {
-  if (toneClass.includes('emerald') || toneClass.includes('mint')) return 'var(--mint)';
-  if (toneClass.includes('amber') || toneClass.includes('yellow')) return 'var(--amber)';
-  if (toneClass.includes('red') || toneClass.includes('rose')) return 'var(--rose)';
-  if (toneClass.includes('blue') || toneClass.includes('peri')) return 'var(--peri)';
-  return 'var(--fg-2)';
-}
-
 function RunCard({ run }: { run: TaskExecutionRun }) {
   const stale = isExecutionStale(run.status, run.heartbeat_at);
-  const toneCls = getExecutionStatusTone(run.status, stale);
+  const tone = getExecutionStatusTone(run.status, stale, 'task-execution-run');
   return (
     <div className="card" style={{ padding: 16 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -137,9 +124,13 @@ function RunCard({ run }: { run: TaskExecutionRun }) {
           <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>Attempt #{run.attempt}</p>
           <p className="mono text-2xs" style={{ marginTop: 4, color: 'var(--fg-4)' }}>{run.id}</p>
         </div>
-        <span className="pill" style={{ color: executionStatusToneColor(toneCls) }}>
-          {getExecutionStatusLabel(run.status, stale)}
-        </span>
+        <StatusBadge
+          domain="task-execution-run"
+          status={run.status}
+          tone={tone}
+          label={getExecutionStatusLabel(run.status, stale)}
+          size="lg"
+        />
       </div>
       <div className="text-xs" style={{ marginTop: 12, display: 'grid', gap: 8, color: 'var(--fg-3)', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         <p>Started: <span style={{ color: 'var(--fg-1)' }}>{run.started_at ? formatDateTime(run.started_at) : '—'}</span></p>
@@ -235,7 +226,7 @@ export default async function ProtocolInspectorPage({
             <StatCard
               label="Webhook Failures"
               value={data.conformance.failedWebhookEventCount + data.conformance.retryingWebhookEventCount}
-              tone={data.conformance.failedWebhookEventCount + data.conformance.retryingWebhookEventCount ? 'var(--amber)' : 'var(--mint)'}
+              tone={colorVarForTone(data.conformance.failedWebhookEventCount + data.conformance.retryingWebhookEventCount ? 'amber' : 'mint')}
             />
             <StatCard
               label="Drift Flags"
@@ -316,7 +307,7 @@ export default async function ProtocolInspectorPage({
                     <div key={item.label} className="card" style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                         <p className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{item.label}</p>
-                        <span className={`pill ${item.ok ? 'pill--mint' : 'pill--rose'}`}>
+                        <span className={pillClassForTone(item.ok ? 'mint' : 'rose')}>
                           {item.ok ? 'ok' : 'check'}
                         </span>
                       </div>
@@ -384,9 +375,7 @@ export default async function ProtocolInspectorPage({
                           <div key={participant.id} className="card--inset" style={{ padding: '8px 12px', borderRadius: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                               <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{participant.agent?.display_name || participant.agent?.name || 'Unknown agent'}</p>
-                              <span className={`pill ${participant.status === 'accepted' ? 'pill--mint' : participant.status === 'pending' ? 'pill--amber' : 'pill--rose'}`}>
-                                {participant.status}
-                              </span>
+                              <StatusBadge domain="participant" status={participant.status} dot="none" size="lg" />
                             </div>
                             <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{participant.role}{participant.responded_at ? ` · responded ${formatRelative(participant.responded_at)}` : ''}</p>
                           </div>
@@ -490,7 +479,7 @@ export default async function ProtocolInspectorPage({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.linkedTasks.map((task) => {
                       const stale = isExecutionStale(task.execution_status || undefined, task.execution_heartbeat_at || undefined);
-                      const toneCls = getExecutionStatusTone(task.execution_status, stale);
+                      const tone = getExecutionStatusTone(task.execution_status, stale);
                       return (
                         <div key={task.id} className="card" style={{ padding: 16 }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -500,9 +489,13 @@ export default async function ProtocolInspectorPage({
                               </Link>
                               <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{task.project_title || task.project_id} · {task.status} · {task.priority}</p>
                             </div>
-                            <span className="pill" style={{ color: executionStatusToneColor(toneCls) }}>
-                              {getExecutionStatusLabel(task.execution_status, stale)}
-                            </span>
+                            <StatusBadge
+                              domain="task-execution"
+                              status={task.execution_status}
+                              tone={tone}
+                              label={getExecutionStatusLabel(task.execution_status, stale)}
+                              size="lg"
+                            />
                           </div>
                           <div className="text-xs" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--fg-3)' }}>
                             <p>Assignee: <span style={{ color: 'var(--fg-2)' }}>{task.assignee?.display_name || task.assignee?.name || '—'}</span></p>

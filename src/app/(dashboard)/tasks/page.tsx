@@ -8,31 +8,19 @@ import { createServerClient } from '@/lib/supabase/server';
 import { formatDate } from '@/lib/format-date';
 import { PageFrame, SectionHeader, Avatar } from '@/components/atoms';
 import AutoRefresh from '@/components/auto-refresh';
+import StatusBadge from '@/components/status-badge';
+import { colorVarForTone, taskPriorityTone } from '@/lib/status-tone';
 import TaskFilters from './filters';
 
 export const dynamic = 'force-dynamic';
 
-const priorityTone: Record<string, string> = {
-  urgent: 'pill--rose',
-  high: 'pill--amber',
-  medium: 'pill--peri',
-  low: '',
-};
-
-const statusTone: Record<string, string> = {
-  'in-progress': 'pill--peri',
-  blocked: 'pill--rose',
-  done: 'pill--mint',
-  todo: '',
-};
-
 /** Overdue and due-today deserve to look different from a date in three weeks. */
 const dueTone = (due: string | null) => {
-  if (!due) return 'var(--fg-3)';
+  if (!due) return colorVarForTone('neutral');
   const days = Math.ceil((new Date(due).getTime() - Date.now()) / 86_400_000);
-  if (days < 0) return 'var(--rose)';
-  if (days <= 1) return 'var(--amber)';
-  return 'var(--fg-3)';
+  if (days < 0) return colorVarForTone('rose');
+  if (days <= 1) return colorVarForTone('amber');
+  return colorVarForTone('neutral');
 };
 
 export default async function TasksPage({
@@ -115,20 +103,21 @@ export default async function TasksPage({
                       <span style={{ color: dueTone(task.due_date) }}>due {formatDate(task.due_date)}</span>
                     )}
                     {task.labels?.slice(0, 3).map((label) => (
-                      <span key={label} className="pill pill--ghost text-2xs" style={{ height: 16 }}>{label}</span>
+                      // A task label is free text, not a status — `label` keeps it verbatim.
+                      <StatusBadge key={label} status={null} label={label} tone="neutral" dot="none" size="sm" />
                     ))}
                   </div>
                 </div>
 
                 <div className="row gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
                   {task.priority && (
-                    <span className={`pill ${priorityTone[task.priority] ?? ''} text-2xs`} style={{ height: 18 }}>
-                      {task.priority}
-                    </span>
+                    <StatusBadge
+                      status={task.priority}
+                      tone={taskPriorityTone(task.priority)}
+                      dot="none"
+                    />
                   )}
-                  <span className={`pill ${statusTone[task.status] ?? ''} text-2xs`} style={{ height: 18 }}>
-                    {task.status}
-                  </span>
+                  <StatusBadge domain="task" status={task.status} dot="static" />
                   {task.assignee && (
                     <span title={task.assignee.display_name || task.assignee.name}>
                       <Avatar name={task.assignee.display_name || task.assignee.name} size={20} />

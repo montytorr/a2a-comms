@@ -6,6 +6,7 @@ import MarkdownPreview from '@/components/markdown-preview';
 import { Avatar } from '@/components/atoms';
 import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
+import { dotClassForTone, statusTone } from '@/lib/status-tone';
 
 const priorityOptions: { id: TaskPriority; label: string; icon: string; varColor: string }[] = [
   { id: 'urgent', label: 'Urgent', icon: '🔴', varColor: 'var(--rose)' },
@@ -671,10 +672,10 @@ function SprintPicker({
 
   const current = sprints.find(s => s.id === currentSprintId);
 
+  /* Sprint status, from the shared map. `planned` used to fall through to the
+     grey dot, which made it indistinguishable from a sprint with no status. */
   function sprintDotClass(status: string) {
-    if (status === 'active') return 'dot dot--amber';
-    if (status === 'completed') return 'dot dot--mint';
-    return 'dot';
+    return dotClassForTone(statusTone('sprint', status));
   }
 
   return (
