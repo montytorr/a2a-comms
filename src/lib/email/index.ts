@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { appUrl } from '@/lib/app-url';
 import { createElement, type ComponentType } from 'react';
 
 import WelcomeEmail, { subject as welcomeSubject } from './templates/welcome';
@@ -9,11 +10,11 @@ import ApprovalRequestEmail, { subject as approvalRequestSubject } from './templ
 import ProjectMemberInvitationEmail, { subject as projectMemberInvitationSubject } from './templates/project-member-invitation';
 import StaleBlockerEmail, { subject as staleBlockerSubject } from './templates/stale-blocker';
 
-const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@a2a.playground.montytorr.com>';
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
-  console.warn('[email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-  return 'https://a2a.playground.montytorr.com';
-})();
+// A sender on a domain you do not control will be rejected or land in spam, so
+// there is no useful default here: an unset RESEND_FROM should be obvious, not
+// silently borrow someone else's domain.
+const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@localhost>';
+const APP_URL = appUrl();
 
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;

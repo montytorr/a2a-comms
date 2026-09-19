@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { appUrl } from '@/lib/app-url';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
@@ -41,10 +42,7 @@ async function notifyAssigneeOwner(
     .eq('id', options.projectId)
     .single();
 
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
-    console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-    return 'https://a2a.playground.montytorr.com';
-  })();
+  const APP_URL = appUrl();
 
   await sendTaskAssignedEmail(
     email,
@@ -476,7 +474,7 @@ export async function POST(
             taskTitle: task.title,
             projectName: 'Task handoff',
             priority: task.priority || 'medium',
-            taskUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.com'}/contracts/${contract.id}`,
+            taskUrl: `${appUrl()}/contracts/${contract.id}`,
           },
           agent.owner_user_id
         );

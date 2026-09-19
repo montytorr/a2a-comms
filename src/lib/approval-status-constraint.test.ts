@@ -55,3 +55,36 @@ test('consumeApproval writes a status the constraint permits', () => {
   const rejected = [...new Set(written)].filter((s) => !allowed.has(s));
   assert.deepEqual(rejected, [], `approvals.ts writes statuses the database refuses: ${rejected.join(', ')}`);
 });
+
+
+/**
+ * The same class of bug, on a different table.
+ *
+ * webhook_deliveries declared CHECK (status IN ('pending','success','failed'))
+ * and no migration widened it, while src/lib/webhooks.ts writes 'pending_retry'
+ * and 'retrying'. Production accepts them only because the constraint was
+ * widened there by hand and never came back into the ledger — so the live
+ * database and this repo disagreed, and a fresh deploy would have silently
+ * stopped retrying failed deliveries.
+ */
+test('every webhook delivery status the code writes is one the database allows', () => {
+  const dir = join(root, 'supabase/migrations');
+  let allowed: string[] | null = null;
+  for (const file of readdirSync(dir).sort()) {
+    const sql = readFileSync(join(dir, file), 'utf8');
+    const re = /webhook_deliveries[\s\S]{0,600}?status\s+(?:IN|=\s*ANY)\s*\(?\s*(?:ARRAY)?\s*\[?([^)\]]*)[)\]]/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(sql))) {
+      const values = m[1].match(/'([a-z_]+)'/g);
+      if (values) allowed = values.map((v) => v.replace(/'/g, ''));
+    }
+  }
+  assert.ok(allowed, 'no CHECK on webhook_deliveries.status found in any migration');
+
+  const src = readFileSync(join(root, 'src/lib/webhooks.ts'), 'utf8');
+  const written = [...src.matchAll(/status:\s*'([a-z_]+)'/g)].map((m) => m[1]);
+  assert.ok(written.includes('pending_retry'), 'expected webhooks.ts to still write pending_retry');
+
+  const rejected = [...new Set(written)].filter((s) => !allowed!.includes(s));
+  assert.deepEqual(rejected, [], `webhooks.ts writes statuses the database refuses: ${rejected.join(', ')}`);
+});

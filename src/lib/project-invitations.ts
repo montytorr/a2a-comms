@@ -3,11 +3,9 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { getProjectMemberAgentIds } from '@/app/api/v1/projects/_helpers';
 import { getUserEmail } from '@/lib/email/helpers';
 import { sendEmailWithPrefs } from '@/lib/email';
+import { appUrl } from '@/lib/app-url';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
-  console.warn('[project-invitations] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-  return 'https://a2a.playground.montytorr.com';
-})();
+const APP_URL = appUrl();
 
 export const PROJECT_INVITATION_TTL_DAYS = 7;
 export const PROJECT_INVITATION_REMINDER_HOURS = 72;

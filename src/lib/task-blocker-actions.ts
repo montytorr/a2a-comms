@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { appUrl } from '@/lib/app-url';
 import { getUserEmail } from '@/lib/email/helpers';
 import { sendEmailWithPrefs, sendStaleBlockerEmail } from '@/lib/email';
 import { deliverWebhooks } from '@/lib/webhooks';
@@ -245,9 +246,9 @@ export async function notifyBlockerAction(
     blockerResolutionStatus?: string | null;
   }
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://a2a.playground.montytorr.com';
+  const baseUrl = appUrl();
   const blockerSummary = options.blockerTitles.filter(Boolean).join(', ') || 'task dependencies';
-  const taskUrl = `${appUrl}/projects/${options.projectId}/tasks/${options.taskId}`;
+  const taskUrl = `${baseUrl}/projects/${options.projectId}/tasks/${options.taskId}`;
   const blockerPlan = [
     options.blockerResolutionAction?.trim() || null,
     options.blockerResolutionOwner?.trim() ? `owner: ${options.blockerResolutionOwner.trim()}` : null,

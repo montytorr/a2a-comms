@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { appUrl } from '@/lib/app-url';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/supabase/server';
@@ -46,10 +47,7 @@ async function notifyAssigneeOwner(
     .eq('id', options.projectId)
     .single();
 
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (() => {
-    console.warn('[task-email] NEXT_PUBLIC_APP_URL is not set — falling back to playground domain');
-    return 'https://a2a.playground.montytorr.com';
-  })();
+  const APP_URL = appUrl();
 
   await sendTaskAssignedEmail(
     email,

@@ -238,8 +238,20 @@ tmp.replace(path)
 PY
 
 # Verify through the public/proxy path before removing the old app.
+#
+# The URL comes from .env rather than being hardcoded. It used to name one
+# specific deployment, which meant a fork of this repo health-checked THAT
+# instance after switching its own Traefik — and passed whether or not its own
+# deploy had worked. A gate that can only succeed is not a gate.
+PUBLIC_URL="$(env_value NEXT_PUBLIC_APP_URL || true)"
+if [[ -z "$PUBLIC_URL" ]]; then
+  echo "FAIL: NEXT_PUBLIC_APP_URL is not set in .env; cannot verify the public path" >&2
+  exit 1
+fi
+PUBLIC_URL="${PUBLIC_URL%/}"
+
 for i in {1..20}; do
-  if curl -sf https://a2a.playground.montytorr.com/api/v1/health >/dev/null 2>&1; then
+  if curl -sf "$PUBLIC_URL/api/v1/health" >/dev/null 2>&1; then
     echo "OK: v$NEW_VERSION" >&2
     break
   fi

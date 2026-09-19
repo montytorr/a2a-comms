@@ -1,930 +1,147 @@
 # A2A Comms
 
-**Agent-to-agent collaboration infrastructure** for teams that want more than loose chat logs and vibes.
+**Let an agent you don't control do real work for you — under terms you set, with a human veto.**
 
-A2A Comms gives agents and operators a shared system for:
-- **structured conversations** with contracts, turn limits, and auditable message history
-- **shared execution** with projects, sprints, tasks, blockers, checkpoints, and approvals
-- **human visibility** through a dashboard that shows what is happening, what is stuck, and who owns what next
+Think of a contract here the way you'd think of a purchase order rather than a
+chat thread: it names the scope, it has a fixed cost ceiling, both sides agreed
+to it before anything started, and there's a paper trail when it's done.
 
-In plain English: this is the layer between “agents are talking” and “work is actually getting shipped.”
+A2A Comms is the trust boundary between agents. Every exchange is HMAC-signed,
+turn-limited, and auditable, and a person can read it, leave standing
+instructions on it, and answer an agent that gets stuck — without ever holding
+that agent's signing key.
+
+```bash
+git clone https://github.com/montytorr/a2a-comms && cd a2a-comms
+docker compose -f docker-compose.dev.yml up -d --build
+curl localhost:3100/api/v1/health
+```
+
+That brings up Postgres, applies the migrations, starts the dashboard and the
+workers, and seeds an agent with a usable key pair. Credentials are printed by
+`docker compose -f docker-compose.dev.yml logs seed`.
+
+---
 
 ## Why this exists
 
-Most multi-agent setups fall apart in the same places:
-- conversations are easy to start but hard to track
-- ownership gets fuzzy the second work spans more than one message
-- blockers live in prose instead of structured state
-- humans can’t tell whether an agent is progressing, waiting, blocked, or quietly dead
+**Letting someone else's agent into your workflow currently means trusting it
+completely.** There is no setting between "no access" and "here is an API key".
+A2A Comms adds [trust tiers](docs/glossary.md#trust-and-safety) — `internal`,
+`partner`, `external` — enforced *separately* on contracts, approvals,
+attachments, webhooks and observer visibility. A partner's agent can collaborate
+on a task without being able to take a handoff, download an artifact, or manage
+a webhook. An unknown tier normalises to `external`, so a misconfiguration fails
+closed.
 
-A2A Comms fixes that by separating **communication** from **delivery**:
-- use **contracts + messages** for bounded conversation
-- use **projects + tasks + runs** for execution tracking
+**A conversation with no budget is a conversation with no end.** Every
+[contract](docs/glossary.md#the-conversation) carries a hard
+[turn budget](docs/glossary.md#the-conversation) with atomic accounting, so a
+loop costs turns instead of money. Acknowledgements are
+[free](docs/glossary.md#the-conversation) — the budget is spent on evidence and
+decisions, not on "received". And running out is not the same as being finished:
+with a [completion gate](docs/glossary.md#the-conversation) set, an exhausted
+contract stays open until the proposer signs off.
 
-Everything is authenticated, rate-limited, auditable, and built so a human operator can inspect the system without reverse-engineering raw chat history.
+**A stuck agent and a dead agent look identical, and that is an operational
+problem.** Waiting is a first-class state here. An agent can say it is
+[blocked](docs/glossary.md#the-human-side) and ask a person, which parks the
+contract on `awaiting: human` so nothing nags it for a move it cannot make. A
+human can leave a [standing note](docs/glossary.md#the-human-side) every agent
+re-reads on its next look. Stale heartbeats are reaped and announced.
 
-## What you get
+## What it is not
 
-### 1) Contracts for agent conversation
-- time-limited, turn-limited conversations between agents
-- structured JSON messages with optional schema enforcement
-- attachments, approvals, webhook notifications, and full audit history
-- an operator channel on every contract: standing notes a human leaves for the agents, and questions the agents put back when they are stuck
+It is **not** Google's [A2A protocol](https://a2a-protocol.org/), despite the
+name collision — that is a wire protocol for agent interoperability. It is not
+[MCP](https://modelcontextprotocol.io/), which connects one agent to its tools.
+This sits a layer up from both: it is a running server that holds the state of
+who agreed to what, whose move it is, and what a human said about it.
 
-### 2) Projects for shared delivery
-- projects, sprints, tasks, priorities, labels, assignees, due dates, and kanban status
-- task ↔ contract linking so you can trace execution back to the conversation that created it
-- a dashboard that updates when something moves rather than on a timer, and says so honestly when it has stopped
-- turn state on every contract — whose move it is and why, with `a2a inbox` and `?awaiting=me` answering "what am I holding?", and `?awaiting=human` the contracts parked on a person
-- contract ↔ contract linking so a successor contract records what it continues, replaces, or was delegated from
-- typed dependencies: hard blockers, sequencing, and related-work links
+Nor is it a workflow engine. If you want durable execution with retries and
+compensation, use Temporal. A2A Comms assumes the agents are the ones doing the
+work and concerns itself with whether they are allowed to, and whether anyone
+can tell what happened.
 
-### 3) Runtime visibility for long-running work
-- explicit execution runs and durable checkpoints
-- states like `pending-approval`, `waiting`, `blocked`, and `handoff-needed`
-- stale-run and stale-blocker detection so operators know when something needs attention
+If you just want a chatbot wrapper, this is overkill and you should not use it.
 
-### 4) Operator controls instead of blind trust
-- dashboard for contracts, tasks, runs, webhooks, approvals, and audit history
-- operator notes and agent questions on a contract, so a human can instruct and unblock without holding an agent's signing secret
-- trust tiers + trust policy for who can collaborate, observe, escalate, or manage webhooks
-- privacy/retention metadata, observer mode, and a human kill switch
+## How it fits together
 
-## Who this is for
+```mermaid
+flowchart LR
+  subgraph yours["your side"]
+    A["your agent"]
+    H["you<br/><i>no signing key</i>"]
+  end
+  subgraph boundary["A2A Comms — the trust boundary"]
+    C["contract<br/>scope · turn budget · audit"]
+    OC["operator channel<br/>notes · questions"]
+  end
+  subgraph theirs["someone else's side"]
+    B["their agent<br/><i>trust tier: partner</i>"]
+  end
 
-You will probably like this project if you are building one of these:
-- an **agent platform** where multiple agents need explicit coordination
-- an **operator dashboard** for AI workflows that must stay inspectable
-- a **broker / handoff / escalation** system between specialized agents
-- a **task-aware webhook reactor** that turns incoming events into tracked work
-
-If you just want a chatbot wrapper, this is overkill. Deliberately so.
-
-## Core building blocks
-
-- **Contracts** — scoped conversations between agents
-- **Messages** — structured payloads exchanged inside active contracts
-- **Projects** — durable workspaces that group execution
-- **Sprints** — optional planning buckets inside a project
-- **Tasks** — actionable work items with assignees, priority, due dates, labels, blockers, and execution state
-- **Execution runs + checkpoints** — resumable long-running work with durable progress snapshots
-- **Dependencies** — typed task links (`blocks`, `sequence_after`, `relates_to`) with explicit blocker workflow tracking
-- **Approvals** — structured approval requests with self-approval prevention and audit logs
-- **Webhooks** — selective event delivery with retries, health visibility, and delivery history
-- **Observer mode** — read-only participation without turning observers into executors
-- **Trust / privacy controls** — collaboration policy plus operator-facing retention and visibility posture
-
-## What makes it different
-
-- **Communication and execution are separate primitives.** That sounds obvious. Most systems still muddle them.
-- **Blocked work is first-class state.** Not a sad sentence buried in a comment.
-- **Long-running work is modeled explicitly.** Agents can be waiting, blocked, or pending approval without pretending they are “running.”
-- **Humans stay in the loop without micromanaging.** The dashboard is for supervision, not ceremony.
-- **The platform is opinionated about trust.** Not every agent should get the same access just because it exists.
-
-## Feature snapshot
-
-- project-member assignment guardrails with assignee-owner notifications
-- project invitations with inbox discovery, reminder/expiry sweep, and explicit accept/decline flow
-- trust tiers (`internal`, `partner`, `external`) and per-agent trust policy
-- retention/privacy metadata for agents and projects
-- structured blocker workflow with follow-up logging and stale escalation
-- grouped dependency visibility on kanban cards and task detail
-- task activity timeline across assignment, status, and execution events
-- rich message rendering with Markdown support in the dashboard, including safe recovery of legacy escaped structural line breaks across full and compact views
-- enforced contract descriptions: a brief over 600 characters must carry real Markdown structure, a literal `\n` is refused, and the proposer can rewrite a description after the fact
-- an operator channel on contracts: human-authored standing notes that are re-read on every contract read, and `question` / `validation` / `blocked` questions agents raise back, with a blocking question moving the contract to `awaiting: human`
-- protocol inspector for message/task/run/checkpoint/webhook drift
-- webhook retries, delivery history, and a webhook health dashboard
-- atomic turn accounting and endpoint-scoped idempotency protection
-- event reactor + commitment tracking for turning messages into tracked work
-
-## Quick Start
-
-### Recent operator-facing additions
-
-Recent dashboard and API work that operators will notice most:
-- task detail now carries a fuller activity timeline across assignment, status, and execution events
-- agent detail now exposes trust tier, trust policy, a visible privacy posture summary, the editable privacy controls, and reputation context together
-- retention/privacy metadata is now first-class on both agents and projects, with plain-English copy in the dashboard to make the semantics visible to operators
-- the contract page now carries an operator channel: leave a note that every agent on the contract re-reads (with a per-note "read by N of M"), and answer or dismiss the questions agents raise when they are stuck. A question an agent marks blocking moves the contract to `awaiting: human`, so a stuck agent stops looking like a crashed one
-
-### Long-running task semantics + durable checkpoints
-
-Sprint 4 Phase 1 introduces the first narrow slice of long-running execution state:
-- `tasks` now carry an execution snapshot (`execution_status`, active run ID, start/heartbeat/completion timestamps, and the latest checkpoint summary/payload)
-- `task_execution_runs` stores attempt-scoped lifecycle history for background or long-lived work
-- `task_execution_checkpoints` stores ordered durable checkpoints keyed per run
-- task detail responses now include `execution_runs` and `execution_checkpoints`
-- the dashboard task detail page now renders a dedicated execution panel with current snapshot, recent runs, recent checkpoints, and a deterministic stale-run warning when heartbeats are older than 15 minutes
-- project detail responses now include recent `execution_runs` so the dashboard/API layer can surface project-wide run state next
-
-This slice now includes authenticated agent-facing mutation endpoints and CLI support for execution runs/checkpoints:
-- execution runs can now explicitly park in `pending-approval`, `waiting`, or `blocked` without pretending they are still actively running
-- contract messages already had replay-safe submission via endpoint-scoped idempotency keys and atomic turn accounting; this release keeps that mechanism and documents it rather than rebuilding it
-- webhook receivers now get lightweight async-attention hints on `message` events when the payload clearly declares `status: pending-approval|waiting|blocked|completed`, so hours/days-long workflows can notify peers without polling
-- acknowledgements no longer cost a turn: `receipt` and `approval` are non-turn message types that stay available once the turn cap is reached, so a contract spends its budget on evidence and decisions rather than on "received"
-- `message` webhooks carry `message_id`, `consumes_turn` and `requires_action`, and the async-attention hints are folded into that single delivery instead of arriving as extra webhooks — one message wakes a recipient once
-- contracts can be proposed with `completion_requires_approval`, so exhausting a turn budget no longer counts as the work being accepted; the contract is held open until the proposer records an approval
-- `POST /projects/:id/tasks/:tid/runs` — start a run (`starting` by default, one active run per task)
-- `PATCH /projects/:id/tasks/:tid/runs/:rid` — heartbeat or move run state (`queued`, `starting`, `running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, `succeeded`, `failed`, `cancelled`)
-- `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints` — append ordered durable checkpoints keyed per run
-- CLI helpers: `task-runs`, `task-run-start`, `task-run`, `task-run-update`, `checkpoints`, `checkpoint`
-
-Minimal auth-safe validation is enforced: callers must be project participants for read access, observer access now applies consistently across task/run/checkpoint read routes, only writable project members can start or mutate run/checkpoint streams, completed runs reject further heartbeats/checkpoints, and only one active run may exist per task at a time.
-
-### Trust model
-
-Third-party collaboration is policy, not implication. The platform uses two layers:
-- **Trust tier** on each agent: `internal`, `partner`, `external`
-- **Trust policy** on each agent: fine-grained thresholds for sensitive surfaces
-
-Default practical matrix:
-- `internal` — full collaboration, direct handoff, brokered escalation, project membership, observer mode, webhook management
-- `partner` — project membership, observer mode, generic contracts, brokered escalation, webhook management, but still blocked from direct handoff contracts
-- `external` — default for unvetted agents; blocked from project membership, cross-owner generic contracts, broker escalation, direct handoff, and webhook management
-
-Where gates apply today:
-- project member invitations
-- observer-only project/task/run/checkpoint reads
-- generic contract proposals
-- task handoff contract creation
-- task escalation broker selection
-- webhook registration / listing / deletion
-
-Dashboard caveat:
-- if an **acting agent** is selected, trust tier, trust policy, and visibility scope come from that agent
-- if no acting agent is selected, the dashboard falls back to the least-privilege aggregate across owned agents
-- that fallback is intentionally conservative, so mixed-tier accounts should not assume the most privileged view
-
-Approval and kill-switch nuance:
-- approval requests still require a different reviewer in the normal flow, no self-approval
-- dashboard-triggered admin kill switch activation is the explicit exception: it is auto-approved so the emergency brake can fire immediately
-- kill switch freezes writes platform-wide, but leaves reads available for inspection
-
-
-Third-party collaboration is no longer a loose social convention; it is an explicit platform policy:
-- `internal` — same-owner / first-party agents, allowed full collaboration including project membership, generic contracts, handoffs, and brokered escalation
-- `partner` — trusted third-party agents, allowed into projects, observer mode, brokered escalation, and generic contracts, but still blocked from taking direct handoff contracts
-- `external` — default tier for newly registered or unvetted agents; blocked from project membership, blocked from cross-owner generic contract proposals, blocked from brokering escalations, and only allowed observer access under the narrower same-owner exception
-
-The platform now uses the same `trust-tiers` helper for:
-- project member invites
-- project observer access
-- generic `POST /api/v1/contracts` proposals
-- task handoff contract creation
-- task escalation broker selection
-
-And it now uses per-agent `trust_policy` for sensitive collaboration surfaces:
-- webhook registration / listing / deletion (`/api/v1/agents/:id/webhook` and dashboard webhook management)
-- observer-only project/task/run/checkpoint reads (`/api/v1/projects/:id`, `/api/v1/projects/:id/tasks/:tid`, `/api/v1/projects/:id/tasks/:tid/runs*`)
-- observer downloads of project-only task attachments (`/api/v1/projects/:id/tasks/:tid/attachments`)
-- observer visibility into project member / observer rosters and pending member invitations (`/api/v1/projects/:id/members`, `/api/v1/projects/:id/observers`, `/api/v1/projects/:id/invitations`, and the invitation block embedded in `/api/v1/projects/:id`)
-- dashboard project detail now applies the same policy on UI surfaces: observer views only render non-pending invitation history unless trust policy allows pending invite visibility, and can optionally show a coarse hidden-pending count without leaking invitee identities
-- dashboard project cards now mirror that policy for observer-reachable projects, showing only coarse hidden-pending invitation summaries instead of raw invitee metadata
-- dashboard auth context now aggregates owned-agent trust using least-privilege semantics, so mixed-tier accounts cannot inherit the most privileged agent's observer or webhook visibility by accident
-
-Current practical matrix:
-- `internal` → full collaboration + webhook management
-- `partner` → project membership, observer mode, generic contracts, brokered escalation, webhook management
-- `external` → default tier; blocked from project membership, cross-owner generic contracts, broker escalation, direct handoff, and webhook management
-
-Storage decision: trust policy now lives on the `agents` row as `trust_policy jsonb`, while operator-facing retention/privacy metadata now lives on both `agents.privacy_metadata` and `projects.privacy_metadata`.
-
-That privacy metadata currently covers:
-- agent-level defaults for handling sensitivity, retention days, model-training allowance, export allowance, and redaction posture
-- project-level visibility, retention mode, retention days, observer allowance, export allowance, and redaction posture
-- immediate enforcement for observer access when a project disables observers, with the remaining fields exposed as first-class metadata for operators, APIs, and future janitor/purge automation
-
-Plain-English reading of the model:
-- **trust tier** = the broad platform default for how much collaboration an agent should get
-- **trust policy** = narrower gates for specific sensitive surfaces, like webhook management, observer reads, attachment downloads, participant visibility, and pending invitation visibility
-- **privacy / retention metadata** = handling defaults and operator expectations, not a magical background purge system
-- **currently enforced right now** = observer-access flags on project visibility plus the trust-policy surfaces listed above
-- **currently mostly metadata** = retention windows, export posture, training allowance, and redaction expectations unless a downstream worker or future janitor explicitly acts on them
-
-Trust policy now lives on the `agents` row as `trust_policy jsonb`, starting with:
-
-```json
-{
-  "version": 1,
-  "webhooks": { "management": "partner" },
-  "observer_project_access": {
-    "read": "partner",
-    "download_project_attachments": "partner"
-  },
-  "project_participants": {
-    "list_members": "partner",
-    "list_observers": "partner"
-  },
-  "project_invitations": {
-    "list_pending": "internal"
-  }
-}
+  A <-->|signed, turn-limited| C
+  B <-->|signed, turn-limited| C
+  C --- OC
+  H -->|standing notes| OC
+  OC -->|"I'm blocked — ask a human"| H
 ```
 
-That keeps enforcement local to agent auth context instead of scattering capability rows across extra tables before the policy surface area justifies it.
+The agents never talk to each other directly. They talk to contracts, and the
+contract is what enforces the terms.
 
-That keeps policy drift out of the UI/API edges. If the trust model changes later, the helper should move first and the product surfaces follow.
+## Where to start
 
-### Task dependency model
+| You are | Read |
+|---|---|
+| **evaluating this** | you are in the right place — then [docs/concepts.md](docs/concepts.md) |
+| **writing an agent against it** | [ONBOARDING-AGENT.md](ONBOARDING-AGENT.md), then [AGENTS.md](AGENTS.md) as the API reference |
+| **operating an instance** | [ONBOARDING-HUMAN.md](ONBOARDING-HUMAN.md), and [docs/deployment.md](docs/deployment.md) to host it |
+| **reviewing the security** | [docs/security-model.md](docs/security-model.md) and [SECURITY.md](SECURITY.md) |
+| **using the CLI** | [docs/cli.md](docs/cli.md) |
+| **lost in the vocabulary** | [docs/glossary.md](docs/glossary.md) — "approval" means three different things |
+| **contributing** | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
-The current dependency model is typed, but only one type is operationally blocking.
+## Talking to it
 
-- `blocks`
-  - use when downstream work truly cannot proceed until upstream work finishes
-  - surfaces in task detail as `blocked by` / `blocks`
-  - surfaces on project cards and project-level blocker summaries as hard blockers
-  - drives blocked-state refresh, blocker follow-up timestamps, notification wording, and the stale-blocker sweep
-- `sequence_after`
-  - use when work should happen later for ordering, rollout, or queueing reasons, but does not justify blocked-state automation
-  - surfaces in task detail as `sequence after` / `sequence before`
-  - appears in project-card dependency summaries so execution order is visible without marking the task blocked
-- `relates_to`
-  - use when tasks are connected for traceability, shared context, or coordination
-  - surfaces in task detail and project cards as related work only
-  - never triggers blocked-state or stale-blocker automation
-
-Compatibility / migration notes:
-- older clients that omit `dependency_type` still create `blocks` links
-- delete operations still remove links by `dependency_id`
-- creating `sequence_after` or `relates_to` requires the migration that adds `task_dependencies.dependency_type`; otherwise the API returns a validation error instead of silently downgrading the link
-
-### Observer mode
-
-The active observer slice is now shipped across project/task surfaces:
-- `project_observers` grants read-only participation without making the agent a project member or task assignee
-- project detail pages now expose an owner-only observer manager so operators can add, annotate, and remove observers without dropping to SQL or raw API calls
-- `GET/POST /api/v1/projects/:id/observers` plus `PATCH/DELETE /api/v1/projects/:id/observers/:observerId` give the same management path to agents and automations
-- observers can view task details, execution runs, run detail payloads, checkpoints, and signed attachment links through the API/UI
-- observers can add task notes, but those notes are stamped as read-only observer commentary/analysis in metadata
-- observers cannot mutate task state, upload task artifacts, start runs, heartbeat runs, append checkpoints, or take execution ownership
-- contract surfaces now also render `observer` participants distinctly and block observer-side contract artifact uploads / close actions
-
-This is the intended bridge into a later escalation / brokered-collaboration slice: observers can watch and annotate execution safely, but they still cannot broker or seize execution directly.
-
-### Blocker follow-up workflow
-
-Blocked tasks now track dedicated blocker timestamps instead of piggybacking on `updated_at`:
-- `blocked_at` — when the task first became blocked by an active dependency
-- `blocker_follow_up_at` / `blocker_followed_through_at` — latest operator follow-up logged from the UI or API/CLI
-- `blocker_escalated_at` — when a stale blocker was escalated from the UI or API/CLI
-- `blocker_resolution_action` / `blocker_resolution_owner` / `blocker_resolution_due_at` / `blocker_resolution_status` — the structured unblock plan that records what happens next, who owns it, when to check again, and whether the latest operator action was a follow-up or escalation
-
-Operators can use the task detail page or the public API/CLI to:
-- **Log follow-up** once they have nudged the blocker owner or checked status
-- **Escalate blocker** once the blocker is stale (48h+) and needs louder routing
-
-That structured blocker plan is now visible in three places, not just the task detail:
-- task detail shows the current unblock owner, next action, due time, last follow-up, and escalation history
-- project blocker radar cards summarize owner, next action, expected follow-up time, and stale/escalated cues
-- kanban cards surface hard-blocker plan context inline so operators do not have to drill into every blocked task to see what is supposed to happen next
-
-Notification surfaces now carry the same structured fields where useful:
-- dashboard blocker inbox items append the unblock plan summary to the meta line
-- stale-blocker webhook payloads include the structured blocker fields plus a compact `blocker_plan` string for receivers that prefer a single field
-- stale-blocker email and blocker follow-up/escalation email copy now include the recorded owner, next action, and expected follow-up time when present
-
-The workflow stays audit-friendly because the structured fields still land in task state, comments, activity history, webhook payloads, and email copy instead of relying on implicit interpretation of generic task edits.
-
-### Stale blocker escalation sweep
-
-Stale blockers now have a dedicated automation path:
-- webhook event: `task.blocker_stale`
-- email template: `stale-blocker`
-- worker command: `npm run stale-blocker-sweep`
-
-What it does:
-- scans blocked tasks that are still unresolved
-- checks the explicit blocker timestamps and stale policy (48h blocked, not already escalated)
-- stamps `blocker_escalated_at`, logs a system comment, emits the `task.blocker_stale` webhook, and sends a dedicated stale-blocker email to the assignee owner
-
-Dry run:
+Agents use the HTTP API or the bundled CLI. Both authenticate the same way:
+HMAC-SHA256 over an RFC 8785 canonicalised body, with a nonce and a ±5-minute
+timestamp window.
 
 ```bash
-STALE_BLOCKER_SWEEP_DRY_RUN=1 npm run stale-blocker-sweep
+a2a propose "Review the auth refactor" --to reviewer-agent --max-turns 20
+a2a inbox                      # what is actually waiting on you
+a2a send <id> --content '{"text": "PR is at abc123, ready for review"}'
+a2a ask <id> --kind blocked --body "No credentials for the artifact host."
+a2a close <id> --reason "Reviewed and merged"
 ```
 
-Recommended production pattern: use the repo's canonical Docker worker runtime. `docker-compose.yml` now ships `stale-blocker-sweep-worker`, a long-lived sidecar that runs the sweep every 15 minutes by default (`STALE_BLOCKER_SWEEP_INTERVAL_SECONDS`). This matches the existing `webhook-worker` and `invitation-sweep-worker` pattern, keeps deployment in one place, and avoids inventing a parallel cron/systemd path. It is intentionally idempotent — once `blocker_escalated_at` is set, the task drops out of the sweep.
-
-### Invitation follow-up sweep
-
-Project invitations no longer rely solely on read-time reconciliation. Run the sweep worker to process overdue reminders and expiries proactively:
-
-```bash
-# one-shot manual run
-npm run project-invitation-sweep:once
-
-# inspect without mutating anything
-PROJECT_INVITATION_SWEEP_ONCE=1 PROJECT_INVITATION_SWEEP_DRY_RUN=1 npm run project-invitation-sweep
-
-# via CLI wrapper
-./skill/scripts/a2a invitation-sweep --dry-run
-
-# local dev wrapper (auto-loads repo .env and defaults base URL to localhost)
-./scripts/a2a-local invitation-sweep --dry-run
-```
-
-Recommended production pattern: run the worker continuously. The default Docker stack now includes an `invitation-sweep-worker` service for that purpose.
-
-Useful env knobs:
-- `PROJECT_INVITATION_SWEEP_INTERVAL_MS` — poll interval for the daemon worker (default `600000`)
-- `PROJECT_INVITATION_SWEEP_BATCH_SIZE` — pending invitations processed per cycle (default `100`)
-
-If you deploy without Docker, invoke the one-shot command from cron/systemd every 5–15 minutes or run the script as a long-lived worker.
-
-## Local CLI ergonomics
-
-For local operator use inside this repo, prefer:
-
-```bash
-./scripts/a2a-local health
-./scripts/a2a-local webhook get
-./scripts/a2a-local project-members <project-id>
-```
-
-It auto-loads `./.env` when present, sets `A2A_BASE_URL=http://localhost:3700` if unset, and forwards to `skill/scripts/a2a`. That avoids the recurring `a2a: command not found` / missing-env faceplant when the raw CLI is invoked outside a prepped shell.
-
-## Quick Start
-
-| Path | Description |
-|------|-------------|
-| [CLI Documentation](docs/cli.md) | Full CLI reference — contracts, messages, projects, sprints, tasks, dependencies, task-contract links, and contract-to-contract links |
-| [OpenClaw Skill](skill/) | Drop-in skill for OpenClaw-powered agents |
-| [Agent Onboarding](ONBOARDING-AGENT.md) | API and integration guide for agent developers |
-| [Human Onboarding](ONBOARDING-HUMAN.md) | Dashboard guide for human operators |
-| [Dashboard API Docs](src/app/(dashboard)/api-docs/page.tsx) | Hardcoded in-app API reference, including Projects & Tasks endpoints |
-
-## Architecture
-
-```text
-┌──────────────┐     HTTPS + HMAC      ┌──────────────────┐
-│  Agent CLI   │ ────────────────────→ │  Next.js API     │
-│  / SDK /     │                        │  /api/v1/*       │
-│  curl client │                        │                  │
-└──────────────┘                        │  Contracts       │
-                                        │  Projects        │
-┌──────────────┐   Cookie session auth  │  Sprints         │
-│  Human UI    │ ────────────────────→ │  Tasks           │
-│  Dashboard   │                        │  Dependencies    │
-└──────────────┘                        │  Webhooks        │
-                                        └────────┬─────────┘
-                                                 │
-                                        ┌────────▼─────────┐
-                                        │   PostgreSQL     │
-                                        │ + file storage   │
-                                        └──────────────────┘
-```
-
-Webhook-driven operator automation usually sits beside the platform, not inside it:
-
-```text
-platform webhook → operator queue → reactor → explicit worker → contract reply / task run update
-```
-
-- **Platform truth**: contracts, messages, projects, tasks, runs, checkpoints, approvals, and webhook delivery state.
-- **Operator automation**: queue consumers, routing logic, wakeups, and background workers that decide what to do next.
-
-That boundary matters. The platform records shared state; the operator side decides when to wake an agent, when to ignore an event, and which worker should act.
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 15 (App Router) |
-| API | Next.js API Routes |
-| Database | PostgreSQL 17 via `node-postgres` |
-| Human Auth | Application-owned bcrypt users and database-backed sessions |
-| Attachments | HMAC-signed local filesystem storage |
-| Agent Auth | Service keys + HMAC-SHA256 |
-| Deployment | Docker + Traefik |
-
-## Operator Reactor Pattern
-
-A reference implementation ships in [`reactor/`](reactor/) — standard library
-only, no dependencies, `npm run test:reactor`. It handles the parts that are
-easy to get wrong and expensive to run: non-turn acknowledgements that must not
-wake an agent, redeliveries that must not wake it twice, turn budget surfaced
-before it runs out, closure outcomes that distinguish accepted work from a
-spent budget, and a provenance gate that refuses to fetch an artifact from
-outside the approved channels. It also skips an activation the other
-participant is expected to open — pass your own `Reactor(agent_id=...)` to
-enable that; left unset, both sides react as before. The receiver and the
-worker stay yours.
-
-For webhook-driven setups, the recommended pattern is:
-
-1. **Webhook receiver** validates and normalizes the platform event
-2. **Queue** durably records the event before any agent logic runs
-3. **Reactor** decides whether the event needs action, traceability only, or no wake-up at all
-4. **Worker** does the actual work: reply in a contract, update a task run, request approval, or hand off
-
-Why split it this way:
-- **Durability first** — if the worker crashes, the event is still queued
-- **Traceability first** — inbound work should usually create or update a task before a reply is attempted
-- **Explicit execution** — a worker run is easier to audit and retry than implicit "the webhook handler replied directly" magic
-- **Selective wakeups** — informational events should often be recorded without waking the main agent loop
-
-Common failure modes this pattern avoids:
-- **Task created, no reply sent** — the task proves the event arrived, and the missing worker step is visible
-- **Noise wakes the main agent** — informational lifecycle events can stay queue-only or task-only
-- **False-author confusion** — the worker can resolve the real actor from platform payloads before replying
-- **Contract thread drifts from execution trail** — task comments, run state, checkpoints, and contract messages stay synchronized
-
-Recommendation: if a contract message implies real work, create or update a task immediately, then let an explicit worker own the response path. Keep the task execution trail and the contract thread in sync so humans can trust either surface.
-
-## Relationship Model
-
-A2A Comms now has a clean split between **communication** and **execution tracking**:
-
-- **Users** own dashboard accounts and can register agents
-- **Agents** participate in contracts and can be members of projects
-- **Contracts** capture a bounded conversation between agents
-- **Messages** are exchanged inside contracts only
-- **Projects** group multi-step work that may span multiple contracts or agents
-- **Sprints** organize project work into planning windows or phases
-- **Tasks** are the units tracked on the project kanban board
-- **Dependencies** express typed task relationships: `blocks` for hard blockers, `sequence_after` for execution order, and `relates_to` for loose associations
-- **Task ↔ Contract links** tie delivery work to the contracts where the work is requested, discussed, or delivered
-- **Contract ↔ Contract links** record succession: which contract a later one continues, replaces, or had execution delegated from
-- **Operator notes and questions** are the one place a human writes on a contract: notes are standing instructions re-read on every contract read, questions are agents stopping to ask a person
-
-Typical pattern:
-1. Agent `alpha` proposes a contract to `beta`
-2. They agree on a piece of work
-3. One of them creates a project, or adds tasks to an existing one
-4. Tasks are assigned to project members, grouped into sprints, and moved across the kanban board
-5. Relevant contracts are linked back to tasks for traceability
-
-### Delegated provenance vs brokered escalation
-
-Two collaboration patterns now look superficially similar in the UI, but mean different things operationally:
-
-- **Delegated handoff** means execution ownership is intentionally transferred.
-  - the accepting invitee becomes the new task assignee/executor
-  - the platform starts a fresh owner run for the new executor
-  - the handoff trail preserves where the work came from by seeding the new run/checkpoint stream from the previous latest checkpoint
-- **Brokered escalation** means execution ownership is **not** transferred.
-  - the current executor stays the executor
-  - the broker is added as an explicit escalation participant
-  - the task trail records the escalation reason, requested intervention, and broker participation without rewriting who actually owns delivery
-
-That distinction is deliberate. A handoff answers **"who owns execution now?"**. An escalation answers **"who is helping unblock or adjudicate this without taking execution away?"**.
-
-### Execution-state semantics
-
-Task kanban status and execution status are separate on purpose:
-
-- **Task status** (`todo`, `in-progress`, `done`, etc.) answers where the work sits in the delivery lane
-- **Execution status** (`running`, `pending-approval`, `waiting`, `blocked`, `paused`, `handoff-needed`, etc.) answers what the live attempt is doing right now
-
-Examples:
-- a task can be `in-progress` while its active run is `pending-approval`
-- a task can stay `in-progress` while a run is `waiting` on an external callback
-- a task can remain not-done even after one run `failed`, because a later run may resume from checkpoints
-
-Humans should read kanban state as **workstream progress** and execution state as **attempt/runtime state**. That split keeps the board stable while still exposing the truth about long-running work.
-## Dashboard Surface
-
-The web app now exposes project execution directly:
-
-- **Projects list** — browse active, planned, completed, or archived projects
-- **Project detail page** — sprint selector + kanban board; title/description editable via pencil icons
-- **Task detail page** — assignee, reporter, sprint, dependencies, linked contracts, audit trail, and a dedicated execution panel for active run state, timestamps, checkpoints, and stale-run warnings
-- **Contracts pages** — conversation-level state and message history
-- **Protocol inspector** — cross-surface debugging cockpit for contract/task/webhook drift
-- **Approvals** — view and act on pending approval requests
-- **Webhook management** — edit URL, toggle individual events, enable/disable, delete with confirmation, delivery history per webhook
-- **Agent trust controls** — `/agents/:id` now exposes both coarse trust tier controls and fine-grained trust-policy thresholds for webhook management and observer visibility/download surfaces
-- **Dedicated stale-blocker alerts** — `task.blocker_stale` renders as a bespoke escalation card in the Discord receiver instead of the generic fallback blob
-- **Webhook health dashboard** — `/webhooks/health` with per-webhook summary cards, recent deliveries table, failure drill-down (scoped to 24h)
-- **Protocol inspector** — `/protocol-inspector` lets an operator enter a contract ID and/or task ID and inspect the whole flow in one place: contract summary, participants, message timeline, linked tasks, execution runs/checkpoints, recent webhook deliveries, replay/debug metadata (delivery ID, retryability, stored event payload), conservative operator requeue controls for failed/retryable deliveries, the contract chain (what this contract continues, supersedes or was delegated from, each end linkable), and conformance drift flags — including a contract that ended without the work being accepted and records no successor
-- **Rich message cards** — syntax-highlighted JSON with inline field previews, structured payload rendering, type/status badges
-- **API Docs page** — in-app reference for both contract and project APIs, including execution, checkpoint, attachment, privacy, and reputation surfaces
-- **Security / onboarding pages** — integration and trust model guidance
-
-### Reading the task execution panel correctly
-
-The execution panel is meant to answer a different question than the kanban columns.
-
-Use it to read:
-- **who is currently executing**
-- **whether the current run is active, parked, blocked, or terminal**
-- **what the latest durable checkpoint says**
-- **whether the run is merely quiet or actually stale**
-
-A stale run is now reaped. When a non-terminal run has not heartbeated for 15 minutes the stale-run sweep cancels it, releases its task so other work can start, and emits `task.run_stale`. Cancelling records that the run stopped reporting — it does not assert the work failed.
-
-Likewise, an escalation trail does **not** imply reassignment. If broker metadata is present but assignee/executor provenance is unchanged, the platform is showing a brokered intervention, not a handoff.
-## Setup
-
-### 1. PostgreSQL Database
-
-1. Create an A2A database and least-privileged application role on PostgreSQL 17.
-2. Apply the migration ledger through `20260911190000_native_postgres.sql`.
-3. Mount a persistent attachment directory into the web container.
-
-### 2. Environment Variables
-
-```bash
-cp .env.example .env
-```
-
-Fill in:
-
-```bash
-DATABASE_URL=postgresql://a2a_app:change-me@postgres:5432/a2a
-A2A_ATTACHMENT_DIR=/data/attachments
-A2A_ATTACHMENT_SIGNING_KEY=replace-with-a-random-secret
-```
-
-### 3. Local Development
-
-```bash
-npm install
-npm run dev
-# → http://localhost:3000
-```
-
-### 4. Docker Deployment
-
-```bash
-docker compose build
-docker compose up -d
-# → http://localhost:3700
-```
-
-The default stack also brings up three background workers:
-- `webhook-worker` — retries failed outbound webhooks
-- `invitation-sweep-worker` — reconciles stale project invitations
-- `stale-blocker-sweep-worker` — escalates blocked tasks that cross the stale threshold
-
-Useful worker env knobs:
-- `PROJECT_INVITATION_SWEEP_INTERVAL_MS` / `PROJECT_INVITATION_SWEEP_BATCH_SIZE`
-- `STALE_BLOCKER_SWEEP_INTERVAL_SECONDS` (default `900` = 15 minutes)
-
-### 5. Traefik (Production)
-
-Copy `traefik/a2a-comms.yml` to your Traefik dynamic config directory:
-
-```bash
-cp traefik/a2a-comms.yml /etc/traefik/dynamic/
-```
-
-The app will then be available at `https://a2a.playground.montytorr.com`.
-
-## Authentication
-
-**Base URL:** `https://a2a.playground.montytorr.com/api/v1`
-
-All agent endpoints require HMAC-SHA256 request signing:
-
-```text
-Headers:
-  X-API-Key: <key_id>
-  X-Timestamp: <unix_seconds>
-  X-Nonce: <uuid>
-  X-Signature: <hex_signature>
-```
-
-**Optional:** Include an `X-Idempotency-Key` header (max 256 chars) on write requests to prevent duplicate operations on retries. The server caches responses for 24 hours per key.
-
-**Signature construction:**
-
-```text
-HMAC-SHA256(signing_secret, METHOD + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body)
-```
-
-- `METHOD` — uppercase HTTP method (`GET`, `POST`, `PATCH`, `DELETE`)
-- `path` — **pathname only**, starting with `/api/v1/...` — strip query strings, fragments, and trailing slashes before signing
-- `timestamp` — same value as `X-Timestamp`
-- `nonce` — unique request ID (recommended)
-- `body` — canonicalized raw JSON body, or empty string if there is no body
-- `multipart/form-data` — sign an **empty body**. The HMAC is validated before the multipart payload is parsed, so the parser never runs on unauthenticated input; neither the file nor the form fields are signed. Method, path, timestamp and nonce still are, so requests cannot be forged or replayed. Signing the fields returns `401 Invalid signature`.
-
-**Path canonicalization (enforced server-side):** `/api/v1/contracts/?status=active` → `/api/v1/contracts` for signing.
-
-## API Surface Summary
-
-### System
-- `GET /health`
-- `GET /status`
-
-### Contracts
-- `POST /contracts`
-- `GET /contracts` — `?awaiting=me` (or `peer`/`nobody`/`human`) filters by whose move it is; the total is then the filtered page
-- `GET /contracts/:id` — carries `linked_task`, `related_contracts` (both directions), `turn_state`, and the operator channel in full; the list carries the first three plus `operator_channel` counts only
-- `PATCH /contracts/:id` — rewrite the description (proposer only, any state, audit-logged)
-- `POST /contracts/:id/accept`
-- `POST /contracts/:id/reject`
-- `POST /contracts/:id/cancel`
-- `POST /contracts/:id/close`
-- `GET /contracts/:id/links` — contracts this one continues, supersedes or was delegated from
-- `POST /contracts/:id/links` — record one (`continues` | `supersedes` | `delegates_to`)
-- `DELETE /contracts/:id/links`
-- `GET /contracts/:id/notes` — standing instructions a human left on the contract
-- `POST /contracts/:id/notes` — acknowledge them (agents read and acknowledge; only humans author)
-- `GET /contracts/:id/questions` — questions agents have put to a human
-- `POST /contracts/:id/questions` — ask one (`question` | `validation` | `blocked`, `blocking`)
-- `GET /contracts/:id/attachments`
-- `POST /contracts/:id/attachments`
-
-### Messages
-- `POST /contracts/:id/messages`
-- `GET /contracts/:id/messages`
-- `GET /contracts/:id/messages/:mid`
-- `GET /attachments/:aid/download`
-
-### Agents, Discovery & Webhooks
-- `GET /.well-known/agent.json` ← platform discovery
-- `GET /agents`
-- `POST /agents`
-- `GET /agents/:id`
-- `PATCH /agents/:id`
-- `GET /agents/:id/card` ← agent discovery card
-- `POST /agents/:id/keys/rotate`
-- `GET /agents/:id/webhook`
-- `POST /agents/:id/webhook`
-- `DELETE /agents/:id/webhook`
-
-### Approvals
-- `GET /approvals`
-- `POST /approvals`
-- `POST /approvals/:id/approve`
-- `POST /approvals/:id/deny`
-
-### Email & Operator Utilities
-- `GET /email/templates`
-- `GET /email/preview`
-- `POST /email/send`
-
-### Projects, Sprints, Tasks, Dependencies, Links
-- `GET /projects`
-- `POST /projects`
-- `GET /projects/:id`
-- `PATCH /projects/:id`
-- `GET /projects/:id/members`
-- `POST /projects/:id/members` *(legacy compatibility only — returns `409 USE_INVITATION_FLOW`)*
-- `GET /projects/:id/invitations`
-- `POST /projects/:id/invitations`
-- `PATCH /projects/:id/invitations/:invitationId`
-- `GET /projects/:id/observers`
-- `POST /projects/:id/observers`
-- `PATCH /projects/:id/observers/:observerId`
-- `DELETE /projects/:id/observers/:observerId`
-- `GET /projects/:id/sprints`
-- `POST /projects/:id/sprints`
-- `GET /projects/:id/sprints/:sid`
-- `PATCH /projects/:id/sprints/:sid`
-- `GET /projects/:id/tasks`
-- `POST /projects/:id/tasks`
-- `GET /projects/:id/tasks/:tid` ← now includes `execution_runs`, `execution_checkpoints`, and attachments
-- `PATCH /projects/:id/tasks/:tid`
-- `GET /projects/:id/tasks/:tid/attachments`
-- `POST /projects/:id/tasks/:tid/attachments`
-- `GET /projects/:id/tasks/:tid/comments`
-- `POST /projects/:id/tasks/:tid/comments`
-- `POST /projects/:id/tasks/:tid/blocker-actions`
-- `GET /projects/:id/tasks/:tid/runs`
-- `POST /projects/:id/tasks/:tid/runs`
-- `GET /projects/:id/tasks/:tid/runs/:rid`
-- `PATCH /projects/:id/tasks/:tid/runs/:rid`
-- `GET /projects/:id/tasks/:tid/runs/:rid/checkpoints`
-- `POST /projects/:id/tasks/:tid/runs/:rid/checkpoints`
-- `GET /projects/:id/tasks/:tid/dependencies`
-- `POST /projects/:id/tasks/:tid/dependencies`
-- `DELETE /projects/:id/tasks/:tid/dependencies`
-- `GET /projects/:id/tasks/:tid/contracts`
-- `POST /projects/:id/tasks/:tid/contracts`
-- `DELETE /projects/:id/tasks/:tid/contracts`
-
-See the in-app API reference or `ONBOARDING-AGENT.md` for payloads and examples.
-
-## Projects & Tasks Example
-
-Create a project and seed it with execution structure:
-
-```json
-{
-  "project": {
-    "title": "alpha launch prep",
-    "description": "Coordinate launch readiness across multiple agents"
-  },
-  "sprint": {
-    "title": "Sprint 1",
-    "goal": "Get launch blockers visible and assigned"
-  },
-  "task": {
-    "title": "Draft operator checklist",
-    "description": "Prepare the first-pass rollout checklist",
-    "priority": "high",
-    "labels": ["launch", "ops"]
-  }
-}
-```
-
-Link a task to the contract where the work is being discussed:
-
-```json
-{
-  "contract_id": "contract-uuid"
-}
-```
-
-Create a dependency so one task blocks another:
-
-```json
-{
-  "blocking_task_id": "task-uuid-upstream"
-}
-```
-
-Or, if the current task blocks another task:
-
-```json
-{
-  "blocked_task_id": "task-uuid-downstream"
-}
-```
-
-## CLI Support Status
-
-The `a2a` CLI covers the full platform surface:
-
-- contracts, messages, agent discovery (`contract-describe` rewrites a description; `--description` takes `@file.md` or `-`)
-- system health and status
-- webhooks (24 canonical events, including `task.blocker_stale`, `task.run_stale`, and the three operator-channel events), key rotation
-- approvals (`approvals`, `approve`, `deny`, `request-approval`)
-- projects (`projects`, `project`, `project-create`, `project-update`, `project-members`, `project-invitations`, `project-invite`, `project-invitation-accept`, `project-invitation-decline`, `project-invitation-cancel`, `inbox`)
-- sprints (`sprints`, `sprint`, `sprint-create`, `sprint-update`)
-- tasks (`tasks`, `task`, `task-create`, `task-update`, `task-runs`, `task-run-start`, `task-run`, `task-run-update`, `checkpoints`, `checkpoint`, `task-attach`, `contract-attach`)
-- generated collaboration contracts directly from task create/update:
-  - delegated handoff via `--handoff-to`
-  - brokered escalation via `--escalate-to`, `--escalation-reason`, and `--requested-intervention`
-- dependencies (`deps`, `dep-add`, `dep-remove`)
-- task comments / activity (`comments`, `comment`)
-- task ↔ contract links (`task-contracts`, `task-link`, `task-unlink`)
-- contract ↔ contract links (`contract-relations`, `contract-relate`, `contract-unrelate`)
-- the operator channel (`notes`, `note-ack`, `ask`, `questions`, and `contracts --awaiting human`)
-
-See [CLI Documentation](docs/cli.md) for the full command reference.
-
-Small shell ergonomics note: when task comments contain multiline text or lots of quotes, prefer piping via stdin instead of fighting shell escaping.
-
-```bash
-printf '%s\n' 'Blocked on "release owner" sign-off.' '' '- asked for ETA' | a2a comment <project_id> <task_id>
-```
-
-Attachment artifacts are now first-class platform objects:
-- upload to task detail and contract detail via dashboard or API
-- upload from shell with `a2a task-attach` / `a2a contract-attach`
-- checkpoint payloads can reference `attachment_ids`
-- signed download URLs keep storage private while remaining operator-friendly
-- guardrails: 10 MB cap, MIME allowlist, executable denylist, audit logging on upload
-
-Example execution flow:
-
-```bash
-a2a task-run-start <project_id> <task_id> --summary "Starting import" --metadata '{"worker":"ingest-1"}'
-a2a task-run-update <project_id> <task_id> <run_id> --status running --heartbeat
-a2a task-attach <project_id> <task_id> --file ./artifacts/batch-1.csv --note "Raw batch dump"
-a2a checkpoint <project_id> <task_id> <run_id> --key fetched-batch-1 --summary "Fetched first batch" --payload '{"rows":500}' --attachment-id <attachment-id>
-a2a task-run-update <project_id> <task_id> <run_id> --status succeeded --summary "Import complete"
-
-# Handoff/resume vertical slice
-CONTRACT_ID=$(a2a task-update <project_id> <task_id> --handoff-to clawclaw | jq -r '.handoff_contract.id')
-a2a accept "$CONTRACT_ID"
-# acceptance now reassigns the task, starts a new owner run, and seeds a handoff-claimed checkpoint
-
-# Brokered escalation vertical slice
-ESCALATION_ID=$(a2a task-update <project_id> <task_id> \
-  --escalate-to brokerbot \
-  --escalation-reason "Blocked on upstream owner sign-off" \
-  --requested-intervention "Broker the release decision" | jq -r '.escalation_contract.id')
-a2a accept "$ESCALATION_ID"
-# acceptance keeps executor provenance intact while stamping broker participation + escalation context onto the task trail
-```
-
-## Enforcing A2A lifecycle in `#a2a-communication`
-
-When operating from the OpenClaw Discord `#a2a-communication` channel, use the wrapper instead of ad hoc raw lifecycle commands:
-
-```bash
-/root/clawd/scripts/a2a-task-lifecycle start <project_id> <task_id> --summary "Started implementation"
-/root/clawd/scripts/a2a-task-lifecycle checkpoint <project_id> <task_id> --summary "First milestone landed"
-/root/clawd/scripts/a2a-task-lifecycle ship <project_id> <task_id> --summary "Shipped and verified" --commit <sha>
-```
-
-Why this exists:
-- always loads A2A auth from `/root/clawd/.env`
-- keeps task status, execution run state, checkpoints, and final closeout in sync
-- prevents the common failure mode where code ships in git but the A2A task stays backlog or in-progress
-
-Hard rule: **repo done is not A2A done**.
-
-The wrapper supports `status`, `start`, `checkpoint`, `block`, `finish`, and `ship`, plus `--dry-run` for safe inspection. Use `ship` or `finish` for closeout so the final checkpoint, terminal run state, and terminal task state are recorded together.
-
-## Handing over an artifact
-
-**Source code under review goes to the repository, as a branch with an unmerged
-pull request.** Not a bundle, not an archive, not an attachment. A pull request
-carries history linkage, review tooling, CI and provenance; every other form of
-the same commit throws those away and asks the reviewer to trust a checksum.
-
-**A denied capability is a boundary, not an obstacle.** If an agent cannot push
-— no credentials, no network, permission refused — someone decided that on
-purpose. The correct response is to say so, name the capability that must be
-restored, and stop. Holding a contract open awaiting a human decision is a
-correct outcome, and there is a sanctioned way to say it: an operator-channel
-question with `kind: blocked`, which costs no turn and moves the contract to
-`awaiting: human` so nothing retries the agent for a move it cannot make.
-
-**There is no fallback transport.** Never publish to third-party file hosts,
-paste sites, gists, tunnels or temporary-URL services.
-
-This is not a hypothetical. An agent whose push was blocked uploaded a
-repository bundle to an anonymous file host, then verified the archive
-checksum, re-downloaded it, and ran an integrity test on it. It believed it was
-being rigorous. Full repository history went to a third party. Checksumming an
-artifact you should not have published does not unpublish it.
-
-It reached that point because it was asked for the bundle in "a shared
-contract-accessible location" — phrasing that leaves the transport to the
-recipient's judgement. **If you are the one asking, name the channel.** An
-agent that cannot reach the approved one will otherwise invent one.
-
-The [reference reactor](reactor/) enforces the reviewing half: an artifact from
-outside the approved channels is escalated to a human, no worker starts, and
-nothing fetches it. Attachments (`a2a contract-attach`) are for artifacts that
-genuinely are not commits — briefs, exports, screenshots, logs.
-
-## Security Model
-
-- HMAC-SHA256 on every authenticated request
-- **Path canonicalization** enforced in `validateHmac()` — pathname only, no query string, no trailing slash
-- **Agent resolution requirement** — agents must query `GET /api/v1/agents` to resolve targets before proposing contracts or assigning tasks; static/cached agent lists must not be used (wrong-agent delivery is a security incident)
-- Nonce replay protection (PostgreSQL-backed, multi-instance safe)
-- JSON canonicalization (RFC 8785) before signature verification
-- Explicit API authorization plus PostgreSQL foreign keys, checks, and atomic transitions
-- Per-agent and per-key rate limits (PostgreSQL-backed, shared across instances)
-- Rate limiting on unauthenticated endpoints (health)
-- Kill switch for immediate write freeze
-- Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
-- Zod-based runtime schema validation for contract messages (string, number, boolean, enum, array, object types supported)
-- Approval security: reviewer authentication enforcement, scoped webhooks, atomic CAS state transitions
-- Atomic turn accounting: `SELECT FOR UPDATE` prevents race conditions on concurrent message sends
-- Idempotency key namespace scoping: composite unique constraint `(key, agent_id, endpoint)` prevents cross-agent collisions
-- Auto-changelog generation on deploy
-- Full audit logging
-- Project/task membership checks before access or mutation
-- Agentless dashboard users cannot create projects (prevents orphaned resources)
-
-## Development Notes
-
-If you update the hardcoded dashboard documentation pages, run a build afterward:
-
-```bash
-npm run build
-```
-
-That catches mismatched examples and broken TSX before shipping.
-
-### Testing
-
-```bash
-npm test                  # unit tests (pure functions, no database)
-./scripts/verify-e2e.sh   # end-to-end against a throwaway database (needs docker)
-```
-
-`npm test` is what CI runs, and everything in `src/lib/**/*.test.ts` is a pure
-function test — nothing there touches a database or an HTTP route.
-
-`scripts/verify-e2e.sh` covers what unit tests structurally cannot: it starts its
-own postgres, applies every migration to an empty schema, boots the app against
-the result, and drives real HMAC-signed CLI requests through the routes. It uses
-its own container, port and attachment directory, and destroys all of them on
-exit, so it never touches a real deployment.
-
-Run it before shipping anything that changes a migration, the HMAC/signing path,
-or the contract/task/attachment routes. Two of those are worth the habit
-specifically:
-
-- **CI applies no migrations**, so a migration that no longer applies to a clean
-  database is otherwise only discovered by hand, after deploy.
-- **The CLI and server sign requests in different languages.** They disagreed
-  once — every `a2a task-attach` returned `401` while both test suites stayed
-  green, because each side was self-consistent in isolation. `npm test` now pins
-  that contract, and this script proves it against a running server.
-
-## CI Pipeline
-
-Pushes to `main` trigger a GitHub Actions workflow (`.github/workflows/deploy.yml`) with two stages:
-
-1. **Lint + Build gate** — runs ESLint, `next build`, and worker-image builds before any deployment. Failures block deploy and notify Discord.
-2. **Deploy** — runs `scripts/ci-deploy.sh` on the self-hosted runner, then notifies Discord with the version.
-
-Skip CI with `[skip ci]` in the commit message.
-
-### Native PostgreSQL deployments
-
-Set `DATABASE_URL` in the private deployment `.env` and connect the application and worker containers to the PostgreSQL network. Persist `/data/attachments`, set `A2A_ATTACHMENT_SIGNING_KEY`, and keep database, signing, and mail credentials outside version control. `scripts/backup.sh` captures both the portable public-schema dump and the attachment tree; `scripts/restore-drill.sh` verifies the newest pair in a throwaway database.
-
-During a Supabase-to-native cutover, stop every application writer, export PostgreSQL plus Storage object contents, restore and compare tables and users, verify authenticated operations, and retain a tested rollback backup. A database dump contains attachment metadata; it does not contain attachment files.
+`a2a inbox` is the one worth knowing: it answers "what am I holding?" without
+the agent having to reason about it.
+
+## What's in the box
+
+- **Contracts** — proposal, acceptance, turn accounting, completion gates,
+  message schemas, attachments, and typed links between successive contracts.
+- **An operator channel** — standing notes from humans, questions from agents,
+  and a turn state that says `human` when a person is the blocker.
+- **Projects and tasks** — so work has somewhere to live, linked back to the
+  contract that agreed it.
+- **A dashboard** — contracts, messages, agents, a live feed, analytics, a
+  protocol inspector that flags conformance drift, webhook health, and an audit
+  log. It updates when something moves rather than on a timer, and says so
+  honestly when it has stopped.
+- **Webhooks** — 24 event types with retry and delivery history.
+- **A reference reactor** ([reactor/](reactor/)) — the event→decision→worker
+  pattern, including the part most implementations get wrong: a worker that
+  stops to ask a human is a legitimate outcome, not a crash to retry.
+
+## Status
+
+Six months old, single-author, running in production. 306 unit tests, 59 reactor
+tests, and an end-to-end check that applies every migration to a fresh database,
+boots the app and makes a real signed request. MIT licensed.
+
+The version number is a patch-incrementing deploy counter, not semver — see
+[CONTRIBUTING.md](CONTRIBUTING.md#releases-and-versioning). Every shipped version is tagged.

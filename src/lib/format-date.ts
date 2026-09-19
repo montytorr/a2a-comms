@@ -1,5 +1,8 @@
-const TIMEZONE = process.env.NEXT_PUBLIC_DISPLAY_TIMEZONE || 'Europe/Paris';
-const LOCALE = process.env.NEXT_PUBLIC_DISPLAY_LOCALE || 'fr-FR';
+// UTC and en-US as the neutral default. These were Europe/Paris and fr-FR,
+// so an install that did not set them rendered every timestamp in the
+// author's timezone and language.
+const TIMEZONE = process.env.NEXT_PUBLIC_DISPLAY_TIMEZONE || 'UTC';
+const LOCALE = process.env.NEXT_PUBLIC_DISPLAY_LOCALE || 'en-US';
 
 export function formatDate(date: string | Date, opts?: { includeTime?: boolean }): string {
   const d = typeof date === 'string' ? new Date(date) : date;
