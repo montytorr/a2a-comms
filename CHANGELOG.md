@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.334] - 2026-09-19
+### Added
+- apply migrations on deploy, and prove they build the running schema
+- CI never touched the schema, so every change reached production by hand and the two drifted apart silently. The failure mode is quiet: a release that adds a table ships code querying a table that is not there, and src/lib/db/client.ts catches the error and returns { data: null, error } rather than throwing — so the read degrades to an empty result and the app stays healthy while telling everyone there is nothing to see. v1.0.316 did exactly that with contract_links for twenty-five minutes.
+- ci-deploy.sh now runs migrate.sh before the build, so the new container comes up against the schema it was written for. Migrations here are additive, so the old container keeps serving correctly for the minute until the Traefik switch.
+- AND A CHECK THAT THE TWO AGREE. verify-schema.sh builds a database from the migrations alone in a throwaway container, describes both schemas as a sorted list of columns, constraints, indexes and functions, and diffs them. It runs in CI on every deploy.
+- It found a third instance of the drift on its first run: reputation_ledger_events allows `operator_feedback` and `operator_review` in production, which no migration produces, ReputationSignalKey and ReputationEventSourceType do not contain, nothing in src/ writes, and no row uses. Added by hand for something never built. Narrowed to match, because here the drift is production's — the other two went the other way (pending_approvals.status was missing a value the app wrote; webhook_deliveries.status was widened in production and the ledger never told). None could be seen by reading either side alone, and a schema_migrations ledger would not have caught any of them: the question is not which files ran, it is whether the result matches.
+- Production and the migrations now produce an identical 638 objects. That is what made it safe to backfill the ledger with all 51 migrations as already applied — the claim is true, and it was verified before it was made rather than after.
+- TWO THINGS THIS NEARLY BROKE, both caught by testing before shipping:
+- migrate.sh's bootstrap creates Supabase roles, an auth schema, and SEEDS TWO TEST USERS that 005_user_scoping.sql needs by hardcoded id. Correct for a fresh database, catastrophic for a live one. It now runs only when `contracts` does not already exist, and an existing database gets the ledger table and nothing else.
+- And production's DATABASE_URL names `clawdius-postgres`, a docker-network hostname the host cannot resolve — so the first version of this wiring would have failed on its first deploy. migrate.sh takes A2A_DB_CONTAINER and runs psql inside the container, which is how every other script here already reaches it.
+- Verified against production: "0 applied, 51 already present", bootstrap skipped. Mutation-tested the checker by widening a constraint in production — it reported the difference on both sides and exited 1, and exits 0 once restored.
+- AC-63
+
 ## [1.0.333] - 2026-09-19
 ### Fixed
 - measure line fragments, not the union box of a wrapped inline
