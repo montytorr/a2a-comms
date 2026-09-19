@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.333] - 2026-09-19
+### Fixed
+- measure line fragments, not the union box of a wrapped inline
+- getBoundingClientRect on an inline element that wraps returns one rectangle spanning every line it touches. `<code>turns-exhausted</code>` broken across two lines therefore reported a box covering the text either side of it on both, and the auditor called that an overlap — a dozen imaginary findings across the prose pages. getClientRects() returns the per-line fragments, which is what a reader actually sees.
+- This is the third false-positive mechanism in the same detector, and the third one a screenshot caught: the live badge is absolutely positioned and is meant to sit over its container, a line-clamped preview keeps a layout rect for the line it has clipped out of view, and now this.
+- I also shipped this patch once without it applying. The edit and the audit run were in one backgrounded command, so the assertion that should have stopped it failed into a log nobody read and the run used the old script — which is why an identical set of findings came back and looked like the fix had done nothing. Verify the edit landed before acting on what follows it.
+- let a slash-separated token wrap instead of overflowing its box
+- "Heartbeat/update/complete/fail/cancel" is one unbreakable word to a browser: 236px of text in a 211px box on a phone, on both the api-docs endpoint list and its onboarding twin. The path rendered directly above it already carried wordBreak; the description never did.
+- overflowWrap: 'anywhere' rather than break-all — it breaks only when a token genuinely does not fit, instead of chopping every word in the sentence.
+- These were the last two findings from the phone audit, down from 52.
+
 ## [1.0.332] - 2026-09-19
 ### Changed
 - collapse the duplicate spellings onto the scale, and make the auditor honest
