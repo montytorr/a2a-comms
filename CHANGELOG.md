@@ -6,6 +6,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.338] - 2026-09-19
+### Added
+- move to fair-code from v1.0.338
+- The core stays public, readable and self-hostable. What changes is that you may no longer sell A2A Comms to other people as a service — which is the whole point of the hosted product that now exists at a2acomms.montytorr.com.
+- This is the n8n arrangement, and n8n's repository is PUBLIC — going private would have been the opposite of the model, and would have thrown away the discoverability of AC-77/79/80. The licence is their Sustainable Use License 1.0, which they explicitly encourage other projects to adopt, itself adapted from the Elastic License 2.0 with Elastic's permission. Fetched from n8n-io/n8n as raw bytes rather than copied from a rendered page — the original uses curly quotes and an HTML-to-markdown pass silently straightens them. Their preamble about `.ee.` enterprise files is removed because it describes their repository; nothing in the operative terms is changed, so if you know SUL 1.0 you know exactly what this says.
+- V1.0.337 AND EARLIER STAY MIT, FOREVER. That grant is public, tagged, released and irrevocable, and nothing here takes it back. The text is preserved byte-identical as LICENSE-MIT rather than left only in history, and LICENSE.md says plainly where the line falls.
+- LICENSE.md also carries the plain reading, because the text is precise but short and n8n needs a whole FAQ to explain it. Run it for your own company for anything, free, including work you are paid for. Fork it, build on it, be paid to set it up for the company using it. Do not host it and charge others for access, do not white-label it, do not sell something whose value comes substantially from A2A Comms itself. Worth being clear-eyed: SUL is BROADER than a hosted-service ban — it restricts commercial provision generally — and saying so here is better than letting someone discover it later.
+- THE THING THIS NEARLY GOT WRONG. `git shortlog -sne --all` is not single-author. One outside contributor, `jgiffard`, one commit, e09b1cd, and 160 lines of it still live in main — message-preview.ts is 80 of 80 lines untouched since. MIT inbound cannot be unilaterally relicensed by someone who does not hold the copyright. He is a friend of the maintainer and said it was fine, so the code stays and he keeps the credit. That is luck, not a process, so CONTRIBUTING.md now has the inbound-licence clause it never had.
+- Guarded, because a stale licence claim is a false legal statement and not a typo: licence-claims.test.ts fails on the word MIT anywhere outside the five files that exist to explain the history, and asserts both licence files exist with the boundary stated in one of them. Mutation-tested — a stray "Licensed under MIT" in docs/cli.md fails it, and so does deleting LICENSE-MIT.
+- The badge, the README status line, reactor/README.md and package.json's license field all move with it. GitHub's own detection will go from "MIT license" to "View license", which is what every fair-code project shows.
+- 371 tests, lint and build clean.
+- AC-84, AC-85
+### Changed
+- move the landing page to the cloud repo
+- The page shipped in v1.0.336 and lived here for four hours. It belongs to the commercial side, which is now its own private repository (montytorr/a2a-comms-cloud) on its own subdomain and its own container.
+- The reason is the one n8n has: the core is something you can read, fork and self-host; the hosted service is a business. Keeping both in one repository makes both harder to reason about — what is free, what is sold, and what a contributor is contributing to.
+- What went: src/app/(marketing)/, 562 lines of `.mkt-*` CSS, the `/home` allowlist and the `/` rewrite in proxy.ts, public-landing.test.ts, and the two cascade assertions that existed to guard the landing page's scroll override. `/` is a gated console route again, exactly as it was before v1.0.336.
+- WHAT STAYED, deliberately: scripts/ui-audit.mjs keeps its wheel-driven scroll check. That was written because of the landing page (AC-83) but it is not about the landing page — it is the difference between "window.scrollTo moved the viewport" and "a person can scroll this", and it applies to all 30 console routes. Removing it with the page would be throwing away the lesson and keeping only the bruise.
+- 369 tests, lint and build clean; no /home route in the build output.
+- AC-84
+
 ## [1.0.337] - 2026-09-19
 ### Fixed
 - the homepage could not be scrolled on any desktop
