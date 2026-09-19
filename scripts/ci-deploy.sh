@@ -76,6 +76,29 @@ if [[ -n "$EXPECTED_SHA" ]]; then
   fi
 fi
 
+# Apply any migration the running database has not seen.
+#
+# Nothing in this pipeline used to touch the schema, so every schema change
+# reached production by hand — and the failure mode is quiet. A release that
+# adds a table ships code querying a table that is not there, and
+# src/lib/db/client.ts catches the error and returns { data: null, error }
+# rather than throwing, so the read degrades to an empty result and the app
+# stays healthy while telling everyone there is nothing to see. v1.0.316 did
+# exactly that with contract_links for twenty-five minutes.
+#
+# Before the build on purpose: the new container must come up against the
+# schema it was written for. Migrations here are additive, so the OLD container
+# keeps serving correctly against the new schema for the minute between this
+# and the Traefik switch.
+#
+# migrate.sh is idempotent and records what it applied in schema_migrations, so
+# a redeploy with no new migration is a no-op.
+# Through the container, not the URL: production's DATABASE_URL names
+# `clawdius-postgres`, a docker-network hostname this host cannot resolve. Every
+# other script here reaches it the same way.
+echo "Applying migrations…" >&2
+A2A_DB_CONTAINER="${A2A_DB_CONTAINER:-clawdius-postgres}" ./scripts/migrate.sh >&2
+
 # Bump patch version
 CURRENT=$(node -p "require('./package.json').version")
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"

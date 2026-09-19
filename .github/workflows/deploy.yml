@@ -66,6 +66,17 @@ jobs:
       # reaches a route. Runs after Build because it starts the built app.
       # Self-contained: its own postgres container, its own ports, destroyed on
       # exit, and it never touches production.
+      # The migrations must produce the schema that is actually running. They
+      # drifted three times in two days — a status the app wrote and the CHECK
+      # refused, and twice a constraint widened in production by hand that no
+      # migration reproduced. Reading either side alone cannot see any of it,
+      # and a schema_migrations ledger would not have either: the question is
+      # not which files ran, it is whether the result matches.
+      - name: Verify the migrations build the running schema
+        run: |
+          cd /root/projects/a2a-comms
+          ./scripts/verify-schema.sh
+
       - name: Verify end-to-end (migrations, boot, signed request)
         run: |
           cd /root/projects/a2a-comms

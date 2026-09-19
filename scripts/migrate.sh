@@ -22,8 +22,8 @@
 #
 set -eu
 
-if [ -z "${DATABASE_URL:-}" ]; then
-  echo "migrate: DATABASE_URL is required" >&2
+if [ -z "${DATABASE_URL:-}" ] && [ -z "${A2A_DB_CONTAINER:-}" ]; then
+  echo "migrate: set DATABASE_URL, or A2A_DB_CONTAINER to reach a database only docker can see" >&2
   exit 1
 fi
 
@@ -37,8 +37,23 @@ if [ ! -d "$MIGRATIONS_DIR" ]; then
   exit 1
 fi
 
-psql_run() { psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 "$@"; }
-psql_val() { psql "$DATABASE_URL" -t -A -v ON_ERROR_STOP=1 "$@"; }
+# Two ways to reach the database, because the two callers are different.
+#
+# A newcomer has a DATABASE_URL they can dial directly. The deploy does not:
+# production's DATABASE_URL names `clawdius-postgres`, a docker-network
+# hostname the HOST cannot resolve, and ci-deploy.sh runs on the host. So it
+# passes A2A_DB_CONTAINER instead and psql runs inside the container, which is
+# how every other script here already reaches it (contract-expiry-sweep.sh).
+if [ -n "${A2A_DB_CONTAINER:-}" ]; then
+  DOCKER="docker"; docker info >/dev/null 2>&1 || DOCKER="sudo docker"
+  DB_USER="${A2A_DB_USER:-postgres}"
+  DB_NAME="${A2A_DB_NAME:-a2a}"
+  psql_run() { $DOCKER exec -i "$A2A_DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -q -v ON_ERROR_STOP=1 "$@"; }
+  psql_val() { $DOCKER exec -i "$A2A_DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -v ON_ERROR_STOP=1 "$@"; }
+else
+  psql_run() { psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 "$@"; }
+  psql_val() { psql "$DATABASE_URL" -t -A -v ON_ERROR_STOP=1 "$@"; }
+fi
 
 # ------------------------------------------------------------------ wait ---
 # The compose healthcheck already gates on pg_isready, but this script is also
@@ -65,6 +80,24 @@ fi
 # reference auth.* and Supabase's three roles. Nothing recreates them on native
 # Postgres, so 001 fails at 'role "authenticated" does not exist' without this.
 # Lifted verbatim from verify-e2e.sh's bootstrap and made re-runnable.
+#
+# ONLY ON AN EMPTY DATABASE. It creates an auth schema and SEEDS TWO TEST USERS
+# that 005_user_scoping.sql needs by hardcoded id — which belongs in a fresh
+# database and absolutely does not belong in a live one. A database that already
+# has `contracts` has been through this once; it needs the ledger table and
+# nothing else.
+ALREADY_BUILT="$(psql_val -c "select 1 from information_schema.tables where table_schema='public' and table_name='contracts'")"
+if [ "$ALREADY_BUILT" = "1" ]; then
+  echo "migrate: existing database — skipping the fresh-install bootstrap" >&2
+  psql_run >/dev/null <<'SQL'
+set client_min_messages = warning;
+create table if not exists schema_migrations (
+  version     text primary key,
+  checksum    text,
+  applied_at  timestamptz not null default now()
+);
+SQL
+else
 psql_run >/dev/null <<'SQL'
 -- Everything below is guarded with if-not-exists, so on every run after the
 -- first it would otherwise print a screenful of NOTICEs about work it correctly
@@ -95,6 +128,7 @@ create table if not exists schema_migrations (
   applied_at  timestamptz not null default now()
 );
 SQL
+fi
 
 # --------------------------------------------------------------- migrate ---
 APPLIED=0
