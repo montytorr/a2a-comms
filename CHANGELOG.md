@@ -6,6 +6,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.332] - 2026-09-19
+### Changed
+- collapse the duplicate spellings onto the scale, and make the auditor honest
+- Every change here is pixel-identical by construction: `16`, `'16px'` and `'1rem'` are the same sixteen pixels written three ways, and they all become `var(--space-4)`. Verified the premise rather than assuming it — the tokens are 4/8/12/16/24/32 and 4/6/8/12 exactly, and nothing overrides the root font size, so the rem equivalences hold.
+- Distinct padding values 87 → 82, radii 27 → 22, across 45 files. The ratchet ceilings came down with them, which is the whole point of the ratchet: the number can only go one way.
+- THE AUDITOR WAS WRONG TWICE, AND A SCREENSHOT CAUGHT IT BOTH TIMES.
+- It reported eight overlaps on /messages. The page is fine — I looked. The cause took a browser to find: a `-webkit-line-clamp: 3` preview clips its fourth line out of view, but that line still has a layout rect, 61px below its clipping parent, which then "collides" with the next card. Measured the exact spans: child `428..488`, clipping parent `364..427`. The auditor now skips anything whose rect escapes its nearest clipping ancestor.
+- Earlier it reported six overlaps for the live badge, which is absolutely positioned and is supposed to sit over its container, and it screenshotted the boot splash instead of three pages because boot-screen.tsx holds the viewport for 800ms against a 700ms wait.
+- A tool that cries wolf gets ignored, and this one is going in the repo — so `scripts/ui-audit.mjs` ships with the reasoning for each exclusion written down, and CONTRIBUTING explains when to run it and why the ratchet is the half that runs on every commit.
+- 364 tests, build and lint clean.
+- AC-78
+### Fixed
+- the mobile bugs a real browser found, and a ratchet so geometry can drift back
+- I said a mobile pass needed a running app behind auth, so I stood one up: the dev stack, a super-admin seeded into it, production content loaded for realistic volume, and Playwright logging in through the actual form. 30 routes at 390px, measured rather than eyeballed.
+- WHAT IT FOUND, and a screenshot proves each:
+- /contracts was unusable on a phone. Six percentage-width columns — 15% of 390px is 58px — so the cells did not overflow, they SHRANK until they overlapped. The header read "PROPOSEPARTICIPANTSTURNSCREATED", a status and its turn count rendered on top of each other as "CAN4/12ELLED", and titles truncated to ten characters. It is a grid now, stacking below `md`, with the five meta cells dissolving back into columns via `md:contents`.
+- The status filter row pushed the whole PAGE 88px sideways: seven buttons of ~478px in a 390px viewport. `.seg` clamps and scrolls inside itself now — wrapping would split the rounded container down its middle.
+- /webhooks pushed it 60px the same way. `.row--split` is the header pattern those 23 hand-written `justifyContent: 'space-between'` rows all want.
+- /users had capability pills riding over the agent names they belong to — "Cla RESEARCH CODE-REVIEW" — with the last pill cut off by the card and the Remove Admin button pushed off the edge.
+- Zero pages scroll sideways now.
+- THE RATCHET. AC-61 — burning down the inline styles — was cancelled for a good reason: "rewriting them with no UI test safety net is real regression risk for no stated payoff". Colour has a safety net and the cascade has one; geometry had nothing, so every convergence step was unfalsifiable. geometry-ratchet.test.ts is the missing half. It does not claim the numbers are right — nobody can write that test — it fixes them as ceilings that may only come down. A thirty-second distinct padding value now fails a commit instead of turning up in an audit a year later.
+- It has an honesty test on itself: a ceiling more than a few above the real count fails, because a ceiling with slack in it is a comment rather than a ratchet. That test immediately caught its own ceiling going stale when email templates were excluded — correctly, since mail clients strip stylesheets, so inline styles are mandatory there and no design token exists.
+- First convergence with the net in place: `fontWeight: 650` meant "slightly bolder than a heading" in three unrelated places and `800` sat on a headline whose emphasis already comes from being 30px. Four weights now, down from six, and the ceiling came down with them. Seven card paddings became `.card--pad`.
+- Also fixed, in the harness rather than the app: it was measuring the boot splash instead of the page, because boot-screen.tsx holds the viewport for 800ms and the wait was 700ms. And it reported six overlaps on three pages for the live badge, which is absolutely positioned and is SUPPOSED to sit over its container.
+- 364 tests, build and lint clean.
+- AC-78
+
 ## [1.0.331] - 2026-09-19
 ### Added
 - one meaning per colour, a light theme that is a design, and a brand
