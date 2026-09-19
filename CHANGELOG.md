@@ -6,6 +6,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.335] - 2026-09-19
+### Added
+- turn every tag into a release
+- AC-76 gave this repo tags for the first time after 328 published versions. Nothing turned one into a release, so github.com/montytorr/a2a-comms/releases was blank — on a public repository, next to a 4,000-line CHANGELOG.md that already said exactly what each version did. A tag is a pointer; the releases page is where someone who has never seen this project finds out what changed.
+- The six that tagging had already produced are now published, and `scripts/publish-release.sh` runs on every deploy, so the next one cannot be forgotten. Backfill and steady state are the same code, on purpose: two renderings of the same changelog drift.
+- The notes are READ OUT OF CHANGELOG.md, never written again. ci-deploy.sh already generates that section from the commits the release really contains, so a release cannot claim something the changelog does not say, and there is no second thing to keep in sync. A version with no section gets no release and an error, because a release with invented notes is worse than no release.
+- It refuses a tag the remote does not have. GitHub's releases API will happily CREATE a missing tag pointing at the default branch head — which is how a v1.0.334 release ends up sitting on whatever landed after it. ci-deploy.sh pushes the tag and only warns if that fails, so the case is reachable rather than theoretical. It retries for a few seconds first: "not there yet" and "never pushed" look identical from the API.
+- Like the tag push, it never fails a deploy that has already succeeded. The code is live either way, and a missing release page is a thing to notice, not a thing to roll back for.
+- The guard test covers both this and the rename before it: every tag has notes to publish, the extractor stops at the next version heading, a missing version fails rather than publishing an empty page, and Supabase appears nowhere in src/ or scripts/. Mutation-tested — reintroducing the word, or the directory, fails the suite.
+- README gains the three badges a public repo is read for: release, licence, tests. Its test count was 306 and is 369.
+- AC-80
+### Changed
+- stop calling it Supabase
+- We moved to the native PostgreSQL driver on 2026-09-11 and then kept the name of the dependency we had just dropped, 1,071 times. A newcomer reading the tree of a public repository concludes Supabase is required to run this, which is the kind of wrong first impression a public repository cannot afford — and the one it makes before reading a single line of the README.
+- Three layers, none of which touched Supabase:
+- `supabase/migrations/` -> `migrations/`. Nothing under it was ever Supabase-specific; the directory held migrations and nothing else. With it went `config.toml` — 14 KB configuring a local Supabase stack, read by nothing, describing ports this project does not use — and a `.gitignore` for `.branches` and `.temp`, directories the Supabase CLI makes and we do not have.
+- `src/lib/supabase/{client,server}.ts` -> `src/lib/auth/browser.ts` and `src/lib/db/server.ts`. server.ts wraps `pg` and `bcryptjs`; client.ts posts to this app's own `/api/auth/*`. They are named for what they are now.
+- 917 `const supabase = createServerClient()` locals -> `db`, across 116 files. Not cosmetic: one file already wrote `const db =`, which is the name all of them should have had, and the next person to reach for a database handle copies whatever is nearest.
+- What did NOT change, deliberately: the early migrations still reference `auth.*` and Supabase's three roles, and `scripts/migrate.sh` still creates them so a fresh database can replay history. Rewriting a migration to hide where it came from would be a lie told to make a grep quieter. CHANGELOG.md keeps its four mentions for the same reason — it records what happened. `docs/deployment.md` lost its Supabase-to-native cutover runbook, which is an instruction for a migration that finished eight days ago.
+- Two things this nearly broke, both found before shipping:
+- `scripts/verify-schema.sh --snapshot` wrote to `supabase/schema.txt`. That directory no longer exists, so the snapshot would have failed on a path nobody re-reads. It writes `docs/schema.txt`.
+- `.dockerignore` excluded `supabase`, which after the rename excluded nothing — the build context would have silently grown by every migration.
+- Proven rather than assumed: verify-schema.sh builds a database from the renamed directory and gets the same 638 schema objects as before. 369 tests, lint and build clean.
+- AC-79
+
 ## [1.0.334] - 2026-09-19
 ### Added
 - apply migrations on deploy, and prove they build the running schema
