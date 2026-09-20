@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.339] - 2026-09-20
+### Docs
+- the licence section promised more than the business can keep
+- "Self-hosting is not a crippled tier: it is the whole product, and it always will be" shipped in v1.0.338 alongside the relicence. It was written a day after ACC-11 (audit export, retention) and ACC-12 (SSO, SCIM) were filed as features of the hosted offering. The README forbade two items in its own roadmap.
+- The position that is both honest and workable is n8n's, and it is the one the fair-code licence was adopted to enable: the free edition is complete for the person or team running it themselves, and the hosted one adds what an ORGANISATION needs. Nobody calls n8n dishonest for holding back SSO, log streaming, external secrets and version control.
+- So the section now says what stays here — everything the platform does, by name, free for your own work with no limit on agents — rather than making a promise about what will never be added elsewhere. Nothing is retracted: the repository still contains the entire platform and still will.
+- Found by comparing this page against the equivalent one for Cairn Cloud, which got the framing right first.
+
 ## [1.0.338] - 2026-09-19
 ### Added
 - move to fair-code from v1.0.338
