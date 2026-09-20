@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.340] - 2026-09-20
+### Fixed
+- a cancelled deploy switched production and told nobody
+- v1.0.339 went live at 06:43 and had no GitHub release until 12:01, when I went looking for what was unfinished. It was not a fluke and it would have happened again.
+- WHAT HAPPENED. The deploy job carried `timeout-minutes: 10`. Deploys run five to seven minutes; this one took exactly ten and GitHub cancelled it — AFTER migrate.sh had run, the new container was healthy, Traefik had switched and the tag was pushed. Everything ci-deploy.sh does, happened. Everything after it in the workflow did not: "Publish the release" was skipped and so was the notification.
+- AND NOBODY WAS TOLD, which is the part that actually cost something. The failure notifier is `if: failure()`, and a cancelled job is not a failed one. A deploy that had already changed production finished in silence.
+- THREE FIXES, because raising the timeout alone only makes it rarer:
+- 1. timeout-minutes 10 -> 20. ci-deploy.sh cannot be safely interrupted part-way — the cancel landed somewhere between "Traefik switched" and "tag pushed" — so the limit exists to kill a HUNG deploy, not a slow one, and it needs enough headroom to tell those apart.
+- 2. `if: failure() || cancelled()`, and the message now says production may already have switched and names what to check. Silence was the real harm.
+- 3. `publish-release.sh --reconcile`, at the START of every deploy. It publishes a release for any of the last twenty tags that lacks one, so the next deploy heals whatever the last one missed. Bounded to twenty on purpose: backfilling the whole history is a deliberate act, not something a deploy decides on its own. `continue-on-error`, because a missing release must never fail the deploy in front of it.
+- Mutation-tested rather than assumed: deleted the v1.0.339 release, ran --reconcile, watched it come back.
+- The lesson is the one the release machinery was built on in the first place and did not go far enough with. Idempotent and re-runnable by hand is what made today's repair a single command. Self-healing is what stops it needing a hand at all — because a release that depends on a human noticing is a release that goes missing.
+- AC-89
+
 ## [1.0.339] - 2026-09-20
 ### Docs
 - the licence section promised more than the business can keep
