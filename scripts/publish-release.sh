@@ -20,7 +20,40 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="${1:?usage: publish-release.sh <version>   e.g. 1.0.334}"
+# --reconcile: publish a release for every tag that is missing one.
+#
+# WHY IT EXISTS. On 2026-09-20 the deploy job hit its ten-minute timeout and
+# was cancelled AFTER production had switched and the tag was pushed, so the
+# release step never ran. v1.0.339 was live, tagged, and unreleased for
+# eighteen hours, and it was only noticed because somebody went looking.
+#
+# Raising the timeout makes that less likely. This makes it self-correcting:
+# the next deploy publishes whatever the last one missed. A release that
+# depends on a human noticing is a release that goes missing.
+if [[ "${1:-}" == "--reconcile" ]]; then
+  REPO="${GITHUB_REPOSITORY:-montytorr/a2a-comms}"
+  : "${GITHUB_TOKEN:?GITHUB_TOKEN is required}"
+  HERE="$(cd "$(dirname "$0")" && pwd)"
+
+  have="$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/$REPO/releases?per_page=100" \
+    | python3 -c 'import json,sys; print("\n".join(r["tag_name"] for r in json.load(sys.stdin)))')"
+
+  missing=0
+  # Only the recent ones. Backfilling the whole history is a deliberate act,
+  # not something a deploy should decide to do on its own.
+  for tag in $(git -C "$HERE/.." tag --list 'v*' --sort=-v:refname | head -20); do
+    grep -qxF "$tag" <<< "$have" && continue
+    echo "reconciling $tag" >&2
+    "$HERE/publish-release.sh" "${tag#v}" || echo "  skipped $tag" >&2
+    missing=$((missing + 1))
+  done
+  [[ "$missing" == "0" ]] && echo "every recent tag has a release" >&2
+  exit 0
+fi
+
+VERSION="${1:?usage: publish-release.sh <version>   e.g. 1.0.334, or --reconcile}"
 VERSION="${VERSION#v}"
 TAG="v$VERSION"
 REPO="${GITHUB_REPOSITORY:-montytorr/a2a-comms}"

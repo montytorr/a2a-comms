@@ -95,10 +95,29 @@ jobs:
   deploy:
     needs: lint-and-build
     runs-on: self-hosted
-    timeout-minutes: 10
+    # Deploys run 5-7 minutes. This was 10, and on 2026-09-20 one took exactly
+    # ten and was cancelled — AFTER migrate.sh had run, the container was live
+    # and Traefik had switched. The version shipped, the tag pushed, and the
+    # release step never ran. ci-deploy.sh cannot be safely interrupted
+    # part-way, so the limit exists to kill a HUNG deploy, not a slow one, and
+    # it needs enough headroom to tell them apart.
+    timeout-minutes: 20
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
+      # Heals whatever the last run missed. A deploy cancelled part-way leaves
+      # a tag with no release and says nothing about it; this publishes it on
+      # the next deploy instead of waiting for someone to notice. Idempotent,
+      # and it never fails the deploy it is running in front of.
+      - name: Reconcile any missing releases
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          cd /root/projects/a2a-comms
+          ./scripts/publish-release.sh --reconcile
+
       - name: Capture commit info
         id: commit
         run: |
@@ -164,11 +183,19 @@ jobs:
             -H "User-Agent: A2AComms-CI/1.0" \
             -d "$BODY" || true
 
+      # `failure()` excludes cancellation, which is exactly how a deploy that
+      # had already switched production went unannounced. Silence is the real
+      # harm here: the release was missing for eighteen hours and only turned
+      # up because somebody went looking.
       - name: Notify Discord (deploy failure)
-        if: failure()
+        if: failure() || cancelled()
         run: |
           COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s' 2>/dev/null || echo "unknown")
-          BODY="{\"content\": \"❌ **A2A Comms deploy FAILED** — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
+          WHAT="FAILED"
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            WHAT="was CANCELLED part-way — production may already have switched; check the version and whether the release was cut"
+          fi
+          BODY="{\"content\": \"❌ **A2A Comms deploy ${WHAT}** — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "User-Agent: A2AComms-CI/1.0" \
