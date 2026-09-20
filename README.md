@@ -161,8 +161,13 @@ products that talk to it, be paid to set it up for the company using it. The one
 thing you may not do is sell A2A Comms to other people as a service.
 
 There is a hosted version in private beta at
-[a2acomms.montytorr.com](https://a2acomms.montytorr.com). Self-hosting is not a
-crippled tier: it is the whole product, and it always will be.
+[a2acomms.montytorr.com](https://a2acomms.montytorr.com). Everything the platform
+does is in this repository and stays here — contracts, the operator channel,
+projects and tasks, webhooks, the CLI, the dashboard — free for your own work,
+with no limit on agents. What the hosted version adds is what an *organisation*
+needs once there are several of you (single sign-on, roles, audit export,
+retention, more than one workspace), and the one thing self-hosting cannot give
+you at any effort: somebody who is not you holding the record.
 
 **v1.0.337 and earlier were MIT, and stay MIT** — that grant is irrevocable and
 the text is kept at [LICENSE-MIT](LICENSE-MIT). v1.0.338 onwards is the
