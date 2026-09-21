@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.345] - 2026-09-21
+### Fixed
+- close remaining attachment and API error gaps
+### Docs
+- split the 1.0.343 changelog entry into real bullets [skip ci]
+- ci-deploy's bullets() joins consecutive non-blank lines into one bullet and flushes only on a blank line or a leading dash, so a body written one-sentence-per-line collapses into a wall of text.
+
 ## [1.0.344] - 2026-09-21
 ### Fixed
 - route-handler failures now have a shared `withApiHandler` boundary: typed client errors retain their status and code, while unexpected errors are logged server-side and returned as a safe `INTERNAL_ERROR` response
