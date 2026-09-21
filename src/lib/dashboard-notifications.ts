@@ -92,7 +92,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
     ? context.agentScope.length > 0 ? context.agentScope : [EMPTY_UUID]
     : user.agentIds.length > 0 ? user.agentIds : [EMPTY_UUID];
 
-  const [contractInvitesRes, assignedTasksRes, projectInvitesRes, blockedTasksRes, approvalsRes] = await Promise.all([
+  const [contractInvitesRes, assignedTasksRes, projectInvitesRes, blockedTasksRes, approvalsRes, myContractRowsRes] = await Promise.all([
     db
       .from('contract_participants')
       .select(`
@@ -163,6 +163,13 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
           .order('created_at', { ascending: false })
           .limit(25)
       : Promise.resolve({ data: [], error: null }),
+    // Fetch this alongside the notification fan-out. It is needed for the
+    // question query below and must not add another serial round trip to the
+    // shared dashboard layout.
+    db
+      .from('contract_participants')
+      .select('contract_id')
+      .in('agent_id', agentScope),
   ]);
 
   const contractInvites = ((contractInvitesRes.data || []) as unknown as ContractInviteRow[]).map((row) => ({
@@ -267,11 +274,7 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
   // steps rather than an embedded filter: the question is addressed to whoever
   // can answer it, which is every human on the contract and not only the owner
   // of the agent that asked.
-  const { data: myContractRows } = await db
-    .from('contract_participants')
-    .select('contract_id')
-    .in('agent_id', agentScope);
-  const myContractIds = [...new Set(((myContractRows || []) as Array<{ contract_id: string }>).map((row) => row.contract_id))];
+  const myContractIds = [...new Set((((myContractRowsRes.data || []) as Array<{ contract_id: string }>)).map((row) => row.contract_id))];
 
   const { data: questionRows } = myContractIds.length > 0
     ? await db

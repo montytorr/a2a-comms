@@ -10,11 +10,18 @@ export default async function DashboardLayout({
 }) {
   const auth = await getAuthActorContext();
   const user = auth?.user ?? null;
-  const notificationSummary = auth ? await getDashboardNotificationSummary(auth) : null;
-  const initialTickerItems = auth ? await getLiveFeedItems(auth).catch((error) => {
-    console.error('[dashboard] live feed seed failed', error);
-    return [];
-  }) : [];
+  // These are independent header enhancements. Serialising them made every
+  // dashboard navigation wait for both the notification fan-out and ticker
+  // queries before the page could stream.
+  const [notificationSummary, initialTickerItems] = auth
+    ? await Promise.all([
+        getDashboardNotificationSummary(auth),
+        getLiveFeedItems(auth).catch((error) => {
+          console.error('[dashboard] live feed seed failed', error);
+          return [];
+        }),
+      ])
+    : [null, []];
 
   return (
     <DashboardShell

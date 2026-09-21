@@ -119,14 +119,18 @@ export default async function ContractsPage({
 
   const { data: contracts } = await query;
   const rows = (contracts || []) as ContractWithRelations[];
-  // One query for the whole page rather than one per row.
-  const linkedTasks = await getLinkedTasksForContracts(rows.map((r) => r.id));
-  const relatedContracts = await getRelatedContractsForContracts(rows.map((r) => r.id));
-  // An agent that has stopped to ask a person is the most actionable thing on
-  // this page, and it was only visible by opening each contract in turn.
-  const channels = await getOperatorChannelForContracts(rows.map((r) => r.id), null);
-  // One query for the page, same as the links above.
-  const lastMessages = await getLastMessages(rows.map((r) => r.id));
+  const contractIds = rows.map((r) => r.id);
+  // These are independent page-wide enrichments. Running them in series made
+  // navigation cost the sum of four round trips after the main list query.
+  const [linkedTasks, relatedContracts, channels, lastMessages] = await Promise.all([
+    getLinkedTasksForContracts(contractIds),
+    getRelatedContractsForContracts(contractIds),
+    // An agent that has stopped to ask a person is the most actionable thing on
+    // this page, and it was only visible by opening each contract in turn.
+    getOperatorChannelForContracts(contractIds, null),
+    // One query for the page, same as the links above.
+    getLastMessages(contractIds),
+  ]);
 
   return (
     <AutoRefresh intervalMs={15000} watch={['contracts', 'participants', 'messages']}>
