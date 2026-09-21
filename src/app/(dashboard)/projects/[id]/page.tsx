@@ -112,7 +112,7 @@ export default async function ProjectDetailPage({
       .order('created_at', { ascending: false }),
     db
       .from('tasks')
-      .select('id, project_id, title, status, priority, labels, assignee_agent_id, position, created_at, updated_at, blocked_at, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
+      .select('id, project_id, title, status, priority, labels, assignee_agent_id, position, due_date, created_at, updated_at, blocked_at, blocker_follow_up_at, blocker_followed_through_at, blocker_escalated_at, blocker_resolution_action, blocker_resolution_owner, blocker_resolution_due_at, blocker_resolution_status, assignee:agents!tasks_assignee_agent_id_fkey(id, name, display_name)')
       .eq('project_id', id)
       .order('position', { ascending: true }),
     (async () => {
@@ -142,10 +142,36 @@ export default async function ProjectDetailPage({
   });
   const invitations = invitationVisibility.visibleInvitations;
   const observers = observersRes.data || [];
-  const tasks = ((tasksRes.data || []) as Array<Record<string, unknown>>).map((task) => ({
+  // Spelled out so the select above and what the board reads are checked
+  // against each other: casting the mapped rows straight to `TaskRow[]` hid a
+  // select that fetched neither due_date nor any blocker_* column, so no card
+  // was ever overdue and every blocked card claimed it had no unblock plan.
+  type TaskSelectRow = {
+    id: string;
+    project_id: string;
+    title: string;
+    status: string;
+    priority: string;
+    labels: string[];
+    assignee_agent_id: string | null;
+    position: number;
+    due_date: string | null;
+    created_at: string;
+    updated_at: string;
+    blocked_at: string | null;
+    blocker_follow_up_at: string | null;
+    blocker_followed_through_at: string | null;
+    blocker_escalated_at: string | null;
+    blocker_resolution_action: string | null;
+    blocker_resolution_owner: string | null;
+    blocker_resolution_due_at: string | null;
+    blocker_resolution_status: string | null;
+    assignee: { id: string; name: string; display_name: string } | { id: string; name: string; display_name: string }[] | null;
+  };
+  const tasks: TaskRow[] = ((tasksRes.data || []) as TaskSelectRow[]).map((task) => ({
     ...task,
     assignee: Array.isArray(task.assignee) ? (task.assignee[0] ?? null) : task.assignee,
-  })) as TaskRow[];
+  }));
   const allAgents = allAgentsRes.data || [];
   const dependencyRows = (depsRes.data || []) as Array<{
     id: string;

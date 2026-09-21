@@ -93,11 +93,27 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
   const db = createServerClient();
-  const { data: profile } = await db
-    .from('user_profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .single();
+  let profile: { is_super_admin?: boolean | null } | null;
+  try {
+    const { data, error } = await db
+      .from('user_profiles')
+      .select('is_super_admin')
+      .eq('id', user.id)
+      .single();
+    // PGRST116 is "no profile row", which is an answer: this user is not a
+    // super-admin. Every other error means the question went unanswered, and a
+    // connection failure throws out of the await entirely. Neither is a 403 —
+    // telling a super-admin they lack a permission they hold sends them looking
+    // for a grant instead of at the database that is down.
+    if (error && error.code !== 'PGRST116') throw new Error(error.message);
+    profile = data;
+  } catch (error) {
+    console.error('[email/preview] could not determine super-admin status', error);
+    return NextResponse.json(
+      { error: 'Email preview is unavailable: your permissions could not be verified. Retry shortly.', code: 'DB_ERROR' },
+      { status: 503 },
+    );
+  }
   if (!profile?.is_super_admin) return NextResponse.json({ error: 'Forbidden', code: 'FORBIDDEN' }, { status: 403 });
 
   const template = new URL(req.url).searchParams.get('template');
@@ -105,10 +121,34 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown template', code: 'VALIDATION_ERROR' }, { status: 400 });
   }
 
-  const APP_URL = getAppUrl(req);
+  let APP_URL: string;
+  try {
+    APP_URL = getAppUrl(req);
+  } catch (error) {
+    // No Host header and no NEXT_PUBLIC_APP_URL: a deployment setting is missing,
+    // not a bad request. Uncaught this was a bare 500 with an empty body, which
+    // an operator cannot tell apart from a crashed process.
+    console.error('[email/preview] could not derive app url', error);
+    return NextResponse.json(
+      { error: 'Email preview is unavailable: this server could not derive its own URL and NEXT_PUBLIC_APP_URL is not set.', code: 'SERVICE_MISCONFIGURED' },
+      { status: 503 },
+    );
+  }
+
   const previewPayloads = getPreviewPayloads(APP_URL);
   const Component = templateComponents[template];
-  const html = await render(createElement(Component, previewPayloads[template]));
+  let html: string;
+  try {
+    html = await render(createElement(Component, previewPayloads[template]));
+  } catch (error) {
+    // A template that fails to render is our bug, but it still has to say so:
+    // the same empty 500 otherwise.
+    console.error('[email/preview] template render failed', template, error);
+    return NextResponse.json(
+      { error: `Failed to render the "${template}" email template.`, code: 'INTERNAL_ERROR' },
+      { status: 500 },
+    );
+  }
 
   return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }

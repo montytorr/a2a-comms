@@ -4,6 +4,10 @@ import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { randomBytes, createHash } from 'crypto';
 import { requestApproval, consumeApproval } from '@/lib/approvals';
+import { revalidatePath } from 'next/cache';
+import { auditLog } from '@/lib/api-helpers';
+import { updateAgentLifecycle, AgentLifecycleError, type AgentLifecycleUpdateInput } from '@/lib/agent-lifecycle';
+import { isAgentTrustTier } from '@/lib/trust-tiers';
 
 export interface RotateKeyResult {
   success: boolean;
@@ -160,4 +164,122 @@ export async function executeKeyRotation(agentId: string, approvalId: string): P
  */
 export async function rotateAgentKey(agentId: string): Promise<RotateKeyResult> {
   return requestKeyRotation(agentId);
+}
+
+/**
+ * Trust, trust-policy and privacy edits from the dashboard.
+ *
+ * These existed as buttons long before they existed as actions: the three
+ * controls on this page each did a browser `fetch('/api/v1/agents/:id')`, and
+ * `/api/v1/*` is HMAC-service-key only with no session path, so every save
+ * could only ever 401. The control rendered, accepted input, showed the new
+ * value, and silently discarded it. They are server actions now, authorized by
+ * the same rule the page uses to decide whether to render them at all.
+ */
+type AgentEditResult = { success: boolean; error?: string };
+
+async function requireAgentEditor(agentId: string) {
+  const user = await getAuthUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const db = createServerClient();
+  const { data: agent, error } = await db
+    .from('agents')
+    .select('id, name, owner_user_id')
+    .eq('id', agentId)
+    .single();
+
+  if (error || !agent) throw new Error('Agent not found');
+
+  // Same predicate as agents/[id]/page.tsx computes for `canEdit`. An agent's
+  // tier is a judgement made ABOUT it, so it is never self-service.
+  if (!user.isSuperAdmin && agent.owner_user_id !== user.id) {
+    throw new Error('Only the agent owner or a super admin can change this');
+  }
+
+  return { user, agent };
+}
+
+function toEditResult(error: unknown): AgentEditResult {
+  if (error instanceof AgentLifecycleError) return { success: false, error: error.message };
+  return { success: false, error: error instanceof Error ? error.message : 'Update failed' };
+}
+
+export async function updateAgentTrustControls(
+  agentId: string,
+  input: { trust_tier: string; trust_notes: string | null }
+): Promise<AgentEditResult> {
+  try {
+    const { user } = await requireAgentEditor(agentId);
+
+    if (!isAgentTrustTier(input.trust_tier)) {
+      return { success: false, error: 'Invalid trust tier. Must be one of: internal, partner, external' };
+    }
+
+    await updateAgentLifecycle(agentId, {
+      trust_tier: input.trust_tier,
+      trust_notes: input.trust_notes,
+    });
+
+    await auditLog({
+      actor: user.displayName,
+      action: 'agent.trust_tier_change',
+      resourceType: 'agent',
+      resourceId: agentId,
+      details: { trust_tier: input.trust_tier, changed_by_user: user.id },
+    });
+
+    revalidatePath(`/agents/${agentId}`);
+    return { success: true };
+  } catch (error) {
+    return toEditResult(error);
+  }
+}
+
+export async function updateAgentTrustPolicy(
+  agentId: string,
+  trustPolicy: AgentLifecycleUpdateInput['trust_policy']
+): Promise<AgentEditResult> {
+  try {
+    const { user } = await requireAgentEditor(agentId);
+
+    await updateAgentLifecycle(agentId, { trust_policy: trustPolicy });
+
+    await auditLog({
+      actor: user.displayName,
+      action: 'agent.trust_policy_change',
+      resourceType: 'agent',
+      resourceId: agentId,
+      details: { changed_by_user: user.id },
+    });
+
+    revalidatePath(`/agents/${agentId}`);
+    return { success: true };
+  } catch (error) {
+    return toEditResult(error);
+  }
+}
+
+export async function updateAgentPrivacy(
+  agentId: string,
+  privacyMetadata: AgentLifecycleUpdateInput['privacy_metadata']
+): Promise<AgentEditResult> {
+  try {
+    const { user } = await requireAgentEditor(agentId);
+
+    await updateAgentLifecycle(agentId, { privacy_metadata: privacyMetadata });
+
+    await auditLog({
+      actor: user.displayName,
+      action: 'agent.privacy_change',
+      resourceType: 'agent',
+      resourceId: agentId,
+      details: { changed_by_user: user.id },
+    });
+
+    revalidatePath(`/agents/${agentId}`);
+    return { success: true };
+  } catch (error) {
+    return toEditResult(error);
+  }
 }

@@ -3,6 +3,7 @@ import { auditLog } from '@/lib/api-helpers';
 import { evaluateContractCollaboration, type TrustPolicyAgent } from '@/lib/trust-tiers';
 import { enrichContract } from '@/app/api/v1/contracts/_helpers';
 import { validateContractDescription } from '@/lib/contract-description';
+import { validateExpiresInHours } from '@/lib/contract-expiry-window';
 import type { ApiError, ContractResponse, ProposeContractRequest } from '@/lib/types';
 
 export interface ContractProposalActor extends TrustPolicyAgent {
@@ -59,8 +60,16 @@ export async function createContractProposal(params: {
     throw new ContractProposalError(description.status, description.body);
   }
 
+  // A window that cannot be turned into a date threw RangeError out of the
+  // route, which the catch below reported as DB_ERROR - a server fault for what
+  // is the caller's own value.
+  const expiryWindow = validateExpiresInHours(parsed.expires_in_hours);
+  if (!expiryWindow.ok) {
+    throw new ContractProposalError(expiryWindow.status, expiryWindow.body);
+  }
+
   const maxTurns = parsed.max_turns ?? 50;
-  const expiresInHours = parsed.expires_in_hours ?? 168;
+  const expiresInHours = expiryWindow.hours;
   const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
 
   const db = createServerClient();

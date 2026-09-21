@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { evaluateAttachmentDownloadAccess } from './attachment-trust-policy';
 import type { ProjectAccessRecord } from './project-access';
 
@@ -93,4 +94,16 @@ test('missing project access is denied before trust-tier checks', () => {
       body: { error: 'Forbidden', code: 'FORBIDDEN' },
     }
   );
+});
+
+// Regression: `verifyContractParticipation` selected `status` and never read
+// it, so an agent that had REJECTED a contract invitation still counted as a
+// participant and could download that contract's attachments. Declining must
+// not be a cheaper way to keep reading. Asserted against the source because the
+// lookup is a database query with no seam to inject.
+test('contract participation for attachment access is limited to accepted participants', () => {
+  const source = readFileSync(new URL('./attachment-access.ts', import.meta.url), 'utf8');
+  const lookup = source.slice(source.indexOf('export async function verifyContractParticipation'));
+  const body = lookup.slice(0, lookup.indexOf('\n}'));
+  assert.match(body, /\.eq\('status', 'accepted'\)/);
 });

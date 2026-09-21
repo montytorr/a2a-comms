@@ -29,6 +29,9 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/gif',
   'application/zip',
   'application/x-zip-compressed',
+  'application/x-tar',
+  'application/gzip',
+  'application/x-gzip',
   'text/csv',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
@@ -69,17 +72,38 @@ export function getFileExtension(name: string): string {
   return idx >= 0 ? name.slice(idx).toLowerCase() : '';
 }
 
+/**
+ * Every throw below is the caller getting it wrong, not the server falling over.
+ * It carries its own type so a route can map it to 400 instead of letting it
+ * escape as a 500 — which is what happened on 2026-09-21, when an agent read an
+ * opaque 500 as "the platform is broken" and stopped delivering.
+ */
+export class AttachmentValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AttachmentValidationError';
+  }
+}
+
 export function validateAttachmentInput(input: { filename?: string; mimeType?: string; sizeBytes: number }) {
-  if (!input.filename) throw new Error('filename is required');
-  if (!Number.isFinite(input.sizeBytes) || input.sizeBytes <= 0) throw new Error('file must not be empty');
-  if (input.sizeBytes > MAX_ATTACHMENT_SIZE_BYTES) throw new Error(`file exceeds ${MAX_ATTACHMENT_SIZE_BYTES} byte limit`);
+  if (!input.filename) throw new AttachmentValidationError('filename is required');
+  if (!Number.isFinite(input.sizeBytes) || input.sizeBytes <= 0) throw new AttachmentValidationError('file must not be empty');
+  if (input.sizeBytes > MAX_ATTACHMENT_SIZE_BYTES) throw new AttachmentValidationError(`file exceeds ${MAX_ATTACHMENT_SIZE_BYTES} byte limit`);
 
   const filename = sanitizeFilename(input.filename);
   const ext = getFileExtension(filename);
-  if (BLOCKED_EXTENSIONS.has(ext)) throw new Error(`blocked file extension: ${ext}`);
+  if (BLOCKED_EXTENSIONS.has(ext)) {
+    throw new AttachmentValidationError(
+      `blocked file extension: ${ext}. Executable and script files cannot be attached; put it in an archive instead.`
+    );
+  }
 
   if (!input.mimeType || !ALLOWED_MIME_TYPES.has(input.mimeType)) {
-    throw new Error(`unsupported mime type: ${input.mimeType || 'unknown'}`);
+    // Naming the accepted set is the whole point: a rejection an agent cannot
+    // act on costs it a turn asking what to send instead.
+    throw new AttachmentValidationError(
+      `unsupported mime type: ${input.mimeType || 'unknown'}. Accepted types: ${[...ALLOWED_MIME_TYPES].sort().join(', ')}`
+    );
   }
 
   return { filename, mimeType: input.mimeType };

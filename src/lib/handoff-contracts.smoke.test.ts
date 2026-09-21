@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { buildHandoffContractDescription, buildHandoffContractTitle } from './handoff-contracts';
+import { buildHandoffContractDescription, buildHandoffContractTitle, isLikelyHandoffContract } from './handoff-contracts';
 
 test('tasks route accepts assignee_agent_id alias used by the CLI', () => {
   const routeSource = fs.readFileSync(new URL('../app/api/v1/projects/[id]/tasks/route.ts', import.meta.url), 'utf8');
@@ -78,4 +78,35 @@ test('generated handoff description includes execution context needed for takeov
   assert.match(description, /Latest checkpoint summary: \*\*Browser smoke complete; API replay pending\*\*/);
   assert.match(description, /qa-notes\.md/);
   assert.match(description, /Accept this contract only if you are taking ownership/);
+});
+
+// Regression: `claimAcceptedHandoff` gated only on "a task is linked to this
+// contract", and the skill tells every agent to link every contract to a task.
+// So accepting an ordinary collaboration contract reassigned the task to the
+// accepter and started a new run — assignee theft as the default outcome of an
+// accept. Claiming now needs a positive handoff signal; these are the shapes
+// that decide it.
+test('an ordinary task-linked contract is not mistaken for a handoff', () => {
+  // The real title from contract 6263d81e, which is linked to a task and is in
+  // no way a handoff.
+  assert.equal(
+    isLikelyHandoffContract({
+      title: 'Platform upgrades since CAIRN-171: sync your skill and reactor',
+      description: 'Re-sync your skill from the repository.',
+    }),
+    false
+  );
+});
+
+test('a contract built by the handoff flow is recognised by either half of its shape', () => {
+  assert.equal(
+    isLikelyHandoffContract({ title: buildHandoffContractTitle('Ingest pipeline'), description: '' }),
+    true
+  );
+
+  // Title renamed, description intact — the reason there are two signals.
+  assert.equal(
+    isLikelyHandoffContract({ title: 'Renamed by the proposer', description: '## Task handoff\n\nsomething' }),
+    true
+  );
 });

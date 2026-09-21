@@ -54,10 +54,50 @@ export interface MyTaskFilters {
  */
 export const OPEN_STATUSES: TaskStatus[] = ['backlog', 'todo', 'in-progress', 'in-review'];
 
+/**
+ * Who a task query is allowed to see, decided before any query is built.
+ *
+ * This lived inline as `if (!isSuperAdmin && scope.projectIds.length > 0)`,
+ * which inverted the guard exactly when it mattered: a user whose scope was
+ * EMPTY skipped the project filter altogether, and `/tasks` listed every task
+ * in every project. An empty scope means "sees nothing", not "sees
+ * everything". It is a pure function so the rule can be tested without a
+ * database — the inline version never could be.
+ */
+export function resolveTaskQueryScope(input: {
+  isSuperAdmin: boolean;
+  projectIds: string[];
+  agentIds: string[];
+  assignee?: MyTaskFilters['assignee'];
+}): { visible: boolean; projectIds: string[] | null; agentIds: string[] | null } {
+  const filterByAssignee = input.assignee !== 'all';
+
+  if (!input.isSuperAdmin && input.projectIds.length === 0) {
+    return { visible: false, projectIds: null, agentIds: null };
+  }
+
+  if (filterByAssignee && input.agentIds.length === 0) {
+    return { visible: false, projectIds: null, agentIds: null };
+  }
+
+  return {
+    visible: true,
+    // A super admin is bounded by nothing; everyone else by their scope.
+    projectIds: input.isSuperAdmin ? null : input.projectIds,
+    agentIds: filterByAssignee ? input.agentIds : null,
+  };
+}
+
 export async function listMyTasks(auth: AuthActorContext, filters: MyTaskFilters = {}) {
   const db = createServerClient();
   const scope = await buildDashboardVisibilityScope(auth);
   const limit = filters.limit ?? 200;
+  const visibility = resolveTaskQueryScope({
+    isSuperAdmin: auth.user.isSuperAdmin,
+    projectIds: scope.projectIds,
+    agentIds: scope.agentIds,
+    assignee: filters.assignee,
+  });
 
   let query = db
     .from('tasks')
@@ -76,15 +116,12 @@ export async function listMyTasks(auth: AuthActorContext, filters: MyTaskFilters
     .order('updated_at', { ascending: false })
     .limit(limit);
 
-  // A super admin sees every project; everyone else is bounded by the same
-  // visibility scope the rest of the dashboard uses.
-  if (!auth.user.isSuperAdmin && scope.projectIds.length > 0) {
-    query = query.in('project_id', scope.projectIds);
+  if (!visibility.visible) {
+    return { tasks: [] as MyTask[], error: null };
   }
 
-  if (filters.assignee !== 'all') {
-    query = query.in('assignee_agent_id', scope.agentIds);
-  }
+  if (visibility.projectIds) query = query.in('project_id', visibility.projectIds);
+  if (visibility.agentIds) query = query.in('assignee_agent_id', visibility.agentIds);
 
   if (filters.projectId) query = query.eq('project_id', filters.projectId);
 

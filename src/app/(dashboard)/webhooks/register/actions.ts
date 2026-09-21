@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/db/server';
 import { getAuthUser } from '@/lib/auth-context';
 import { validateWebhookUrl } from '@/lib/url-validator';
 import { evaluateWebhookManagementAccess } from '@/lib/webhook-trust-policy';
+import { TRUST_POLICY_ACCESS_COLUMNS } from '@/lib/agent-trust-policy';
 
 export async function getAgents() {
   const user = await getAuthUser();
@@ -12,7 +13,7 @@ export async function getAgents() {
   const db = createServerClient();
   let query = db
     .from('agents')
-    .select('id, name, display_name, trust_tier')
+    .select(TRUST_POLICY_ACCESS_COLUMNS)
     .order('name', { ascending: true });
 
   // Non-admin: only their agents
@@ -38,7 +39,7 @@ export async function registerWebhook(params: {
   // Validate agent exists and user owns it (or is admin)
   const { data: agent } = await db
     .from('agents')
-    .select('id, name, owner_user_id, trust_tier')
+    .select(TRUST_POLICY_ACCESS_COLUMNS)
     .eq('id', params.agentId)
     .single();
 

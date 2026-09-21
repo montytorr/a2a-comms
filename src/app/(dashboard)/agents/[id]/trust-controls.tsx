@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENT_TRUST_TIERS, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, type AgentTrustTier } from '@/lib/trust-tiers';
+import { updateAgentTrustControls } from './actions';
 
 interface TrustControlsProps {
   agentId: string;
@@ -28,20 +29,13 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
 
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/v1/agents/${agentId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            trust_tier: tier,
-            trust_notes: notes.trim() || null,
-          }),
+        const result = await updateAgentTrustControls(agentId, {
+          trust_tier: tier,
+          trust_notes: notes.trim() || null,
         });
 
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(payload?.error || 'Failed to update trust controls');
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update trust controls');
         }
 
         setSuccess('Trust controls updated.');

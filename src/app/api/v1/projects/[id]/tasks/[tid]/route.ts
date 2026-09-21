@@ -18,7 +18,8 @@ import { recordDelegation, resolveChainPredecessors, type ChainCandidate } from 
 import type { UpdateTaskRequest, ApiError, TaskStatus } from '@/lib/types';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
-import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
+import { evaluateEscalationBroker, evaluateHandoffInvite, TRUST_POLICY_AGENT_COLUMNS } from '@/lib/trust-tiers';
+import { validateExpiresInHours } from '@/lib/contract-expiry-window';
 
 async function notifyAssigneeOwner(
   db: ReturnType<typeof createServerClient>,
@@ -496,6 +497,19 @@ export async function PATCH(
     }
   }
 
+  // Same reason as the invitee checks below: the task update lands before the
+  // contract is built, so an unusable expiry window has to be refused here or
+  // it returns 500 with the update already applied.
+  const handoffExpiry = validateExpiresInHours(parsed.handoff_contract?.expires_in_hours, 'handoff_contract.expires_in_hours');
+  if (!handoffExpiry.ok) {
+    return NextResponse.json(handoffExpiry.body satisfies ApiError, { status: handoffExpiry.status });
+  }
+
+  const escalationExpiry = validateExpiresInHours(parsed.escalation_contract?.expires_in_hours, 'escalation_contract.expires_in_hours');
+  if (!escalationExpiry.ok) {
+    return NextResponse.json(escalationExpiry.body satisfies ApiError, { status: escalationExpiry.status });
+  }
+
   // Pre-validate handoff/escalation contract inputs before committing task update
   if (parsed.handoff_contract) {
     const preNormalizedInvitees = [...new Set(parsed.handoff_contract.invitees.map((invitee) => invitee.trim()).filter(Boolean))];
@@ -622,7 +636,7 @@ export async function PATCH(
 
     const { data: inviteeAgents, error: inviteeError } = await db
       .from('agents')
-      .select('id, name, display_name, owner_user_id')
+      .select(TRUST_POLICY_AGENT_COLUMNS)
       .in('name', normalizedInvitees);
 
     if (inviteeError) {
@@ -679,7 +693,7 @@ export async function PATCH(
       linkedTaskTitle: task.title,
     }));
 
-    const expiresInHours = parsed.handoff_contract.expires_in_hours ?? 168;
+    const expiresInHours = handoffExpiry.hours;
     const maxTurns = parsed.handoff_contract.max_turns ?? 30;
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
     const contractTitle = parsed.handoff_contract.title || buildHandoffContractTitle(task.title);
@@ -820,7 +834,7 @@ export async function PATCH(
 
     const { data: brokerAgents, error: brokerError } = await db
       .from('agents')
-      .select('id, name, display_name, owner_user_id')
+      .select(TRUST_POLICY_AGENT_COLUMNS)
       .in('name', normalizedBrokers);
 
     if (brokerError) {
@@ -877,7 +891,7 @@ export async function PATCH(
       linkedTaskTitle: task.title,
     }));
 
-    const expiresInHours = parsed.escalation_contract.expires_in_hours ?? 168;
+    const expiresInHours = escalationExpiry.hours;
     const maxTurns = parsed.escalation_contract.max_turns ?? 30;
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
     const contractTitle = parsed.escalation_contract.title || buildBrokeredCollaborationTitle(task.title);

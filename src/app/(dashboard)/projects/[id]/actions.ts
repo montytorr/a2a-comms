@@ -4,9 +4,11 @@ import { createServerClient } from '@/lib/db/server';
 import { revalidatePath } from 'next/cache';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated, notifyProjectInvitationResponded } from '@/lib/project-invitations';
 import { refreshTaskBlockedState } from '@/lib/task-blocker-actions';
-import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
+import { evaluateProjectMemberInvite, evaluateObserverAccess, TRUST_POLICY_AGENT_COLUMNS } from '@/lib/trust-tiers';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { EMPTY_UUID, resolveProjectActorAccess } from '@/lib/dashboard-actor-helpers';
+import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
+import type { ProjectPrivacyMetadata } from '@/lib/types';
 
 async function requireProjectMembership(
   projectId: string,
@@ -70,10 +72,10 @@ export async function inviteProjectMember(projectId: string, agentId: string) {
     db.from('projects').select('id, title').eq('id', projectId).single(),
     db.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
     db.from('project_member_invitations').select('id, status').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    db.from('agents').select('id, name, display_name, owner_user_id, trust_tier').eq('id', agentId).single(),
+    db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', agentId).single(),
     inviterLookupId
-      ? db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
-      : db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
+      ? db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', inviterLookupId).maybeSingle()
+      : db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', EMPTY_UUID).maybeSingle(),
   ]);
 
   if (!project) throw new Error('Project not found');
@@ -199,10 +201,10 @@ export async function addProjectObserver(projectId: string, agentId: string, not
     db.from('projects').select('id').eq('id', projectId).single(),
     db.from('project_members').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
     db.from('project_observers').select('id').eq('project_id', projectId).eq('agent_id', agentId).single(),
-    db.from('agents').select('id, name, display_name, trust_tier').eq('id', agentId).single(),
+    db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', agentId).single(),
     inviterLookupId
-      ? db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', inviterLookupId).maybeSingle()
-      : db.from('agents').select('id, name, owner_user_id, trust_tier').eq('id', EMPTY_UUID).maybeSingle(),
+      ? db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', inviterLookupId).maybeSingle()
+      : db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', EMPTY_UUID).maybeSingle(),
   ]);
 
   if (!project) throw new Error('Project not found');
@@ -210,7 +212,10 @@ export async function addProjectObserver(projectId: string, agentId: string, not
   if (existingMember) throw new Error('Agent is already a member of this project');
   if (existingObserver) throw new Error('Agent is already an observer on this project');
   if (inviterAgent) {
-    const trustGate = evaluateProjectMemberInvite(inviterAgent, agent);
+    // This used to run the MEMBER gate, whose own refusal message tells you to
+    // "start with observer access" — so the escape hatch rejected exactly the
+    // agents it exists to admit, quoting advice to use the door you were at.
+    const trustGate = evaluateObserverAccess(inviterAgent, agent);
     if (!trustGate.allowed) throw new Error(trustGate.reason || 'Agent trust tier blocks observer access');
   }
 
@@ -285,6 +290,11 @@ export async function removeProjectMember(projectId: string, memberId: string) {
 }
 
 export async function getAvailableAgents(projectId: string) {
+  // A server action is a POST endpoint: without this, anyone holding the action
+  // id could enumerate every agent on the platform. Every sibling in this file
+  // checks membership; this one did not.
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
   const db = createServerClient();
 
   // Get all agents
@@ -376,6 +386,30 @@ export async function updateProject(
     .update(updates)
     .eq('id', projectId);
   if (error) throw new Error(`Failed to update project: ${error.message}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/**
+ * Project privacy was a live control with no action behind it: the panel did a
+ * browser fetch to `/api/v1/projects/:id`, which is HMAC-only, so every save
+ * 401'd while the UI kept showing the new value.
+ */
+export async function updateProjectPrivacy(
+  projectId: string,
+  privacyMetadata: ProjectPrivacyMetadata
+) {
+  await requireProjectMembership(projectId, { requireRole: 'owner' });
+
+  const db = createServerClient();
+  const { error } = await db
+    .from('projects')
+    .update({
+      privacy_metadata: normalizeProjectPrivacyMetadata(privacyMetadata),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) throw new Error(`Failed to update project privacy controls: ${error.message}`);
   revalidatePath(`/projects/${projectId}`);
 }
 

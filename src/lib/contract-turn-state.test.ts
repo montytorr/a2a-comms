@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import type { TurnStateLastMessage, TurnStateParticipant } from '@/lib/contract-turn-state';
 import type { Contract, ContractStatus } from '@/lib/types';
@@ -308,4 +310,74 @@ test('a question on a cancelled contract cannot make it live again', () => {
     });
     assert.equal(result.awaiting, 'nobody', `${status} should owe nothing`);
   }
+});
+
+/**
+ * `blockingQuestions` is optional, and an omitted one defaults to no questions
+ * rather than failing - so a surface that forgets it derives a confident wrong
+ * answer and nothing anywhere errors. The contracts LIST page shipped in
+ * exactly that state: it fetched the operator channel for its "asking" pill but
+ * never fed it to the derivation, so `awaiting: 'human'` could not occur there
+ * and a contract parked on an unanswered question still read "your move" - on
+ * the one page whose job is to say whose move it is.
+ *
+ * Every case above passes the argument by hand, so none of them could catch
+ * that. This one reads the call sites.
+ */
+const SRC = join(process.cwd(), 'src');
+
+/**
+ * Activation asks a narrower question than any display does - who opens, by the
+ * accepter-opens convention - and reads only `awaiting_agent_id`. A blocking
+ * question nulls that field by design, which would leave the webhook naming
+ * nobody as the opener, so this one call deliberately derives without them.
+ */
+const DELIBERATELY_UNCONDITIONED: Record<string, string> = {
+  'app/api/v1/contracts/[id]/accept/route.ts': 'names the opener at activation; reads awaiting_agent_id only',
+};
+
+function sourceFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...sourceFiles(path));
+    else if (/\.tsx?$/.test(entry.name) && !entry.name.includes('.test.')) out.push(path);
+  }
+  return out;
+}
+
+/** The argument object of each `deriveContractTurnState({ ... })` call. */
+function callArguments(source: string): string[] {
+  const out: string[] = [];
+  const marker = 'deriveContractTurnState({';
+  for (let at = source.indexOf(marker); at !== -1; at = source.indexOf(marker, at + 1)) {
+    let depth = 0;
+    let end = at + marker.length - 1;
+    for (; end < source.length; end += 1) {
+      if (source[end] === '{') depth += 1;
+      else if (source[end] === '}' && (depth -= 1) === 0) break;
+    }
+    out.push(source.slice(at, end + 1));
+  }
+  return out;
+}
+
+test('every surface that derives turn state feeds it the blocking questions', () => {
+  const missing: string[] = [];
+  let callSites = 0;
+
+  for (const file of sourceFiles(SRC)) {
+    const source = readFileSync(file, 'utf8');
+    if (!source.includes('deriveContractTurnState({')) continue;
+    for (const call of callArguments(source)) {
+      callSites += 1;
+      const relative = file.slice(SRC.length + 1);
+      if (call.includes('blockingQuestions') || relative in DELIBERATELY_UNCONDITIONED) continue;
+      missing.push(relative);
+    }
+  }
+
+  // A guard that finds no call sites cannot fail for the right reason.
+  assert.ok(callSites >= 3, `expected at least the list page, the detail page and the API; found ${callSites}`);
+  assert.deepEqual(missing, [], `these derive turn state without blocking questions: ${missing.join(', ')}`);
 });

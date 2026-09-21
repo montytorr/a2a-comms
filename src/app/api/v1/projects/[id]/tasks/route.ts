@@ -12,8 +12,9 @@ import { sendTaskAssignedEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { buildHandoffContractDescription, buildHandoffContractTitle } from '@/lib/handoff-contracts';
 import { buildBrokeredCollaborationDescription, buildBrokeredCollaborationTitle } from '@/lib/escalation-brokerage';
-import { evaluateEscalationBroker, evaluateHandoffInvite } from '@/lib/trust-tiers';
+import { evaluateEscalationBroker, evaluateHandoffInvite, TRUST_POLICY_AGENT_COLUMNS } from '@/lib/trust-tiers';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
+import { validateExpiresInHours } from '@/lib/contract-expiry-window';
 
 async function notifyAssigneeOwner(
   db: ReturnType<typeof createServerClient>,
@@ -207,6 +208,19 @@ export async function POST(
     );
   }
 
+  // Checked here rather than beside the date arithmetic below: by then the task
+  // row exists, so a bad window used to return 500 AND leave a task with no
+  // contract behind it.
+  const handoffExpiry = validateExpiresInHours(parsed.handoff_contract?.expires_in_hours, 'handoff_contract.expires_in_hours');
+  if (!handoffExpiry.ok) {
+    return NextResponse.json(handoffExpiry.body satisfies ApiError, { status: handoffExpiry.status });
+  }
+
+  const escalationExpiry = validateExpiresInHours(parsed.escalation_contract?.expires_in_hours, 'escalation_contract.expires_in_hours');
+  if (!escalationExpiry.ok) {
+    return NextResponse.json(escalationExpiry.body satisfies ApiError, { status: escalationExpiry.status });
+  }
+
   // Validate priority
   if (parsed.priority) {
     const validPriorities = ['urgent', 'high', 'medium', 'low'];
@@ -233,7 +247,7 @@ export async function POST(
 
     const { data: inviteeAgents, error: inviteeError } = await db
       .from('agents')
-      .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
+      .select(`${TRUST_POLICY_AGENT_COLUMNS}, max_concurrent_contracts`)
       .in('name', invitees);
 
     if (inviteeError) {
@@ -275,7 +289,7 @@ export async function POST(
 
     const { data: brokerAgents, error: brokerError } = await db
       .from('agents')
-      .select('id, name, display_name, max_concurrent_contracts, owner_user_id')
+      .select(`${TRUST_POLICY_AGENT_COLUMNS}, max_concurrent_contracts`)
       .in('name', brokers);
 
     if (brokerError) {
@@ -379,7 +393,7 @@ export async function POST(
   let handoffContract: Record<string, unknown> | null = null;
   let escalationContract: Record<string, unknown> | null = null;
   if (parsed.handoff_contract) {
-    const expiresInHours = parsed.handoff_contract.expires_in_hours ?? 168;
+    const expiresInHours = handoffExpiry.hours;
     const maxTurns = parsed.handoff_contract.max_turns ?? 30;
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
     const handoffDescription = parsed.handoff_contract.description || buildHandoffContractDescription({
@@ -483,7 +497,7 @@ export async function POST(
   }
 
   if (parsed.escalation_contract) {
-    const expiresInHours = parsed.escalation_contract.expires_in_hours ?? 168;
+    const expiresInHours = escalationExpiry.hours;
     const maxTurns = parsed.escalation_contract.max_turns ?? 30;
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
     const escalationReason = parsed.escalation_contract.escalation_reason ?? 'Escalation requested during task creation';

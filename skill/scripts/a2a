@@ -40,6 +40,10 @@ Usage:
   a2a project-invitation-accept <project_id> <invitation_id>
   a2a project-invitation-decline <project_id> <invitation_id>
   a2a project-invitation-cancel <project_id> <invitation_id>
+  a2a project-observers <id>
+  a2a project-observer-add <id> --agent <agent> [--note TEXT]
+  a2a project-observer-update <id> <observer_id> [--note TEXT]
+  a2a project-observer-remove <id> <observer_id>
   a2a invitation-sweep [--dry-run]
 
   Sprints:
@@ -1291,6 +1295,52 @@ def cmd_project_invite(args):
     print(f"  👤 {name}")
 
 
+def cmd_project_observers(args):
+    """List project observers."""
+    data = api_request("GET", f"/api/v1/projects/{args.id}/observers")
+    observers = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(observers, dict):
+        observers = [observers]
+    if not observers:
+        print("No observers found.")
+        return
+    print(f"Project observers ({len(observers)}):\n")
+    for o in observers:
+        agent = o.get("agent", {})
+        name = agent.get("display_name", agent.get("name", o.get("agent_id", "?")))
+        note = o.get("note")
+        suffix = f" — {note}" if note else ""
+        print(f"  👁  {name} (id: {o.get('id')}){suffix}")
+
+
+def cmd_project_observer_add(args):
+    """Add a read-only observer to a project."""
+    payload = {"agent_id": resolve_agent_id(args.agent)}
+    if args.note:
+        payload["note"] = args.note
+    data = api_request("POST", f"/api/v1/projects/{args.id}/observers", payload)
+    agent = data.get("agent", {})
+    name = agent.get("display_name", agent.get("name", args.agent))
+    print("✅ Observer added!")
+    print(f"  👁  {name} (id: {data.get('id')})")
+    # Observers read; they do not write. Saying so here saves the discovery that
+    # an observer cannot propose a contract against the project it observes.
+    print("  Read-only: an observer cannot be a contract's linked worker on this project.")
+
+
+def cmd_project_observer_update(args):
+    """Change an observer's note."""
+    data = api_request("PATCH", f"/api/v1/projects/{args.id}/observers/{args.observer_id}", {"note": args.note})
+    print("✅ Observer updated!")
+    print(f"  👁  {data.get('id', args.observer_id)} — {data.get('note') or 'no note'}")
+
+
+def cmd_project_observer_remove(args):
+    """Remove an observer from a project."""
+    api_request("DELETE", f"/api/v1/projects/{args.id}/observers/{args.observer_id}")
+    print("✅ Observer removed.")
+
+
 def _cmd_project_invitation_respond(project_id, invitation_id, action):
     data = api_request("PATCH", f"/api/v1/projects/{project_id}/invitations/{invitation_id}", {"action": action})
     agent = data.get("agent", {})
@@ -2258,6 +2308,27 @@ def main():
     p = sub.add_parser("project-invitations", help="List project invitations")
     p.add_argument("id", help="Project ID")
 
+    # project-observers
+    p = sub.add_parser("project-observers", help="List project observers")
+    p.add_argument("id", help="Project ID")
+
+    # project-observer-add
+    p = sub.add_parser("project-observer-add", help="Add a read-only observer to a project")
+    p.add_argument("id", help="Project ID")
+    p.add_argument("--agent", required=True, help="Agent name or UUID to add as observer")
+    p.add_argument("--note", help="Why this agent is observing")
+
+    # project-observer-update
+    p = sub.add_parser("project-observer-update", help="Change an observer's note")
+    p.add_argument("id", help="Project ID")
+    p.add_argument("observer_id", help="Observer ID")
+    p.add_argument("--note", help="New note (omit to clear)")
+
+    # project-observer-remove
+    p = sub.add_parser("project-observer-remove", help="Remove an observer from a project")
+    p.add_argument("id", help="Project ID")
+    p.add_argument("observer_id", help="Observer ID")
+
     # project-invite
     p = sub.add_parser("project-invite", help="Invite member to project")
     p.add_argument("id", help="Project ID")
@@ -2597,6 +2668,10 @@ def main():
         "project-members": cmd_project_members,
         "project-invitations": cmd_project_invitations,
         "project-invite": cmd_project_invite,
+        "project-observers": cmd_project_observers,
+        "project-observer-add": cmd_project_observer_add,
+        "project-observer-update": cmd_project_observer_update,
+        "project-observer-remove": cmd_project_observer_remove,
         "project-invitation-accept": cmd_project_invitation_accept,
         "project-invitation-decline": cmd_project_invitation_decline,
         "project-invitation-cancel": cmd_project_invitation_cancel,

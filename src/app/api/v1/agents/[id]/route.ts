@@ -86,6 +86,20 @@ export async function PATCH(
     );
   }
 
+  // A tier is what the platform thinks of an agent, so the agent is the one
+  // party that must not be able to set it. The authorization above admits an
+  // agent patching itself — correct for its own description or capabilities,
+  // and an escalation path straight to `internal` for this field.
+  if (parsed.trust_tier !== undefined && !isAdminAgent(auth.agent.id, auth.agent.name)) {
+    return NextResponse.json(
+      {
+        error: 'An agent cannot set its own trust tier. A super admin can change it from the agent page in the dashboard.',
+        code: 'FORBIDDEN',
+      } satisfies ApiError,
+      { status: 403 }
+    );
+  }
+
   const updateInput = {
     capabilities: parsed.capabilities,
     protocols: parsed.protocols,

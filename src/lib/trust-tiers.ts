@@ -51,6 +51,32 @@ export interface TrustPolicyAgent {
   trust_tier?: string | null;
 }
 
+/**
+ * The exact column list every trust gate needs. Select this, not a subset:
+ * a gate reading a column that was never fetched sees `undefined`, and
+ * `normalizeAgentTrustTier` turns `undefined` into 'external' — so the omission
+ * does not fail, it silently denies. That cost a day on 2026-09-21, when
+ * `POST /v1/projects/:id/invitations` selected only `id, name, display_name`
+ * and refused every invite as "external-tier", including partner agents.
+ */
+export const TRUST_POLICY_AGENT_COLUMNS = 'id, name, display_name, owner_user_id, trust_tier';
+
+/**
+ * Distinguishes "the column was not selected" from "the agent has no tier".
+ * A missing key is a bug in the caller, not a fact about the agent, so it is
+ * loud. A null/unrecognised value is a real data state and still normalises to
+ * the most restrictive tier.
+ */
+function gateTier(agent: TrustPolicyAgent, role: 'caller' | 'target'): AgentTrustTier {
+  if (!('trust_tier' in agent)) {
+    throw new Error(
+      `trust gate: ${role} agent ${agent.id} was loaded without trust_tier. ` +
+      `Select TRUST_POLICY_AGENT_COLUMNS — the gate cannot be evaluated on a partial row.`
+    );
+  }
+  return normalizeAgentTrustTier(agent.trust_tier);
+}
+
 export interface TrustGateResult {
   allowed: boolean;
   reason?: string;
@@ -74,12 +100,22 @@ export interface ContractCollaborationGateResult {
 }
 
 function sameOwner(caller: TrustPolicyAgent, target: TrustPolicyAgent) {
+  // Same trap as gateTier: an unselected owner_user_id is `undefined` and would
+  // quietly read as "different owners", which is the restrictive answer.
+  for (const [role, agent] of [['caller', caller], ['target', target]] as const) {
+    if (!('owner_user_id' in agent)) {
+      throw new Error(
+        `trust gate: ${role} agent ${agent.id} was loaded without owner_user_id. ` +
+        `Select TRUST_POLICY_AGENT_COLUMNS — ownership cannot be compared on a partial row.`
+      );
+    }
+  }
   return !!caller.owner_user_id && !!target.owner_user_id && caller.owner_user_id === target.owner_user_id;
 }
 
 export function evaluateProjectMemberInvite(caller: TrustPolicyAgent, target: TrustPolicyAgent): TrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
-  const targetTier = normalizeAgentTrustTier(target.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
+  const targetTier = gateTier(target, 'target');
 
   if (targetTier === 'external') {
     return {
@@ -94,8 +130,8 @@ export function evaluateProjectMemberInvite(caller: TrustPolicyAgent, target: Tr
 }
 
 export function evaluateObserverAccess(caller: TrustPolicyAgent, target: TrustPolicyAgent): TrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
-  const targetTier = normalizeAgentTrustTier(target.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
+  const targetTier = gateTier(target, 'target');
 
   if (targetTier === 'external' && !sameOwner(caller, target)) {
     return {
@@ -110,8 +146,8 @@ export function evaluateObserverAccess(caller: TrustPolicyAgent, target: TrustPo
 }
 
 export function evaluateHandoffInvite(caller: TrustPolicyAgent, target: TrustPolicyAgent): TrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
-  const targetTier = normalizeAgentTrustTier(target.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
+  const targetTier = gateTier(target, 'target');
 
   if (targetTier !== 'internal') {
     return {
@@ -126,8 +162,8 @@ export function evaluateHandoffInvite(caller: TrustPolicyAgent, target: TrustPol
 }
 
 export function evaluateEscalationBroker(caller: TrustPolicyAgent, target: TrustPolicyAgent): TrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
-  const targetTier = normalizeAgentTrustTier(target.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
+  const targetTier = gateTier(target, 'target');
 
   if (targetTier === 'external') {
     return {
@@ -142,8 +178,8 @@ export function evaluateEscalationBroker(caller: TrustPolicyAgent, target: Trust
 }
 
 export function evaluateGenericContractInvite(caller: TrustPolicyAgent, target: TrustPolicyAgent): TrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
-  const targetTier = normalizeAgentTrustTier(target.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
+  const targetTier = gateTier(target, 'target');
 
   if (targetTier === 'external' && !sameOwner(caller, target)) {
     return {
@@ -158,7 +194,7 @@ export function evaluateGenericContractInvite(caller: TrustPolicyAgent, target: 
 }
 
 export function evaluateContractInvitees(caller: TrustPolicyAgent, targets: TrustPolicyAgent[]): MultiTargetTrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
   const blockedTargets = targets.flatMap((target) => {
     const gate = evaluateGenericContractInvite(caller, target);
     return gate.allowed
@@ -186,7 +222,7 @@ export function evaluateContractInvitees(caller: TrustPolicyAgent, targets: Trus
 }
 
 export function evaluateContractObservers(caller: TrustPolicyAgent, targets: TrustPolicyAgent[]): MultiTargetTrustGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
   const blockedTargets = targets.flatMap((target) => {
     const gate = evaluateObserverAccess(caller, target);
     return gate.allowed
@@ -218,7 +254,7 @@ export function evaluateContractCollaboration(
   invitees: TrustPolicyAgent[],
   observers: TrustPolicyAgent[]
 ): ContractCollaborationGateResult {
-  const callerTier = normalizeAgentTrustTier(caller.trust_tier);
+  const callerTier = gateTier(caller, 'caller');
   const inviteeGate = evaluateContractInvitees(caller, invitees);
   const observerGate = evaluateContractObservers(caller, observers);
 

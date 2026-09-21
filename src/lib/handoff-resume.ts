@@ -9,6 +9,8 @@ import {
 } from '@/lib/task-execution';
 import type { Contract } from '@/lib/types';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
+import { isLikelyHandoffContract } from '@/lib/handoff-contracts';
+import { getDelegationMembers } from '@/lib/contract-links';
 
 export interface HandoffTaskContext {
   taskId: string;
@@ -59,12 +61,35 @@ export async function getLinkedTaskForContract(contractId: string): Promise<Hand
   };
 }
 
+/**
+ * Is this contract actually a handoff, or merely linked to a task?
+ *
+ * The distinction was missing, and claiming gated only on "a task is linked" —
+ * so accepting ANY task-linked contract silently reassigned the task to the
+ * accepter and opened a new execution run. Since the skill tells every agent to
+ * link every contract to a task, that made assignee theft the default outcome
+ * of an ordinary accept.
+ *
+ * Two positive signals, because neither covers the whole population:
+ * `delegates_to` links are the real mechanism but only exist from the SECOND
+ * contract in a chain onward (`recordDelegation` no-ops without a
+ * predecessor), so a first handoff has only the title/description shape.
+ */
+export async function isHandoffClaimEligible(contract: Pick<Contract, 'id' | 'title' | 'description'>) {
+  if (isLikelyHandoffContract(contract)) return true;
+
+  const delegationMembers = await getDelegationMembers([contract.id]).catch(() => new Set<string>());
+  return delegationMembers.has(contract.id);
+}
+
 export async function claimAcceptedHandoff(params: {
   contract: Contract;
   acceptedByAgentId: string;
   acceptedByAgentName: string;
   acceptedByAgentDisplayName?: string | null;
 }): Promise<ClaimHandoffResult | null> {
+  if (!(await isHandoffClaimEligible(params.contract))) return null;
+
   const task = await getLinkedTaskForContract(params.contract.id);
   if (!task) return null;
 

@@ -22,7 +22,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await req.json();
+  // A malformed body used to escape as an unhandled throw, so the dashboard saw a
+  // 500 for what is plainly a bad request.
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
   const { title, description, member_agent_ids } = body;
 
   if (!title || typeof title !== 'string') {

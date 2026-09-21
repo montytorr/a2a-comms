@@ -7,6 +7,18 @@ import { getProjectMemberAgentIds } from '@/app/api/v1/projects/_helpers';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
 
+export class BlockerWorkflowError extends Error {
+  code: string;
+  status: number;
+
+  constructor(message: string, code: string, status = 400) {
+    super(message);
+    this.name = 'BlockerWorkflowError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
 export type BlockerActionType = 'follow-up' | 'escalate' | 'stale-escalation';
 export type BlockerWorkflowActionType = 'follow-up' | 'escalate';
 
@@ -29,12 +41,15 @@ export function normalizeBlockerWorkflowInput(input: BlockerWorkflowInput) {
   const owner = input.owner.trim();
   const dueAt = input.dueAt.trim();
 
-  if (!nextAction) throw new Error('Next action is required');
-  if (!owner) throw new Error('Unblock owner is required');
-  if (!dueAt) throw new Error('Expected follow-up time is required');
+  // Typed so the route can answer 400/VALIDATION_ERROR. These used to be plain
+  // Errors, which the route funnelled into 500/DB_ERROR, so an agent that simply
+  // omitted next_action was told the database had failed.
+  if (!nextAction) throw new BlockerWorkflowError('Next action is required', 'VALIDATION_ERROR', 400);
+  if (!owner) throw new BlockerWorkflowError('Unblock owner is required', 'VALIDATION_ERROR', 400);
+  if (!dueAt) throw new BlockerWorkflowError('Expected follow-up time is required', 'VALIDATION_ERROR', 400);
 
   const dueDate = new Date(dueAt);
-  if (Number.isNaN(dueDate.getTime())) throw new Error('Expected follow-up time is invalid');
+  if (Number.isNaN(dueDate.getTime())) throw new BlockerWorkflowError('Expected follow-up time is invalid', 'VALIDATION_ERROR', 400);
 
   return {
     nextAction,

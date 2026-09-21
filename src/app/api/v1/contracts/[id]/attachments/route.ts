@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/db/server';
-import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
+import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, AttachmentValidationError, buildAttachmentStoragePath, sha256Buffer, removeAttachmentBinary } from '@/lib/attachments';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
 import { resolveProjectForContract } from '@/app/api/v1/projects/[id]/attachments/_helpers';
 import type { ApiError } from '@/lib/types';
@@ -74,15 +74,45 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
-  const form = await req.formData();
+  // A truncated or mis-typed multipart body is the client's mistake, and
+  // formData() throws on it. Unguarded, that was another bare 500.
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json(
+      { error: 'Could not read multipart form body. Send the file as multipart/form-data with a "file" part.', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+
   const file = form.get('file');
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'file is required', code: 'VALIDATION_ERROR' } satisfies ApiError, { status: 400 });
   }
   const note = typeof form.get('note') === 'string' ? (form.get('note') as string) : null;
 
-  const content = Buffer.from(await file.arrayBuffer());
-  const validated = validateAttachmentInput({ filename: file.name, mimeType: file.type, sizeBytes: content.length });
+  let content: Buffer;
+  try {
+    content = Buffer.from(await file.arrayBuffer());
+  } catch {
+    // The upload was cut off mid-stream. Nothing has been written yet.
+    return NextResponse.json(
+      { error: 'Upload did not complete; the file body could not be read in full.', code: 'VALIDATION_ERROR' } satisfies ApiError,
+      { status: 400 }
+    );
+  }
+  // Bad input is a 400. This call used to sit outside any try/catch, so a
+  // rejected mime type escaped as an opaque 500 with no message at all.
+  let validated: ReturnType<typeof validateAttachmentInput>;
+  try {
+    validated = validateAttachmentInput({ filename: file.name, mimeType: file.type, sizeBytes: content.length });
+  } catch (err) {
+    if (err instanceof AttachmentValidationError) {
+      return NextResponse.json({ error: err.message, code: 'VALIDATION_ERROR' } satisfies ApiError, { status: 400 });
+    }
+    throw err;
+  }
   const storagePath = buildAttachmentStoragePath({ projectId, contractId, filename: validated.filename });
 
   await ensureAttachmentBucket();

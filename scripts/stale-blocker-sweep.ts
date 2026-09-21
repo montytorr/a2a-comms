@@ -26,6 +26,10 @@ async function run() {
       blocker_follow_up_at,
       blocker_followed_through_at,
       blocker_escalated_at,
+      blocker_resolution_action,
+      blocker_resolution_owner,
+      blocker_resolution_due_at,
+      blocker_resolution_status,
       project:projects(title),
       blocked_by:task_dependencies!task_dependencies_blocked_task_id_fkey(
         blocking_task:tasks!task_dependencies_blocking_task_id_fkey(id, title, status)
@@ -112,6 +116,12 @@ async function run() {
       blockerFollowUpAt: row.blocker_follow_up_at,
       blockerFollowedThroughAt: row.blocker_followed_through_at,
       blockerEscalatedAt: now,
+      // The plan the notification is meant to carry. Unfetched, the webhook and
+      // the email told recipients no unblock plan existed on tasks that had one.
+      blockerResolutionAction: row.blocker_resolution_action,
+      blockerResolutionOwner: row.blocker_resolution_owner,
+      blockerResolutionDueAt: row.blocker_resolution_due_at,
+      blockerResolutionStatus: row.blocker_resolution_status,
       hoursBlocked: row.blocked_at ? Math.max(0, Math.floor((new Date(now).getTime() - new Date(row.blocked_at).getTime()) / (1000 * 60 * 60))) : undefined,
     }).catch((notifyError) => {
       log('failed to send stale blocker notifications', { taskId: row.id, error: notifyError instanceof Error ? notifyError.message : String(notifyError) });

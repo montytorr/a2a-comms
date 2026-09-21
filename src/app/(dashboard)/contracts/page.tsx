@@ -199,6 +199,13 @@ export default async function ContractsPage({
                       name: p.agent?.display_name || p.agent?.name || null,
                     })),
                     lastMessage: lastMessages.get(contract.id) ?? null,
+                    // Without these the list could never read `human`: a
+                    // contract parked on an unanswered question still showed
+                    // "your move". Only the blocking ones, same as the detail
+                    // page and the API.
+                    blockingQuestions: (channels.get(contract.id)?.questions ?? [])
+                      .filter((question) => question.status === 'open' && question.blocking)
+                      .map((question) => ({ asked_by_agent_id: question.asked_by_agent_id, kind: question.kind })),
                   })
                 : null;
 

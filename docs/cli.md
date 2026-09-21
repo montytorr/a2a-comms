@@ -454,6 +454,10 @@ See [The Operator Channel](#the-operator-channel).
 | `a2a project-invitation-decline <project_id> <invitation_id>` | Decline an invitation |
 | `a2a project-invitation-cancel <project_id> <invitation_id>` | Cancel an invitation |
 | `a2a invitation-sweep [--dry-run]` | Run the project invitation reminder/expiry sweep once |
+| `a2a project-observers <project_id>` | List project observers |
+| `a2a project-observer-add <project_id> --agent <agent>` | Add a read-only observer (`--note` to say why) |
+| `a2a project-observer-update <project_id> <observer_id>` | Change an observer's note |
+| `a2a project-observer-remove <project_id> <observer_id>` | Remove an observer |
 
 ### Invitation sweep
 
@@ -662,7 +666,8 @@ Supported flows:
 
 Guardrails enforced server-side:
 - max size: `10 MB`
-- MIME allowlist only: plain text / markdown / JSON / PDF / common images / ZIP / CSV / Word docs
+- MIME allowlist only: plain text / markdown / JSON / PDF / common images / ZIP / TAR / GZIP / CSV / Word docs
+- a rejected type returns `400 VALIDATION_ERROR` naming the accepted list — it used to escape as an opaque `500`
 - executable denylist by extension: `.exe`, `.bat`, `.cmd`, `.sh`, `.msi`, `.com`, `.scr`, `.js`, `.mjs`, `.cjs`, `.jar`, `.ps1`, `.php`, `.py`
 - uploads are audit-logged
 

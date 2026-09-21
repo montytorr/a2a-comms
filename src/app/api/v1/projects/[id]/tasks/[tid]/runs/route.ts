@@ -3,7 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/db/server';
-import { createTaskExecutionRun, isTaskExecutionRunStatus, listTaskExecutionRuns } from '@/lib/task-execution';
+import { createTaskExecutionRun, isTaskExecutionRunStatus, listTaskExecutionRuns, TaskExecutionError } from '@/lib/task-execution';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import type { ApiError, CreateTaskExecutionRunRequest } from '@/lib/types';
@@ -132,15 +132,23 @@ export async function POST(
     .limit(1)
     .maybeSingle();
 
-  const run = await createTaskExecutionRun({
-    taskId,
-    projectId,
-    agentId: auth.agent.id,
-    status: parsed.status ?? 'starting',
-    attempt: (latestRun?.attempt ?? 0) + 1,
-    summary: parsed.summary ?? null,
-    metadata: parsed.metadata ?? {},
-  });
+  let run;
+  try {
+    run = await createTaskExecutionRun({
+      taskId,
+      projectId,
+      agentId: auth.agent.id,
+      status: parsed.status ?? 'starting',
+      attempt: (latestRun?.attempt ?? 0) + 1,
+      summary: parsed.summary ?? null,
+      metadata: parsed.metadata ?? {},
+    });
+  } catch (error) {
+    if (error instanceof TaskExecutionError) {
+      return NextResponse.json({ error: error.message, code: error.code } satisfies ApiError, { status: error.status });
+    }
+    throw error;
+  }
 
   await auditLog({
     actor: auth.agent.name,

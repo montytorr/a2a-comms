@@ -6,7 +6,7 @@ import { createServerClient } from '@/lib/db/server';
 import { getProjectMembership, hydrateProjectInvitations } from '../../_helpers';
 import { getProjectInvitationExpiry, notifyProjectInvitationCreated } from '@/lib/project-invitations';
 import type { ApiError } from '@/lib/types';
-import { evaluateProjectMemberInvite } from '@/lib/trust-tiers';
+import { evaluateProjectMemberInvite, TRUST_POLICY_AGENT_COLUMNS } from '@/lib/trust-tiers';
 import { evaluateProjectInvitationListPolicyAccess } from '@/lib/agent-trust-policy';
 
 export async function GET(
@@ -19,8 +19,27 @@ export async function GET(
   const { auth } = result;
   const { id } = await params;
 
+  const db = createServerClient();
+
   const member = await getProjectMembership(id, auth.agent.id);
   if (!member) {
+    // An invitee is not a member yet — that is the point of an invitation. It
+    // still has to be able to read its own, or it cannot learn the id that
+    // `a2a project-invitation-accept` requires and the invitation is
+    // unreachable. Own row only; the rest of the project stays private.
+    const { data: ownInvitation } = await db
+      .from('project_member_invitations')
+      .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
+      .eq('project_id', id)
+      .eq('agent_id', auth.agent.id)
+      .eq('status', 'pending')
+      .single();
+
+    if (ownInvitation) {
+      const hydratedOwn = await hydrateProjectInvitations([ownInvitation]);
+      return NextResponse.json({ data: hydratedOwn });
+    }
+
     return NextResponse.json(
       { error: 'Not a participant in this project', code: 'FORBIDDEN' } satisfies ApiError,
       { status: 403 }
@@ -37,7 +56,6 @@ export async function GET(
     }
   }
 
-  const db = createServerClient();
   const { data, error } = await db
     .from('project_member_invitations')
     .select('*, agent:agents!project_member_invitations_agent_id_fkey(id, name, display_name), invited_by:agents!project_member_invitations_invited_by_agent_id_fkey(id, name, display_name)')
@@ -115,7 +133,7 @@ export async function POST(
 
   const [{ data: project }, { data: agent }, { data: existingMember }, { data: existingInvite }] = await Promise.all([
     db.from('projects').select('id, title').eq('id', id).single(),
-    db.from('agents').select('id, name, display_name').eq('id', parsed.agent_id).single(),
+    db.from('agents').select(TRUST_POLICY_AGENT_COLUMNS).eq('id', parsed.agent_id).single(),
     db.from('project_members').select('id').eq('project_id', id).eq('agent_id', parsed.agent_id).single(),
     db.from('project_member_invitations').select('id, status').eq('project_id', id).eq('agent_id', parsed.agent_id).single(),
   ]);
@@ -141,14 +159,6 @@ export async function POST(
     );
   }
 
-  const trustGate = evaluateProjectMemberInvite(auth.agent, agent);
-  if (!trustGate.allowed) {
-    return NextResponse.json(
-      { error: trustGate.reason || 'Target agent is not trusted enough for project membership', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
-      { status: 403 }
-    );
-  }
-
   if (existingMember) {
     return NextResponse.json(
       { error: 'Agent is already a member of this project', code: 'DUPLICATE' } satisfies ApiError,
@@ -160,6 +170,14 @@ export async function POST(
     return NextResponse.json(
       { error: 'Agent already has a pending invitation', code: 'DUPLICATE' } satisfies ApiError,
       { status: 409 }
+    );
+  }
+
+  const trustGate = evaluateProjectMemberInvite(auth.agent, agent);
+  if (!trustGate.allowed) {
+    return NextResponse.json(
+      { error: trustGate.reason || 'Target agent is not trusted enough for project membership', code: 'TRUST_TIER_BLOCKED' } satisfies ApiError,
+      { status: 403 }
     );
   }
 

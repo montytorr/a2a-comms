@@ -7,6 +7,15 @@ export async function getProjectMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
 }
 
+/**
+ * Only an ACCEPTED participant counts.
+ *
+ * This selected `status` and then ignored it, so an agent that had been invited
+ * to a contract and REJECTED it still read as a participant and could download
+ * the contract's attachments. Declining is how an agent says it is not part of
+ * this exchange; it should not be the cheapest way to keep reading it. Pending
+ * is excluded for the same reason — nothing has been agreed yet.
+ */
 export async function verifyContractParticipation(contractId: string, agentId: string) {
   const db = createServerClient();
   const { data } = await db
@@ -14,6 +23,7 @@ export async function verifyContractParticipation(contractId: string, agentId: s
     .select('id, role, status')
     .eq('contract_id', contractId)
     .eq('agent_id', agentId)
+    .eq('status', 'accepted')
     .single();
   return data || null;
 }

@@ -163,11 +163,27 @@ export function canAccessPolicyTier(callerTier: AgentTrustTier, requiredTier: Ag
   return TIER_RANK[callerTier] >= TIER_RANK[requiredTier];
 }
 
+/**
+ * The column list every policy decision needs. This direction of the bug is the
+ * dangerous one: an unselected `trust_policy` is `undefined`, and
+ * `normalizeAgentTrustPolicy(undefined)` returns the PERMISSIVE default — so
+ * forgetting the column does not deny, it silently ignores the owner's stricter
+ * setting. Fail-open, and invisible.
+ */
+export const TRUST_POLICY_ACCESS_COLUMNS = 'id, name, display_name, owner_user_id, trust_tier, trust_policy';
+
 function evaluatePolicyTierAccess(
   context: TrustPolicyAccessContext,
   requiredTier: AgentTrustTier,
   errorBuilder: (callerTier: AgentTrustTier, requiredTier: AgentTrustTier) => string,
 ): TrustPolicyDecision {
+  if (!('trust_policy' in context)) {
+    throw new Error(
+      'trust policy: the agent row was loaded without trust_policy. Select TRUST_POLICY_ACCESS_COLUMNS — ' +
+      'an absent column would otherwise read as "no custom policy" and grant the permissive default.'
+    );
+  }
+
   const callerTier = normalizeAgentTrustTier(context.trust_tier);
   const policy = normalizeAgentTrustPolicy(context.trust_policy);
 

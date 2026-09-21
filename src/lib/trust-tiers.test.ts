@@ -10,6 +10,7 @@ import {
   evaluateContractInvitees,
   evaluateContractObservers,
   evaluateContractCollaboration,
+  TRUST_POLICY_AGENT_COLUMNS,
 } from './trust-tiers';
 
 const internal = { id: 'a', name: 'clawdius', owner_user_id: 'u1', trust_tier: 'internal' };
@@ -86,4 +87,44 @@ test('contract collaboration gating validates invitees and observers separately'
   assert.equal(allowed.allowed, true);
   assert.equal(allowed.blockedInvitees.length, 0);
   assert.equal(allowed.blockedObservers.length, 0);
+});
+
+// Regression: a partial agent row must be loud, not quietly restrictive.
+// `POST /v1/projects/:id/invitations` selected 'id, name, display_name', so
+// every target's trust_tier was undefined, normalised to 'external', and every
+// invite — including partner agents — came back 403 "External-tier agents
+// cannot be invited as project members". The gate was right; the row was wrong.
+test('a gate refuses to run on an agent row loaded without trust_tier', () => {
+  const partialTarget = { id: 'd', name: 'partial-bot', owner_user_id: 'u4' };
+  assert.throws(
+    () => evaluateProjectMemberInvite(internal, partialTarget),
+    /was loaded without trust_tier/
+  );
+});
+
+test('a gate refuses to run on an agent row loaded without owner_user_id', () => {
+  // evaluateObserverAccess compares owners, and an absent column would read as
+  // "different owners" — the restrictive answer, silently.
+  const noOwner = { id: 'e', name: 'ownerless-bot', trust_tier: 'external' };
+  assert.throws(
+    () => evaluateObserverAccess(internal, noOwner),
+    /was loaded without owner_user_id/
+  );
+});
+
+test('TRUST_POLICY_AGENT_COLUMNS names every column the gates read', () => {
+  for (const column of ['id', 'name', 'owner_user_id', 'trust_tier']) {
+    assert.ok(
+      TRUST_POLICY_AGENT_COLUMNS.split(',').map((c) => c.trim()).includes(column),
+      `${column} missing from TRUST_POLICY_AGENT_COLUMNS`
+    );
+  }
+});
+
+test('a null trust_tier is a real data state and still normalises to external', () => {
+  // Distinct from the absent-column case above: this row WAS selected.
+  const untiered = { id: 'f', name: 'new-bot', owner_user_id: 'u5', trust_tier: null };
+  const decision = evaluateProjectMemberInvite(internal, untiered);
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.targetTier, 'external');
 });

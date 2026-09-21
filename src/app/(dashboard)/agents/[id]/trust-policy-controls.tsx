@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { type AgentTrustTier } from '@/lib/trust-tiers';
+import { updateAgentTrustPolicy } from './actions';
 import {
   normalizeAgentTrustPolicy,
   type AgentTrustPolicyConfig,
@@ -54,19 +55,9 @@ export default function TrustPolicyControls({
 
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/v1/agents/${agentId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            trust_policy: policy,
-          }),
-        });
-
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(payload?.error || 'Failed to update trust policy');
+        const result = await updateAgentTrustPolicy(agentId, policy);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update trust policy');
         }
 
         setSuccess('Trust policy updated.');

@@ -1,6 +1,34 @@
 import { createServerClient } from '@/lib/db/server';
 import type { DatabaseError as PostgrestError } from '@/lib/db/client';
 
+/**
+ * Execution-run failures used to leave the route with nothing to map. Two
+ * shapes in particular: `if (error || !data) throw error` throws *null* when
+ * the query succeeded but returned no row, and the atomic-checkpoint RPC
+ * rejects duplicate keys as a business rule. Both reached the client as a bare
+ * 500 with an empty body, which reads as "the server fell over" for what is
+ * usually a retry or a bad id.
+ */
+export class TaskExecutionError extends Error {
+  code: string;
+  status: number;
+
+  constructor(message: string, code: string, status = 400) {
+    super(message);
+    this.name = 'TaskExecutionError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
+/** Postgres tells us whose fault it is; pass that on instead of flattening to 500. */
+export function taskExecutionErrorFromDb(error: PostgrestError | null | undefined, fallback: string): TaskExecutionError {
+  if (error?.code === '23505') return new TaskExecutionError(error.message || fallback, 'DUPLICATE', 409);
+  if (error?.code === '23514') return new TaskExecutionError(error.message || fallback, 'VALIDATION_ERROR', 400);
+  if (error?.code === '23503') return new TaskExecutionError(error.message || fallback, 'VALIDATION_ERROR', 400);
+  return new TaskExecutionError(error?.message || fallback, 'DB_ERROR', 500);
+}
+
 export const TASK_EXECUTION_STATUSES = [
   'idle',
   'queued',
@@ -141,7 +169,7 @@ export async function listTaskExecutionRuns(taskId: string) {
     .eq('task_id', taskId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) throw taskExecutionErrorFromDb(error, 'Failed to list execution runs');
   return (data || []) as TaskExecutionRunRow[];
 }
 
@@ -185,7 +213,7 @@ export async function listTaskExecutionCheckpoints(runId: string) {
       .order('sequence', { ascending: false })) as { data: unknown; error: PostgrestError | null }
   );
 
-  if (error) throw error;
+  if (error) throw taskExecutionErrorFromDb(error, 'Failed to list checkpoints');
   return (data || []) as TaskExecutionCheckpointRow[];
 }
 
@@ -228,7 +256,9 @@ export async function createTaskExecutionRun(input: {
     .select()
     .single();
 
-  if (error || !data) throw error;
+  if (error || !data) {
+    throw taskExecutionErrorFromDb(error, 'Failed to create execution run');
+  }
 
   await syncTaskExecutionSnapshot({
     taskId: input.taskId,
@@ -263,7 +293,13 @@ export async function updateTaskExecutionRun(input: {
     .eq('id', input.runId)
     .single();
 
-  if (existingError || !existing) throw existingError;
+  if (existingError || !existing) {
+    // A run id that does not belong to this task is a caller mistake, not a
+    // database fault. `throw existingError` threw null when the query simply
+    // matched nothing.
+    if (!existingError) throw new TaskExecutionError('Execution run not found', 'NOT_FOUND', 404);
+    throw taskExecutionErrorFromDb(existingError, 'Failed to load execution run');
+  }
 
   const updates: Record<string, unknown> = {};
   if (input.status) {
@@ -290,7 +326,9 @@ export async function updateTaskExecutionRun(input: {
     .select()
     .single();
 
-  if (error || !data) throw error;
+  if (error || !data) {
+    throw taskExecutionErrorFromDb(error, 'Failed to update execution run');
+  }
 
   const latestCheckpoint = await getLatestTaskCheckpoint(input.taskId, input.runId);
   await syncTaskExecutionSnapshot({
@@ -341,9 +379,16 @@ export async function appendTaskCheckpoint(input: {
     p_attachment_ids: input.attachmentIds ?? [],
   });
 
-  if (error) throw error;
+  if (error) throw taskExecutionErrorFromDb(error, 'Failed to append checkpoint');
   if (result?.error) {
-    throw new Error(result.message || result.error);
+    // The RPC's own rejections are business rules — a reused checkpoint_key, a
+    // run that belongs to another task — so they are the caller's to fix.
+    const duplicate = /duplicate|already exists|checkpoint_key/i.test(String(result.error || result.message || ''));
+    throw new TaskExecutionError(
+      result.message || result.error,
+      duplicate ? 'DUPLICATE' : 'VALIDATION_ERROR',
+      duplicate ? 409 : 400
+    );
   }
 
   const typedCheckpoint = result.checkpoint as TaskExecutionCheckpointRow;
@@ -385,7 +430,7 @@ export async function getLatestTaskCheckpoint(taskId: string, runId?: string) {
     return (await query.maybeSingle()) as { data: unknown; error: PostgrestError | null };
   });
 
-  if (error) throw error;
+  if (error) throw taskExecutionErrorFromDb(error, 'Failed to load latest checkpoint');
   return (data || null) as TaskExecutionCheckpointRow | null;
 }
 
@@ -408,5 +453,5 @@ export async function syncTaskExecutionSnapshot(input: {
     .update(snapshot)
     .eq('id', input.taskId);
 
-  if (error) throw error;
+  if (error) throw taskExecutionErrorFromDb(error, 'Failed to sync execution snapshot');
 }

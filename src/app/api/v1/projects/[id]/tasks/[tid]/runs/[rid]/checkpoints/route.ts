@@ -3,7 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { checkIdempotency, storeIdempotencyResponse } from '@/lib/idempotency';
 import { createServerClient } from '@/lib/db/server';
-import { appendTaskCheckpoint, listTaskExecutionCheckpoints } from '@/lib/task-execution';
+import { appendTaskCheckpoint, listTaskExecutionCheckpoints, TaskExecutionError } from '@/lib/task-execution';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import type { ApiError, CreateTaskExecutionCheckpointRequest } from '@/lib/types';
@@ -138,16 +138,26 @@ export async function POST(
     );
   }
 
-  const checkpoint = await appendTaskCheckpoint({
-    runId,
-    taskId,
-    projectId,
-    agentId: auth.agent.id,
-    checkpointKey: parsed.checkpoint_key.trim(),
-    summary: parsed.summary ?? null,
-    payload: parsed.payload ?? {},
-    attachmentIds: parsed.attachment_ids ?? [],
-  });
+  // A reused checkpoint_key is a retry, not a server fault: it must come back
+  // as 409 so the caller knows the checkpoint is already recorded.
+  let checkpoint;
+  try {
+    checkpoint = await appendTaskCheckpoint({
+      runId,
+      taskId,
+      projectId,
+      agentId: auth.agent.id,
+      checkpointKey: parsed.checkpoint_key.trim(),
+      summary: parsed.summary ?? null,
+      payload: parsed.payload ?? {},
+      attachmentIds: parsed.attachment_ids ?? [],
+    });
+  } catch (error) {
+    if (error instanceof TaskExecutionError) {
+      return NextResponse.json({ error: error.message, code: error.code } satisfies ApiError, { status: error.status });
+    }
+    throw error;
+  }
 
   await auditLog({
     actor: auth.agent.name,

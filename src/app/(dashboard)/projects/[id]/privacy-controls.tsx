@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProjectPrivacyMetadata } from '@/lib/types';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
+import { updateProjectPrivacy } from './actions';
 
 interface ProjectPrivacyControlsProps {
   projectId: string;
@@ -65,14 +66,7 @@ export default function ProjectPrivacyControls({
 
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/v1/projects/${projectId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ privacy_metadata: privacyMetadata }),
-        });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok)
-          throw new Error(payload?.error || 'Failed to update project privacy controls');
+        await updateProjectPrivacy(projectId, privacyMetadata);
         setSuccess('Project privacy controls updated.');
         router.refresh();
       } catch (err) {

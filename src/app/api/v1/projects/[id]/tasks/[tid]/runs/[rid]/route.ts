@@ -4,7 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/db/server';
 import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
-import { isTaskExecutionRunStatus, updateTaskExecutionRun } from '@/lib/task-execution';
+import { isTaskExecutionRunStatus, updateTaskExecutionRun, TaskExecutionError } from '@/lib/task-execution';
 import type { ApiError, UpdateTaskExecutionRunRequest } from '@/lib/types';
 import { appendTaskActivityEvent } from '@/lib/task-activity';
 
@@ -145,15 +145,23 @@ export async function PATCH(
     );
   }
 
-  const updated = await updateTaskExecutionRun({
-    runId,
-    taskId,
-    status: parsed.status,
-    summary: parsed.summary,
-    errorMessage: parsed.error_message,
-    metadata: parsed.metadata,
-    heartbeat: parsed.heartbeat,
-  });
+  let updated;
+  try {
+    updated = await updateTaskExecutionRun({
+      runId,
+      taskId,
+      status: parsed.status,
+      summary: parsed.summary,
+      errorMessage: parsed.error_message,
+      metadata: parsed.metadata,
+      heartbeat: parsed.heartbeat,
+    });
+  } catch (error) {
+    if (error instanceof TaskExecutionError) {
+      return NextResponse.json({ error: error.message, code: error.code } satisfies ApiError, { status: error.status });
+    }
+    throw error;
+  }
 
   await auditLog({
     actor: auth.agent.name,

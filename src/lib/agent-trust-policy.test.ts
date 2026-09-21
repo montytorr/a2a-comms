@@ -10,6 +10,7 @@ import {
   evaluateProjectObserverListPolicyAccess,
   evaluateProjectInvitationListPolicyAccess,
   canAccessPolicyTier,
+  TRUST_POLICY_ACCESS_COLUMNS,
 } from './agent-trust-policy.ts';
 import { applyProjectInvitationVisibility } from './project-invitation-visibility.ts';
 import { getAuthUser } from './auth-context.ts';
@@ -142,4 +143,27 @@ test('getAuthUser source aggregates owned agent trust with least privilege seman
   assert.match(source, /normalizedAgents\.map\(agent=>agent\.trustTier\)|normalizedAgents\.map\(\(agent\) => agent\.trustTier\)/);
   assert.match(source, /normalizedAgents\.map\(agent=>agent\.trustPolicy\)|normalizedAgents\.map\(\(agent\) => agent\.trustPolicy\)/);
   assert.match(source, /agents:\s*normalizedAgents/);
+});
+
+// Regression, the fail-OPEN direction: an unselected `trust_policy` column is
+// `undefined`, and normalizeAgentTrustPolicy(undefined) returns the permissive
+// default — so forgetting the column silently discards an owner's stricter
+// setting instead of denying. That is worse than the fail-closed variant,
+// because nothing ever complains.
+test('a policy decision refuses to run on an agent row loaded without trust_policy', () => {
+  const partial = { id: 'x', name: 'partial-bot', trust_tier: 'internal' };
+  assert.throws(
+    () => evaluateWebhookPolicyAccess(partial),
+    /was loaded without trust_policy/
+  );
+});
+
+test('a null trust_policy is a real data state and uses the defaults', () => {
+  const noPolicy = { id: 'y', name: 'default-bot', trust_tier: 'internal', trust_policy: null };
+  const decision = evaluateWebhookPolicyAccess(noPolicy);
+  assert.equal(decision.allowed, true);
+});
+
+test('TRUST_POLICY_ACCESS_COLUMNS includes trust_policy', () => {
+  assert.ok(TRUST_POLICY_ACCESS_COLUMNS.split(',').map((c) => c.trim()).includes('trust_policy'));
 });

@@ -3,7 +3,7 @@ import { authenticateApiRequest } from '@/lib/middleware-auth';
 import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/db/server';
 import { getProjectAccess } from '@/lib/project-access';
-import { runBlockerWorkflowAction } from '@/lib/task-blocker-actions';
+import { BlockerWorkflowError, runBlockerWorkflowAction } from '@/lib/task-blocker-actions';
 import type { ApiError } from '@/lib/types';
 
 async function verifyMembership(projectId: string, agentId: string) {
@@ -112,6 +112,15 @@ export async function POST(
       blocker_escalated_at: action === 'escalate' ? result.actionAt : result.task.blocker_escalated_at ?? null,
     });
   } catch (error) {
+    // Client-input rejections land here too, and the DB_ERROR fallback below used
+    // to relabel them as 500s, so a missing next_action read as a database outage.
+    if (error instanceof BlockerWorkflowError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code } satisfies ApiError,
+        { status: error.status }
+      );
+    }
+
     if (error instanceof Error && error.message === 'Task not found') {
       return NextResponse.json(
         { error: 'Task not found', code: 'NOT_FOUND' } satisfies ApiError,

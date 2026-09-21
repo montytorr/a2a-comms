@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AgentPrivacyMetadata } from '@/lib/types';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
+import { updateAgentPrivacy } from './actions';
 
 interface PrivacyControlsProps {
   agentId: string;
@@ -44,14 +45,8 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
 
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/v1/agents/${agentId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ privacy_metadata: privacyMetadata }),
-        });
-
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload?.error || 'Failed to update privacy controls');
+        const result = await updateAgentPrivacy(agentId, privacyMetadata);
+        if (!result.success) throw new Error(result.error || 'Failed to update privacy controls');
 
         setSuccess('Privacy controls updated.');
         router.refresh();
