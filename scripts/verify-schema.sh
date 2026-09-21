@@ -77,6 +77,21 @@ FROM pg_proc p
 JOIN pg_namespace n ON n.oid = p.pronamespace
 LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
 WHERE n.nspname = 'public' AND d.objid IS NULL
+UNION ALL
+-- Functions too, and for a different reason than tables. EXECUTE defaults to
+-- PUBLIC, so a function owned by the wrong role still RUNS — which is why the
+-- three that were owned by `postgres` caused no visible fault. What they would
+-- have caused is the next migration that touches one: CREATE OR REPLACE
+-- requires ownership, so it would fail in production and pass in the
+-- throwaway database, where the function is built by the same role that runs
+-- the migration. Proven with a probe function: "must be owner of function".
+-- insert_message_atomic is the turn accounting, and the likeliest of the
+-- three to ever need changing.
+SELECT 'function-owner|' || p.proname || '|' || pg_get_userbyid(p.proowner)
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
+WHERE n.nspname = 'public' AND d.objid IS NULL
 ORDER BY 1;
 SQL
 
