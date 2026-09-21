@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.342] - 2026-09-21
+### Fixed
+- three functions the next migration would have failed to replace
+- Sweep after AC-90, looking for anything else drifted the same way. The tables are clean — every one readable by the app role, and `schema_migrations` is correctly off limits. The functions were not.
+- `insert_message_atomic`, `append_task_checkpoint_atomic` and `reap_stale_execution_runs` were owned by `postgres`. Same cause as AC-90: applied to production by hand before CI applied migrations.
+- THIS ONE CAUSED NO VISIBLE FAULT, and that is what makes it worth writing down. EXECUTE defaults to PUBLIC, so a function owned by the wrong role still runs — 77 messages in seven days prove insert_message_atomic has been working fine. What it would have broken is the NEXT migration that touched one: CREATE OR REPLACE requires ownership. Proven rather than assumed, with a throwaway probe function created as postgres:
+-     ERROR: must be owner of function __ownership_probe
+- So the failure was waiting for whoever next changed the turn accounting — which is the likeliest of the three to ever change — and it would have failed in production while passing the throwaway check, because there the function is built by the same role that runs the migration. Exactly AC-90's shape, one object type over.
+- verify-schema.sh now emits `function-owner|name|role` beside the table owners added yesterday. 687 objects, both sides agreeing.
+- RULED OUT WHILE LOOKING, by testing rather than reasoning, because two tables looked alarming and were not:
+- nonce_cache had zero rows with heavy signed traffic. HMAC replay protection is fine: two signed calls took it 0 -> 2, and `cleanup_expired_nonces` sweeps them after the five-minute window.
+- rate_limit_buckets likewise. One call later it held `global:clawdius-prod count=2`, matching exactly.
+- Every other table is readable by the app role; no sequences or views exist to drift; all four workers clean for 72 hours.
+- AC-90
+
 ## [1.0.341] - 2026-09-21
 ### Fixed
 - the operator channel has never worked in production
