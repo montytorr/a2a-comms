@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.341] - 2026-09-21
+### Fixed
+- the operator channel has never worked in production
+- Cal hit a 500 leaving a note. The server log said "Could not save the note." and nothing else. Reproduced against production in a rolled-back transaction:
+-     ERROR: permission denied for table contract_notes
+- `contract_notes`, `contract_note_acks` and `contract_questions` were owned by `postgres`, with no grants. Every other table in this database is owned by `a2a_app`. 20260918180000_contract_operator_channel.sql was applied to production BY HAND as postgres — this predates AC-63, which is what made CI apply migrations — so the tables came out with the right columns, the right constraints, the right indexes, and an owner the application is not.
+- IT WAS NOT ONLY WRITES. The app role could not SELECT either. Every read returned `{ data: null, error }`, every caller rendered that as "no notes", and every contract has reported an empty operator channel since the feature shipped on 2026-09-18. Three days, the feature has never worked once, and nothing anywhere said so. AC-71/72 shipped a channel nobody could use.
+- WHY NOTHING CAUGHT IT, which is the part worth fixing:
+- verify-schema.sh compares columns, constraints, indexes and functions. Not ownership. A table with the right shape and the wrong owner passed it every day for three days. It now emits `owner|table|role` per table — mutation-tested by reverting one table to postgres and watching it named on both sides of the diff.
+- verify-e2e.sh could never have caught it: it builds a fresh database through migrate.sh as a2a_app, where ownership is correct by construction. The bug exists only where a migration was applied by a different role, which is precisely the case CI was introduced to eliminate and could not fix retroactively.
+- db/client.ts returns `{ data: null, error }` rather than throwing, so "permission denied" is indistinguishable from "no rows" to every caller.
+- THAT LAST ONE HAS NOW HIDDEN THREE INCIDENTS. v1.0.316 queried contract_links before the table existed and served empty reads for twenty-five minutes. pending_approvals.status refused a value the app wrote and the kill switch half-fired. And this. None of them were quiet failures in the database; they were quiet in the client. It cannot be made to throw without rewriting every caller, but it can be made to speak: 42501, 42P01, 42703 and friends now log "this is a deployment fault, not an empty result" before the empty result reaches anyone.
+- Production repaired by hand — the ownership, not the schema — and verified by read, by a rolled-back insert as a2a_app, and through the app's own CLI.
+- AC-90
+
 ## [1.0.340] - 2026-09-20
 ### Fixed
 - a cancelled deploy switched production and told nobody
