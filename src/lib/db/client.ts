@@ -97,8 +97,43 @@ const parseSelect = (value = '*'): SelectItem[] => splitTopLevel(value).map((tok
   return { kind: 'column', column: column!.trim(), alias: alias?.trim() }
 })
 
+/**
+ * Postgres codes that mean the DEPLOYMENT is wrong, not the data.
+ *
+ * Every caller here treats `{ data: null, error }` as "nothing to show",
+ * because for an ordinary query that is what it means. For these it does not:
+ * the table is missing, or the role cannot touch it, and an empty page is a
+ * lie rather than an answer.
+ *
+ * That distinction has now cost three incidents. v1.0.316 shipped code
+ * querying `contract_links` before the table existed and served empty reads
+ * for twenty-five minutes. `pending_approvals.status` refused a value the app
+ * wrote, and the kill switch half-fired. And the operator channel's three
+ * tables were applied to production by hand as `postgres`, so the app role
+ * could not read them — every contract reported "no notes" for three days and
+ * nothing anywhere said why.
+ *
+ * None of those are quiet failures in the database. They are quiet here.
+ */
+const STRUCTURAL = new Set([
+  '42501', // insufficient_privilege — the role cannot touch the table
+  '42P01', // undefined_table — it does not exist
+  '42703', // undefined_column — it does not have that column
+  '42883', // undefined_function
+  '3D000', // invalid_catalog_name
+  '28000', // invalid_authorization_specification
+  '28P01', // invalid_password
+])
+
 const errorResult = (error: unknown): Result<any> => {
   const candidate = error as { code?: string; message?: string; detail?: string; hint?: string }
+  if (candidate.code && STRUCTURAL.has(candidate.code)) {
+    // Loud, and on stderr, because the caller is about to render this as an
+    // empty list and say nothing at all.
+    console.error(
+      `[db] ${candidate.code} — this is a deployment fault, not an empty result: ${candidate.message ?? String(error)}`,
+    )
+  }
   return {
     data: null,
     error: {

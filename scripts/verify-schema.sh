@@ -60,6 +60,18 @@ UNION ALL
 SELECT 'index|' || tablename || '|' || indexname || '|' || indexdef
 FROM pg_indexes WHERE schemaname = 'public' AND tablename <> 'schema_migrations'
 UNION ALL
+-- OWNERSHIP, not just shape. On 2026-09-18 the operator-channel migration was
+-- applied to production by hand as `postgres` instead of through migrate.sh as
+-- the application role. The tables came out with the right columns, the right
+-- constraints and the right indexes — and an owner the app is not, and no
+-- grants. src/lib/db/client.ts turns "permission denied" into
+-- { data: null, error }, so every read returned empty and every contract said
+-- "no notes" for three days. This check compared shape only and passed it.
+SELECT 'owner|' || c.relname || '|' || pg_get_userbyid(c.relowner)
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind = 'r'
+  AND c.relname <> 'schema_migrations'
+UNION ALL
 SELECT 'function|' || p.proname || '|' || pg_get_function_identity_arguments(p.oid)
 FROM pg_proc p
 JOIN pg_namespace n ON n.oid = p.pronamespace
