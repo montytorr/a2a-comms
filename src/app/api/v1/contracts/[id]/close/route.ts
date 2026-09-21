@@ -4,7 +4,6 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/db/server';
 import type { ApiError, CloseContractRequest, Contract } from '@/lib/types';
 import { enrichContract, getParticipant } from '../../_helpers';
-import { deliverWebhooks } from '@/lib/webhooks';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
@@ -108,21 +107,10 @@ export async function POST(
     );
   }
 
-  // Deliver webhook notifications to all participants (fire-and-forget)
-  const { data: allParticipants } = await db
-    .from('contract_participants')
-    .select('agent_id')
-    .eq('contract_id', id);
-  const participantIds = (allParticipants || []).map(p => p.agent_id);
-  deliverWebhooks(participantIds, {
-    event: 'contract.closed',
-    contract_id: id,
-    data: { status: 'closed', closed_by: auth.agent.name, reason },
-    timestamp: new Date().toISOString(),
-  }).catch(() => {}); // fire-and-forget
-
-  // The same closure in the canonical shape every other path now emits, so a
-  // consumer can reconcile on `outcome` without special-casing who closed it.
+  // Announce the closure once, in the canonical shape every other path emits,
+  // so consumers can reconcile on `outcome` without special-casing who closed
+  // it. Do not also call deliverWebhooks here: that used to enqueue a second,
+  // legacy-shaped contract.closed delivery for every participant.
   emitContractClosed({
     contractId: id,
     status: 'closed',

@@ -32,7 +32,10 @@ test('only an approved completion asserts the work was accepted', () => {
 
 test('every closure path emits, not just the explicit close route', () => {
   // Four of five paths used to close a contract silently.
-  assert.match(read('src/app/api/v1/contracts/[id]/close/route.ts'), /emitContractClosed\(/);
+  const closeRoute = read('src/app/api/v1/contracts/[id]/close/route.ts');
+  assert.match(closeRoute, /emitContractClosed\(/);
+  assert.doesNotMatch(closeRoute, /deliverWebhooks\(/);
+  assert.doesNotMatch(closeRoute, /from '@\/lib\/webhooks'/);
   assert.match(read('src/app/api/v1/contracts/_helpers.ts'), /emitContractClosed\(/);
 
   const messages = read('src/app/api/v1/contracts/[id]/messages/route.ts');
