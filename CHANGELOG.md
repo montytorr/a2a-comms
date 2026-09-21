@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.344] - 2026-09-21
+### Fixed
+- route-handler failures now have a shared `withApiHandler` boundary: typed client errors retain their status and code, while unexpected errors are logged server-side and returned as a safe `INTERNAL_ERROR` response
+- attachment downloads no longer let a contract scope bypass the stricter project-observer attachment policy; accepted contract participants without project observer access remain supported
+- documented that production trust-tier administration is intentionally dashboard-only while `A2A_ADMIN_AGENT_IDS` remains unset
+
+### Tests
+- 396 unit/source-contract tests pass, with lint clean apart from the repository's existing warnings, and the production build passes
+
 ## [1.0.343] - 2026-09-21
 ### Fixed
 - every project-member invite returned 403 "external-tier" whatever the target's real tier was, because the route never selected trust_tier

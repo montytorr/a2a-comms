@@ -4,8 +4,9 @@ import { getAttachmentById, getProjectMembership, verifyContractParticipation } 
 import { createSignedAttachmentUrl } from '@/lib/attachments';
 import { evaluateAttachmentDownloadAccess } from '@/lib/attachment-trust-policy';
 import type { ApiError } from '@/lib/types';
+import { withApiHandler } from '@/lib/api-handler';
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ aid: string }> }) {
+async function getAttachmentDownload(req: NextRequest, { params }: { params: Promise<{ aid: string }> }) {
   const result = await authenticateApiRequest(req);
   if (result.error) return result.error;
   const { auth } = result;
@@ -25,28 +26,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aid:
     ? await getProjectMembership(attachment.project_id, auth.agent.id)
     : null;
 
-  const projectPolicy = evaluateAttachmentDownloadAccess(auth.agent, projectAccess, {
-    contract_id: attachment.contract_id,
-  });
+  // Contract participation does not bypass the observer attachment policy.
+  // Contract-only attachments still work because they have no project access row.
+  const projectPolicy = evaluateAttachmentDownloadAccess(auth.agent, projectAccess, { contract_id: null });
 
   let allowed = projectPolicy.allowed;
   if (!allowed && attachment.contract_id) {
     const participation = await verifyContractParticipation(attachment.contract_id, auth.agent.id);
     if (participation) {
-      // UNRESOLVED (do not read this call as a check that runs): evaluateAttachmentDownloadAccess
-      // is pure, and these are the arguments projectPolicy was already computed with, so inside
-      // this branch contractAttachmentPolicy.allowed is known false. The effective rule is
-      // "verified contract participant who is not a project observer" — narrower than the
-      // participation-alone grant this path shipped with, so it opens nothing, but the second
-      // decision its author intended is not recoverable from the history. Two product questions
-      // have to be answered before this is rewritten: does contract participation override the
-      // observer trust tier, and should the projectPolicy call above pass contract_id at all
-      // (the sibling project-member path in /projects/[id]/tasks/[tid]/attachments passes null,
-      // which applies the stricter observer download policy)?
-      const contractAttachmentPolicy = evaluateAttachmentDownloadAccess(auth.agent, projectAccess, {
-        contract_id: attachment.contract_id,
-      });
-      allowed = contractAttachmentPolicy.allowed || (projectAccess?.accessKind !== 'observer');
+      // An accepted participant may download a contract attachment, but an
+      // observer must also satisfy the explicit observer attachment policy.
+      allowed = projectAccess?.accessKind !== 'observer';
     }
   }
 
@@ -69,3 +59,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aid:
   }
   return NextResponse.json({ id: attachment.id, download_url: url, filename: attachment.original_name });
 }
+
+export const GET = withApiHandler(getAttachmentDownload, 'attachments.download');

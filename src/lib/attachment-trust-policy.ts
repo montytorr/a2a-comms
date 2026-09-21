@@ -4,6 +4,7 @@ import { evaluateObserverProjectAttachmentDownloadPolicyAccess, evaluateObserver
 
 export interface AttachmentAccessActor {
   trust_tier?: string | null;
+  trust_policy?: unknown;
 }
 
 export interface AttachmentScope {

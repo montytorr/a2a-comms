@@ -74,7 +74,7 @@ test('observer attachment downloads can remain stricter than read visibility', (
   );
 });
 
-test('external observers can still download attachments scoped to a contract when observer reads allow external', () => {
+test('contract scope permits observers when observer reads allow external', () => {
   assert.deepEqual(
     evaluateAttachmentDownloadAccess(
       { trust_tier: 'external', trust_policy: { observer_project_access: { read: 'external', download_project_attachments: 'internal' } } },
@@ -106,4 +106,11 @@ test('contract participation for attachment access is limited to accepted partic
   const lookup = source.slice(source.indexOf('export async function verifyContractParticipation'));
   const body = lookup.slice(0, lookup.indexOf('\n}'));
   assert.match(body, /\.eq\('status', 'accepted'\)/);
+});
+
+test('attachment download route applies observer policy before contract participation', () => {
+  const source = readFileSync(new URL('../app/api/v1/attachments/[aid]/download/route.ts', import.meta.url), 'utf8');
+  assert.match(source, /evaluateAttachmentDownloadAccess\(auth\.agent, projectAccess, \{ contract_id: null \}\)/);
+  assert.match(source, /withApiHandler\(getAttachmentDownload, 'attachments\.download'\)/);
+  assert.doesNotMatch(source, /contractAttachmentPolicy/);
 });
