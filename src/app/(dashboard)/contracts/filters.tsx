@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useTransition } from 'react';
 import type { ContractStatus } from '@/lib/types';
 
 const statuses: Array<ContractStatus | 'all'> = ['all', 'proposed', 'active', 'closed', 'rejected', 'expired', 'cancelled'];
@@ -18,6 +18,7 @@ export default function ContractFilters({ current }: { current: string }) {
   const currentSort = searchParams.get('sort') || 'newest';
   const [localSearch, setLocalSearch] = useState(currentSearch);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
@@ -30,7 +31,7 @@ export default function ContractFilters({ current }: { current: string }) {
         }
       }
       const qs = params.toString();
-      router.push(`/contracts${qs ? `?${qs}` : ''}`);
+      startTransition(() => router.push(`/contracts${qs ? `?${qs}` : ''}`));
     },
     [router, searchParams],
   );
@@ -44,7 +45,8 @@ export default function ContractFilters({ current }: { current: string }) {
   );
 
   return (
-    <div className="col gap-3" style={{ marginBottom: 16 }}>
+    <div className="col gap-3" style={{ marginBottom: 16, position: 'relative' }} aria-busy={isPending}>
+      {isPending && <div role="status" aria-live="polite" className="text-2xs contract-filter-loading">Loading contracts…</div>}
       <div className="seg">
         {statuses.map((status) => (
           <button

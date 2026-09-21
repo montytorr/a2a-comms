@@ -8,15 +8,20 @@ import { AlertTriangle, X } from 'lucide-react';
 export default function CloseContractButton({ contractId }: { contractId: string }) {
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleClose = async () => {
     setLoading(true);
+    setError(null);
     try {
       await closeContract(contractId);
       router.refresh();
     } catch (err) {
       console.error('Failed to close contract:', err);
+      setError(err instanceof Error ? err.message : 'The contract could not be closed');
+      setLoading(false);
+      return;
     }
     setLoading(false);
     setConfirming(false);
@@ -24,7 +29,7 @@ export default function CloseContractButton({ contractId }: { contractId: string
 
   return (
     <>
-      <button onClick={() => setConfirming(true)} className="btn btn--danger">
+      <button onClick={() => { setError(null); setConfirming(true); }} className="btn btn--danger">
         <X size={13} />Close Contract
       </button>
 
@@ -56,6 +61,11 @@ export default function CloseContractButton({ contractId }: { contractId: string
               <div className="muted text-sm" style={{ textAlign: 'center', lineHeight: 1.5 }}>
                 This will permanently close the contract. No more messages can be exchanged. This action cannot be undone.
               </div>
+              {error && (
+                <div role="alert" className="text-sm contract-action-error">
+                  {error}
+                </div>
+              )}
             </div>
             <div className="row gap-3" style={{ padding: '0 28px 28px' }}>
               <button

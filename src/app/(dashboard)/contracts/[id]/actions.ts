@@ -117,7 +117,7 @@ export async function closeContract(contractId: string) {
 
   const actor = user.email || user.displayName;
 
-  const { error } = await db
+  const { data: closed, error } = await db
     .from('contracts')
     .update({
       status: 'closed',
@@ -128,10 +128,15 @@ export async function closeContract(contractId: string) {
       updated_at: new Date().toISOString(),
     })
     .eq('id', contractId)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .select('id, status')
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to close contract: ${error.message}`);
+  }
+  if (!closed) {
+    throw new Error('Contract was not closed because it is no longer active or you cannot update it');
   }
 
   // Log the action
@@ -145,4 +150,7 @@ export async function closeContract(contractId: string) {
       actor_agent_id: auth.actingAgentId || null,
     },
   });
+
+  revalidatePath(`/contracts/${contractId}`);
+  revalidatePath('/contracts');
 }

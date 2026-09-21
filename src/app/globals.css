@@ -1074,4 +1074,66 @@ input[type="checkbox"], input[type="radio"] {
   .pulse, .blink { animation: none; }
   .animate-fade-in { animation-duration: 0.01ms; }
 }
+
+.contract-row-loading {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  color: var(--peri);
+  font-size: 11px;
+  z-index: 2;
+}
+
+.contract-row-loading__spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.contract-filter-loading {
+  align-self: flex-end;
+  color: var(--peri);
+}
+
+.contract-action-error {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-2);
+  background: var(--rose-bg);
+  border: 1px solid var(--rose-line);
+  color: var(--rose);
+}
+
+.route-loading-shell {
+  width: 100%;
+  padding: 24px 16px;
+}
+
+.route-loading-title {
+  width: 240px;
+  height: 28px;
+  margin-bottom: 20px;
+  border-radius: var(--radius-2);
+  background: var(--bg-2);
+}
+
+.route-loading-title--contracts { width: 180px; }
+.route-loading-card--short { height: 88px; margin-bottom: 16px; opacity: 0.7; }
+.route-loading-card--detail { height: 150px; margin-bottom: 16px; opacity: 0.7; }
+.route-loading-card--list { height: 420px; opacity: 0.55; }
+.route-loading-card--body { height: 480px; opacity: 0.55; }
+
+.route-loading-card {
+  background: var(--bg-2);
+}
 }
