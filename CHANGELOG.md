@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.347] - 2026-09-21
+### Fixed
+- emit contract closure once
+
 ## [1.0.346] - 2026-09-21
 ### Fixed
 - make contract actions and navigation truthful
