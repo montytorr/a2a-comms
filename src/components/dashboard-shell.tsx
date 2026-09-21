@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePersistedToggle } from '@/lib/persisted-toggle';
 import Sidebar from './sidebar';
 import { Topbar } from './topbar';
@@ -9,6 +9,8 @@ import { CommandPalette } from './command-palette';
 import type { TickerItem } from '@/lib/live-feed';
 import { DashboardProvider, type DashboardContextValue } from '@/app/(dashboard)/dashboard-context';
 import ActingAgentSelector from '@/app/(dashboard)/acting-agent-selector';
+import { NavigationFeedbackProvider } from './navigation-feedback';
+import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
 
 interface DashboardShellProps extends DashboardContextValue {
   initialTickerItems?: TickerItem[];
@@ -27,20 +29,33 @@ export default function DashboardShell({
 }: DashboardShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [collapsed, toggleCollapsed] = usePersistedToggle(COLLAPSE_KEY);
+  const [counts, setCounts] = useState<DashboardNotificationCounts | undefined>(notificationCounts);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/internal/notifications', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() as Promise<{ counts?: DashboardNotificationCounts }> : null)
+      .then((payload) => {
+        if (!cancelled && payload?.counts) setCounts(payload.counts);
+      })
+      .catch(() => { /* Header enrichment must never block navigation. */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const dashboardContext: DashboardContextValue = {
     isSuperAdmin,
     displayName,
-    notificationCounts,
+    notificationCounts: counts,
     actor,
   };
 
   return (
-    <DashboardProvider value={dashboardContext}>
+    <NavigationFeedbackProvider>
+      <DashboardProvider value={dashboardContext}>
       <Sidebar
         isSuperAdmin={isSuperAdmin}
         displayName={displayName}
-        notificationCounts={notificationCounts}
+        notificationCounts={counts}
         collapsed={collapsed}
       />
       <main className="flex min-w-0 flex-1 flex-col md:h-full">
@@ -53,7 +68,7 @@ export default function DashboardShell({
             <MobileNav
               isSuperAdmin={isSuperAdmin}
               displayName={displayName}
-              notificationCounts={notificationCounts}
+              notificationCounts={counts}
             />
           }
         />
@@ -72,7 +87,8 @@ export default function DashboardShell({
           </div>
         </div>
       </main>
-      <CommandPalette open={paletteOpen} onClose={setPaletteOpen} isAdmin={isSuperAdmin} />
-    </DashboardProvider>
+        <CommandPalette open={paletteOpen} onClose={setPaletteOpen} isAdmin={isSuperAdmin} />
+      </DashboardProvider>
+    </NavigationFeedbackProvider>
   );
 }

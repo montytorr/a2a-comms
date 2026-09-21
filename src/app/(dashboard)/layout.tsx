@@ -1,7 +1,5 @@
 import DashboardShell from '@/components/dashboard-shell';
-import { getDashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
-import { getLiveFeedItems } from '@/lib/live-feed';
 
 export default async function DashboardLayout({
   children,
@@ -10,25 +8,14 @@ export default async function DashboardLayout({
 }) {
   const auth = await getAuthActorContext();
   const user = auth?.user ?? null;
-  // These are independent header enhancements. Serialising them made every
-  // dashboard navigation wait for both the notification fan-out and ticker
-  // queries before the page could stream.
-  const [notificationSummary, initialTickerItems] = auth
-    ? await Promise.all([
-        getDashboardNotificationSummary(auth),
-        getLiveFeedItems(auth).catch((error) => {
-          console.error('[dashboard] live feed seed failed', error);
-          return [];
-        }),
-      ])
-    : [null, []];
-
   return (
     <DashboardShell
       isSuperAdmin={user?.isSuperAdmin ?? false}
       displayName={user?.displayName ?? undefined}
-      notificationCounts={notificationSummary?.counts}
-      initialTickerItems={initialTickerItems}
+      // Header enrichment is loaded by the client after the shell paints.
+      // Keeping it out of this layout lets the route loading boundary stream.
+      notificationCounts={undefined}
+      initialTickerItems={[]}
       actor={{
         availableAgents: auth?.availableAgents || [],
         activeAgentId: auth?.actingAgentId || null,

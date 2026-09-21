@@ -7,6 +7,7 @@ import { Search, RefreshCw, Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-r
 import { Ticker } from '@/components/atoms';
 import { useDashboardContext } from '@/app/(dashboard)/dashboard-context';
 import type { TickerItem } from '@/lib/live-feed';
+import { useNavigationFeedback } from './navigation-feedback';
 
 interface TopbarProps {
   initialTickerItems?: TickerItem[];
@@ -20,6 +21,7 @@ interface TopbarProps {
 export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collapsed, onToggleCollapsed }: TopbarProps) => {
   const router = useRouter();
   const { notificationCounts } = useDashboardContext();
+  const { begin } = useNavigationFeedback();
   // Derived per request in lib/dashboard-notifications.ts; there is no read
   // state in the system, so this is "actionable now", not "unread".
   const actionable = notificationCounts?.total ?? 0;
@@ -153,6 +155,7 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
         </button>
         <Link
           href="/notifications"
+          onNavigate={begin}
           className="btn btn--ghost btn--sm btn--icon"
           title={actionable > 0 ? `Notifications — ${actionable} needing attention` : 'Notifications'}
           aria-label={

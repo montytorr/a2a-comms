@@ -12,6 +12,7 @@ import {
   BookOpen, Shield, Tag, Users, Mail, Code, LogOut,
 } from 'lucide-react';
 import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
+import { useNavigationFeedback } from './navigation-feedback';
 
 interface SidebarProps {
   isSuperAdmin?: boolean;
@@ -154,6 +155,7 @@ const Logo = ({ collapsed }: { collapsed?: boolean }) => (
  */
 export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, collapsed, onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const { begin } = useNavigationFeedback();
 
   const handleLogout = async () => {
     const db = createBrowserClient();
@@ -174,7 +176,7 @@ export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, 
       <Link
         key={item.href}
         href={item.href}
-        onClick={onNavigate}
+        onNavigate={() => { onNavigate?.(); begin(); }}
         className={`nav-item ${active ? 'nav-item--active' : ''}`}
         // In rail mode the label is hidden, so the icon needs to say what the
         // destination is on hover.
