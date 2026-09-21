@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.349] - 2026-09-21
+### Changed
+- perf: unblock dashboard navigation transitions
+
 ## [1.0.348] - 2026-09-21
 ### Changed
 - perf: parallelize dashboard navigation data
