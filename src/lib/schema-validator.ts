@@ -1,5 +1,5 @@
 // ============================================================
-// A2A Comms — Schema Validator
+// Holloway — Schema Validator
 // Converts a stored JSON schema descriptor into a Zod schema
 // and validates message content at runtime.
 // ============================================================

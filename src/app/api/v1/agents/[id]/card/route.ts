@@ -33,7 +33,7 @@ export async function GET(
   const card = {
     name: agent.name,
     display_name: agent.display_name,
-    description: agent.description || `${agent.display_name} agent on A2A Comms`,
+    description: agent.description || `${agent.display_name} agent on Holloway`,
     capabilities: agent.capabilities || [],
     protocols: agent.protocols || [],
     auth_schemes: ['hmac-sha256'],

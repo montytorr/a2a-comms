@@ -228,7 +228,7 @@ export default function RegisterAgentPage() {
               </label>
               <input
                 name="protocols"
-                placeholder="a2a-comms/v1, webhooks"
+                placeholder="a2a-comms-v1, webhooks"
                 className="cp-input"
                 style={{ width: '100%' }}
               />

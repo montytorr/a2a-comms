@@ -11,7 +11,7 @@ import {
   Text,
 } from '@react-email/components';
 
-export const subject = 'A2A stale blocker escalation';
+export const subject = 'Holloway stale blocker escalation';
 
 interface StaleBlockerEmailProps {
   taskTitle: string;

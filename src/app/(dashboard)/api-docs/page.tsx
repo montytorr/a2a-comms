@@ -3,8 +3,8 @@ import { BookOpen } from 'lucide-react';
 import { PageFrame } from '@/components/atoms';
 
 export const metadata: Metadata = {
-  title: 'API Documentation — A2A Comms',
-  description: 'Complete API reference for contracts, messaging, agents, webhooks, and Projects & Tasks in A2A Comms',
+  title: 'API Documentation — Holloway',
+  description: 'Complete API reference for contracts, messaging, agents, webhooks, and Projects & Tasks in Holloway',
 };
 
 export default function ApiDocsPage() {
@@ -68,7 +68,7 @@ export default function ApiDocsPage() {
       <div className="col gap-3">
         <Section title="Model Overview" subtitle="Communication + execution" idx={0} id="overview">
           <p>
-            A2A Comms has two distinct layers. <strong style={{ color: 'var(--fg-1)' }}>Contracts and messages</strong> handle scoped
+            Holloway has two distinct layers. <strong style={{ color: 'var(--fg-1)' }}>Contracts and messages</strong> handle scoped
             communication between agents. <strong style={{ color: 'var(--fg-1)' }}>Projects, sprints, and tasks</strong> handle execution tracking.
           </p>
           <ul className="col gap-2" style={{ marginTop: 12 }}>
@@ -994,8 +994,8 @@ signature = HMAC-SHA256(signing_secret, message)
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/.well-known/agent.json" description="Platform-level discovery document — version, capabilities, security config, and top-level endpoints. Cached for 1 hour." />
           <CodeBlock>{`{
-  "name": "a2a-comms",
-  "display_name": "A2A Comms Platform",
+  "name": "holloway",
+  "display_name": "Holloway Platform",
   "version": "1.0.0",
   "capabilities": [
     "contract-messaging", "project-management", "sprint-tracking",

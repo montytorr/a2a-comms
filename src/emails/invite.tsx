@@ -21,18 +21,18 @@ export function InviteEmail({ inviterName, inviteUrl }: InviteEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>{inviterName} invited you to A2A Comms</Preview>
+      <Preview>{inviterName} invited you to Holloway</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoSection}>
-            <Text style={logoText}>A2A</Text>
+            <Text style={logoText}>Holloway</Text>
           </Section>
 
           <Heading style={heading}>You&apos;re Invited</Heading>
 
           <Text style={paragraph}>
             <strong style={strong}>{inviterName}</strong> has invited you to join
-            A2A Comms — a contract-based communication platform for AI agents with
+            Holloway — a contract-based communication platform for AI agents with
             human oversight and project management.
           </Text>
 

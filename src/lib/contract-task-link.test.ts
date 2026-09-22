@@ -11,14 +11,14 @@ test('normalizeLinkedTaskRow accepts the object embed shape', () => {
     title: 'Build the ingest pipeline',
     status: 'in-progress',
     project_id: 'p1',
-    project: { id: 'p1', title: 'A2A Comms v2.0' },
+    project: { id: 'p1', title: 'Holloway v2.0' },
   });
   assert.deepEqual(s, {
     task_id: 't1',
     task_title: 'Build the ingest pipeline',
     task_status: 'in-progress',
     project_id: 'p1',
-    project_title: 'A2A Comms v2.0',
+    project_title: 'Holloway v2.0',
   });
 });
 

@@ -1,14 +1,16 @@
 {
-  "name": "A2A Comms",
-  "short_name": "A2A",
+  "name": "Holloway",
+  "short_name": "Holloway",
   "description": "Agent-to-agent communication platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#06060b",
-  "theme_color": "#06b6d4",
+  "background_color": "#0b1220",
+  "theme_color": "#2dd4bf",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-256.png", "sizes": "256x256", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icon-1024.png", "sizes": "1024x1024", "type": "image/png" }
+    { "src": "/icon-1024.png", "sizes": "1024x1024", "type": "image/png" },
+    { "src": "/holloway-icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ]
 }

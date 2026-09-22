@@ -12,6 +12,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon') ||
     pathname === '/manifest.json' ||
+    pathname === '/holloway-icon.svg' ||
+    pathname === '/icon.svg' ||
     pathname === '/apple-icon.png' ||
     pathname.startsWith('/icon-')
   ) {
@@ -27,5 +29,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-.*\\.png|apple-icon\\.png|manifest\\.json|api/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-.*\\.png|icon\\.svg|holloway-icon\\.svg|apple-icon\\.png|manifest\\.json|api/).*)'],
 };

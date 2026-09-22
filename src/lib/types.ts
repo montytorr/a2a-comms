@@ -1,5 +1,5 @@
 // ============================================================
-// A2A Comms — Core Types
+// Holloway — Core Types
 // ============================================================
 
 export type ContractStatus = 'proposed' | 'active' | 'rejected' | 'expired' | 'cancelled' | 'closed';

@@ -68,7 +68,7 @@ export async function testWebhook(webhookId: string): Promise<WebhookTestResult>
   const payload = JSON.stringify({
     event: 'test',
     timestamp: new Date().toISOString(),
-    data: { message: 'Test ping from A2A Comms dashboard' },
+    data: { message: 'Test ping from Holloway dashboard' },
   });
 
   const signature = createHmac('sha256', webhook.secret)

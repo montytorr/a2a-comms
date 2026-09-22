@@ -13,7 +13,7 @@ import StaleBlockerEmail, { subject as staleBlockerSubject } from './templates/s
 // A sender on a domain you do not control will be rejected or land in spam, so
 // there is no useful default here: an unset RESEND_FROM should be obvious, not
 // silently borrow someone else's domain.
-const FROM = process.env.RESEND_FROM || 'A2A Comms <noreply@localhost>';
+const FROM = process.env.RESEND_FROM || 'Holloway <noreply@localhost>';
 const APP_URL = appUrl();
 
 function getResendClient(): Resend {

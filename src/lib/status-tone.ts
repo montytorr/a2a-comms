@@ -1,5 +1,5 @@
 // ============================================================
-// A2A Comms — Status → tone: the single source of truth
+// Holloway — Status → tone: the single source of truth
 // ============================================================
 //
 // THE RULE

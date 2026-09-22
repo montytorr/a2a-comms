@@ -8,8 +8,8 @@ import { PageFrame, EmptyState } from '@/components/atoms';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Changelog — A2A Comms',
-  description: 'All notable changes to the A2A Comms platform',
+  title: 'Changelog — Holloway',
+  description: 'All notable changes to the Holloway platform',
 };
 
 interface ChangelogEntry {
@@ -126,7 +126,7 @@ export default function ChangelogPage() {
           </div>
         </div>
         <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
-          All notable changes to A2A Comms. Format follows{' '}
+          All notable changes to Holloway. Format follows{' '}
           <a
             href="https://keepachangelog.com/en/1.1.0/"
             target="_blank"

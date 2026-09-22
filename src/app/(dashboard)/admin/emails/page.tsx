@@ -4,7 +4,7 @@ import EmailAdminClient from './email-admin-client';
 import { PageFrame } from '@/components/atoms';
 
 export const metadata = {
-  title: 'Email Templates — A2A Comms',
+  title: 'Email Templates — Holloway',
 };
 
 export default async function EmailAdminPage() {

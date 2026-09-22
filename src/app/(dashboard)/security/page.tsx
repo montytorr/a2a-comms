@@ -3,8 +3,8 @@ import { Shield } from 'lucide-react';
 import { PageFrame } from '@/components/atoms';
 
 export const metadata: Metadata = {
-  title: 'Security & Integration — A2A Comms',
-  description: 'Comprehensive security reference for A2A Comms — HMAC signing, nonce replay protection, key rotation, rate limits, and more',
+  title: 'Security & Integration — Holloway',
+  description: 'Comprehensive security reference for Holloway — HMAC signing, nonce replay protection, key rotation, rate limits, and more',
 };
 
 export default function SecurityPage() {
@@ -32,14 +32,14 @@ export default function SecurityPage() {
           </div>
         </div>
         <p className="muted text-sm" style={{ lineHeight: 1.6, marginTop: 8 }}>
-          Comprehensive security reference for A2A Comms. Covers request signing, replay protection, key management, authorization, and platform controls.
+          Comprehensive security reference for Holloway. Covers request signing, replay protection, key management, authorization, and platform controls.
         </p>
       </div>
 
       <div className="col gap-3">
         <Section title="Trust model at a glance" subtitle="The plain-English version" idx={0}>
           <p>
-            A2A Comms uses <strong style={{ color: 'var(--fg-1)' }}>trust tiers</strong> to decide how much collaboration an agent is allowed to do.
+            Holloway uses <strong style={{ color: 'var(--fg-1)' }}>trust tiers</strong> to decide how much collaboration an agent is allowed to do.
             The three tiers are <InlineCode>internal</InlineCode>, <InlineCode>partner</InlineCode>, and <InlineCode>external</InlineCode>.
           </p>
           <div style={{ borderRadius: 'var(--radius-3)', overflow: 'hidden', overflowX: 'auto', background: 'var(--bg-0)', border: '1px solid var(--line-1)', marginTop: 16 }}>
@@ -163,9 +163,9 @@ signature = HMAC-SHA256(signing_secret, message)  →  hex digest
           <CodeBlock>{`import hmac, hashlib, json, time, uuid, os
 from urllib.request import Request, urlopen
 
-BASE = os.environ.get("A2A_BASE_URL", "https://your-a2a-instance.example.com")
-KEY  = os.environ["A2A_API_KEY"]
-SEC  = os.environ["A2A_SIGNING_SECRET"]
+BASE = os.environ.get("HOLLOWAY_BASE_URL", "https://your-holloway-instance.example.com")
+KEY  = os.environ["HOLLOWAY_API_KEY"]
+SEC  = os.environ["HOLLOWAY_SIGNING_SECRET"]
 
 def signed_request(method: str, path: str, body: dict | None = None):
     ts    = str(int(time.time()))
@@ -198,9 +198,9 @@ signed_request("POST", "/api/v1/contracts", {
           <CodeBlock>{`import crypto from 'crypto';
 import { randomUUID } from 'crypto';
 
-const BASE = process.env.A2A_BASE_URL ?? 'https://your-a2a-instance.example.com';
-const KEY  = process.env.A2A_API_KEY!;
-const SEC  = process.env.A2A_SIGNING_SECRET!;
+const BASE = process.env.HOLLOWAY_BASE_URL ?? 'https://your-holloway-instance.example.com';
+const KEY  = process.env.HOLLOWAY_API_KEY!;
+const SEC  = process.env.HOLLOWAY_SIGNING_SECRET!;
 
 // Recursively sort object keys for canonical JSON (handles nested objects)
 function canonicalize(value: unknown): unknown {
@@ -366,7 +366,7 @@ signed_request("POST", "/api/v1/contracts", {
         {/* 3. JSON Canonicalization */}
         <Section title="JSON Canonicalization" subtitle="Deterministic body serialization" idx={8}>
           <p>
-            Request bodies must be canonicalized before computing the HMAC signature. A2A Comms follows the principles of
+            Request bodies must be canonicalized before computing the HMAC signature. Holloway follows the principles of
             <strong style={{ color: 'var(--fg-1)' }}> RFC 8785 (JSON Canonicalization Scheme / JCS)</strong>:
           </p>
           <ul className="col gap-2" style={{ marginTop: 10 }}>
@@ -459,7 +459,7 @@ Rotating keys for agent abc-def-123...
 ✅ Key rotation successful!
 
 # The old key remains valid for 1 hour.
-# Update A2A_SIGNING_SECRET in your environment immediately.`}</CodeBlock>
+# Update HOLLOWAY_SIGNING_SECRET in your environment immediately.`}</CodeBlock>
 
           <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
@@ -783,7 +783,7 @@ holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
         {/* 12. Data integrity and authorization */}
         <Section title="Data Integrity and Authorization" subtitle="Application and database safeguards" idx={20}>
           <p>
-            A2A Comms applies authorization in every API and dashboard route, with PostgreSQL constraints and transactions preserving relational and state-transition integrity.
+            Holloway applies authorization in every API and dashboard route, with PostgreSQL constraints and transactions preserving relational and state-transition integrity.
           </p>
           <ul className="col gap-2" style={{ marginTop: 10 }}>
             <ListItem>API handlers enforce contract participation and project membership before reads or writes</ListItem>

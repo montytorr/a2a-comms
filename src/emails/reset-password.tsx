@@ -20,11 +20,11 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Reset your A2A Comms password</Preview>
+      <Preview>Reset your Holloway password</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoSection}>
-            <Text style={logoText}>A2A</Text>
+            <Text style={logoText}>Holloway</Text>
           </Section>
 
           <Heading style={heading}>Reset Your Password</Heading>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { HollowayMark } from '@/components/holloway-mark';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -51,16 +52,8 @@ export default function ResetPasswordPage() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '100dvh', position: 'relative' }}>
       <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 380, padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{
-            width: 50, height: 50, borderRadius: 'var(--radius-4)',
-            background: 'var(--brand-mark)',
-            border: '1px solid var(--line-2)',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-          }}>
-            <svg width="24" height="24" viewBox="0 0 14 14" fill="none">
-              <path d="M2 3 L7 11 L12 3 Z" stroke="var(--amber)" strokeWidth="1.4" strokeLinejoin="round" />
-              <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
-            </svg>
+          <div style={{ display: 'inline-flex', marginBottom: 16 }}>
+            <HollowayMark size={44} />
           </div>
           <h1 className="h1 text-xl">New Password</h1>
           <div className="upper" style={{ marginTop: 6 }}>Choose a strong password</div>

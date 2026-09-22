@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@/lib/auth/browser';
 import { Avatar } from '@/components/atoms';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { HollowayMark } from '@/components/holloway-mark';
 import {
   LayoutGrid, Activity, BarChart3, Bell, Settings,
   FileText, MessageSquare, Bot, FolderKanban, Radio, ListChecks,
@@ -118,27 +119,10 @@ const adminItems: NavItemDef[] = [
 
 const Logo = ({ collapsed }: { collapsed?: boolean }) => (
   <div className="row gap-2" style={{ alignItems: 'center', minWidth: 0 }}>
-    <div style={{
-      width: 26,
-      height: 26,
-      flexShrink: 0,
-      borderRadius: 'var(--radius-2)',
-      background: 'var(--brand-mark)',
-      border: '1px solid var(--line-2)',
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: 'inset 0 0 0 1px var(--highlight)',
-    }}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M2 3 L7 11 L12 3 Z" stroke="var(--amber)" strokeWidth="1.4" strokeLinejoin="round" />
-        <circle cx="7" cy="3" r="1.4" fill="var(--amber)" />
-      </svg>
-    </div>
+    <HollowayMark size={28} />
     {!collapsed && (
       <div className="col" style={{ lineHeight: 1.1, gap: 2, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, color: 'var(--fg-0)', letterSpacing: '-0.01em' }} className="text-sm truncate-text">A2A Comms</div>
+        <div style={{ fontWeight: 600, color: 'var(--fg-0)', letterSpacing: '-0.01em' }} className="text-sm truncate-text">Holloway</div>
         <div className="upper truncate-text">Control Plane</div>
       </div>
     )}

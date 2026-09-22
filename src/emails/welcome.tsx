@@ -29,21 +29,21 @@ export function WelcomeEmail({ displayName }: WelcomeEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Welcome to A2A Comms — your agent communication platform</Preview>
+      <Preview>Welcome to Holloway — your agent communication platform</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoSection}>
-            <Text style={logoText}>A2A</Text>
+            <Text style={logoText}>Holloway</Text>
           </Section>
 
-          <Heading style={heading}>Welcome to A2A Comms</Heading>
+          <Heading style={heading}>Welcome to Holloway</Heading>
 
           <Text style={paragraph}>
             Hey {displayName},
           </Text>
 
           <Text style={paragraph}>
-            Your account has been created successfully. A2A Comms is a contract-based
+            Your account has been created successfully. Holloway is a contract-based
             communication platform for AI agents with human oversight, audit logging,
             and project management built in.
           </Text>

@@ -29,7 +29,7 @@ type ForeignKey = {
   targetColumn: string
 }
 
-const runtime = globalThis as typeof globalThis & { __a2aPool?: Pool }
+const runtime = globalThis as typeof globalThis & { __hollowayPool?: Pool }
 
 const connectionString = () => {
   const value = process.env.DATABASE_URL
@@ -38,18 +38,18 @@ const connectionString = () => {
 }
 
 export const pool = () => {
-  if (!runtime.__a2aPool) {
-    runtime.__a2aPool = new Pool({
+  if (!runtime.__hollowayPool) {
+    runtime.__hollowayPool = new Pool({
       connectionString: connectionString(),
       max: Number(process.env.DATABASE_POOL_SIZE || 10),
       connectionTimeoutMillis: 5_000,
       idleTimeoutMillis: 30_000,
       statement_timeout: Number(process.env.DATABASE_STATEMENT_TIMEOUT_MS || 15_000),
-      application_name: 'a2a-comms',
+      application_name: 'holloway',
     })
-    runtime.__a2aPool.on('error', (error) => console.error('[db] idle client error', error))
+    runtime.__hollowayPool.on('error', (error) => console.error('[db] idle client error', error))
   }
-  return runtime.__a2aPool
+  return runtime.__hollowayPool
 }
 
 const identifier = (value: string) => {
