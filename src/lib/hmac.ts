@@ -132,7 +132,7 @@ export interface HmacValidationResult {
  * This used to be ambiguous: a `canonicalizeMultipartFields` helper existed and
  * was unit-tested, but nothing ever called it in the request path. The CLI was
  * written against the design that helper implied and signed the form fields, so
- * every `a2a task-attach` / `contract-attach` failed with 401 — each side
+ * every `holloway task-attach` / `contract-attach` failed with 401 — each side
  * self-consistent, both test suites green, the feature entirely broken. The
  * helper is gone so the code states the actual contract.
  *

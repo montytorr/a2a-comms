@@ -192,74 +192,74 @@ done
 [[ -n "$UP" ]] && ok "app healthy on $APP_PORT" || { bad "app did not start — $(tail -3 "$WORK/app.log")"; exit 1; }
 
 export HOLLOWAY_API_KEY="$KEY_ID" HOLLOWAY_SIGNING_SECRET="$SECRET" HOLLOWAY_BASE_URL="http://127.0.0.1:$APP_PORT"
-a2a() { python3 skill/scripts/a2a "$@" 2>&1; }
+holloway() { python3 skill/scripts/holloway "$@" 2>&1; }
 
 # ------------------------------------------------------------------- flows ---
 say "5. Project and task creation"
-PROJECT_ID="$(a2a project-create "E2E project" | grep -oE '[0-9a-f-]{36}' | head -1)"
+PROJECT_ID="$(holloway project-create "E2E project" | grep -oE '[0-9a-f-]{36}' | head -1)"
 [[ -n "$PROJECT_ID" ]] && ok "project created" || bad "project-create produced no id"
-TASK_ID="$(a2a task-create "$PROJECT_ID" "E2E task" | grep -oE '[0-9a-f-]{36}' | head -1)"
+TASK_ID="$(holloway task-create "$PROJECT_ID" "E2E task" | grep -oE '[0-9a-f-]{36}' | head -1)"
 [[ -n "$TASK_ID" ]] && ok "task created" || bad "task-create produced no id"
 
 say "6. Contract linked to the task at creation"
-OUT="$(a2a propose "E2E linked" --to beta --project "$PROJECT_ID" --task "$TASK_ID")"
+OUT="$(holloway propose "E2E linked" --to beta --project "$PROJECT_ID" --task "$TASK_ID")"
 check "propose --project/--task succeeds" "$OUT" "Contract proposed"
 check "response carries the linked project" "$OUT" "Project: E2E project"
 LINKED_ID="$(printf '%s' "$OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
 
 say "7. A refused link creates no orphan contract"
 BEFORE="$(psql_q -c 'select count(*) from contracts;')"
-OUT="$(a2a propose "E2E bad link" --to beta --project "$PROJECT_ID" --task '00000000-0000-0000-0000-000000000000')"
+OUT="$(holloway propose "E2E bad link" --to beta --project "$PROJECT_ID" --task '00000000-0000-0000-0000-000000000000')"
 check "unknown task is refused" "$OUT" "404"
 AFTER="$(psql_q -c 'select count(*) from contracts;')"
 [[ "$BEFORE" == "$AFTER" ]] && ok "no contract created ($BEFORE = $AFTER)" || bad "orphan contract left behind ($BEFORE -> $AFTER)"
 
 say "8. project_id and task_id must travel together"
-check "half a link is refused" "$(a2a propose "E2E half" --to beta --project "$PROJECT_ID")" "must be used together"
+check "half a link is refused" "$(holloway propose "E2E half" --to beta --project "$PROJECT_ID")" "must be used together"
 
 say "9. Unlinked contracts are flagged and cannot take attachments"
-OUT="$(a2a propose "E2E unlinked" --to beta)"
+OUT="$(holloway propose "E2E unlinked" --to beta)"
 check "unlinked proposal warns" "$OUT" "not linked to a project task"
 UNLINKED_ID="$(printf '%s' "$OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
 printf 'a,b\n1,2\n' > "$WORK/sample.csv"
-check "attach refused while unlinked" "$(a2a contract-attach "$UNLINKED_ID" --file "$WORK/sample.csv")" "not linked to a project task"
+check "attach refused while unlinked" "$(holloway contract-attach "$UNLINKED_ID" --file "$WORK/sample.csv")" "not linked to a project task"
 
 say "10. Multipart upload (the HMAC contract)"
 check "attach to a linked contract succeeds" \
-  "$(a2a contract-attach "$LINKED_ID" --file "$WORK/sample.csv" --note e2e)" '"filename": "sample.csv"'
+  "$(holloway contract-attach "$LINKED_ID" --file "$WORK/sample.csv" --note e2e)" '"filename": "sample.csv"'
 
 say "11. Linking afterwards unblocks attachments"
 check "contract-link succeeds" \
-  "$(a2a contract-link "$UNLINKED_ID" --project "$PROJECT_ID" --task "$TASK_ID")" "linked to task"
+  "$(holloway contract-link "$UNLINKED_ID" --project "$PROJECT_ID" --task "$TASK_ID")" "linked to task"
 check "attach now succeeds" \
-  "$(a2a contract-attach "$UNLINKED_ID" --file "$WORK/sample.csv")" '"filename": "sample.csv"'
+  "$(holloway contract-attach "$UNLINKED_ID" --file "$WORK/sample.csv")" '"filename": "sample.csv"'
 
 say "12. Contract-to-contract links"
 # The acyclicity trigger and the both-ends permission rule live in the database
 # and in a route, so no unit test can reach them.
 check "relate records a successor" \
-  "$(a2a contract-relate "$UNLINKED_ID" --to "$LINKED_ID" --type continues --note 'turn budget ran out')" \
+  "$(holloway contract-relate "$UNLINKED_ID" --to "$LINKED_ID" --type continues --note 'turn budget ran out')" \
   "continues"
 check "the link reads from the from end" \
-  "$(a2a contract-relations "$UNLINKED_ID")" "Continues: E2E linked"
+  "$(holloway contract-relations "$UNLINKED_ID")" "Continues: E2E linked"
 check "and reads back from the other end" \
-  "$(a2a contract-relations "$LINKED_ID")" "Continued by: E2E unlinked"
+  "$(holloway contract-relations "$LINKED_ID")" "Continued by: E2E unlinked"
 check "re-recording the same link is not an error" \
-  "$(a2a contract-relate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "continues"
+  "$(holloway contract-relate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "continues"
 check "the reverse link is refused as a cycle" \
-  "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "cycle"
+  "$(holloway contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "cycle"
 check "self-linking is refused" \
-  "$(a2a contract-relate "$LINKED_ID" --to "$LINKED_ID" --type continues)" "itself"
+  "$(holloway contract-relate "$LINKED_ID" --to "$LINKED_ID" --type continues)" "itself"
 check "a contract you are not in is refused" \
-  "$(a2a contract-relate "$LINKED_ID" --to '00000000-0000-0000-0000-000000000000' --type continues)" "participant in both"
+  "$(holloway contract-relate "$LINKED_ID" --to '00000000-0000-0000-0000-000000000000' --type continues)" "participant in both"
 check "unrelate removes it" \
-  "$(a2a contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Removed"
+  "$(holloway contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Removed"
 check "and it is gone from both ends" \
-  "$(a2a contract-relations "$LINKED_ID")" "No related contracts"
+  "$(holloway contract-relations "$LINKED_ID")" "No related contracts"
 # Removing a link that was never there is the asked-for end state, not an error
 # — but reporting it as a removal would make a mistyped id read as success.
 check "removing a link that was never there says so" \
-  "$(a2a contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Nothing to remove"
+  "$(holloway contract-unrelate "$UNLINKED_ID" --to "$LINKED_ID" --type continues)" "Nothing to remove"
 
 say "13. Observers read links but do not record them"
 # The read path used to call the write check, so an observer was refused the
@@ -267,56 +267,56 @@ say "13. Observers read links but do not record them"
 # borrow one: demote the key's own participant row, then put it back.
 psql_q -c "update contract_participants set role='observer' where contract_id='$LINKED_ID';" >/dev/null
 check "an observer can read the link list" \
-  "$(a2a contract-relations "$LINKED_ID")" "No related contracts"
+  "$(holloway contract-relations "$LINKED_ID")" "No related contracts"
 check "an observer cannot record a link" \
-  "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "Observers may read"
+  "$(holloway contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "Observers may read"
 check "an observer cannot remove one either" \
-  "$(a2a contract-unrelate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "Observers may read"
+  "$(holloway contract-unrelate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "Observers may read"
 psql_q -c "update contract_participants set role='proposer' where contract_id='$LINKED_ID';" >/dev/null
 check "and recording works again once they are not" \
-  "$(a2a contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "continues"
+  "$(holloway contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "continues"
 
 say "14. Whose move is it"
 # Only alpha holds a signing key here, so beta's half is done in SQL. What is
 # under test is the derivation and every surface that reports it, not the peer.
-TS_ID="$(a2a propose "E2E turn state" --to beta --project "$PROJECT_ID" --task "$TASK_ID" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+TS_ID="$(holloway propose "E2E turn state" --to beta --project "$PROJECT_ID" --task "$TASK_ID" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
 check "a proposed contract waits on the invitee" \
-  "$(a2a contract "$TS_ID")" "waiting on peer"
+  "$(holloway contract "$TS_ID")" "waiting on peer"
 
 psql_q -c "update contract_participants set status='accepted', responded_at=now() where contract_id='$TS_ID'; update contracts set status='active' where id='$TS_ID';" >/dev/null
 check "THE ACCEPTER OPENS: an active contract with no messages waits on them" \
-  "$(a2a contract "$TS_ID")" "agent that accepted"
+  "$(holloway contract "$TS_ID")" "agent that accepted"
 check "and it is not yet in my inbox" \
-  "$(a2a contracts --awaiting me --status active)" "Contracts (0 total)"
+  "$(holloway contracts --awaiting me --status active)" "Contracts (0 total)"
 
 # Beta asks a question.
 psql_q -c "insert into messages (contract_id, sender_id, message_type, content, requires_action, consumes_turn, turn_number) select '$TS_ID', id, 'request', '{\"text\":\"over to you\"}'::jsonb, true, true, 1 from agents where name='beta';" >/dev/null
 psql_q -c "update contracts set current_turns=1 where id='$TS_ID';" >/dev/null
-check "a request from the peer is my move" "$(a2a contract "$TS_ID")" "YOUR MOVE"
+check "a request from the peer is my move" "$(holloway contract "$TS_ID")" "YOUR MOVE"
 check "and the awaiting filter finds it" \
-  "$(a2a contracts --awaiting me --status active)" "E2E turn state"
-check "and the inbox leads with it" "$(a2a inbox)" "Your move (1)"
+  "$(holloway contracts --awaiting me --status active)" "E2E turn state"
+check "and the inbox leads with it" "$(holloway inbox)" "Your move (1)"
 
 check "answering hands the move back" \
-  "$(a2a send "$TS_ID" --content '{"text":"answered"}' --type response >/dev/null; a2a contract "$TS_ID")" \
+  "$(holloway send "$TS_ID" --content '{"text":"answered"}' --type response >/dev/null; holloway contract "$TS_ID")" \
   "next move is theirs"
 check "sending it warns that a reply is now expected" \
-  "$(a2a send "$TS_ID" --content '{"text":"and again"}' --type response)" "expected to reply"
+  "$(holloway send "$TS_ID" --content '{"text":"and again"}' --type response)" "expected to reply"
 check "an informational message leaves nobody owing a turn" \
-  "$(a2a send "$TS_ID" --content '{"text":"fyi"}' --type update --no-action-required >/dev/null; a2a contract "$TS_ID")" \
+  "$(holloway send "$TS_ID" --content '{"text":"fyi"}' --type update --no-action-required >/dev/null; holloway contract "$TS_ID")" \
   "asked for no reply"
 check "messages say what each one expected" \
-  "$(a2a messages "$TS_ID")" "informational — no reply expected"
+  "$(holloway messages "$TS_ID")" "informational — no reply expected"
 # The CLI refuses it first, which is the better place to catch a typo. The API
 # has to refuse it too, for anyone calling over HTTP: an empty 200 there reads
 # as "nothing is waiting on you", the most misleading answer it can give.
 check "the CLI refuses an unknown awaiting value and names the allowed ones" \
-  "$(a2a contracts --awaiting nonsense 2>&1 || true)" "{me,peer,nobody,human}"
+  "$(holloway contracts --awaiting nonsense 2>&1 || true)" "{me,peer,nobody,human}"
 check "and so does the API, over a real signed request" \
   "$(python3 -c "
 import importlib.machinery, importlib.util
-loader = importlib.machinery.SourceFileLoader('a2acli', 'skill/scripts/a2a')
-spec = importlib.util.spec_from_loader('a2acli', loader)
+loader = importlib.machinery.SourceFileLoader('hollowaycli', 'skill/scripts/holloway')
+spec = importlib.util.spec_from_loader('hollowaycli', loader)
 cli = importlib.util.module_from_spec(spec); loader.exec_module(cli)
 try:
     cli.api_request('GET', '/api/v1/contracts?awaiting=nonsense')
@@ -325,13 +325,13 @@ except SystemExit:
 " 2>&1)" "must be one of"
 
 # UNLINKED_ID was linked back in stage 11, so this needs its own.
-PROPOSAL_OUT="$(a2a propose "E2E still unlinked" --to beta)"
+PROPOSAL_OUT="$(holloway propose "E2E still unlinked" --to beta)"
 NO_PROJECT_ID="$(printf '%s' "$PROPOSAL_OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
 # A proposal used to come back with turn_state null: the one response that
 # enriched a contract without telling it who was asking.
 check "a proposal reports whose move it is" "$PROPOSAL_OUT" "waiting on peer"
 check "an unlinked contract says so where attention is, not only at propose time" \
-  "$(a2a contract "$NO_PROJECT_ID")" "not on any board"
+  "$(holloway contract "$NO_PROJECT_ID")" "not on any board"
 
 say "15. Deploy-skew watchdog"
 # Every deploy gives an already-open tab a stale build id. Next answers that by
@@ -379,19 +379,19 @@ say "17. The operator channel"
 # downstream of that.
 psql_q -c "insert into contract_notes (contract_id, body, author_name) values ('$TS_ID', 'Use the staging bucket, never production.', 'E2E Operator');" >/dev/null
 check "an agent reads the note back" \
-  "$(a2a notes "$TS_ID")" "staging bucket"
+  "$(holloway notes "$TS_ID")" "staging bucket"
 check "and is told it has not acknowledged it" \
-  "$(a2a notes "$TS_ID")" "NOT acknowledged"
+  "$(holloway notes "$TS_ID")" "NOT acknowledged"
 check "the contract itself carries the note without being asked" \
-  "$(a2a contract "$TS_ID")" "operator note"
+  "$(holloway contract "$TS_ID")" "operator note"
 check "acknowledging says how many it actually wrote" \
-  "$(a2a note-ack "$TS_ID")" "Acknowledged 1"
+  "$(holloway note-ack "$TS_ID")" "Acknowledged 1"
 # The lesson from deleteContractLink reporting removals that never happened: a
 # second acknowledgement must not claim a second effect.
 check "acknowledging again claims nothing new" \
-  "$(a2a note-ack "$TS_ID")" "already acknowledged"
+  "$(holloway note-ack "$TS_ID")" "already acknowledged"
 check "and the nudge is gone once it is read" \
-  "$(a2a notes "$TS_ID" | tail -3)" "0 unacknowledged"
+  "$(holloway notes "$TS_ID" | tail -3)" "0 unacknowledged"
 
 EMPTY_NOTE_OUT="$(psql_q -c "insert into contract_notes (contract_id, body, author_name) values ('$TS_ID', '   ', 'E2E');" 2>&1 || true)"
 check "an empty note body is refused rather than stored" "$EMPTY_NOTE_OUT" "violates check constraint"
@@ -403,36 +403,36 @@ check "an empty note body is refused rather than stored" "$EMPTY_NOTE_OUT" "viol
 # suppressed.
 psql_q -c "insert into messages (contract_id, sender_id, message_type, content, requires_action, consumes_turn, turn_number) select '$TS_ID', id, 'request', '{\"text\":\"your move again\"}'::jsonb, true, true, 5 from agents where name='beta'; update contracts set current_turns=5 where id='$TS_ID';" >/dev/null
 check "the move is mine again before the question" \
-  "$(a2a contract "$TS_ID")" "YOUR MOVE"
+  "$(holloway contract "$TS_ID")" "YOUR MOVE"
 
 check "an agent can stop and ask a person" \
-  "$(a2a ask "$TS_ID" --kind blocked --body "No credentials for the artifact host.")" "blocked"
+  "$(holloway ask "$TS_ID" --kind blocked --body "No credentials for the artifact host.")" "blocked"
 check "the contract stops asking that agent for a move" \
-  "$(a2a contract "$TS_ID")" "WAITING ON A PERSON"
+  "$(holloway contract "$TS_ID")" "WAITING ON A PERSON"
 check "and the awaiting filter can find exactly those" \
-  "$(a2a contracts --awaiting human --status active)" "E2E turn state"
+  "$(holloway contracts --awaiting human --status active)" "E2E turn state"
 check "while the inbox no longer claims a move is owed" \
-  "$(a2a inbox)" "Waiting on a person"
+  "$(holloway inbox)" "Waiting on a person"
 check "the question is listed with who asked and why" \
-  "$(a2a questions "$TS_ID")" "artifact host"
+  "$(holloway questions "$TS_ID")" "artifact host"
 
 # Answering is the human half, so again by the path the server action takes.
 QID="$(psql_q -c "select id from contract_questions where contract_id='$TS_ID' limit 1;")"
 psql_q -c "update contract_questions set status='answered', answer='Use staging.', answered_by_name='E2E Operator', answered_at=now() where id='$QID';" >/dev/null
 check "an answered question hands the move back to the agent that asked" \
-  "$(a2a contract "$TS_ID")" "YOUR MOVE"
+  "$(holloway contract "$TS_ID")" "YOUR MOVE"
 check "and the answer is readable by the agent that asked" \
-  "$(a2a questions "$TS_ID" --status answered)" "Use staging."
+  "$(holloway questions "$TS_ID" --status answered)" "Use staging."
 
 # A question is not a turn: an agent with no budget left still has to be able to
 # say it is stuck, for the same reason a receipt is non-turn.
 psql_q -c "update contracts set current_turns=max_turns where id='$TS_ID';" >/dev/null
 check "asking is still possible with the turn budget spent" \
-  "$(a2a ask "$TS_ID" --kind question --body "Anything else before I stop?")" "question"
+  "$(holloway ask "$TS_ID" --kind question --body "Anything else before I stop?")" "question"
 psql_q -c "update contracts set current_turns=1 where id='$TS_ID';" >/dev/null
 
 check "an ended contract refuses a new question and says where to raise it" \
-  "$(a2a close "$TS_ID" --reason "e2e done" >/dev/null; a2a ask "$TS_ID" --body "too late" 2>&1 || true)" \
+  "$(holloway close "$TS_ID" --reason "e2e done" >/dev/null; holloway ask "$TS_ID" --body "too late" 2>&1 || true)" \
   "successor"
 
 # A note is displayed on contract pages, so it must move the domain those pages

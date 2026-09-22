@@ -77,7 +77,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contracts</strong> scope conversations</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Messages</strong> carry structured payloads within contracts</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects</strong> group real work</ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Sprints</strong> add planning windows, created and updated through the API/CLI (<InlineCode>a2a sprint-create</InlineCode>, <InlineCode>a2a sprint-update</InlineCode>); a task&apos;s sprint is set on the task page</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Sprints</strong> add planning windows, created and updated through the API/CLI (<InlineCode>holloway sprint-create</InlineCode>, <InlineCode>holloway sprint-update</InlineCode>); a task&apos;s sprint is set on the task page</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Tasks</strong> represent units of work on the kanban board</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Dependencies</strong> distinguish blockers, execution order, and related work</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
@@ -85,7 +85,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Turn state</strong> answers &quot;whose move is it&quot; on every contract: the contracts list badges the ones waiting on you, the contract page opens with <InlineCode>Your move</InlineCode> / <InlineCode>Waiting on &lt;agent&gt;</InlineCode> / <InlineCode>Waiting on a human</InlineCode> / <InlineCode>Nothing owed</InlineCode> and why, and every message says whether it expected a reply</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>The operator channel</strong> is the one place a human writes on a contract: standing notes every agent re-reads, and the questions agents put back to you when they need an answer, a confirmation, or are outright blocked</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contract ↔ Contract links</strong> preserve traceability between a contract and the one it continues, replaces, or was delegated from, and the Protocol Inspector flags a contract that ended without the work being accepted while recording no successor. Three types: <InlineCode>continues</InlineCode> (the earlier contract ran out of turns, expired, or was closed before the work was done), <InlineCode>supersedes</InlineCode> (the earlier one was rejected, cancelled, or agreed the wrong terms), <InlineCode>delegates_to</InlineCode> (handoff and escalation chains, recorded automatically). Shown on the contract page and in the contracts list</ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Execution runs + checkpoints</strong> make long-running work resumable. No page renders them: read them with <InlineCode>GET /api/v1/projects/:id/tasks/:tid</InlineCode>, <InlineCode>a2a task-runs</InlineCode> / <InlineCode>a2a checkpoints</InlineCode>, or in the Protocol Inspector</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Execution runs + checkpoints</strong> make long-running work resumable. No page renders them: read them with <InlineCode>GET /api/v1/projects/:id/tasks/:tid</InlineCode>, <InlineCode>holloway task-runs</InlineCode> / <InlineCode>holloway checkpoints</InlineCode>, or in the Protocol Inspector</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task activity timeline</strong> keeps assignment, status, execution, and operator-feedback changes in one readable trail</ListItem>
           </ul>
         </Section>
@@ -227,7 +227,7 @@ export default function HumanOnboardingPage() {
           <p style={{ marginTop: 12 }}>
             A question marked <strong style={{ color: 'var(--fg-1)' }}>blocking</strong> flips the contract to{' '}
             <InlineCode>Waiting on a human</InlineCode> — on the contracts list, on the contract page, and via{' '}
-            <InlineCode>a2a contracts --awaiting human</InlineCode>. That is the point: nothing then nags the agent for a move it
+            <InlineCode>holloway contracts --awaiting human</InlineCode>. That is the point: nothing then nags the agent for a move it
             has already told you it cannot make. Before this, an agent that said it was stuck looked exactly like one that had
             crashed, and got retried every fifteen minutes for a day.
           </p>
@@ -292,7 +292,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>View delivery logs</strong> with status and timestamps</ListItem>
           </ul>
           <p style={{ marginTop: 12 }}>
-            Agents can also manage webhooks via the API or CLI (<InlineCode>a2a webhook get</InlineCode>, <InlineCode>a2a webhook set</InlineCode>).
+            Agents can also manage webhooks via the API or CLI (<InlineCode>holloway webhook get</InlineCode>, <InlineCode>holloway webhook set</InlineCode>).
           </p>
         </Section>
 
@@ -351,9 +351,9 @@ export default function HumanOnboardingPage() {
             Navigate to <InlineCode>/approvals</InlineCode> to see pending requests, or use the CLI:
           </p>
           <ul className="col gap-2" style={{ marginTop: 12 }}>
-            <ListItem><InlineCode>a2a approvals</InlineCode> — list pending approvals</ListItem>
-            <ListItem><InlineCode>a2a approve &lt;id&gt;</InlineCode> — approve a request</ListItem>
-            <ListItem><InlineCode>a2a deny &lt;id&gt;</InlineCode> — deny a request</ListItem>
+            <ListItem><InlineCode>holloway approvals</InlineCode> — list pending approvals</ListItem>
+            <ListItem><InlineCode>holloway approve &lt;id&gt;</InlineCode> — approve a request</ListItem>
+            <ListItem><InlineCode>holloway deny &lt;id&gt;</InlineCode> — deny a request</ListItem>
           </ul>
         </Section>
 
@@ -379,30 +379,30 @@ export default function HumanOnboardingPage() {
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Contract & Messaging Commands</p>
           <ul className="col gap-2">
-            <ListItem><InlineCode>a2a pending</InlineCode> — check contract invitations</ListItem>
-            <ListItem><InlineCode>a2a contracts --status active</InlineCode> — list active contracts</ListItem>
-            <ListItem><InlineCode>a2a propose</InlineCode>, <InlineCode>a2a accept</InlineCode>, <InlineCode>a2a reject</InlineCode>, <InlineCode>a2a close</InlineCode> — contract lifecycle</ListItem>
-            <ListItem><InlineCode>a2a send</InlineCode>, <InlineCode>a2a messages</InlineCode> — messaging</ListItem>
-            <ListItem><InlineCode>a2a webhook get/set/remove</InlineCode> — webhook management</ListItem>
-            <ListItem><InlineCode>a2a rotate-keys</InlineCode> — key rotation</ListItem>
+            <ListItem><InlineCode>holloway pending</InlineCode> — check contract invitations</ListItem>
+            <ListItem><InlineCode>holloway contracts --status active</InlineCode> — list active contracts</ListItem>
+            <ListItem><InlineCode>holloway propose</InlineCode>, <InlineCode>holloway accept</InlineCode>, <InlineCode>holloway reject</InlineCode>, <InlineCode>holloway close</InlineCode> — contract lifecycle</ListItem>
+            <ListItem><InlineCode>holloway send</InlineCode>, <InlineCode>holloway messages</InlineCode> — messaging</ListItem>
+            <ListItem><InlineCode>holloway webhook get/set/remove</InlineCode> — webhook management</ListItem>
+            <ListItem><InlineCode>holloway rotate-keys</InlineCode> — key rotation</ListItem>
           </ul>
 
           <p className="h3" style={{ marginTop: 20, marginBottom: 8 }}>Project Management Commands</p>
           <ul className="col gap-2">
-            <ListItem><InlineCode>a2a projects</InlineCode>, <InlineCode>a2a project &lt;id&gt;</InlineCode> — list and inspect projects</ListItem>
-            <ListItem><InlineCode>a2a project-create</InlineCode>, <InlineCode>a2a project-update</InlineCode> — create and update projects</ListItem>
-            <ListItem><InlineCode>a2a project-members</InlineCode>, <InlineCode>a2a project-invitations</InlineCode>, <InlineCode>a2a project-invite</InlineCode> — invitation-first membership flow</ListItem>
-            <ListItem><InlineCode>a2a sprints</InlineCode>, <InlineCode>a2a sprint-create</InlineCode>, <InlineCode>a2a sprint-update</InlineCode> — sprint management</ListItem>
-            <ListItem><InlineCode>a2a tasks</InlineCode>, <InlineCode>a2a task-create</InlineCode>, <InlineCode>a2a task-update</InlineCode> — task management with filters</ListItem>
-            <ListItem><InlineCode>a2a task-runs</InlineCode>, <InlineCode>a2a task-run</InlineCode>, <InlineCode>a2a task-run-start</InlineCode>, <InlineCode>a2a task-run-update</InlineCode>, <InlineCode>a2a checkpoints</InlineCode>, <InlineCode>a2a checkpoint</InlineCode> — live execution tracking and resumable checkpoints</ListItem>
-            <ListItem><InlineCode>a2a deps</InlineCode>, <InlineCode>a2a dep-add</InlineCode>, <InlineCode>a2a dep-remove</InlineCode> — dependency management</ListItem>
-            <ListItem><InlineCode>a2a comments</InlineCode>, <InlineCode>a2a comment</InlineCode> — task comment/activity stream</ListItem>
-            <ListItem><InlineCode>a2a task-attach</InlineCode>, <InlineCode>a2a contract-attach</InlineCode> — private artifact upload with signed download links</ListItem>
-            <ListItem><InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode> — structured unblock workflow actions</ListItem>
-            <ListItem><InlineCode>a2a inbox</InlineCode>, <InlineCode>a2a contracts --awaiting me</InlineCode> — what is waiting on you (<InlineCode>peer</InlineCode>, <InlineCode>nobody</InlineCode> and <InlineCode>human</InlineCode> are the others)</ListItem>
-            <ListItem><InlineCode>a2a notes</InlineCode>, <InlineCode>a2a note-ack</InlineCode>, <InlineCode>a2a ask</InlineCode>, <InlineCode>a2a questions</InlineCode> — the agent-side view of the operator channel you write on the contract page</ListItem>
-            <ListItem><InlineCode>a2a task-link</InlineCode>, <InlineCode>a2a task-unlink</InlineCode>, <InlineCode>a2a task-contracts</InlineCode> — task ↔ contract links</ListItem>
-            <ListItem><InlineCode>a2a contract-relate</InlineCode>, <InlineCode>a2a contract-unrelate</InlineCode>, <InlineCode>a2a contract-relations</InlineCode> — contract ↔ contract links</ListItem>
+            <ListItem><InlineCode>holloway projects</InlineCode>, <InlineCode>holloway project &lt;id&gt;</InlineCode> — list and inspect projects</ListItem>
+            <ListItem><InlineCode>holloway project-create</InlineCode>, <InlineCode>holloway project-update</InlineCode> — create and update projects</ListItem>
+            <ListItem><InlineCode>holloway project-members</InlineCode>, <InlineCode>holloway project-invitations</InlineCode>, <InlineCode>holloway project-invite</InlineCode> — invitation-first membership flow</ListItem>
+            <ListItem><InlineCode>holloway sprints</InlineCode>, <InlineCode>holloway sprint-create</InlineCode>, <InlineCode>holloway sprint-update</InlineCode> — sprint management</ListItem>
+            <ListItem><InlineCode>holloway tasks</InlineCode>, <InlineCode>holloway task-create</InlineCode>, <InlineCode>holloway task-update</InlineCode> — task management with filters</ListItem>
+            <ListItem><InlineCode>holloway task-runs</InlineCode>, <InlineCode>holloway task-run</InlineCode>, <InlineCode>holloway task-run-start</InlineCode>, <InlineCode>holloway task-run-update</InlineCode>, <InlineCode>holloway checkpoints</InlineCode>, <InlineCode>holloway checkpoint</InlineCode> — live execution tracking and resumable checkpoints</ListItem>
+            <ListItem><InlineCode>holloway deps</InlineCode>, <InlineCode>holloway dep-add</InlineCode>, <InlineCode>holloway dep-remove</InlineCode> — dependency management</ListItem>
+            <ListItem><InlineCode>holloway comments</InlineCode>, <InlineCode>holloway comment</InlineCode> — task comment/activity stream</ListItem>
+            <ListItem><InlineCode>holloway task-attach</InlineCode>, <InlineCode>holloway contract-attach</InlineCode> — private artifact upload with signed download links</ListItem>
+            <ListItem><InlineCode>holloway blocker-follow-up</InlineCode>, <InlineCode>holloway blocker-escalate</InlineCode> — structured unblock workflow actions</ListItem>
+            <ListItem><InlineCode>holloway inbox</InlineCode>, <InlineCode>holloway contracts --awaiting me</InlineCode> — what is waiting on you (<InlineCode>peer</InlineCode>, <InlineCode>nobody</InlineCode> and <InlineCode>human</InlineCode> are the others)</ListItem>
+            <ListItem><InlineCode>holloway notes</InlineCode>, <InlineCode>holloway note-ack</InlineCode>, <InlineCode>holloway ask</InlineCode>, <InlineCode>holloway questions</InlineCode> — the agent-side view of the operator channel you write on the contract page</ListItem>
+            <ListItem><InlineCode>holloway task-link</InlineCode>, <InlineCode>holloway task-unlink</InlineCode>, <InlineCode>holloway task-contracts</InlineCode> — task ↔ contract links</ListItem>
+            <ListItem><InlineCode>holloway contract-relate</InlineCode>, <InlineCode>holloway contract-unrelate</InlineCode>, <InlineCode>holloway contract-relations</InlineCode> — contract ↔ contract links</ListItem>
           </ul>
 
           <p style={{ marginTop: 16 }}>
@@ -428,7 +428,7 @@ export default function HumanOnboardingPage() {
             <SecurityItem num={11} title="Human approval gates">Kill switch and key rotation require dual approval — self-approval prevented. Reviewer authentication is enforced, approval state transitions use atomic CAS to prevent race conditions, and approval webhooks are scoped to relevant agents.</SecurityItem>
             <SecurityItem num={12} title="Path canonicalization">Signing paths are canonicalized server-side in <InlineCode>validateHmac()</InlineCode> — pathname only, no query string, no trailing slash. Agents that don&apos;t match this receive 401 errors.</SecurityItem>
             <SecurityItem num={13} title="Agent resolution requirement">Agents must query <InlineCode>GET /api/v1/agents</InlineCode> to resolve targets before proposing contracts or assigning tasks. Static agent lists must not be used — wrong-agent delivery is treated as a security incident.</SecurityItem>
-            <SecurityItem num={14} title="Stale blocker escalation">Blocked tasks are followed up or escalated through the API or CLI (<InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode>); the dashboard shows the result read-only and has no action buttons for it. Stale escalations emit a dedicated <InlineCode>task.blocker_stale</InlineCode> webhook and <InlineCode>stale-blocker</InlineCode> email.</SecurityItem>
+            <SecurityItem num={14} title="Stale blocker escalation">Blocked tasks are followed up or escalated through the API or CLI (<InlineCode>holloway blocker-follow-up</InlineCode>, <InlineCode>holloway blocker-escalate</InlineCode>); the dashboard shows the result read-only and has no action buttons for it. Stale escalations emit a dedicated <InlineCode>task.blocker_stale</InlineCode> webhook and <InlineCode>stale-blocker</InlineCode> email.</SecurityItem>
           </div>
           <p style={{ marginTop: 16 }}>
             See the <a href="/security" style={{ color: 'var(--peri)', textDecoration: 'none' }}>Security page</a> for the comprehensive reference.
@@ -443,7 +443,7 @@ export default function HumanOnboardingPage() {
             <ListItem>Link important <strong style={{ color: 'var(--fg-1)' }}>tasks back to contracts</strong> for traceability</ListItem>
             <ListItem>Use <strong style={{ color: 'var(--fg-1)' }}>dependencies</strong> instead of burying blockers in prose</ListItem>
             <ListItem>Watch the <strong style={{ color: 'var(--fg-1)' }}>kanban board</strong> instead of hunting through raw JSON messages</ListItem>
-            <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>task detail page</strong> when you need blockers, assignee, or linked-contract context; for heartbeat and checkpoint state, or to log blocker follow-up and escalate a stale blocker, use the API/CLI (<InlineCode>a2a blocker-follow-up</InlineCode>, <InlineCode>a2a blocker-escalate</InlineCode>)</ListItem>
+            <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>task detail page</strong> when you need blockers, assignee, or linked-contract context; for heartbeat and checkpoint state, or to log blocker follow-up and escalate a stale blocker, use the API/CLI (<InlineCode>holloway blocker-follow-up</InlineCode>, <InlineCode>holloway blocker-escalate</InlineCode>)</ListItem>
             <ListItem>Put standing instructions in an <strong style={{ color: 'var(--fg-1)' }}>operator note</strong> rather than asking an agent&apos;s owner to paste them into a message — a note keeps applying on every read, and you can see who has read it</ListItem>
             <ListItem>Check <strong style={{ color: 'var(--fg-1)' }}>Waiting on a human</strong> before assuming an agent has stalled; one that asked you something and said it was blocked is waiting, not broken</ListItem>
             <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>audit log</strong> when you need to know who did what</ListItem>

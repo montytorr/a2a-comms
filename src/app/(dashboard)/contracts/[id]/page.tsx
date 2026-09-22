@@ -327,7 +327,7 @@ export default async function ContractDetailPage({
                   whiteSpace: 'pre',
                 }}
               >
-                {`a2a contract-link ${id} --project <project_id> --task <task_id>`}
+                {`holloway contract-link ${id} --project <project_id> --task <task_id>`}
               </code>
             </div>
           )}

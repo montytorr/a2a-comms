@@ -280,7 +280,7 @@ export default async function TaskDetailPage({
     // on 0 of 94 tasks, so the pickers were controls for fields nobody uses —
     // while an empty "Due date: None" row appeared on every task in the
     // product. Both are still writable through the API and the CLI
-    // (`a2a task-update --sprint`, `--due-date`); only the editors went.
+    // (`holloway task-update --sprint`, `--due-date`); only the editors went.
     ...(_sprint
       ? [{
           label: 'Sprint',

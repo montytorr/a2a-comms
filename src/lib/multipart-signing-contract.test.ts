@@ -11,7 +11,7 @@ import { deriveSigningBody } from './hmac';
  * They did not: the server signs an empty body for multipart (middleware-auth
  * passes `multipartFields: undefined` so the parser never runs on unauthenticated
  * input), while the CLI signed a canonical JSON of the form fields. Every
- * `a2a task-attach` and `a2a contract-attach` failed with 401 Invalid signature,
+ * `holloway task-attach` and `holloway contract-attach` failed with 401 Invalid signature,
  * and no unit test caught it because each side was correct in isolation.
  */
 
@@ -22,7 +22,7 @@ test('server derives an empty signing body for multipart requests', () => {
 });
 
 test('the CLI signs an empty body for multipart, matching the server', () => {
-  const cli = readFileSync(join(process.cwd(), 'skill/scripts/a2a'), 'utf8');
+  const cli = readFileSync(join(process.cwd(), 'skill/scripts/holloway'), 'utf8');
 
   const fn = cli.slice(cli.indexOf('def _multipart_encode'));
   const body = fn.slice(0, fn.indexOf('\ndef ', 1));

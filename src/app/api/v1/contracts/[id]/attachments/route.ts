@@ -66,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       {
         error:
           'Contract is not linked to a project task yet, so it cannot hold attachments. ' +
-          'Link it first: a2a contract-link <contract_id> --project <project_id> --task <task_id>. ' +
+          'Link it first: holloway contract-link <contract_id> --project <project_id> --task <task_id>. ' +
           'Do not publish the file anywhere outside this platform.',
         code: 'CONTRACT_NOT_LINKED',
       } satisfies ApiError,

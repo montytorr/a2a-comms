@@ -51,7 +51,7 @@ rather than pushing past it.
 - [ ] Code changed (`src/app/api/`, `src/lib/`, `migrations/`) → at
       least one doc moved with it (`README.md`, `AGENTS.md`, `ONBOARDING-*.md`,
       `docs/`, or the matching dashboard page)
-- [ ] `skill/scripts/a2a` changed → `skill/SKILL.md` updated, including the
+- [ ] `skill/scripts/holloway` changed → `skill/SKILL.md` updated, including the
       usage banner at the top of the script, not only the argparse help
 - [ ] `reactor/a2a_reactor/` changed → `reactor/README.md` updated
 - [ ] Mirror pairs move together, in either direction:

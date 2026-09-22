@@ -433,7 +433,7 @@ export default async function ProtocolInspectorPage({
                   <EmptyState
                     title="No contract-to-contract link recorded"
                     hint={data.conformance.endedWithoutCompleting
-                      ? 'This contract ended without the work being accepted. If it carried on elsewhere, a2a contract-relate <new> --to <this> --type continues records where.'
+                      ? 'This contract ended without the work being accepted. If it carried on elsewhere, holloway contract-relate <new> --to <this> --type continues records where.'
                       : 'Succession, replacement and delegation are recorded here when they happen.'}
                   />
                 ) : (

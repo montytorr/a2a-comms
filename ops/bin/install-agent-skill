@@ -11,18 +11,30 @@
 # Symlinking the directory to fix it would be worse. The runtime directory holds
 # scripts that exist ONLY there and are deliberately not in this repo:
 #
-#   scripts/a2a-reactor           the private reactor (reactor/ is the public one)
-#   scripts/a2a-expire-sweep
-#   scripts/a2a-webhook-receiver
-#   scripts/a2a-webhook-recovery
+#   scripts/holloway-reactor           the private reactor (reactor/ is the public one)
+#   scripts/holloway-expire-sweep
+#   scripts/holloway-webhook-receiver
+#   scripts/holloway-webhook-recovery
 #   tests/
 #
+# (named a2a-* before the rename to Holloway; see below.)
+#
 # A directory symlink would hide all of them behind this repo's smaller skill/.
-# So this copies only the three files the repo actually owns and never removes
+# So this copies only the files the repo actually owns and never removes
 # anything, which is why it is a script and not a --delete rsync.
 #
+# The rename. The skill used to install to ~/clawd/skills/a2a-comms. When the
+# target is .../holloway and a real .../a2a-comms directory sits beside it with
+# no holloway yet, it is MOVED, private scripts and all. It is not copied and no
+# a2a-comms symlink is left behind: the runtime loads every directory in
+# skills/, so either would load the skill twice. Inside the moved directory,
+# each private scripts/a2a-<name> becomes scripts/holloway-<name> with an
+# a2a-<name> symlink left in its place, so anything that calls the old path
+# still works. scripts/a2a is a symlink to scripts/holloway, as in this repo.
+# Every step is skipped when already done, so re-running is safe.
+#
 # Usage:
-#   ops/bin/install-agent-skill [target_dir]        # default ~/clawd/skills/a2a-comms
+#   ops/bin/install-agent-skill [target_dir]        # default ~/clawd/skills/holloway
 #   ops/bin/install-agent-skill --check [target]    # report drift, change nothing
 #
 set -e
@@ -33,24 +45,52 @@ if [ "$1" = "--check" ]; then
   shift
 fi
 
-TARGET="${1:-$HOME/clawd/skills/a2a-comms}"
+TARGET="${1:-$HOME/clawd/skills/holloway}"
 SOURCE="$(cd "$(dirname "$0")/../../skill" && pwd)"
 
 # Only these. Anything else in TARGET belongs to the runtime, not to this repo.
-OWNED="SKILL.md README.md scripts/a2a"
+OWNED="SKILL.md README.md scripts/holloway"
+# Owned symlinks, as "link:points-to". The CLI's name before the rename.
+OWNED_LINKS="scripts/a2a:holloway"
+
+drift=0
+warned=0
+
+if [ "$(basename "$TARGET")" = "holloway" ]; then
+  LEGACY="$(dirname "$TARGET")/a2a-comms"
+  if [ -L "$LEGACY" ]; then
+    echo "install-agent-skill: $LEGACY is a symlink; remove it or the runtime loads the skill twice" >&2
+    warned=1
+  elif [ -d "$LEGACY" ] && [ ! -e "$TARGET" ]; then
+    drift=1
+    if [ "$CHECK" = "1" ]; then
+      echo "drift: $LEGACY should move to $TARGET"
+    else
+      mv "$LEGACY" "$TARGET"
+      echo "moved: $LEGACY -> $TARGET"
+    fi
+  elif [ -d "$LEGACY" ]; then
+    echo "install-agent-skill: both $LEGACY and $TARGET exist; the runtime loads the skill twice." >&2
+    echo "  Move anything only $LEGACY holds into $TARGET, then remove $LEGACY." >&2
+    warned=1
+  fi
+fi
 
 if [ ! -d "$TARGET" ]; then
+  if [ "$CHECK" = "1" ] && [ "$drift" = "1" ]; then
+    echo "run ops/bin/install-agent-skill to sync" >&2
+    exit 1
+  fi
   echo "install-agent-skill: $TARGET does not exist" >&2
   exit 1
 fi
 
-drift=0
 for file in $OWNED; do
   src="$SOURCE/$file"
   dst="$TARGET/$file"
   [ -f "$src" ] || continue
 
-  if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+  if [ -f "$dst" ] && [ ! -L "$dst" ] && cmp -s "$src" "$dst"; then
     continue
   fi
 
@@ -59,9 +99,47 @@ for file in $OWNED; do
     echo "drift: $file"
   else
     mkdir -p "$(dirname "$dst")"
+    rm -f "$dst"
     cp "$src" "$dst"
     [ -x "$src" ] && chmod +x "$dst"
     echo "updated: $file"
+  fi
+done
+
+for entry in $OWNED_LINKS; do
+  link="${entry%%:*}"
+  dest="${entry#*:}"
+  dst="$TARGET/$link"
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$dest" ]; then
+    continue
+  fi
+  drift=1
+  if [ "$CHECK" = "1" ]; then
+    echo "drift: $link (should link to $dest)"
+  else
+    rm -f "$dst"
+    ln -s "$dest" "$dst"
+    echo "linked: $link -> $dest"
+  fi
+done
+
+# The runtime-only helpers: scripts/a2a-<name> -> scripts/holloway-<name>.
+for old in "$TARGET"/scripts/a2a-*; do
+  [ -f "$old" ] && [ ! -L "$old" ] || continue
+  name="$(basename "$old")"
+  new="holloway-${name#a2a-}"
+  if [ -e "$TARGET/scripts/$new" ]; then
+    echo "install-agent-skill: scripts/$name and scripts/$new both exist; leaving both" >&2
+    warned=1
+    continue
+  fi
+  drift=1
+  if [ "$CHECK" = "1" ]; then
+    echo "drift: scripts/$name should become scripts/$new"
+  else
+    mv "$old" "$TARGET/scripts/$new"
+    ln -s "$new" "$old"
+    echo "renamed: scripts/$name -> scripts/$new (old name kept as a symlink)"
   fi
 done
 
@@ -71,3 +149,5 @@ elif [ "$CHECK" = "1" ]; then
   echo "run ops/bin/install-agent-skill to sync" >&2
   exit 1
 fi
+
+[ "$warned" = "0" ] || exit 1

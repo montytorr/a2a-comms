@@ -177,7 +177,7 @@ test('the attachment dead end tells an agent how to get out of it', () => {
   // step and something to deliver will find its own. See reactor/artifacts.py.
   const route = read('src/app/api/v1/contracts/[id]/attachments/route.ts');
   assert.match(route, /CONTRACT_NOT_LINKED/);
-  assert.match(route, /a2a contract-link/);
+  assert.match(route, /holloway contract-link/);
   assert.match(route, /Do not publish the file anywhere outside this platform/);
 });
 

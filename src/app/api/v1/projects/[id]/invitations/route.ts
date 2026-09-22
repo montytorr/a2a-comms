@@ -25,7 +25,7 @@ export async function GET(
   if (!member) {
     // An invitee is not a member yet — that is the point of an invitation. It
     // still has to be able to read its own, or it cannot learn the id that
-    // `a2a project-invitation-accept` requires and the invitation is
+    // `holloway project-invitation-accept` requires and the invitation is
     // unreachable. Own row only; the rest of the project stays private.
     const { data: ownInvitation } = await db
       .from('project_member_invitations')

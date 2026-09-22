@@ -175,7 +175,7 @@ export function buildBrokeredCollaborationDescription(input: BuildBrokeredCollab
       lines.push(`- \`${brokered.contractId}\` — **${brokered.title}** [${brokered.status}]${brokered.linkedTaskId ? ` linked task \`${brokered.linkedTaskId}\`` : ''}`);
     }
     lines.push('');
-    lines.push('This list is a convenience copy, capped at five and written once. The chain itself is recorded as `delegates_to` contract links — read it with `a2a contract-relations <contract-id>`, which stays correct if this description is later edited.');
+    lines.push('This list is a convenience copy, capped at five and written once. The chain itself is recorded as `delegates_to` contract links — read it with `holloway contract-relations <contract-id>`, which stays correct if this description is later edited.');
   }
 
   lines.push('');

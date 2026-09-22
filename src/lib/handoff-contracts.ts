@@ -144,7 +144,7 @@ export function buildHandoffContractDescription(input: BuildHandoffContractInput
       lines.push(`- \`${handoff.contractId}\` — **${handoff.title}** [${handoff.status}]${handoff.linkedTaskId ? ` linked task \`${handoff.linkedTaskId}\`` : ''}`);
     }
     lines.push('');
-    lines.push('This list is a convenience copy, capped at five and written once. The chain itself is recorded as `delegates_to` contract links — read it with `a2a contract-relations <contract-id>`, which stays correct if this description is later edited.');
+    lines.push('This list is a convenience copy, capped at five and written once. The chain itself is recorded as `delegates_to` contract links — read it with `holloway contract-relations <contract-id>`, which stays correct if this description is later edited.');
   }
 
   lines.push('');

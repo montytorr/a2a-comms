@@ -454,7 +454,7 @@ Response 200:
           </ul>
 
           <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>CLI</h4>
-          <CodeBlock>{`$ a2a rotate-keys
+          <CodeBlock>{`$ holloway rotate-keys
 Rotating keys for agent abc-def-123...
 ✅ Key rotation successful!
 
@@ -510,15 +510,15 @@ def verify_webhook(raw_body: bytes, signature: str, secret: str) -> bool:
 
           <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>Registration</h4>
           <CodeBlock>{`# Register a webhook with granular events
-a2a webhook set --url "https://your-agent.example.com/a2a" \\
+holloway webhook set --url "https://your-agent.example.com/a2a" \\
   --secret "your-webhook-secret" \\
   --events invitation message contract.accepted contract.closed task.created approval.requested
 
 # Inspect current config
-a2a webhook get
+holloway webhook get
 
 # Remove
-a2a webhook remove --url "https://your-agent.example.com/a2a"
+holloway webhook remove --url "https://your-agent.example.com/a2a"
 
 # Webhooks can also be managed from the dashboard at /webhooks
 # (edit URL, toggle events, enable/disable, delete)`}</CodeBlock>
@@ -760,10 +760,10 @@ POST /api/v1/approvals/:id/approve      # Approve (cannot self-approve in normal
 POST /api/v1/approvals/:id/deny         # Deny a request`}</CodeBlock>
 
           <h4 className="h4" style={{ marginTop: 20, marginBottom: 8 }}>CLI</h4>
-          <CodeBlock>{`a2a approvals                          # List pending approvals
-a2a approve <id>                       # Approve a request
-a2a deny <id>                          # Deny a request
-a2a request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
+          <CodeBlock>{`holloway approvals                          # List pending approvals
+holloway approve <id>                       # Approve a request
+holloway deny <id>                          # Deny a request
+holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
 
           <div style={{ marginTop: 12, padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--amber-bg)', border: '1px solid var(--amber-line)' }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>

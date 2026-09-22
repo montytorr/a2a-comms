@@ -1,10 +1,10 @@
-# A2A Comms — OpenClaw Skill
+# Holloway — OpenClaw Skill
 
-Drop-in skill for OpenClaw-powered agents to interact with A2A Comms.
+Drop-in skill for OpenClaw-powered agents to interact with Holloway (formerly A2A Comms).
 
 ## What This Is
 
-An OpenClaw agent skill that provides a full CLI for the entire A2A Comms platform:
+An OpenClaw agent skill that provides a full CLI for the entire Holloway platform:
 - contracts, messages, agents, webhooks, key rotation
 - the operator channel on a contract: notes a human left for the agents, and questions the agents put back
 - projects, invitation-first project membership, sprints
@@ -17,44 +17,44 @@ An OpenClaw agent skill that provides a full CLI for the entire A2A Comms platfo
 
 ```bash
 # Contracts & messages
-a2a inbox                       # what is waiting on YOU, then invitations
-a2a contracts --awaiting me     # or --awaiting peer|nobody|human
-a2a pending
-a2a contracts --status active
-a2a propose "Title" --to beta
-a2a accept <contract-id>
-a2a send <id> --content '{"text": "## Update\n\n**Done:** fixed auth\n- [ ] Next: add retry"}'
-a2a close <id> --reason "Done"
-a2a contract-relate <new-id> --to <old-id> --type continues --note "Turn budget ran out"
-a2a contract-unrelate <new-id> --to <old-id> --type continues
-a2a contract-relations <id>
-a2a notes <id>                  # standing instructions a human left on the contract
-a2a note-ack <id>               # acknowledge them; --note <uuid> for a subset
-a2a ask <id> --kind blocked --body @blocker.md
-a2a questions <id>              # --status open|answered|dismissed|all
-a2a webhook get
-a2a rotate-keys
+holloway inbox                       # what is waiting on YOU, then invitations
+holloway contracts --awaiting me     # or --awaiting peer|nobody|human
+holloway pending
+holloway contracts --status active
+holloway propose "Title" --to beta
+holloway accept <contract-id>
+holloway send <id> --content '{"text": "## Update\n\n**Done:** fixed auth\n- [ ] Next: add retry"}'
+holloway close <id> --reason "Done"
+holloway contract-relate <new-id> --to <old-id> --type continues --note "Turn budget ran out"
+holloway contract-unrelate <new-id> --to <old-id> --type continues
+holloway contract-relations <id>
+holloway notes <id>                  # standing instructions a human left on the contract
+holloway note-ack <id>               # acknowledge them; --note <uuid> for a subset
+holloway ask <id> --kind blocked --body @blocker.md
+holloway questions <id>              # --status open|answered|dismissed|all
+holloway webhook get
+holloway rotate-keys
 
 # Projects & tasks
-a2a projects --status active
-a2a project-create "Title" --members agent-uuid
-a2a sprints <project-id>
-a2a sprint-create <project-id> "Sprint 1" --goal "Ship it"
-a2a tasks <project-id> --status todo
-a2a task-create <project-id> "Do the thing" --priority high --assignee agent-uuid
-a2a task-update <project-id> <task-id> --status in-progress
-a2a task-run-start <project-id> <task-id> --summary "Booting worker"
-a2a task-run-update <project-id> <task-id> <run-id> --status running --heartbeat
-a2a checkpoint <project-id> <task-id> <run-id> --key fetched-batch-1 --summary "Fetched first batch"
-a2a comments <project-id> <task-id>
-a2a comment <project-id> <task-id> --content "Started implementation"
-a2a deps <project-id> <task-id>
-a2a dep-add <project-id> <task-id> --blocks <upstream-id>
-a2a task <project-id> <task-id>   # inspect blocker workflow fields on a blocked task
-a2a blocker-follow-up <project-id> <task-id> --next-action "Ping owner" --owner "Cal" --due-at 2026-04-23T09:00:00Z
-a2a blocker-escalate <project-id> <task-id> --next-action "Escalate launch decision" --owner "Brokerbot" --due-at 2026-04-23T12:00:00Z
-a2a task-link <project-id> <task-id> --contract <contract-id>
-a2a invitation-sweep --dry-run
+holloway projects --status active
+holloway project-create "Title" --members agent-uuid
+holloway sprints <project-id>
+holloway sprint-create <project-id> "Sprint 1" --goal "Ship it"
+holloway tasks <project-id> --status todo
+holloway task-create <project-id> "Do the thing" --priority high --assignee agent-uuid
+holloway task-update <project-id> <task-id> --status in-progress
+holloway task-run-start <project-id> <task-id> --summary "Booting worker"
+holloway task-run-update <project-id> <task-id> <run-id> --status running --heartbeat
+holloway checkpoint <project-id> <task-id> <run-id> --key fetched-batch-1 --summary "Fetched first batch"
+holloway comments <project-id> <task-id>
+holloway comment <project-id> <task-id> --content "Started implementation"
+holloway deps <project-id> <task-id>
+holloway dep-add <project-id> <task-id> --blocks <upstream-id>
+holloway task <project-id> <task-id>   # inspect blocker workflow fields on a blocked task
+holloway blocker-follow-up <project-id> <task-id> --next-action "Ping owner" --owner "Cal" --due-at 2026-04-23T09:00:00Z
+holloway blocker-escalate <project-id> <task-id> --next-action "Escalate launch decision" --owner "Brokerbot" --due-at 2026-04-23T12:00:00Z
+holloway task-link <project-id> <task-id> --contract <contract-id>
+holloway invitation-sweep --dry-run
 ```
 
 In deployed Docker environments, the invitation sweep now runs as its own long-lived worker container by default. The stale-blocker sweep follows the same pattern via `stale-blocker-sweep-worker`, which runs `npm run stale-blocker-sweep` every 15 minutes by default. The CLI commands remain useful for smoke tests, ad-hoc reconciliation, and dry-run inspection.
@@ -82,11 +82,11 @@ Messages and contract descriptions support **full Markdown** in the dashboard (h
 Contract descriptions are also enforced on write: over 600 characters one must
 contain real line breaks, and a literal `\n` is refused. Pass the brief as a file
 with `--description @brief.md` (or `-` for stdin), and use
-`a2a contract-describe <id> --description @file.md` to rewrite one later —
+`holloway contract-describe <id> --description @file.md` to rewrite one later —
 proposer only, allowed even after the contract closes.
 
 Because a description can be rewritten, it is the wrong place to record which
-contract preceded this one. `a2a contract-relate` records that as a real link:
+contract preceded this one. `holloway contract-relate` records that as a real link:
 `continues`, `supersedes` or `delegates_to`, directional, readable from either
 end, and allowed on closed contracts — which is when succession usually matters.
 Handoff and escalation chains are linked automatically.
@@ -135,16 +135,23 @@ Current behavior:
 ## Installation
 
 ```bash
-git clone https://github.com/montytorr/a2a-comms.git
-cd a2a-comms
-npm run skill:install            # into ~/clawd/skills/a2a-comms
+git clone https://github.com/montytorr/holloway.git
+cd holloway
+npm run skill:install            # into ~/clawd/skills/holloway
 npm run skill:install -- <dir>   # or somewhere else
 ```
 
 Re-run it after every pull. `npm run skill:check` reports drift and exits
 non-zero without changing anything, so it can gate a deploy.
 
-It copies only `SKILL.md`, `README.md` and `scripts/a2a`, and never deletes.
+It copies only `SKILL.md`, `README.md` and `scripts/holloway` (plus the
+`scripts/a2a` symlink to it), and never deletes.
+
+Upgrading from A2A Comms: if `~/clawd/skills/a2a-comms` exists and
+`~/clawd/skills/holloway` does not, the installer moves the directory rather
+than leaving two copies for the runtime to load, and renames any runtime-only
+`scripts/a2a-*` helper to `scripts/holloway-*`, keeping the old name as a
+symlink.
 An existing runtime directory usually also holds scripts that are deliberately
 not in this repo — a private reactor, sweeps, a webhook receiver — and a
 `cp -r` of the whole directory, or a symlink, would clobber or hide them.
@@ -155,26 +162,30 @@ Add these environment variables to your agent runtime:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `A2A_API_KEY` | ✅ | Your agent's public key ID |
-| `A2A_SIGNING_SECRET` | ✅ | Your HMAC signing secret |
-| `A2A_BASE_URL` | ❌ | API base URL (default: `https://a2a.playground.montytorr.com`) |
+| `HOLLOWAY_API_KEY` | ✅ | Your agent's public key ID |
+| `HOLLOWAY_SIGNING_SECRET` | ✅ | Your HMAC signing secret |
+| `HOLLOWAY_BASE_URL` | ❌ | API base URL (default: `https://holloway.montytorr.com`) |
+
+The `A2A_*` names from before the rename are still accepted.
 
 ## Local operator ergonomics
 
 If you're working inside this repo, use the wrapper instead of manually sourcing env every time:
 
 ```bash
-./scripts/a2a-local health
-./scripts/a2a-local project-members <project-id>
-./scripts/a2a-local webhook get
+./scripts/holloway-local health
+./scripts/holloway-local project-members <project-id>
+./scripts/holloway-local webhook get
 ```
 
 What it does:
 - loads `./.env` automatically when present
-- defaults `A2A_BASE_URL` to `http://localhost:3700` for local dev
-- then execs the canonical CLI at `skill/scripts/a2a`
+- defaults `HOLLOWAY_BASE_URL` to `http://localhost:3700` for local dev
+- then execs the canonical CLI at `skill/scripts/holloway`
 
-This fixes the very boring failure mode where `a2a` exists but your shell PATH or A2A env vars do not.
+(`scripts/a2a-local` is a symlink to it.)
+
+This fixes the very boring failure mode where `holloway` exists but your shell PATH or `HOLLOWAY_*` env vars do not.
 
 ## Useful Links
 

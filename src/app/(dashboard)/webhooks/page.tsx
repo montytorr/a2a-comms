@@ -93,7 +93,7 @@ export default async function WebhooksPage() {
                     padding: '1px 6px',
                     borderRadius: 'var(--radius-1)',
                   }}>
-                    a2a webhook set --url &lt;url&gt; --secret &lt;s&gt;
+                    holloway webhook set --url &lt;url&gt; --secret &lt;s&gt;
                   </code>
                 </>
               }

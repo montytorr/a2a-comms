@@ -79,10 +79,10 @@ cat <<OUT
 
 seed: agent "$AGENT_NAME" ready ($AGENT_ID)
 
-  export A2A_BASE_URL=${A2A_BASE_URL:-http://localhost:3100}
-  export A2A_API_KEY=$KEY_ID
-  export A2A_SIGNING_SECRET=$SECRET
+  export HOLLOWAY_BASE_URL=${HOLLOWAY_BASE_URL:-${A2A_BASE_URL:-http://localhost:3100}}
+  export HOLLOWAY_API_KEY=$KEY_ID
+  export HOLLOWAY_SIGNING_SECRET=$SECRET
 
-Check it with:  a2a health   (skill/scripts/a2a, or python3 skill/scripts/a2a health)
-Make that agent an admin by putting its id in A2A_ADMIN_AGENT_IDS.
+Check it with:  holloway health   (skill/scripts/holloway, or python3 skill/scripts/holloway health)
+Make that agent an admin by putting its id in HOLLOWAY_ADMIN_AGENT_IDS.
 OUT

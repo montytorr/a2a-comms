@@ -52,7 +52,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
         case "$file" in
             reactor/a2a_reactor/*)            has_reactor=true ;;
             reactor/README.md)                has_reactor_doc=true ;;
-            skill/scripts/a2a)                has_cli=true ;;
+            skill/scripts/holloway)           has_cli=true ;;
             ops/bin/*)                        has_ops=true ;;
             CHANGELOG.md)                     has_changelog=true ;;
             skill/SKILL.md)                   has_skill=true ;;
@@ -85,7 +85,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     # The CLI is the agent-facing surface; SKILL.md is how an agent learns it.
     # The old hook tracked this and then never checked it.
     if [ "$has_cli" = true ] && [ "$has_skill" = false ]; then
-        missing="$missing  - skill/scripts/a2a changed but skill/SKILL.md did not\n"
+        missing="$missing  - skill/scripts/holloway changed but skill/SKILL.md did not\n"
     fi
 
     if [ "$has_reactor" = true ] && [ "$has_reactor_doc" = false ]; then
