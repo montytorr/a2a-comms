@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.352] - 2026-09-22
+### Docs
+- the installer updates an old a2a-comms install in place (HOL-112)
+- The README still described the first version, which moved the directory.
+
 ## [1.0.351] - 2026-09-22
 ### Added
 - moss brand tokens, split from amber status (HOL-115)
