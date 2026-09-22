@@ -56,7 +56,7 @@ from .events import (
     triage_event,
 )
 from .lease import LeaseBusy, reactor_lease
-from .outcomes import MARKERS, WorkerOutcome, classify_worker_output
+from .outcomes import LEGACY_MARKERS, MARKERS, WorkerOutcome, classify_worker_output
 from .queue import append_event, read_queue, write_queue
 from .reactor import CONTRACT_MARKER_PREFIX, Reactor, ReactorResult
 from .turns import LOW_BUDGET_THRESHOLD, TurnBudget, read_turn_budget
@@ -66,6 +66,7 @@ __version__ = "0.1.0"
 __all__ = [
     "WorkerOutcome",
     "MARKERS",
+    "LEGACY_MARKERS",
     "classify_worker_output",
     "__version__",
     # loop

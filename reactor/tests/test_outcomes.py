@@ -1,19 +1,37 @@
 import unittest
 
-from a2a_reactor import MARKERS, WorkerOutcome, classify_worker_output
+from a2a_reactor import LEGACY_MARKERS, MARKERS, WorkerOutcome, classify_worker_output
 from a2a_reactor.adapters import NullTaskTracker, StderrAlertSink
 from a2a_reactor.reactor import Reactor, ReactorResult
 
 
 class ClassifyWorkerOutput(unittest.TestCase):
     def test_a_marker_on_its_own_line_is_a_decision(self):
+        self.assertIs(classify_worker_output("did the thing\nHOLLOWAY_ACTION_CONFIRMED\n"), WorkerOutcome.ACTED)
+        self.assertIs(classify_worker_output("  HOLLOWAY_NO_ACTION_REQUIRED  "), WorkerOutcome.NO_ACTION)
+        self.assertIs(classify_worker_output("asked\nHOLLOWAY_NEEDS_HUMAN"), WorkerOutcome.NEEDS_HUMAN)
+
+    def test_the_pre_rename_a2a_spelling_is_still_a_decision(self):
+        # Workers on prompts written before the rename still print A2A_*.
         self.assertIs(classify_worker_output("did the thing\nA2A_ACTION_CONFIRMED\n"), WorkerOutcome.ACTED)
         self.assertIs(classify_worker_output("  A2A_NO_ACTION_REQUIRED  "), WorkerOutcome.NO_ACTION)
         self.assertIs(classify_worker_output("asked\nA2A_NEEDS_HUMAN"), WorkerOutcome.NEEDS_HUMAN)
 
+    def test_either_spelling_obeys_the_same_order_of_consequence(self):
+        self.assertIs(
+            classify_worker_output("A2A_NEEDS_HUMAN\nHOLLOWAY_ACTION_CONFIRMED"), WorkerOutcome.ACTED
+        )
+        self.assertIs(
+            classify_worker_output("HOLLOWAY_NEEDS_HUMAN\nA2A_ACTION_CONFIRMED"), WorkerOutcome.ACTED
+        )
+
     def test_a_marker_quoted_mid_sentence_decides_nothing(self):
         # The prompt has to name every marker in order to ask for one, so a
         # worker echoing its instructions must not be read as having decided.
+        self.assertIs(
+            classify_worker_output("I was told to print HOLLOWAY_ACTION_CONFIRMED when done."),
+            WorkerOutcome.FAILED,
+        )
         self.assertIs(
             classify_worker_output("I was told to print A2A_ACTION_CONFIRMED when done."),
             WorkerOutcome.FAILED,
@@ -21,6 +39,7 @@ class ClassifyWorkerOutput(unittest.TestCase):
 
     def test_a_crash_overrides_anything_it_printed(self):
         # Claiming to have acted and then exiting non-zero demonstrates nothing.
+        self.assertIs(classify_worker_output("HOLLOWAY_ACTION_CONFIRMED", returncode=1), WorkerOutcome.FAILED)
         self.assertIs(classify_worker_output("A2A_ACTION_CONFIRMED", returncode=1), WorkerOutcome.FAILED)
 
     def test_exiting_cleanly_with_no_decision_is_a_failure(self):
@@ -42,7 +61,9 @@ class ClassifyWorkerOutput(unittest.TestCase):
             if outcome is WorkerOutcome.FAILED:
                 continue
             self.assertIn(outcome, MARKERS)
-            self.assertTrue(MARKERS[outcome].startswith("A2A_"))
+            self.assertTrue(MARKERS[outcome].startswith("HOLLOWAY_"))
+            self.assertIn(outcome, LEGACY_MARKERS)
+            self.assertEqual(LEGACY_MARKERS[outcome], "A2A_" + MARKERS[outcome][len("HOLLOWAY_"):])
 
 
 class _Worker:

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-__all__ = ["WorkerOutcome", "MARKERS", "classify_worker_output"]
+__all__ = ["WorkerOutcome", "MARKERS", "LEGACY_MARKERS", "classify_worker_output"]
 
 
 class WorkerOutcome(Enum):
@@ -47,7 +47,17 @@ class WorkerOutcome(Enum):
         return cls.ACTED if ok else cls.FAILED
 
 
+# What a worker's prompt should ask it to print.
 MARKERS = {
+    WorkerOutcome.ACTED: "HOLLOWAY_ACTION_CONFIRMED",
+    WorkerOutcome.NO_ACTION: "HOLLOWAY_NO_ACTION_REQUIRED",
+    WorkerOutcome.NEEDS_HUMAN: "HOLLOWAY_NEEDS_HUMAN",
+}
+
+# The spellings from before the rename to Holloway. Still accepted, so a worker
+# running on an old prompt - or a model that remembers the old word - is not
+# read as having decided nothing and retried for a day.
+LEGACY_MARKERS = {
     WorkerOutcome.ACTED: "A2A_ACTION_CONFIRMED",
     WorkerOutcome.NO_ACTION: "A2A_NO_ACTION_REQUIRED",
     WorkerOutcome.NEEDS_HUMAN: "A2A_NEEDS_HUMAN",
@@ -75,7 +85,7 @@ def classify_worker_output(output: str, returncode: int = 0) -> WorkerOutcome:
     # something it cannot resolve has still acted, and the question it raised
     # is recorded on the contract either way.
     for outcome in (WorkerOutcome.ACTED, WorkerOutcome.NO_ACTION, WorkerOutcome.NEEDS_HUMAN):
-        if MARKERS[outcome] in lines:
+        if MARKERS[outcome] in lines or LEGACY_MARKERS[outcome] in lines:
             return outcome
 
     # Exited cleanly having decided nothing. This is the case the bool hid: it
