@@ -3,8 +3,7 @@ import { normalizeAgentTrustPolicy, type AgentTrustPolicyConfig } from '@/lib/ag
 import { normalizeAgentTrustTier, type AgentTrustTier } from '@/lib/trust-tiers';
 import { getAuthUser, type AuthUser } from '@/lib/auth-context';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
-
-const ACTIVE_AGENT_COOKIE = 'a2a_active_agent';
+import { readActiveAgentCookie } from '@/lib/auth/cookie';
 const EMPTY_UUID = '00000000-0000-0000-0000-000000000000';
 const TRUST_TIER_ORDER: AgentTrustTier[] = ['external', 'partner', 'internal'];
 
@@ -92,7 +91,7 @@ export async function getAuthActorContext(): Promise<AuthActorContext | null> {
   }));
 
   const cookieStore = await cookies();
-  const selectedAgentId = cookieStore.get(ACTIVE_AGENT_COOKIE)?.value || null;
+  const selectedAgentId = readActiveAgentCookie(cookieStore) || null;
   const actingAgent = selectedAgentId
     ? availableAgents.find((agent) => agent.id === selectedAgentId) || null
     : null;

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { cookies, headers } from 'next/headers'
 import { pool } from '@/lib/db/client'
-import { SESSION_COOKIE } from './cookie'
+import { SESSION_COOKIE, SESSION_COOKIES, readSessionCookie } from './cookie'
 
 const SESSION_SECONDS = Number(process.env.AUTH_SESSION_SECONDS || 60 * 60 * 24 * 30)
 
@@ -28,7 +28,7 @@ export const createSession = async (user: SessionUser) => {
 }
 
 export const sessionUser = async (): Promise<SessionUser | null> => {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value
+  const token = readSessionCookie(await cookies())
   if (!token) return null
   const { rows } = await pool().query<SessionUser>(
     `select u.id, u.email
@@ -44,14 +44,16 @@ export const sessionUser = async (): Promise<SessionUser | null> => {
 
 export const destroySession = async () => {
   const store = await cookies()
-  const token = store.get(SESSION_COOKIE)?.value
-  if (token) await pool().query('delete from app_sessions where token_hash = $1', [hashToken(token)])
-  store.set(SESSION_COOKIE, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  })
+  const tokens = SESSION_COOKIES.map((name) => store.get(name)?.value).filter((token): token is string => Boolean(token))
+  if (tokens.length) await pool().query('delete from app_sessions where token_hash = any($1)', [tokens.map(hashToken)])
+  for (const name of SESSION_COOKIES) {
+    store.set(name, '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    })
+  }
 }
 

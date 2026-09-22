@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getAuthUser } from '@/lib/auth-context';
-
-const ACTIVE_AGENT_COOKIE = 'a2a_active_agent';
+import { ACTIVE_AGENT_COOKIE, ACTIVE_AGENT_COOKIES, LEGACY_ACTIVE_AGENT_COOKIE } from '@/lib/auth/cookie';
 
 export async function POST(request: Request) {
   const user = await getAuthUser();
@@ -32,8 +31,9 @@ export async function POST(request: Request) {
 
   const cookieStore = await cookies();
   if (!agentId) {
-    cookieStore.delete(ACTIVE_AGENT_COOKIE);
+    for (const name of ACTIVE_AGENT_COOKIES) cookieStore.delete(name);
   } else {
+    cookieStore.delete(LEGACY_ACTIVE_AGENT_COOKIE);
     cookieStore.set(ACTIVE_AGENT_COOKIE, agentId, {
       httpOnly: true,
       sameSite: 'lax',

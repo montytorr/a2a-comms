@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SESSION_COOKIE } from '@/lib/auth/cookie';
+import { readSessionCookie } from '@/lib/auth/cookie';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!request.cookies.get(SESSION_COOKIE)?.value) {
+  if (!readSessionCookie(request.cookies)) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
