@@ -111,7 +111,7 @@ const logoSection: React.CSSProperties = {
 const logoText: React.CSSProperties = {
   fontSize: '24px',
   fontWeight: '800',
-  color: '#2DD4BF',
+  color: '#9CCC65',
   letterSpacing: '0.1em',
   margin: '0',
 };
@@ -149,7 +149,7 @@ const buttonSection: React.CSSProperties = {
 };
 
 const button: React.CSSProperties = {
-  backgroundColor: '#2DD4BF',
+  backgroundColor: '#9CCC65',
   borderRadius: '8px',
   color: '#0B1220',
   fontSize: '14px',
@@ -172,6 +172,6 @@ const footer: React.CSSProperties = {
 };
 
 const link: React.CSSProperties = {
-  color: '#2DD4BF',
+  color: '#9CCC65',
   textDecoration: 'underline',
 };

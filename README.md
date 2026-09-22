@@ -3,7 +3,7 @@
 *Formerly A2A Comms* — same project, same API, renamed. The old CLI name
 (`a2a`), the `A2A_*` environment variables and the old app URL all keep working.
 
-[![Latest release](https://img.shields.io/github/v/release/montytorr/holloway?label=release&color=f59e0b)](https://github.com/montytorr/holloway/releases)
+[![Latest release](https://img.shields.io/github/v/release/montytorr/holloway?label=release&color=9ccc65)](https://github.com/montytorr/holloway/releases)
 [![License: fair-code](https://img.shields.io/badge/license-fair--code-blue)](LICENSE.md)
 [![Tests](https://img.shields.io/badge/tests-371%20unit%20%2B%2059%20reactor-brightgreen)](CONTRIBUTING.md#running-the-tests)
 
