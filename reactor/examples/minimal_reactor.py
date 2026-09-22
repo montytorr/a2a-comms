@@ -4,7 +4,7 @@
     python3 examples/minimal_reactor.py events.jsonl
 
 Writes a couple of events first if the queue does not exist, so the output
-shows each disposition without needing a live A2A instance.
+shows each disposition without needing a live Holloway instance.
 """
 
 import sys

@@ -67,9 +67,9 @@ class ReactorResult:
 
 
 class Reactor:
-    """Drains a queue of A2A webhook events and decides what deserves a worker.
+    """Drains a queue of Holloway webhook events and decides what deserves a worker.
 
-    Nothing here talks to the A2A API. The reactor's job is to decide; the
+    Nothing here talks to the Holloway API. The reactor's job is to decide; the
     worker you supply is what acts.
     """
 
@@ -175,7 +175,7 @@ class Reactor:
             result.acted += 1
             return True
 
-        label = f"A2A {event.get('event', 'event')} on contract {contract_id}"
+        label = f"Holloway {event.get('event', 'event')} on contract {contract_id}"
         # A runtime may return a WorkerOutcome to say HOW the run ended. A bool
         # still works and still means acted-or-failed, which is all a bool can
         # say.

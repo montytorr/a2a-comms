@@ -1,4 +1,4 @@
-name: Deploy A2A Comms
+name: Deploy Holloway
 
 on:
   push:
@@ -177,10 +177,10 @@ jobs:
         run: |
           VERSION="${{ steps.deploy.outputs.version }}"
           COMMIT_MSG="${{ steps.commit.outputs.msg }}"
-          BODY="{\"content\": \"✅ **A2A Comms v${VERSION} deployed** — \`${COMMIT_MSG}\`\"}"
+          BODY="{\"content\": \"✅ **Holloway v${VERSION} deployed** — \`${COMMIT_MSG}\`\"}"
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -H "User-Agent: A2AComms-CI/1.0" \
+            -H "User-Agent: Holloway-CI/1.0" \
             -d "$BODY" || true
 
       # `failure()` excludes cancellation, which is exactly how a deploy that
@@ -195,10 +195,10 @@ jobs:
           if [ "${{ job.status }}" = "cancelled" ]; then
             WHAT="was CANCELLED part-way — production may already have switched; check the version and whether the release was cut"
           fi
-          BODY="{\"content\": \"❌ **A2A Comms deploy ${WHAT}** — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
+          BODY="{\"content\": \"❌ **Holloway deploy ${WHAT}** — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -H "User-Agent: A2AComms-CI/1.0" \
+            -H "User-Agent: Holloway-CI/1.0" \
             -d "$BODY" || true
 
   notify-ci-failure:
@@ -209,8 +209,8 @@ jobs:
       - name: Notify Discord (CI failure)
         run: |
           COMMIT_MSG=$(cd /root/projects/a2a-comms && git log -1 --format='%h %s' 2>/dev/null || echo "unknown")
-          BODY="{\"content\": \"❌ **A2A Comms CI failed** (lint/build) — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
+          BODY="{\"content\": \"❌ **Holloway CI failed** (lint/build) — \`${COMMIT_MSG}\`\nCheck: <https://github.com/${{ github.repository }}/actions>\"}"
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -H "User-Agent: A2AComms-CI/1.0" \
+            -H "User-Agent: Holloway-CI/1.0" \
             -d "$BODY" || true

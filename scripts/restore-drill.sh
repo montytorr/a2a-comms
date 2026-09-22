@@ -6,7 +6,7 @@ DEST=${HOLLOWAY_BACKUP_DIR:-${A2A_BACKUP_DIR:-/srv/backups/a2a}}
 DB_CONTAINER=${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-clawdius-postgres}}
 SCRATCH="a2a_restore_drill_$(date -u +%s)"
 LATEST=$(find "$DEST/daily" -maxdepth 1 -name 'a2a-db-*.dump' -printf '%T@ %p\n' | sort -nr | head -1 | cut -d' ' -f2-)
-[ -n "$LATEST" ] || { echo "no A2A dump to restore"; exit 1; }
+[ -n "$LATEST" ] || { echo "no Holloway dump to restore"; exit 1; }
 
 q() { docker exec "$DB_CONTAINER" psql -v ON_ERROR_STOP=1 -U postgres -d "$1" -qtAX -c "$2"; }
 q postgres "create database $SCRATCH owner a2a_app" >/dev/null

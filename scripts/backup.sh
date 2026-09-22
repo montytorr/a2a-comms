@@ -31,4 +31,4 @@ fi
 find "$DEST/daily" -name 'a2a-db-*.dump' -mtime +7 -delete
 find "$DEST/daily" -name 'a2a-storage-*.tar.gz' -mtime +7 -delete
 find "$DEST/weekly" -name 'a2a-*' -mtime +28 -delete
-printf '%s A2A backup complete: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$STAMP"
+printf '%s Holloway backup complete: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$STAMP"

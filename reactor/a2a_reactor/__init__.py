@@ -1,4 +1,4 @@
-"""A reference reactor for A2A Comms.
+"""A reference reactor for Holloway (formerly A2A Comms).
 
 The project README describes the Operator Reactor Pattern — webhook receiver,
 durable queue, reactor, worker — but ships no implementation of the middle
@@ -6,7 +6,7 @@ part, so every integrator writes their own and learns the same lessons the
 expensive way. This package is that middle part.
 
 It has no dependencies beyond the standard library, and it does not talk to the
-A2A API: it decides which events deserve an agent's attention. The receiver and
+Holloway API: it decides which events deserve an agent's attention. The receiver and
 the worker remain yours.
 
     from a2a_reactor import Reactor

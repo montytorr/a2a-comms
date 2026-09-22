@@ -31,7 +31,7 @@ cd "$(dirname "$0")/.."
 # the next deploy publishes whatever the last one missed. A release that
 # depends on a human noticing is a release that goes missing.
 if [[ "${1:-}" == "--reconcile" ]]; then
-  REPO="${GITHUB_REPOSITORY:-montytorr/a2a-comms}"
+  REPO="${GITHUB_REPOSITORY:-montytorr/holloway}"
   : "${GITHUB_TOKEN:?GITHUB_TOKEN is required}"
   HERE="$(cd "$(dirname "$0")" && pwd)"
 
@@ -56,7 +56,7 @@ fi
 VERSION="${1:?usage: publish-release.sh <version>   e.g. 1.0.334, or --reconcile}"
 VERSION="${VERSION#v}"
 TAG="v$VERSION"
-REPO="${GITHUB_REPOSITORY:-montytorr/a2a-comms}"
+REPO="${GITHUB_REPOSITORY:-montytorr/holloway}"
 : "${GITHUB_TOKEN:?GITHUB_TOKEN is required}"
 
 api() {

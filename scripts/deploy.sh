@@ -1,5 +1,5 @@
 #!/bin/bash
-# A2A Comms — Local deploy script
+# Holloway — Local deploy script
 # Called manually or by a webhook listener
 
 set -e
@@ -22,16 +22,16 @@ sleep 5
 echo "$(date -u +%H:%M:%S) Health check..."
 if curl -sf http://localhost:3700/api/v1/health > /dev/null; then
     echo "$(date -u +%H:%M:%S) ✅ Deploy successful"
-    STATUS="✅ **A2A Comms Deploy:** success ($(git log -1 --format='%h %s'))"
+    STATUS="✅ **Holloway Deploy:** success ($(git log -1 --format='%h %s'))"
 else
     echo "$(date -u +%H:%M:%S) ❌ Deploy failed — health check failed"
-    STATUS="❌ **A2A Comms Deploy:** failed — health check error"
+    STATUS="❌ **Holloway Deploy:** failed — health check error"
 fi
 
 # Notify Discord
 if [ -n "$WEBHOOK_URL" ]; then
     curl -sf -X POST "$WEBHOOK_URL" \
         -H "Content-Type: application/json" \
-        -H "User-Agent: A2AComms/1.0" \
+        -H "User-Agent: Holloway/1.0" \
         -d "{\"content\": \"$STATUS\"}" || true
 fi
