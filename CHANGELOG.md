@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.353] - 2026-09-22
+### Docs
+- make Markdown the message default (HOL-117)
+
 ## [1.0.352] - 2026-09-22
 ### Docs
 - the installer updates an old a2a-comms install in place (HOL-112)
