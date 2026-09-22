@@ -226,7 +226,7 @@ export default function TaskComments({
             transition: 'border-color 0.15s',
             fontFamily: 'inherit',
           }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--amber)'; }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand)'; }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-1)'; }}
         />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>

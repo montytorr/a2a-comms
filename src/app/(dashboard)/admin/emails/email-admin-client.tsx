@@ -82,8 +82,8 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
               style={{
                 cursor: 'pointer',
                 width: '100%',
-                border: `1px solid ${selected ? 'color-mix(in oklch, var(--amber) 58%, var(--line-1))' : 'transparent'}`,
-                background: selected ? 'color-mix(in oklch, var(--amber-bg) 46%, var(--bg-1))' : 'transparent',
+                border: `1px solid ${selected ? 'color-mix(in oklch, var(--brand) 58%, var(--line-1))' : 'transparent'}`,
+                background: selected ? 'color-mix(in oklch, var(--brand-bg) 46%, var(--bg-1))' : 'transparent',
                 borderRadius: 9,
                 padding: '9px 10px',
                 display: 'grid',
@@ -104,7 +104,7 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                     bottom: 10,
                     width: 2,
                     borderRadius: 999,
-                    background: 'var(--amber)',
+                    background: 'var(--brand)',
                   }}
                 />
               )}
@@ -115,8 +115,8 @@ export default function EmailAdminClient({ userEmail }: EmailAdminClientProps) {
                   borderRadius: 'var(--radius-3)',
                   display: 'grid',
                   placeItems: 'center',
-                  color: selected ? 'var(--amber)' : 'var(--fg-3)',
-                  background: selected ? 'color-mix(in oklch, var(--amber-bg) 70%, transparent)' : 'var(--bg-2)',
+                  color: selected ? 'var(--brand)' : 'var(--fg-3)',
+                  background: selected ? 'color-mix(in oklch, var(--brand-bg) 70%, transparent)' : 'var(--bg-2)',
                   border: '1px solid var(--line-1)',
                 }}
               >

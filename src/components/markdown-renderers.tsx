@@ -72,7 +72,7 @@ export const markdownComponents: Components = {
     }
     return (
       <li className="text-sm" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, color: 'var(--fg-2)', lineHeight: 1.6 }}>
-        <span style={{ color: 'var(--amber)', marginTop: 1, flexShrink: 0 }}>•</span>
+        <span style={{ color: 'var(--brand)', marginTop: 1, flexShrink: 0 }}>•</span>
         <span>{children}</span>
       </li>
     );
@@ -107,7 +107,7 @@ export const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ color: 'var(--amber)', textDecoration: 'underline', textDecorationColor: 'var(--amber-line)', textUnderlineOffset: 3 }}
+      style={{ color: 'var(--brand)', textDecoration: 'underline', textDecorationColor: 'var(--brand-line)', textUnderlineOffset: 3 }}
     >
       {children}
     </a>
@@ -167,7 +167,7 @@ export const compactMarkdownComponents: Components = {
     </span>
   ),
   a: ({ children }) => (
-    <span style={{ color: 'var(--amber)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+    <span style={{ color: 'var(--brand)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
       {children}
     </span>
   ),

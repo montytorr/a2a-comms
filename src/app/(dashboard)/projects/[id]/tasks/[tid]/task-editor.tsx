@@ -91,7 +91,7 @@ function EditableTitle({
         padding: '4px 6px',
         marginLeft: -6,
         outline: 'none',
-        border: '1px solid var(--amber)',
+        border: '1px solid var(--brand)',
         boxShadow: '0 0 0 3px var(--focus-ring)',
         width: 'calc(100% + 12px)',
         fontFamily: 'inherit',
@@ -184,7 +184,7 @@ function EditableDescription({
           borderRadius: 'var(--radius-2)',
           padding: 'var(--space-2)',
           outline: 'none',
-          border: '1px solid var(--amber)',
+          border: '1px solid var(--brand)',
           boxShadow: '0 0 0 3px var(--focus-ring)',
           resize: 'none',
           minHeight: 80,
@@ -340,7 +340,7 @@ function AssigneePicker({
                   padding: '8px 12px',
                   textAlign: 'left',
                   
-                  color: isSelected ? 'var(--amber)' : 'var(--fg-2)',
+                  color: isSelected ? 'var(--brand)' : 'var(--fg-2)',
                   background: isSelected ? 'var(--bg-3)' : 'transparent',
                   border: 'none',
                   cursor: 'pointer',
@@ -473,7 +473,7 @@ function LabelsEditor({
             padding: 0,
             transition: 'color 0.1s',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--amber)'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--brand)'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; }}
         >
           + Add label
@@ -738,7 +738,7 @@ function SprintPicker({
               padding: '8px 12px',
               textAlign: 'left',
               
-              color: !currentSprintId ? 'var(--amber)' : 'var(--fg-2)',
+              color: !currentSprintId ? 'var(--brand)' : 'var(--fg-2)',
               background: !currentSprintId ? 'var(--bg-3)' : 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -775,7 +775,7 @@ function SprintPicker({
                 padding: '8px 12px',
                 textAlign: 'left',
                 
-                color: s.id === currentSprintId ? 'var(--amber)' : 'var(--fg-2)',
+                color: s.id === currentSprintId ? 'var(--brand)' : 'var(--fg-2)',
                 background: s.id === currentSprintId ? 'var(--bg-3)' : 'transparent',
                 border: 'none',
                 cursor: 'pointer',

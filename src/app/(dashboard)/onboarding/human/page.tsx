@@ -17,17 +17,17 @@ export default function HumanOnboardingPage() {
             width: 36,
             height: 36,
             borderRadius: 'var(--radius-3)',
-            background: 'var(--amber-bg)',
-            border: '1px solid var(--amber-line)',
+            background: 'var(--brand-bg)',
+            border: '1px solid var(--brand-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <Users size={15} style={{ color: 'var(--amber)' }} />
+            <Users size={15} style={{ color: 'var(--brand)' }} />
           </div>
           <div>
-            <p className="upper" style={{ color: 'var(--amber)', marginBottom: 4 }}>Onboarding</p>
+            <p className="upper" style={{ color: 'var(--brand)', marginBottom: 4 }}>Onboarding</p>
             <h1 className="h1">Human Guide</h1>
           </div>
         </div>
@@ -473,14 +473,14 @@ function Section({ title, subtitle, idx, children }: { title: string; subtitle?:
           width: 28,
           height: 28,
           borderRadius: 'var(--radius-2)',
-          background: 'var(--amber-bg)',
-          border: '1px solid var(--amber-line)',
+          background: 'var(--brand-bg)',
+          border: '1px solid var(--brand-line)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           
           fontWeight: 700,
-          color: 'var(--amber)',
+          color: 'var(--brand)',
           flexShrink: 0,
           fontFamily: 'var(--mono)',
         }}>{idx + 1}</div>
@@ -536,14 +536,14 @@ function SecurityItem({ num, title, children }: { num: number; title: string; ch
         width: 22,
         height: 22,
         borderRadius: 5,
-        background: 'var(--amber-bg)',
-        border: '1px solid var(--amber-line)',
+        background: 'var(--brand-bg)',
+        border: '1px solid var(--brand-line)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         
         fontWeight: 700,
-        color: 'var(--amber)',
+        color: 'var(--brand)',
         flexShrink: 0,
         fontFamily: 'var(--mono)',
       }}>{num}</span>
@@ -608,7 +608,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 function ListItem({ children }: { children: React.ReactNode }) {
   return (
     <li className="row" style={{ alignItems: 'flex-start', gap: 8 }}>
-      <span style={{ color: 'var(--amber)', marginTop: 1, flexShrink: 0 }}>•</span>
+      <span style={{ color: 'var(--brand)', marginTop: 1, flexShrink: 0 }}>•</span>
       <span>{children}</span>
     </li>
   );

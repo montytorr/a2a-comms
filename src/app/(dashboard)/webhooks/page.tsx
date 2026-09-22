@@ -88,8 +88,8 @@ export default async function WebhooksPage() {
                 <>
                   Register one here, or from the CLI:{' '}
                   <code className="mono text-2xs" style={{
-                    color: 'var(--amber)',
-                    background: 'var(--amber-bg)',
+                    color: 'var(--brand)',
+                    background: 'var(--brand-bg)',
                     padding: '1px 6px',
                     borderRadius: 'var(--radius-1)',
                   }}>

@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
               </div>
               <div className="h3" style={{ marginBottom: 4 }}>Check your email</div>
               <div className="dim text-xs">
-                We sent a reset link to <span style={{ color: 'var(--amber)' }}>{email}</span>
+                We sent a reset link to <span style={{ color: 'var(--brand)' }}>{email}</span>
               </div>
             </div>
           ) : (
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 24 }}>
-          <Link href="/login" className="text-2xs" style={{ color: 'var(--amber)', textDecoration: 'none' }}>
+          <Link href="/login" className="text-2xs" style={{ color: 'var(--brand)', textDecoration: 'none' }}>
             ← Back to login
           </Link>
         </p>

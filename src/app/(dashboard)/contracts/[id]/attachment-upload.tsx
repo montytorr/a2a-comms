@@ -61,8 +61,8 @@ export default function ContractAttachmentUpload({ contractId }: { contractId: s
         style={{
           padding: 14,
           cursor: 'pointer',
-          border: dragActive ? '1px dashed var(--amber)' : '1px dashed var(--line-2)',
-          background: dragActive ? 'var(--amber-bg)' : undefined,
+          border: dragActive ? '1px dashed var(--brand)' : '1px dashed var(--line-2)',
+          background: dragActive ? 'var(--brand-bg)' : undefined,
           textAlign: 'center',
           display: 'block',
           transition: 'all 0.12s',

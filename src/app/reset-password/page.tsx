@@ -108,7 +108,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 24 }}>
-          <Link href="/login" className="text-2xs" style={{ color: 'var(--amber)', textDecoration: 'none' }}>
+          <Link href="/login" className="text-2xs" style={{ color: 'var(--brand)', textDecoration: 'none' }}>
             ← Back to login
           </Link>
         </p>

@@ -80,7 +80,7 @@ function LoginForm() {
           placeholder="••••••••"
         />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-          <Link href="/forgot-password" className="text-2xs" style={{ color: 'var(--amber)', textDecoration: 'none' }}>
+          <Link href="/forgot-password" className="text-2xs" style={{ color: 'var(--brand)', textDecoration: 'none' }}>
             Forgot password?
           </Link>
         </div>
