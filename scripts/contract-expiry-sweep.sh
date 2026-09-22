@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-database_container="${A2A_DB_CONTAINER:-clawdius-postgres}"
-database_name="${A2A_DB_NAME:-a2a}"
+database_container="${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-clawdius-postgres}}"
+database_name="${HOLLOWAY_DB_NAME:-${A2A_DB_NAME:-a2a}}"
 
 docker exec -i "$database_container" psql \
   -U postgres \

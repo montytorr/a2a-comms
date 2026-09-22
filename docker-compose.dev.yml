@@ -1,4 +1,4 @@
-# A whole A2A Comms install, from nothing, in one command:
+# A whole Holloway install, from nothing, in one command:
 #
 #   docker compose -f docker-compose.dev.yml up -d --build
 #
@@ -17,7 +17,9 @@
 # for the deploy that is live right now.
 #
 # Ports: change APP_PORT or POSTGRES_PORT in the environment if 3100/55432 are taken.
-
+#
+# The project name predates the rename to Holloway and stays, so an existing
+# local stack keeps its volumes.
 name: a2a-comms-dev
 
 # Shared by the app and all four workers. The workers send email and build
@@ -93,7 +95,7 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *db-url
-      A2A_BASE_URL: http://localhost:${APP_PORT:-3100}
+      HOLLOWAY_BASE_URL: http://localhost:${APP_PORT:-3100}
       SEED_AGENT_NAME: ${SEED_AGENT_NAME:-local}
     command: ["sh", "/opt/scripts/seed.sh"]
 
@@ -116,8 +118,8 @@ services:
         required: false
     environment:
       <<: *runtime-env
-      A2A_ATTACHMENT_DIR: /data/attachments
-      A2A_ATTACHMENT_SIGNING_KEY: ${A2A_ATTACHMENT_SIGNING_KEY:-dev-only-attachment-key-change-me-32b}
+      HOLLOWAY_ATTACHMENT_DIR: /data/attachments
+      HOLLOWAY_ATTACHMENT_SIGNING_KEY: ${HOLLOWAY_ATTACHMENT_SIGNING_KEY:-${A2A_ATTACHMENT_SIGNING_KEY:-dev-only-attachment-key-change-me-32b}}
     ports:
       - "${APP_PORT:-3100}:3000"
     volumes:

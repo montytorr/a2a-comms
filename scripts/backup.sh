@@ -2,10 +2,10 @@
 # Back up the native PostgreSQL database and filesystem attachment store.
 set -euo pipefail
 
-DEST=${A2A_BACKUP_DIR:-/srv/backups/a2a}
-DB_CONTAINER=${A2A_DB_CONTAINER:-clawdius-postgres}
-DB_NAME=${A2A_DB_NAME:-a2a}
-ATTACHMENTS=${A2A_ATTACHMENT_DIR:-/srv/a2a-comms/attachments}
+DEST=${HOLLOWAY_BACKUP_DIR:-${A2A_BACKUP_DIR:-/srv/backups/a2a}}
+DB_CONTAINER=${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-clawdius-postgres}}
+DB_NAME=${HOLLOWAY_DB_NAME:-${A2A_DB_NAME:-a2a}}
+ATTACHMENTS=${HOLLOWAY_ATTACHMENT_DIR:-${A2A_ATTACHMENT_DIR:-/srv/a2a-comms/attachments}}
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 DOW=$(date -u +%u)
 

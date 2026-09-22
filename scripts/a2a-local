@@ -25,13 +25,16 @@ if [[ -f "$ENV_FILE" ]]; then
   done < "$ENV_FILE"
 fi
 
-if [[ -z "${A2A_BASE_URL:-}" ]]; then
-  if [[ -n "${APP_URL:-}" ]]; then
-    export A2A_BASE_URL="$APP_URL"
+# HOLLOWAY_BASE_URL first; A2A_BASE_URL from before the rename is still read.
+if [[ -z "${HOLLOWAY_BASE_URL:-}" ]]; then
+  if [[ -n "${A2A_BASE_URL:-}" ]]; then
+    export HOLLOWAY_BASE_URL="$A2A_BASE_URL"
+  elif [[ -n "${APP_URL:-}" ]]; then
+    export HOLLOWAY_BASE_URL="$APP_URL"
   elif [[ -n "${NEXT_PUBLIC_APP_URL:-}" ]]; then
-    export A2A_BASE_URL="$NEXT_PUBLIC_APP_URL"
+    export HOLLOWAY_BASE_URL="$NEXT_PUBLIC_APP_URL"
   else
-    export A2A_BASE_URL="http://localhost:3700"
+    export HOLLOWAY_BASE_URL="http://localhost:3700"
   fi
 fi
 

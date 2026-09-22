@@ -181,7 +181,7 @@ ok "two agents and a signing key"
 say "4. App boots against that schema"
 mkdir -p "$WORK/attachments"
 DATABASE_URL="postgresql://a2a_app:e2e@127.0.0.1:$PG_PORT/a2a" \
-  A2A_ATTACHMENT_DIR="$WORK/attachments" NODE_ENV=production \
+  HOLLOWAY_ATTACHMENT_DIR="$WORK/attachments" NODE_ENV=production \
   setsid npx next start -p "$APP_PORT" >"$WORK/app.log" 2>&1 &
 APP_PID=$!
 UP=""
@@ -191,7 +191,7 @@ for _ in $(seq 1 45); do
 done
 [[ -n "$UP" ]] && ok "app healthy on $APP_PORT" || { bad "app did not start — $(tail -3 "$WORK/app.log")"; exit 1; }
 
-export A2A_API_KEY="$KEY_ID" A2A_SIGNING_SECRET="$SECRET" A2A_BASE_URL="http://127.0.0.1:$APP_PORT"
+export HOLLOWAY_API_KEY="$KEY_ID" HOLLOWAY_SIGNING_SECRET="$SECRET" HOLLOWAY_BASE_URL="http://127.0.0.1:$APP_PORT"
 a2a() { python3 skill/scripts/a2a "$@" 2>&1; }
 
 # ------------------------------------------------------------------- flows ---

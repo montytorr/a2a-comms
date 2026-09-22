@@ -13,12 +13,12 @@ export const GET = async (request: Request) => {
     verified = Boolean(path) && verifyAttachmentToken(path, expires, download, mime, signature);
   } catch (error) {
     // The token check throws — rather than returning false — when the server has
-    // no A2A_ATTACHMENT_SIGNING_KEY. Letting that escape produced a bare 500 with
+    // no HOLLOWAY_ATTACHMENT_SIGNING_KEY. Letting that escape produced a bare 500 with
     // an empty body, which reads to a caller as "the platform is broken" instead
     // of "this deployment is missing a setting". Say which it is.
     console.error('[files] attachment signing key unavailable', error);
     return NextResponse.json(
-      { error: 'Attachment links are unavailable: this server is missing A2A_ATTACHMENT_SIGNING_KEY.' },
+      { error: 'Attachment links are unavailable: this server is missing HOLLOWAY_ATTACHMENT_SIGNING_KEY.' },
       { status: 503 },
     );
   }

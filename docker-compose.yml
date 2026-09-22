@@ -1,10 +1,19 @@
+# Production deployment. The project, service and container names predate the
+# rename to Holloway and stay: scripts/ci-deploy.sh, Traefik and the host all
+# address them by these names. Pinned so that a checkout directory with any
+# other name can never start a second, empty project beside the live one.
+#
+# The server .env still uses the A2A_* variable names. The app reads
+# HOLLOWAY_* first and falls back to A2A_*, so env_file passes either through.
+name: a2a-comms
+
 services:
   a2a-comms:
     build:
       context: .
       target: runner
       args:
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://a2a.playground.montytorr.com}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://holloway.montytorr.com}
     container_name: a2a-comms
     env_file:
       - .env

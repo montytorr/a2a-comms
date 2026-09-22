@@ -120,8 +120,8 @@ if [[ "$MODE" == "--against" ]]; then
   printf '%s' "$SHAPE" | psql "${2:?--against needs a connection string}" -t -A -P pager=off | sort -u > "$RUNNING"
   LABEL="$2"
 else
-  printf '%s' "$SHAPE" | $DOCKER exec -i "${A2A_DB_CONTAINER:-clawdius-postgres}" \
-    psql -U postgres -d "${A2A_DB_NAME:-a2a}" -t -A -P pager=off | sort -u > "$RUNNING"
+  printf '%s' "$SHAPE" | $DOCKER exec -i "${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-clawdius-postgres}}" \
+    psql -U postgres -d "${HOLLOWAY_DB_NAME:-${A2A_DB_NAME:-a2a}}" -t -A -P pager=off | sort -u > "$RUNNING"
   LABEL="production"
 fi
 echo "  $(wc -l < "$RUNNING") in $LABEL"

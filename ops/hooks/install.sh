@@ -17,4 +17,4 @@ for hook in "$repo_root"/ops/hooks/*; do
     echo "installed: $hooks_dir/$name"
 done
 
-echo "Doc-sync checks warn by default. Set A2A_STRICT_DOCS=1 to make them block."
+echo "Doc-sync checks warn by default. Set HOLLOWAY_STRICT_DOCS=1 to make them block."

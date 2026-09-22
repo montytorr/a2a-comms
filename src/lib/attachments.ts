@@ -1,14 +1,15 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { readEnv } from './env';
 
 export const ATTACHMENT_BUCKET = 'artifacts';
 export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
 
-const attachmentRoot = () => resolve(process.env.A2A_ATTACHMENT_DIR || '/data/attachments');
+const attachmentRoot = () => resolve(readEnv('ATTACHMENT_DIR') || '/data/attachments');
 const signingKey = () => {
-  const key = process.env.A2A_ATTACHMENT_SIGNING_KEY;
-  if (!key) throw new Error('A2A_ATTACHMENT_SIGNING_KEY is required');
+  const key = readEnv('ATTACHMENT_SIGNING_KEY');
+  if (!key) throw new Error('HOLLOWAY_ATTACHMENT_SIGNING_KEY (or legacy A2A_ATTACHMENT_SIGNING_KEY) is required');
   return key;
 };
 const absolutePath = (storagePath: string) => {

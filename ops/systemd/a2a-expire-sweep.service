@@ -1,5 +1,5 @@
 [Unit]
-Description=A2A Comms Contract Expiry Sweep
+Description=Holloway Contract Expiry Sweep
 Requires=docker.service
 After=docker.service
 

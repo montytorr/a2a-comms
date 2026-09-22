@@ -2,8 +2,8 @@
 # Restore the newest native backup into a throwaway database and validate it.
 set -euo pipefail
 
-DEST=${A2A_BACKUP_DIR:-/srv/backups/a2a}
-DB_CONTAINER=${A2A_DB_CONTAINER:-clawdius-postgres}
+DEST=${HOLLOWAY_BACKUP_DIR:-${A2A_BACKUP_DIR:-/srv/backups/a2a}}
+DB_CONTAINER=${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-clawdius-postgres}}
 SCRATCH="a2a_restore_drill_$(date -u +%s)"
 LATEST=$(find "$DEST/daily" -maxdepth 1 -name 'a2a-db-*.dump' -printf '%T@ %p\n' | sort -nr | head -1 | cut -d' ' -f2-)
 [ -n "$LATEST" ] || { echo "no A2A dump to restore"; exit 1; }

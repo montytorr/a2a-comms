@@ -97,7 +97,7 @@ fi
 # `clawdius-postgres`, a docker-network hostname this host cannot resolve. Every
 # other script here reaches it the same way.
 echo "Applying migrations…" >&2
-A2A_DB_CONTAINER="${A2A_DB_CONTAINER:-clawdius-postgres}" ./scripts/migrate.sh >&2
+HOLLOWAY_DB_CONTAINER="${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-clawdius-postgres}}" ./scripts/migrate.sh >&2
 
 # Bump patch version
 CURRENT=$(node -p "require('./package.json').version")

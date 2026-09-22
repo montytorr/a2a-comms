@@ -22,8 +22,11 @@
 #
 set -eu
 
-if [ -z "${DATABASE_URL:-}" ] && [ -z "${A2A_DB_CONTAINER:-}" ]; then
-  echo "migrate: set DATABASE_URL, or A2A_DB_CONTAINER to reach a database only docker can see" >&2
+# HOLLOWAY_* first; the A2A_* names from before the rename are still read.
+DB_CONTAINER="${HOLLOWAY_DB_CONTAINER:-${A2A_DB_CONTAINER:-}}"
+
+if [ -z "${DATABASE_URL:-}" ] && [ -z "$DB_CONTAINER" ]; then
+  echo "migrate: set DATABASE_URL, or HOLLOWAY_DB_CONTAINER to reach a database only docker can see" >&2
   exit 1
 fi
 
@@ -42,14 +45,14 @@ fi
 # A newcomer has a DATABASE_URL they can dial directly. The deploy does not:
 # production's DATABASE_URL names `clawdius-postgres`, a docker-network
 # hostname the HOST cannot resolve, and ci-deploy.sh runs on the host. So it
-# passes A2A_DB_CONTAINER instead and psql runs inside the container, which is
+# passes HOLLOWAY_DB_CONTAINER (or legacy A2A_DB_CONTAINER) instead and psql runs inside the container, which is
 # how every other script here already reaches it (contract-expiry-sweep.sh).
-if [ -n "${A2A_DB_CONTAINER:-}" ]; then
+if [ -n "$DB_CONTAINER" ]; then
   DOCKER="docker"; docker info >/dev/null 2>&1 || DOCKER="sudo docker"
-  DB_USER="${A2A_DB_USER:-postgres}"
-  DB_NAME="${A2A_DB_NAME:-a2a}"
-  psql_run() { $DOCKER exec -i "$A2A_DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -q -v ON_ERROR_STOP=1 "$@"; }
-  psql_val() { $DOCKER exec -i "$A2A_DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -v ON_ERROR_STOP=1 "$@"; }
+  DB_USER="${HOLLOWAY_DB_USER:-${A2A_DB_USER:-postgres}}"
+  DB_NAME="${HOLLOWAY_DB_NAME:-${A2A_DB_NAME:-a2a}}"
+  psql_run() { $DOCKER exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -q -v ON_ERROR_STOP=1 "$@"; }
+  psql_val() { $DOCKER exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -v ON_ERROR_STOP=1 "$@"; }
 else
   psql_run() { psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 "$@"; }
   psql_val() { psql "$DATABASE_URL" -t -A -v ON_ERROR_STOP=1 "$@"; }

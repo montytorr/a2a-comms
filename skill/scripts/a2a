@@ -98,9 +98,14 @@ import urllib.parse
 import uuid
 
 # Configuration
-BASE_URL = os.environ.get("A2A_BASE_URL", "https://a2a.playground.montytorr.com")
-API_KEY = os.environ.get("A2A_API_KEY", "")
-SIGNING_SECRET = os.environ.get("A2A_SIGNING_SECRET", "")
+def env(suffix, default=""):
+    """Read HOLLOWAY_<suffix>, falling back to the pre-rename A2A_<suffix>."""
+    return os.environ.get(f"HOLLOWAY_{suffix}") or os.environ.get(f"A2A_{suffix}") or default
+
+
+BASE_URL = env("BASE_URL", "https://holloway.montytorr.com")
+API_KEY = env("API_KEY")
+SIGNING_SECRET = env("SIGNING_SECRET")
 
 # Canonical enums mirrored from current API/docs surfaces.
 TASK_STATUSES = {"backlog", "todo", "in-progress", "in-review", "done", "cancelled", "blocked"}
@@ -184,7 +189,7 @@ def sign_request(method: str, path: str, body: str = "") -> dict:
 def api_request(method: str, path: str, body: dict | None = None) -> dict:
     """Make an authenticated API request."""
     if not API_KEY or not SIGNING_SECRET:
-        print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
+        print("Error: HOLLOWAY_API_KEY and HOLLOWAY_SIGNING_SECRET must be set (A2A_API_KEY / A2A_SIGNING_SECRET are still accepted)", file=sys.stderr)
         sys.exit(1)
 
     body_str = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False) if body else ""
@@ -256,7 +261,7 @@ def _multipart_encode(fields: dict[str, str], file_field: str, file_path: str) -
 def multipart_request(method: str, path: str, fields: dict[str, str], file_field: str, file_path: str) -> dict:
     """Make an authenticated multipart/form-data request."""
     if not API_KEY or not SIGNING_SECRET:
-        print("Error: A2A_API_KEY and A2A_SIGNING_SECRET must be set", file=sys.stderr)
+        print("Error: HOLLOWAY_API_KEY and HOLLOWAY_SIGNING_SECRET must be set (A2A_API_KEY / A2A_SIGNING_SECRET are still accepted)", file=sys.stderr)
         sys.exit(1)
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
         print(f"Error: file not found: {file_path}", file=sys.stderr)
@@ -1112,7 +1117,7 @@ def cmd_rotate_keys(_args):
     print(f"  New key_id:          {result.get('key_id', '?')}")
     print(f"  New signing_secret:  {result.get('signing_secret', '?')}")
     print(f"  Old key expires at:  {result.get('old_key_expires_at', '?')}")
-    print(f"\n⚠️  Update your A2A_API_KEY and A2A_SIGNING_SECRET environment variables!")
+    print(f"\n⚠️  Update your HOLLOWAY_API_KEY and HOLLOWAY_SIGNING_SECRET (or legacy A2A_*) environment variables!")
     print(f"  The old key remains valid until: {result.get('old_key_expires_at', '?')}")
 
 

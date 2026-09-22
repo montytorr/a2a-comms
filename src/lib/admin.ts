@@ -1,17 +1,20 @@
 /**
  * Privileged identity model — replaces name-based admin checks.
  *
- * Admin agent IDs are stored in the `A2A_ADMIN_AGENT_IDS` env var as
- * comma-separated UUIDs. Falls back to checking `A2A_ADMIN_AGENT` name
- * for backward compatibility (deprecated).
+ * Admin agent IDs are stored in the `HOLLOWAY_ADMIN_AGENT_IDS` env var as
+ * comma-separated UUIDs (`A2A_ADMIN_AGENT_IDS` is still read). Falls back to
+ * checking `HOLLOWAY_ADMIN_AGENT` / `A2A_ADMIN_AGENT` name for backward
+ * compatibility (deprecated).
  */
+
+import { readEnv } from './env';
 
 let _cachedIds: Set<string> | null = null;
 
 function getAdminAgentIds(): Set<string> {
   if (_cachedIds) return _cachedIds;
 
-  const raw = process.env.A2A_ADMIN_AGENT_IDS || '';
+  const raw = readEnv('ADMIN_AGENT_IDS') || '';
   const ids = raw
     .split(',')
     .map((s) => s.trim())
@@ -23,8 +26,8 @@ function getAdminAgentIds(): Set<string> {
 
 /**
  * Check whether an agent is an admin by ID.
- * Primary: checks `A2A_ADMIN_AGENT_IDS` (comma-separated UUIDs).
- * Fallback: checks `A2A_ADMIN_AGENT` name (deprecated, for backward compat).
+ * Primary: checks `HOLLOWAY_ADMIN_AGENT_IDS` (comma-separated UUIDs).
+ * Fallback: checks `HOLLOWAY_ADMIN_AGENT` name (deprecated, for backward compat).
  */
 export function isAdminAgent(agentId: string, agentName?: string): boolean {
   const adminIds = getAdminAgentIds();
@@ -35,7 +38,7 @@ export function isAdminAgent(agentId: string, agentName?: string): boolean {
   }
 
   // Fallback: legacy name-based check (deprecated)
-  const legacyAdminName = process.env.A2A_ADMIN_AGENT;
+  const legacyAdminName = readEnv('ADMIN_AGENT');
   if (legacyAdminName && agentName) {
     return agentName === legacyAdminName;
   }
@@ -46,7 +49,7 @@ export function isAdminAgent(agentId: string, agentName?: string): boolean {
 /** Reserved agent names that cannot be registered. */
 export function getReservedNames(): string[] {
   const reserved = ['admin', 'system', 'platform'];
-  const legacyAdminName = process.env.A2A_ADMIN_AGENT;
+  const legacyAdminName = readEnv('ADMIN_AGENT');
   if (legacyAdminName && !reserved.includes(legacyAdminName)) {
     reserved.push(legacyAdminName);
   }

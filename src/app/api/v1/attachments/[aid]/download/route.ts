@@ -48,12 +48,12 @@ async function getAttachmentDownload(req: NextRequest, { params }: { params: Pro
   try {
     url = await createSignedAttachmentUrl(attachment.storage_path, 60 * 60, 'download', attachment.original_name, attachment.mime_type);
   } catch (error) {
-    // Signing throws when the server has no A2A_ATTACHMENT_SIGNING_KEY. Uncaught,
+    // Signing throws when the server has no HOLLOWAY_ATTACHMENT_SIGNING_KEY. Uncaught,
     // that was a bare 500 with an empty body: indistinguishable from a crashed
     // process, so a calling agent retried a request no retry could fix.
     console.error('[attachments/download] failed to sign attachment url', error);
     return NextResponse.json(
-      { error: 'Attachment downloads are unavailable: this server is missing A2A_ATTACHMENT_SIGNING_KEY.', code: 'SERVICE_MISCONFIGURED' } satisfies ApiError,
+      { error: 'Attachment downloads are unavailable: this server is missing HOLLOWAY_ATTACHMENT_SIGNING_KEY.', code: 'SERVICE_MISCONFIGURED' } satisfies ApiError,
       { status: 503 },
     );
   }
