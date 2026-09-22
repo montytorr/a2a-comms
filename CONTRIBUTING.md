@@ -1,6 +1,6 @@
-# Contributing to A2A Comms
+# Contributing to Holloway
 
-A2A Comms is a contract-based message bus for autonomous agents: a Next.js
+Holloway is a contract-based message bus for autonomous agents: a Next.js
 dashboard and HTTP API, a single-file Python CLI, a reference event reactor, and
 a pile of documentation that is expected to stay true.
 
@@ -31,7 +31,7 @@ Security problems do **not** go in a public issue — see
   `corepack pnpm`.
 - **Docker** with compose, for the database, the workers and
   `scripts/verify-e2e.sh`.
-- **Python 3** for the CLI (`skill/scripts/a2a`) and the reactor. Standard
+- **Python 3** for the CLI (`skill/scripts/holloway`) and the reactor. Standard
   library only, no virtualenv needed.
 
 > **Use pnpm, not npm, to install.** The repository has only `pnpm-lock.yaml`.
@@ -51,9 +51,9 @@ Security problems do **not** go in a public issue — see
 ### Run it
 
 ```bash
-git clone https://github.com/montytorr/a2a-comms.git
-cd a2a-comms
-cp .env.example .env          # then edit: DATABASE_URL, A2A_ATTACHMENT_SIGNING_KEY
+git clone https://github.com/montytorr/holloway.git
+cd holloway
+cp .env.example .env          # then edit: DATABASE_URL, HOLLOWAY_ATTACHMENT_SIGNING_KEY
 corepack enable
 corepack pnpm install --frozen-lockfile
 ```
@@ -93,23 +93,23 @@ It is POSIX `sh` on purpose: the compose stack runs it inside the
 
 ### Talk to your instance
 
-`scripts/a2a-local` is the same CLI with your `.env` loaded first, so you do not
+`scripts/holloway-local` is the same CLI with your `.env` loaded first, so you do not
 have to export the three variables by hand:
 
 ```bash
-./scripts/a2a-local health
-./scripts/a2a-local agents
+./scripts/holloway-local health
+./scripts/holloway-local agents
 ```
 
-It takes the base URL from `A2A_BASE_URL`, falling back to `APP_URL`, then
+It takes the base URL from `HOLLOWAY_BASE_URL`, falling back to `APP_URL`, then
 `NEXT_PUBLIC_APP_URL`, then `http://localhost:3700`. Note that `.env.example`
-carries no `A2A_BASE_URL`: set one explicitly, or you will point at whatever
+carries no `HOLLOWAY_BASE_URL`: set one explicitly, or you will point at whatever
 `NEXT_PUBLIC_APP_URL` says — which in a copied `.env` is the hosted instance,
 not yours.
 
 [AGENTS.md](AGENTS.md) is the full integration reference — signing, endpoints,
-and the CLI. The grammar is flat: `a2a propose "Title" --to beta`,
-`a2a send <id> --content '{...}'`.
+and the CLI. The grammar is flat: `holloway propose "Title" --to beta`,
+`holloway send <id> --content '{...}'`.
 
 ---
 
@@ -243,7 +243,7 @@ then the choice is rewriting their work or not relicensing at all.
 - **Documentation in the same commit as the behavior.** Not a follow-up PR. See
   below; the hook checks it.
 - **Every CLI invocation you write into a doc actually parses.** Check it
-  against `skill/scripts/a2a --help`. Documentation that teaches a command
+  against `skill/scripts/holloway --help`. Documentation that teaches a command
   grammar the CLI does not have is worse than no documentation: it is confidently
   wrong, and it has happened here before.
 - **Comments explain why, not what.** This codebase writes down the incident
@@ -285,7 +285,7 @@ This changed recently. What is true now:
 - **The changelog is generated** from every non-bump commit since the last bump,
   grouped by conventional-commit prefix. A commit that gets batched into a later
   release is picked up there rather than lost.
-- **Every tag becomes a [release](https://github.com/montytorr/a2a-comms/releases)**,
+- **Every tag becomes a [release](https://github.com/montytorr/holloway/releases)**,
   with that version's changelog section as its notes. A tag is a pointer; the
   releases page is where someone who has never seen this repository finds out
   what changed. `scripts/publish-release.sh` does it on every deploy, and did
@@ -305,7 +305,7 @@ it in bug reports.
 ## Post-change discipline
 
 > Everything above is for contributors. Everything below is the maintainer
-> checklist: A2A Comms documents the same behavior in a repository file, a
+> checklist: Holloway documents the same behavior in a repository file, a
 > dashboard page, a CLI help banner and a skill file, and when those disagree,
 > an agent is told to do something the API now refuses. Walk it after any change
 > that alters behavior. Skip an item only if it is genuinely not affected.
@@ -388,7 +388,7 @@ that does not move is a page that does not update.
 - [ ] `AGENTS.md` — full agent integration reference
 - [ ] `docs/cli.md` — CLI commands, flags, new error codes, response headers
 - [ ] `README.md` — if architecture or setup changed
-- [ ] Every CLI invocation you added parses against `skill/scripts/a2a --help`
+- [ ] Every CLI invocation you added parses against `skill/scripts/holloway --help`
 
 ### 3. Dashboard TSX pages
 
@@ -402,13 +402,14 @@ that does not move is a page that does not update.
 ### 4. Skill & CLI
 
 - [ ] `skill/SKILL.md` — OpenClaw skill doc (commands, examples, version notes)
-- [ ] CLI help text in `skill/scripts/a2a` if new subcommands added — the usage
+- [ ] CLI help text in `skill/scripts/holloway` if new subcommands added — the usage
       banner at the top, not only the argparse help
-- [ ] `npm run skill:install` — push SKILL.md, README.md and `scripts/a2a` into
-      the agent runtime at `~/clawd/skills/a2a-comms`. It is a **copy, not a
+- [ ] `npm run skill:install` — push SKILL.md, README.md and `scripts/holloway` into
+      the agent runtime at `~/clawd/skills/holloway`. It is a **copy, not a
       symlink**: that directory also holds scripts kept deliberately outside
-      this repo (`a2a-reactor`, `a2a-expire-sweep`, `a2a-webhook-receiver`,
-      `a2a-webhook-recovery`, `tests/`), and a directory symlink would hide
+      this repo (`holloway-reactor`, `holloway-expire-sweep`,
+      `holloway-webhook-receiver`, `holloway-webhook-recovery`, `tests/`; the
+      `a2a-*` names are kept as symlinks), and a directory symlink would hide
       them. `npm run skill:check` reports drift without changing anything.
       Skipping this is how an agent ends up being told to do something the API
       now refuses.
@@ -416,7 +417,7 @@ that does not move is a page that does not update.
 ### 5. Build & deploy
 
 - [ ] `npm run build` passes (or Docker build if touching infra)
-- [ ] Smoke test: `a2a status` returns healthy
+- [ ] Smoke test: `holloway status` returns healthy
 
 Deployment is CI's. A push to `main` runs `.github/workflows/deploy.yml`, which
 runs the gates and then `scripts/ci-deploy.sh` on the host.
@@ -468,14 +469,14 @@ npm run hooks:install
 ```
 
 It checks whether code changed without the documentation this checklist
-requires. By default it **warns** — set `A2A_STRICT_DOCS=1` to **hard block**.
+requires. By default it **warns** — set `HOLLOWAY_STRICT_DOCS=1` to **hard block**.
 
 What it checks:
 
 - Code changed (`src/app/api/`, `src/lib/`, `migrations/`) → at least
   one doc file must be in the diff (README, AGENTS.md, ONBOARDING, dashboard
   pages, docs/)
-- `skill/scripts/a2a` changed → `skill/SKILL.md` must be in the diff
+- `skill/scripts/holloway` changed → `skill/SKILL.md` must be in the diff
 - `reactor/a2a_reactor/` changed → `reactor/README.md` must be in the diff
 - `ops/bin/` changed → at least one doc file must be in the diff
 - **Mirror pairs**: `ONBOARDING-AGENT.md` and its dashboard page must move
@@ -497,13 +498,13 @@ version controlled in `ops/hooks/` and installed by the script above.
 
 ### Event reactor doc sync reminders
 
-When A2A events create dashboard tasks (via `a2a-reactor`), task descriptions
+When Holloway events create dashboard tasks (via `holloway-reactor`), task descriptions
 for work items include a `[Doc sync: CHANGELOG + docs + SKILL.md if code
 changes]` reminder.
 
 ### Sub-agent task descriptions
 
-When spawning sub-agents for A2A Comms work:
+When spawning sub-agents for Holloway work:
 
 1. **Always include this checklist** in the task description
 2. **Verify outputs** — sub-agents claim completion but don't always update

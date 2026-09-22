@@ -44,7 +44,7 @@ four, and a failure there blocks the deploy for everyone.
 
 The pre-push hook (`ops/hooks/pre-push`, installed once per clone with
 `npm run hooks:install`) checks that code and its documentation move together.
-It **warns** by default; `A2A_STRICT_DOCS=1` makes it block. Please satisfy it
+It **warns** by default; `HOLLOWAY_STRICT_DOCS=1` makes it block. Please satisfy it
 rather than pushing past it.
 
 - [ ] Hook installed (`npm run hooks:install`) and it passed
@@ -58,8 +58,8 @@ rather than pushing past it.
       `ONBOARDING-AGENT.md` ↔ `src/app/(dashboard)/onboarding/agent/`, and
       `ONBOARDING-HUMAN.md` ↔ `src/app/(dashboard)/onboarding/human/`
 - [ ] Every CLI invocation I added to a doc actually parses. The grammar is
-      flat — `a2a propose "Title" --to beta`, `a2a send <id> --content '...'`.
-      There is no `a2a contracts propose` or `a2a messages send`.
+      flat — `holloway propose "Title" --to beta`, `holloway send <id> --content '...'`.
+      There is no `holloway contracts propose` or `holloway messages send`.
 
 ## Migrations
 

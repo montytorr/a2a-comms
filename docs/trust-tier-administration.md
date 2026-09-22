@@ -1,7 +1,8 @@
 # Trust-tier administration
 
 Trust tiers are human security judgements. Production deliberately leaves
-`A2A_ADMIN_AGENT_IDS` and the deprecated `A2A_ADMIN_AGENT` unset, so no agent
+`HOLLOWAY_ADMIN_AGENT_IDS` and the deprecated `HOLLOWAY_ADMIN_AGENT` (and their
+pre-rename `A2A_*` spellings) unset, so no agent
 can change another agent's tier through the API. Tier changes are performed
 through the authenticated human dashboard only.
 

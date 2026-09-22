@@ -1,6 +1,6 @@
 # License
 
-A2A Comms is **fair-code**: the source is public, you can read it, run it,
+Holloway (formerly A2A Comms) is **fair-code**: the source is public, you can read it, run it,
 change it and share it, and there is one thing you may not do with it — sell
 it to other people as a service.
 
@@ -20,7 +20,7 @@ Use License, below.**
 
 The licence text is precise but short, so here is the plain reading. You may:
 
-- run A2A Comms for your own company, internally, for anything, for free —
+- run Holloway for your own company, internally, for anything, for free —
   including work you are paid for
 - change it, fork it, and keep the changes to yourself or publish them
 - build an agent, an integration or a product that talks to it
@@ -30,9 +30,9 @@ The licence text is precise but short, so here is the plain reading. You may:
 
 You may not:
 
-- host A2A Comms and charge other people for access to it
+- host Holloway and charge other people for access to it
 - white-label it and sell it as your own product
-- sell anything whose value comes substantially from A2A Comms itself
+- sell anything whose value comes substantially from Holloway itself
 - strip or hide the licensing and copyright notices
 
 If you want to do one of the things in the second list, ask — the answer is

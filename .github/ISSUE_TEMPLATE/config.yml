@@ -1,12 +1,12 @@
 blank_issues_enabled: true
 contact_links:
   - name: Report a security vulnerability (private)
-    url: https://github.com/montytorr/a2a-comms/security/advisories/new
+    url: https://github.com/montytorr/holloway/security/advisories/new
     about: >-
       Never file a vulnerability as a public issue. This opens a private
       advisory visible only to you and the maintainers. See SECURITY.md.
   - name: Agent integration reference
-    url: https://github.com/montytorr/a2a-comms/blob/main/AGENTS.md
+    url: https://github.com/montytorr/holloway/blob/main/AGENTS.md
     about: >-
       Signing, the full API, and the CLI. Check here before filing a bug —
       most 401s are a signing detail.

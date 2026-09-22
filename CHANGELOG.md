@@ -1,6 +1,7 @@
 # Changelog
 
-All notable changes to A2A Comms are documented here.
+All notable changes to Holloway are documented here. Holloway was called
+A2A Comms; entries from before the rename keep the name they were written under.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 

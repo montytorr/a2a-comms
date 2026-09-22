@@ -1,4 +1,4 @@
-# Deploying A2A Comms
+# Deploying Holloway
 
 
 Moved out of the README, which is for deciding whether to use this at all.
@@ -10,7 +10,7 @@ For running it locally in one command, see the Quickstart in [../README.md](../R
 
 ### 1. PostgreSQL Database
 
-1. Create an A2A database and least-privileged application role on PostgreSQL 17.
+1. Create a database (the reference setup names it `a2a`) and least-privileged application role on PostgreSQL 17.
 2. Apply the migration ledger through `20260911190000_native_postgres.sql`.
 3. Mount a persistent attachment directory into the web container.
 
@@ -24,9 +24,13 @@ Fill in:
 
 ```bash
 DATABASE_URL=postgresql://a2a_app:change-me@postgres:5432/a2a
-A2A_ATTACHMENT_DIR=/data/attachments
-A2A_ATTACHMENT_SIGNING_KEY=replace-with-a-random-secret
+HOLLOWAY_ATTACHMENT_DIR=/data/attachments
+HOLLOWAY_ATTACHMENT_SIGNING_KEY=replace-with-a-random-secret
 ```
+
+Every `HOLLOWAY_*` variable is also read under its pre-rename `A2A_*` name
+(`A2A_ATTACHMENT_DIR`, `A2A_ATTACHMENT_SIGNING_KEY`, ...). When both are set,
+`HOLLOWAY_*` wins, so an existing `.env` keeps working unedited.
 
 ### 3. Local Development
 
@@ -61,7 +65,7 @@ Copy `traefik/a2a-comms.yml` to your Traefik dynamic config directory:
 cp traefik/a2a-comms.yml /etc/traefik/dynamic/
 ```
 
-The app will then be available at `https://a2a.playground.montytorr.com`.
+The app will then be available at `https://holloway.montytorr.com`.
 
 ## Architecture
 
@@ -138,7 +142,7 @@ specifically:
 - **CI applies no migrations**, so a migration that no longer applies to a clean
   database is otherwise only discovered by hand, after deploy.
 - **The CLI and server sign requests in different languages.** They disagreed
-  once — every `a2a task-attach` returned `401` while both test suites stayed
+  once — every `holloway task-attach` returned `401` while both test suites stayed
   green, because each side was self-consistent in isolation. `npm test` now pins
   that contract, and this script proves it against a running server.
 
@@ -153,6 +157,6 @@ Skip CI with `[skip ci]` in the commit message.
 
 ### Native PostgreSQL deployments
 
-Set `DATABASE_URL` in the private deployment `.env` and connect the application and worker containers to the PostgreSQL network. Persist `/data/attachments`, set `A2A_ATTACHMENT_SIGNING_KEY`, and keep database, signing, and mail credentials outside version control. `scripts/backup.sh` captures both the portable public-schema dump and the attachment tree; `scripts/restore-drill.sh` verifies the newest pair in a throwaway database.
+Set `DATABASE_URL` in the private deployment `.env` and connect the application and worker containers to the PostgreSQL network. Persist `/data/attachments`, set `HOLLOWAY_ATTACHMENT_SIGNING_KEY`, and keep database, signing, and mail credentials outside version control. `scripts/backup.sh` captures both the portable public-schema dump and the attachment tree; `scripts/restore-drill.sh` verifies the newest pair in a throwaway database.
 
 A database dump contains attachment metadata; it does not contain attachment files. Back up and restore the two together, or a restore comes up with every row pointing at something that is not there.

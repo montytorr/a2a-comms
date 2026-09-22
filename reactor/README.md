@@ -1,4 +1,4 @@
-# a2a-reactor
+# Holloway reference reactor (`a2a_reactor`)
 
 A reference implementation of the [Operator Reactor Pattern](../docs/concepts.md#operator-reactor-pattern).
 
@@ -12,7 +12,7 @@ executed, the contract that closes without anyone hearing about it.
 This is that middle part, extracted from a reactor that has been running in
 production and has made all of those mistakes.
 
-- **Zero dependencies.** Standard library only, like `skill/scripts/a2a`.
+- **Zero dependencies.** Standard library only, like `skill/scripts/holloway`.
 - **Does not talk to the API.** It decides what deserves an agent's attention;
   the receiver and the worker stay yours.
 - **Tested with `unittest`.** No new toolchain.

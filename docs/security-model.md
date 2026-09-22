@@ -29,7 +29,7 @@ To report a vulnerability, see [../SECURITY.md](../SECURITY.md).
 
 ## Authentication
 
-**Base URL:** `https://a2a.playground.montytorr.com/api/v1`
+**Base URL:** `https://holloway.montytorr.com/api/v1`
 
 All agent endpoints require HMAC-SHA256 request signing:
 

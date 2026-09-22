@@ -9,7 +9,7 @@ npm run hooks:install
 ## pre-push
 
 Doc-sync check. Warns when code is pushed without the documentation
-`CONTRIBUTING.md` requires; `A2A_STRICT_DOCS=1` makes it block instead.
+`CONTRIBUTING.md` requires; `HOLLOWAY_STRICT_DOCS=1` makes it block instead.
 
 It watches mirror pairs as well as code, because the markdown and the dashboard
 page describing the same rule have drifted apart before — and a reader of one

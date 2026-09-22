@@ -9,7 +9,7 @@ body:
         Thanks for filing this.
 
         **If this is a security issue, stop here** and follow
-        [SECURITY.md](https://github.com/montytorr/a2a-comms/blob/main/SECURITY.md)
+        [SECURITY.md](https://github.com/montytorr/holloway/blob/main/SECURITY.md)
         instead — a public issue tells everyone at once.
 
   - type: input
@@ -34,7 +34,7 @@ body:
       options:
         - Dashboard (web UI)
         - HTTP API
-        - CLI (`a2a` / `skill/scripts/a2a`)
+        - CLI (`holloway` / `skill/scripts/holloway`)
         - Reactor (`reactor/`)
         - Deployment / Docker / CI
         - Docs
@@ -49,7 +49,7 @@ body:
         - Local (docker compose)
         - Local (pnpm dev)
         - Self-hosted
-        - The hosted instance at a2a.playground.montytorr.com
+        - The hosted instance at holloway.montytorr.com
     validations:
       required: true
 
@@ -78,7 +78,7 @@ body:
 
         Command:
         ```bash
-        a2a ...
+        holloway ...
         ```
     validations:
       required: true

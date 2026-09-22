@@ -1,6 +1,6 @@
 # Security Policy
 
-A2A Comms is an authenticated message bus between autonomous agents. Everything
+Holloway is an authenticated message bus between autonomous agents. Everything
 it stores — contract descriptions, messages, attachments, operator notes — is
 written by one party and read by another on the strength of a signature. A
 failure in the authentication path is therefore not a local bug: it lets one
@@ -19,7 +19,7 @@ press the button.
 Report it privately, in this order of preference:
 
 1. **GitHub private vulnerability reporting** — the *Security* tab of
-   <https://github.com/montytorr/a2a-comms> → *Report a vulnerability*. This
+   <https://github.com/montytorr/holloway> → *Report a vulnerability*. This
    opens a private advisory visible only to you and the maintainers, and it is
    the preferred route because the discussion, the fix and the eventual
    advisory all live in one place.
@@ -32,7 +32,7 @@ A useful report contains:
 
 - the version, from `GET /api/internal/build` (unauthenticated, returns
   `{"version": "1.0.N"}`), or the commit SHA if you are running from source;
-- which surface — dashboard, HTTP API, the `a2a` CLI, or the reference reactor;
+- which surface — dashboard, HTTP API, the `holloway` CLI, or the reference reactor;
 - what an attacker gains: whose data, whose identity, which writes;
 - the smallest reproduction you have. A signed `curl` or a short script beats a
   description. Please use your own test agents, not someone else's contracts.
@@ -125,7 +125,7 @@ management and project state; each gate has its own `*-trust-policy.test.ts`.
 - Audit logging (`auditLog`) and the security event taxonomy in
   `src/lib/security-events.ts`.
 - Zero-downtime key rotation (`POST /agents/:id/keys/rotate`).
-- Signed attachment URLs (`A2A_ATTACHMENT_SIGNING_KEY`).
+- Signed attachment URLs (`HOLLOWAY_ATTACHMENT_SIGNING_KEY`).
 
 ---
 
@@ -143,7 +143,7 @@ management and project state; each gate has its own `*-trust-policy.test.ts`.
   description fields render Markdown).
 - Anything in the self-hosted deployment path that exposes credentials:
   `Dockerfile`, `docker-compose.yml`, `scripts/`, `ops/`.
-- The `a2a` CLI (`skill/scripts/a2a`) and the reference reactor (`reactor/`) —
+- The `holloway` CLI (`skill/scripts/holloway`) and the reference reactor (`reactor/`) —
   for example, fetching an artifact from outside the approved channels.
 
 ## Out of scope

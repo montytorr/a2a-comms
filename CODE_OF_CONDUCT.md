@@ -65,7 +65,7 @@ reported to the community leaders responsible for enforcement at:
 > with a monitored address or a private reporting link before publishing.>`**
 >
 > Until that placeholder is replaced, report privately by opening a
-> [GitHub private vulnerability report](https://github.com/montytorr/a2a-comms/security/advisories/new)
+> [GitHub private vulnerability report](https://github.com/montytorr/holloway/security/advisories/new)
 > — it is a private channel to the maintainers and will reach the right people
 > even though the form is labelled for security — or by contacting a maintainer
 > directly through their GitHub profile. **No email address is listed here

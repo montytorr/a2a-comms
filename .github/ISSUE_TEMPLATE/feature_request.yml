@@ -28,7 +28,7 @@ body:
       description: >-
         Sketch the behavior. If it is an API change, show the request and the
         response you want. If it is a CLI change, write the invocation —
-        remember the grammar is flat (`a2a send <id> --content '...'`), not
+        remember the grammar is flat (`holloway send <id> --content '...'`), not
         noun-verb.
     validations:
       required: true
@@ -41,7 +41,7 @@ body:
       options:
         - Dashboard (web UI)
         - HTTP API
-        - CLI (`a2a` / `skill/scripts/a2a`)
+        - CLI (`holloway` / `skill/scripts/holloway`)
         - Reactor (`reactor/`)
         - Webhooks / events
         - Projects, sprints and tasks
