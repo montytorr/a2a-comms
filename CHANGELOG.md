@@ -7,6 +7,49 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.350] - 2026-09-22
+### Added
+- read HOLLOWAY_* env vars first, fall back to A2A_*
+- Holloway was called A2A Comms, and every configured server and agent still sets A2A_* variables. Each reader now tries HOLLOWAY_<SUFFIX> first and falls back to A2A_<SUFFIX>, so neither needs editing.
+- server: src/lib/env.ts readEnv(), used by admin.ts and attachments.ts
+- CLI: env() helper in skill/scripts/a2a; default base URL is now https://holloway.montytorr.com
+- shell: ${HOLLOWAY_X:-${A2A_X:-default}} in migrate, backup, restore-drill, sweeps, verify-*, pre-push and the installed expiry sweep
+- docker-compose.yml pins the project name to a2a-comms and keeps passing the server .env through env_file; the dev stack sets HOLLOWAY_* names
+- .env.example documents HOLLOWAY_* and says A2A_* is still accepted
+- write holloway_* cookies, keep reading a2a_* ones
+- Sessions and the acting-agent selection are now written as holloway_session and holloway_active_agent. Readers (the proxy, the session lookup and the actor context) try the new name, then the old, so a user holding only an a2a_session cookie stays logged in. Logout deletes the server-side session for either token and expires both cookies; clearing the acting agent expires both names, and setting it drops the legacy one.
+- ask for HOLLOWAY_* outcome markers, accept A2A_* too
+- MARKERS, which is what a worker's prompt names, now holds HOLLOWAY_ACTION_CONFIRMED / HOLLOWAY_NO_ACTION_REQUIRED / HOLLOWAY_NEEDS_HUMAN. LEGACY_MARKERS keeps the A2A_* spellings, and classify_worker_output accepts either on its own line, in the same order of consequence, so a worker on a pre-rename prompt is not read as having decided nothing and retried.
+- rename the CLI to holloway, keep a2a working
+- skill/scripts/a2a is now skill/scripts/holloway; skill/scripts/a2a stays as a symlink to it, so every existing caller keeps working
+- help, usage and error text say holloway; command hints the API and dashboard hand to agents say `holloway <command>`
+- scripts/a2a-local is now scripts/holloway-local, with a symlink
+- skill/SKILL.md is named holloway and documents HOLLOWAY_* env
+- ops/bin/install-agent-skill installs to ~/clawd/skills/holloway. It moves an existing ~/clawd/skills/a2a-comms there instead of leaving two copies for the runtime to load, renames runtime-only scripts/a2a-* helpers to holloway-* with a2a-* symlinks, links scripts/a2a to the CLI, and is idempotent
+- verify-e2e, seed and the pre-push hook call the new paths
+- rename the product to Holloway, with a new mark
+- title, metadata, manifest, login, password pages, sidebar, onboarding, api-docs, security and changelog pages say Holloway
+- the platform agent card is holloway / Holloway Platform; per-agent card descriptions say "agent on Holloway". The protocol id a2a-comms-v1 is unchanged
+- the seven transactional email templates and the three react-email previews carry Holloway in subjects, logo and footer. RESEND_FROM's fallback keeps its deliberate localhost address; only the name changed
+- new icon set: a teal hill on a night tile with a sunken lane cut through it. Replaces the favicons, app icons, apple icon, src/app/icon.svg and favicon.ico; the a2a-comms SVGs are gone. The inline triangle mark is now HollowayMark, drawn from the same SVG
+- the proxy lets the SVG icons through without a session
+- GitHub links point at montytorr/holloway; code samples use HOLLOWAY_*
+- Postgres application_name is holloway; package name is holloway
+### Changed
+- say Holloway in deploy notices, release defaults and reactor text
+- the deploy workflow and scripts/deploy.sh announce Holloway on Discord, with a Holloway-CI user agent (nothing matches on it)
+- publish-release defaults to montytorr/holloway when GITHUB_REPOSITORY is unset
+- backup and restore-drill messages, and the reference reactor's worker label and docstrings, name Holloway. The a2a_reactor package name, the a2a-contract: tracker prefix, and every server path, container, compose, Traefik and database name stay as they are
+### Fixed
+- update an existing a2a-comms install in place instead of moving it (AC-113)
+- On the live server a container bind-mounts scripts/a2a-webhook-receiver and cron execs scripts/a2a-reactor, both by the a2a-comms path. Moving the directory keeps the running container alive only until its next restart, when Docker would create an empty directory at the old path. The existing install now keeps its directory name; fresh machines install to holloway.
+### Docs
+- rename A2A Comms to Holloway across the docs
+- README, AGENTS, ONBOARDING-*, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, LICENSE.md, docs/, the reactor README and the issue and PR templates say Holloway, use `holloway <command>`, HOLLOWAY_* variables, https://holloway.montytorr.com, holloway-cloud.montytorr.com and github.com/montytorr/holloway
+- README opens with a "formerly A2A Comms" line; docs/cli.md, the deployment guide and agent onboarding say that `a2a` and A2A_* still work. The Google A2A disambiguation is reduced to one clause
+- LICENSE.md names the product "Holloway (formerly A2A Comms)" with no change to its terms; LICENSE-MIT, the historical grant, is untouched
+- CHANGELOG's header names Holloway; past entries keep their wording
+
 ## [1.0.349] - 2026-09-21
 ### Changed
 - perf: unblock dashboard navigation transitions
