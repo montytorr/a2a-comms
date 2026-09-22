@@ -37,9 +37,10 @@ test('the conversion agrees with known sRGB anchors', () => {
 });
 
 test('the primary button is legible in BOTH themes', () => {
-  // It was not: the gradient is fixed in both themes while --on-amber flips to
-  // white in light, which measured 1.87:1. The ink is read out of the RULE
-  // rather than assumed, so putting --on-amber back fails this test instead of
+  // It was not: the gradient is fixed in both themes while the solid-face ink
+  // (then --on-amber, now --on-brand-solid) flips to white in light, which
+  // measured 1.87:1. The ink is read out of the RULE rather than assumed, so
+  // putting a flipping ink back fails this test instead of
   // passing it — the first version of this check tested the token it hoped the
   // button used, which would not have caught the bug it was written for.
   const rule = css.match(/\.btn--primary\s*\{([^}]*)\}/);
@@ -79,14 +80,30 @@ test('body text clears AA against its own background, in both themes', () => {
 });
 
 test('every accent reads against the surface it is painted on', () => {
-  // --amber/--mint/--peri/--rose are used as TEXT on their own tinted --*-bg.
+  // --brand/--amber/--mint/--peri/--rose are used as TEXT on their own tinted --*-bg.
   for (const theme of ['dark', 'light'] as const) {
-    for (const hue of ['amber', 'mint', 'peri', 'rose'] as const) {
+    for (const hue of ['brand', 'amber', 'mint', 'peri', 'rose'] as const) {
       const ratio = contrastRatio(rgbOf(`--${hue}`, theme), rgbOf(`--${hue}-bg`, theme));
       assert.ok(
         ratio >= 4.5,
         `--${hue} on --${hue}-bg in ${theme} is ${ratio.toFixed(2)}:1, below the 4.5:1 minimum`,
       );
+    }
+  }
+});
+
+test('brand text and the ink on a solid brand face read in both themes', () => {
+  // --brand is the link colour on the page ground and on white cards, and a
+  // checked box paints --on-brand-solid on a solid --brand face.
+  for (const theme of ['dark', 'light'] as const) {
+    const brand = rgbOf('--brand', theme);
+    for (const [label, other] of [
+      ['--bg-0', rgbOf('--bg-0', theme)],
+      ['--bg-1', rgbOf('--bg-1', theme)],
+      ['--on-brand-solid', rgbOf('--on-brand-solid', theme)],
+    ] as const) {
+      const ratio = contrastRatio(brand, other);
+      assert.ok(ratio >= 4.5, `--brand against ${label} in ${theme} is ${ratio.toFixed(2)}:1`);
     }
   }
 });

@@ -13,7 +13,7 @@
    Two themes, one instrument, deliberately NOT inversions of each other.
 
    DARK (primary, the bare root block below) — a warm-cool near-black operator
-   console: cool blue-black surfaces, lit from the top right by an amber wash.
+   console: cool blue-black surfaces, lit from the top right by a moss wash.
    This is the theme the product is designed in; light follows it, not the
    reverse.
 
@@ -21,7 +21,7 @@
    instrument deck. The ground is cream, not cool grey; cards are pure white
    SHEETS lying on that ground, lifted by a real soft shadow rather than by
    being merely brighter than their surroundings; and the ink is cool, which
-   keeps the dark theme's warm/cool tension rather than flipping it. The amber accent is native to a warm ground, so the brand
+   keeps the dark theme's warm/cool tension rather than flipping it. Moss, a yellow-green, sits naturally on a warm ground, so the brand
    reads as the light source in both themes: dark is the console at night,
    light is the same console under daylight.
 
@@ -45,7 +45,7 @@
   /* Nav row hover and selected faces. These were --bg-1 and --bg-2, which is
      a clear two-step lift off the --bg-inset rail here and almost nothing in
      light, where the rail, bg-1 and bg-2 all sit within 0.04 lightness of each
-     other: the selected page was identifiable only by its amber edge. Named so
+     other: the selected page was identifiable only by its brand edge. Named so
      light can answer differently without moving anything in dark — these two
      values ARE --bg-1 and --bg-2. */
   --nav-hover: oklch(0.17 0.013 250);
@@ -69,19 +69,36 @@
   --fg-3: oklch(0.66 0.012 250);   /*  6.2 : 1 */
   --fg-4: oklch(0.60 0.012 250);   /*  4.9 : 1 */
 
-  /* signals — only 4 hues allowed */
+  /* brand — moss, the product's accent: primary button, links, the selected
+     nav row and tab, checked controls, focus, selection, the brand mark.
+     Base #9ccc65 is oklch(0.789 0.143 130); the ramp sits at hue 125, five
+     degrees yellower, to keep it clear of --mint (165), which means SUCCESS.
+     Moss is never a status colour: a warning stays --amber, a pass stays
+     --mint, and nothing here should be reached for to say "healthy". */
+  --brand: oklch(0.79 0.14 125);                /* 7.18 : 1 on --brand-bg, 10.6 on --bg-0 */
+  --brand-2: oklch(0.68 0.15 125);
+  --brand-bg: oklch(0.30 0.06 125 / 0.35);
+  --brand-line: oklch(0.55 0.11 125 / 0.55);
+  /* Ink on a solid --brand face (a checked box). Flips to white in light,
+     where solid --brand is a mid-dark swatch. */
+  --on-brand-solid: oklch(0.18 0.04 125);       /* 10.0 : 1 on --brand */
+  /* Ink for the brand gradient, which is deliberately identical in both themes.
+     --on-brand-solid cannot serve here: it correctly flips to white in light —
+     but .btn--primary does not use --brand, it uses a fixed bright gradient.
+     White on the old amber gradient measured 1.87:1, on the most prominent
+     control in the product, and moss is a light hue with the same trap
+     (white on #9ccc65 is ~1.9:1). Dark ink is right in both themes. */
+  --on-brand: oklch(0.18 0.04 125);
+
+  /* signals — only 4 hues allowed. Amber is STATUS only: warning, pending,
+     stale, needs-attention, waiting. It was also the brand accent until the
+     moss rebrand, and the two meanings were split so a warning never turns
+     green. */
   --amber: oklch(0.80 0.155 65);
   --amber-2: oklch(0.68 0.16 55);
   --amber-bg: oklch(0.30 0.06 65 / 0.35);
   --amber-line: oklch(0.55 0.12 60 / 0.55);
   --on-amber: oklch(0.18 0.04 60);
-  /* Ink for the brand gradient, which is deliberately identical in both themes.
-     --on-amber cannot serve here: it correctly flips to white in light, where
-     solid --amber is a mid-dark swatch — but .btn--primary does not use
-     --amber, it uses a fixed bright gradient. White on that measured 1.87:1,
-     on the most prominent control in the product. Amber is a light hue and
-     white-on-amber is a contrast trap; dark ink is right in both themes. */
-  --on-brand: oklch(0.18 0.04 60);
   --on-mint: oklch(0.18 0.04 165);
   --on-peri: oklch(0.18 0.04 265);
   --on-rose: oklch(0.18 0.05 25);
@@ -104,7 +121,7 @@
 
   /* focus ring and the inset hairline that makes a raised surface read as
      raised. Both were repeated as literals across the components. */
-  --focus-ring: oklch(0.70 0.16 60 / 0.15);
+  --focus-ring: oklch(0.72 0.14 125 / 0.15);
   --highlight: oklch(1 0 0 / 0.05);
   /* Zebra stripe for dense tables: a touch darker than --bg-1, not a new surface. */
   --bg-stripe: oklch(0.155 0.013 250 / 0.5);
@@ -115,6 +132,8 @@
      say how a lit indicator looks on its own ground. */
   --glow-amber: oklch(0.70 0.16 60 / 0.6);
   --glow-mint: oklch(0.70 0.13 165 / 0.6);
+  /* Not an LED: the halo on the navigation progress bar, a brand object. */
+  --glow-brand: oklch(0.70 0.14 125 / 0.6);
   --glow-rose: oklch(0.65 0.15 25 / 0.6);
 
   /* A background-image in a data: URI cannot read a custom property, so the
@@ -131,24 +150,23 @@
   --shadow-strong: oklch(0 0 0 / 0.5);
 
   /* ── brand mark ──────────────────────────────────────────────────────────
-     The square tile behind the amber chevron glyph, in the sidebar and on
-     every auth page. It was a neutral grey gradient in both themes, which
-     made the one piece of pure identity in the product the one piece with no
-     colour in it.
+     A square tile for a brand glyph. The sidebar and auth pages now draw the
+     Holloway mark (components/holloway-mark.tsx), which carries its own
+     night tile, so nothing consumes this token today; it is kept in the
+     brand colour so it cannot come back amber.
 
-     It is now an amber-lit instrument tile: a hard ink-to-bronze diagonal
-     with a warm specular highlight off the top-left corner, so the tile looks
-     lit by the same amber the console is lit by. The geometry and light
-     direction are identical in both themes and only the polarity changes —
-     anodised bronze at night, gold leaf by day — which is what lets it read
-     as one object across a theme switch. The glyph stays var(--amber) and
-     clears 3:1 against every stop of the tile in both themes. */
+     A moss-lit instrument tile: a hard ink-to-moss diagonal with a specular
+     highlight off the top-left corner. The geometry and light direction are
+     identical in both themes and only the polarity changes — dark moss at
+     night, pale lichen by day — so it reads as one object across a theme
+     switch. A var(--brand) glyph clears 3:1 against every stop of the tile
+     in both themes (dark 3.7 / 7.5 / 10.3; light 4.9 / 4.0 / 5.7). */
   --brand-mark:
-    radial-gradient(130% 130% at 16% 4%, oklch(0.46 0.10 72 / 0.85), transparent 58%),
-    linear-gradient(152deg, oklch(0.29 0.055 68), oklch(0.165 0.022 258));
+    radial-gradient(130% 130% at 16% 4%, oklch(0.46 0.10 125 / 0.85), transparent 58%),
+    linear-gradient(152deg, oklch(0.29 0.055 125), oklch(0.165 0.022 258));
 
   /* ambient wash behind the shell */
-  --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.30 0.04 65 / 0.10), transparent 60%),
+  --wash: radial-gradient(1200px 600px at 80% -10%, oklch(0.30 0.04 125 / 0.10), transparent 60%),
           radial-gradient(900px 500px at -10% 110%, oklch(0.28 0.03 250 / 0.18), transparent 60%);
 
   /* fonts */
@@ -224,8 +242,8 @@
       while text, lines and scrims stay at hue 250. Dark is a cool room lit
       warm; light is a warm sheet marked in cool ink. The tension survives the
       switch, which is what stops light reading as the "off" state of dark.
-      It also makes amber native here: on the old cool-grey ground every amber
-      accent read as a stain on the page.
+      It also makes the accents native here: on the old cool-grey ground every
+      warm accent read as a stain on the page.
    2. CARDS ARE SHEETS. --bg-1 is pure white and the only surface brighter
       than the ground; it earns its separation from a real soft shadow
       (--shadow-card) plus a crisper hairline, the way paper on a desk does.
@@ -276,6 +294,15 @@
   --fg-3: oklch(0.50 0.014 250);   /*  5.6 : 1 */
   --fg-4: oklch(0.535 0.014 250);  /*  4.8 : 1 — the faintest ink offered */
 
+  /* Moss by day. The dark --brand is a pastel that measures ~1.9:1 on white,
+     so the light swatch is a deep olive that carries text: 5.70 : 1 on white,
+     and white ink on it for a solid face (a checked box) at the same 5.70. */
+  --brand: oklch(0.505 0.115 125);
+  --brand-2: oklch(0.465 0.115 125);
+  --brand-bg: oklch(0.925 0.075 125);   /* 4.66 : 1 with --brand as text */
+  --brand-line: oklch(0.720 0.120 125);
+  --on-brand-solid: oklch(1 0 0);
+
   --amber: oklch(0.505 0.145 65);
   --amber-2: oklch(0.465 0.150 55);
   --amber-bg: oklch(0.925 0.080 65);   /* 4.66 : 1 with --amber as text */
@@ -299,7 +326,7 @@
   --rose-bg: oklch(0.935 0.070 25);    /* 5.16 : 1 */
   --rose-line: oklch(0.720 0.130 25);
 
-  --focus-ring: oklch(0.505 0.145 65 / 0.25);
+  --focus-ring: oklch(0.505 0.115 125 / 0.25);
   /* White, not black. `inset 0 0 0 1px var(--highlight)` is a top-light
      highlight; inverting it to black drew a grubby line inside every raised
      surface, which is the single tell that a light theme was made by negation. */
@@ -312,6 +339,7 @@
      glow — a 0.70-lightness bloom simply disappears here. */
   --glow-amber: oklch(0.620 0.160 65 / 0.35);
   --glow-mint: oklch(0.580 0.140 165 / 0.32);
+  --glow-brand: oklch(0.620 0.140 125 / 0.35);
   --glow-rose: oklch(0.580 0.190 25 / 0.35);
 
   --select-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235d646b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -325,17 +353,17 @@
     0 8px 24px -12px oklch(0.45 0.030 255 / 0.16);
   --shadow-strong: oklch(0.30 0.030 255 / 0.18);
 
-  /* Gold leaf: the same tile, the same light direction, the other polarity. */
+  /* Pale lichen: the same tile, the same light direction, the other polarity. */
   --brand-mark:
     radial-gradient(130% 130% at 16% 4%, oklch(1 0 0 / 0.85), transparent 56%),
-    linear-gradient(152deg, oklch(0.945 0.050 80), oklch(0.875 0.075 62));
+    linear-gradient(152deg, oklch(0.945 0.050 118), oklch(0.875 0.075 128));
 
-  /* Sheet-light from above, a warm brand flare at the top right, a cool bounce
+  /* Sheet-light from above, a moss brand flare at the top right, a cool bounce
      off the bottom-left floor. The old light wash was the dark wash with its
      stops lightened, which painted two grey-blue clouds across a white page;
      the brightest layer here is white, so the page is LIT rather than shaded. */
   --wash:
-    radial-gradient(760px 420px at 86% -8%, oklch(0.86 0.090 72 / 0.22), transparent 58%),
+    radial-gradient(760px 420px at 86% -8%, oklch(0.86 0.090 120 / 0.22), transparent 58%),
     radial-gradient(1200px 640px at 50% -22%, oklch(1 0 0 / 0.90), transparent 64%),
     radial-gradient(980px 520px at -8% 112%, oklch(0.80 0.035 258 / 0.14), transparent 62%);
 }
@@ -368,6 +396,11 @@
   --color-fg-3: var(--fg-3);
   --color-fg-4: var(--fg-4);
 
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-line: var(--brand-line);
+  --color-on-brand-solid: var(--on-brand-solid);
   --color-amber: var(--amber);
   --color-amber-2: var(--amber-2);
   --color-amber-bg: var(--amber-bg);
@@ -487,7 +520,7 @@ body::before {
   z-index: 0;
 }
 
-::selection { background: var(--amber-bg); color: var(--fg-0); }
+::selection { background: var(--brand-bg); color: var(--fg-0); }
 
 /* ══════════════════════════════════════════════
    SCROLLBARS
@@ -660,20 +693,21 @@ body::before {
 .btn:hover { background: var(--bg-3); border-color: var(--line-strong); color: var(--fg-0); }
 /* The one rule in the file that paints colour literals instead of tokens, and
    it has to stay that way: the brand button is deliberately the SAME bright
-   amber in both themes — it is the product's one fixed object, and a token
+   moss in both themes — it is the product's one fixed object, and a token
    would let it drift — and color-contrast.test.ts reads these stops out of
    this rule by regex to measure --on-brand against them. Move them into a
    token and the test that exists to guard this exact control stops seeing it.
-   Both stops, and both hover stops, clear 7:1 against --on-brand. */
+   Both stops, and both hover stops, clear 7:1 against --on-brand
+   (11.9 / 8.5, hover 13.6 / 9.8). */
 .btn--primary {
-  background: linear-gradient(180deg, oklch(0.82 0.16 65), oklch(0.72 0.16 60));
+  background: linear-gradient(180deg, oklch(0.84 0.15 125), oklch(0.74 0.15 125));
   color: var(--on-brand);
-  border-color: oklch(0.62 0.16 60);
+  border-color: oklch(0.62 0.14 125);
   font-weight: 600;
-  box-shadow: 0 1px 0 oklch(0.95 0.10 65 / 0.4) inset, 0 4px 12px oklch(0.40 0.10 60 / 0.25);
+  box-shadow: 0 1px 0 oklch(0.95 0.08 125 / 0.4) inset, 0 4px 12px oklch(0.40 0.09 125 / 0.25);
 }
 .btn--primary:hover {
-  background: linear-gradient(180deg, oklch(0.86 0.16 65), oklch(0.76 0.16 60));
+  background: linear-gradient(180deg, oklch(0.88 0.15 125), oklch(0.78 0.15 125));
   color: var(--on-brand);
 }
 .btn--ghost { background: transparent; border-color: transparent; color: var(--fg-2); }
@@ -723,7 +757,7 @@ body::before {
 .nav-item:hover { background: var(--nav-hover); color: var(--fg-1); }
 .nav-item--active {
   background: var(--nav-active);
-  border-left-color: var(--amber);
+  border-left-color: var(--brand);
   color: var(--fg-0);
   font-weight: 500;
 }
@@ -745,7 +779,7 @@ body::before {
 /* Checkboxes and radios are native controls with no class of their own; this is
    the only way they follow the theme rather than the browser's default blue. */
 input[type="checkbox"], input[type="radio"] {
-  accent-color: var(--amber);
+  accent-color: var(--brand);
 }
 
 .cp-input, .cp-select, .cp-textarea {
@@ -810,7 +844,7 @@ input[type="checkbox"], input[type="radio"] {
   height: 9px;
   transform: scale(0);
   transition: transform 0.12s ease;
-  background: var(--on-amber);
+  background: var(--on-brand-solid);
   clip-path: polygon(14% 45%, 0 60%, 39% 100%, 100% 20%, 85% 5%, 37% 70%);
 }
 .cp-check[type="radio"]::before {
@@ -820,14 +854,14 @@ input[type="checkbox"], input[type="radio"] {
   height: 6px;
 }
 .cp-check:checked {
-  background: var(--amber);
-  border-color: var(--amber);
+  background: var(--brand);
+  border-color: var(--brand);
 }
 .cp-check:checked::before { transform: scale(1); }
 .cp-check:hover:not(:disabled) { border-color: var(--line-strong); }
 .cp-check:focus-visible {
   outline: none;
-  border-color: var(--amber);
+  border-color: var(--brand);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .cp-check:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -836,7 +870,7 @@ input[type="checkbox"], input[type="radio"] {
    alpha on a white field: present in the DOM, invisible on screen. */
 .cp-input:focus, .cp-select:focus, .cp-textarea:focus {
   outline: none;
-  border-color: var(--amber);
+  border-color: var(--brand);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .cp-input::placeholder, .cp-textarea::placeholder { color: var(--fg-3); }
@@ -928,7 +962,7 @@ input[type="checkbox"], input[type="radio"] {
   border-right: none;
 }
 .cp-tab:hover { color: var(--fg-1); }
-.cp-tab--active { color: var(--fg-0); border-bottom-color: var(--amber); }
+.cp-tab--active { color: var(--fg-0); border-bottom-color: var(--brand); }
 
 /* segmented control */
 .seg {
@@ -1142,8 +1176,8 @@ input[type="checkbox"], input[type="radio"] {
   inset: 0 0 auto;
   z-index: 100;
   height: 2px;
-  background: var(--amber);
-  box-shadow: 0 0 10px var(--amber);
+  background: var(--brand);
+  box-shadow: 0 0 10px var(--glow-brand);
   transform-origin: left;
   animation: navigation-progress 1.2s ease-in-out infinite;
 }
