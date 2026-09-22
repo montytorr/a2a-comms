@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.351] - 2026-09-22
+### Added
+- moss brand tokens, split from amber status (HOL-115)
+- Amber meant two things: the brand accent and warning/pending status. Introduce --brand, --brand-2, --brand-bg, --brand-line, --on-brand-solid and --glow-brand in an oklch moss ramp (hue 125, base #9ccc65), repoint the primary button gradient, focus ring, selection, active nav/tab, checked controls, accent-color, progress bar, brand-mark and washes at it, and keep --amber* for status only. Light theme uses a deep olive swatch that clears 4.5:1 as text; the contrast test now covers --brand.
+- moss brand in email templates (HOL-115)
+- Logo text, CTA buttons, highlights and card borders move from teal/cyan to moss #9ccc65. White on moss is ~1.9:1, so the buttons take the #0b1220 night ink (10:1). The approval-request CTA and the task priority colours are status and stay as they were. README release badge follows the brand.
+### Changed
+- point brand accents at --brand, leave status on amber (HOL-115)
+- Auth-page links, markdown links and bullets, onboarding hero and step tiles, focus/selected/hover states in the task editor and comments, the email-template picker selection, the attachment drop target and the webhooks empty-state CLI chip move to moss. Warnings, pending, stale, follow-through, loading LEDs, callouts and categorical tones stay amber.
+### Fixed
+- moss Holloway mark and transparent icon set (HOL-115)
+- The previous PNG icons and favicon had opaque white corners, which showed as a white square behind the rounded tile in the browser tab. Replace the whole set (1024/512/256/192, apple-icon, favicon 16/32/48, favicon.ico, SVG) with transparent-cornered moss #9ccc65 versions, add favicon-48 to the metadata, recolour the inline HollowayMark and set the manifest theme_color to moss.
+
 ## [1.0.350] - 2026-09-22
 ### Added
 - read HOLLOWAY_* env vars first, fall back to A2A_*
