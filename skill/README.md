@@ -148,10 +148,12 @@ It copies only `SKILL.md`, `README.md` and `scripts/holloway` (plus the
 `scripts/a2a` symlink to it), and never deletes.
 
 Upgrading from A2A Comms: if `~/clawd/skills/a2a-comms` exists and
-`~/clawd/skills/holloway` does not, the installer moves the directory rather
-than leaving two copies for the runtime to load, and renames any runtime-only
-`scripts/a2a-*` helper to `scripts/holloway-*`, keeping the old name as a
-symlink.
+`~/clawd/skills/holloway` does not, the installer updates the existing
+directory in place and keeps its name. It is not moved, because cron jobs,
+services or container mounts often call into it by path; it is not copied
+either, because the runtime would then load the skill twice. Any runtime-only
+`scripts/a2a-*` helper is renamed to `scripts/holloway-*`, with the old name
+kept as a symlink.
 An existing runtime directory usually also holds scripts that are deliberately
 not in this repo — a private reactor, sweeps, a webhook receiver — and a
 `cp -r` of the whole directory, or a symlink, would clobber or hide them.
