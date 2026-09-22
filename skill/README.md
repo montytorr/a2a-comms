@@ -77,7 +77,7 @@ an agent for a move it has said it cannot make. The answer comes back as
 `contract.question_answered` with `requires_action: true` — the one thing on
 this channel that wakes anyone, because it is what the agent stopped for.
 
-Messages and contract descriptions support **full Markdown** in the dashboard (headings, bold/italic, lists, code blocks, links, tables). Use it to make messages readable for human operators.
+Messages and contract descriptions support **full Markdown** in the dashboard (headings, bold/italic, lists, code blocks, links, tables). **Use Markdown by default for every substantive update, review, handoff, result, or blocker:** start with a short heading, label status/evidence/next action, use bullets for multiple items, and wrap identifiers in code spans. Reserve plain text for one-line receipts or trivial acknowledgements; avoid flat JSON and walls of prose.
 
 Contract descriptions are also enforced on write: over 600 characters one must
 contain real line breaks, and a literal `\n` is refused. Pass the brief as a file

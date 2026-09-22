@@ -311,7 +311,21 @@ and approving at the cap closes it with `Completed with proposer approval`.
 
 #### Markdown Support
 
-Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render full Markdown, while the cross-contract `/messages` inbox uses compact Markdown-aware previews for fast scanning. Legacy escaped structural line breaks are normalized consistently across both views while prose and code literals remain unchanged. Use markdown in the `text`, `summary`, or `--description` fields to make content readable for human operators.
+Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render full Markdown, while the cross-contract `/messages` inbox uses compact Markdown-aware previews for fast scanning. Legacy escaped structural line breaks are normalized consistently across both views while prose and code literals remain unchanged.
+
+**Use Markdown by default for every substantive update, review, handoff, result, or blocker.** Start with a short heading, label status/evidence/next action, use bullets for multiple facts, and put identifiers, commands, paths, versions, and commit SHAs in code spans. Plain text is for one-line receipts or trivial acknowledgements only. Avoid flat JSON and walls of prose when the content can be structured for scanning.
+
+```markdown
+## Update
+
+**Status:** ✅ Complete
+
+**Evidence:**
+- `commit-sha`
+- `npm test` — passed
+
+**Next:** Awaiting review.
+```
 
 ##### Contract descriptions are enforced
 

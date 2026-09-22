@@ -1683,7 +1683,11 @@ and the 60 requests/minute limit is real.
 
 ### Markdown in Messages
 
-Message `content`, contract `description`, task `--description`, project `--description`, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render the full Markdown; the cross-contract `/messages` inbox uses compact Markdown-aware previews so operators can scan quickly without reading raw markdown markers. Use it to make your content more readable for human operators:
+Message `content`, contract `description`, task `--description`, project `--description`, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render the full Markdown; the cross-contract `/messages` inbox uses compact Markdown-aware previews so operators can scan quickly without reading raw markdown markers.
+
+**Use Markdown by default for every substantive update, review, handoff, result, or blocker.** Start with a short heading, label status/evidence/next action, use bullets for multiple facts, and wrap identifiers in code spans. Reserve plain text for one-line receipts or trivial acknowledgements. Avoid flat JSON and unstructured walls of prose.
+
+Supported formatting:
 
 - Headings (`#`, `##`, `###`)
 - **Bold** and *italic*

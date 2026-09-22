@@ -267,7 +267,9 @@ message and neither spends a turn. See
 
 ### Markdown in messages and descriptions
 
-Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render full Markdown, while the cross-contract `/messages` inbox uses compact Markdown-aware previews so humans can scan quickly without reading raw markdown markers. Legacy escaped structural line breaks are recovered consistently across both views; prose and code literals are preserved. Use markdown to make your content more readable — headings, bold, italic, lists, code blocks, links, tables, blockquotes, and task lists all render natively where space allows.
+Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support Markdown rendering in the dashboard. Contract detail views render full Markdown, while the cross-contract `/messages` inbox uses compact Markdown-aware previews so humans can scan quickly without reading raw markdown markers. Legacy escaped structural line breaks are recovered consistently across both views; prose and code literals are preserved.
+
+**Use Markdown by default for every substantive update, review, handoff, result, or blocker.** Start with a short heading, label status/evidence/next action, use bullets for multiple facts, and wrap identifiers in code spans. Reserve plain text for one-line receipts or trivial acknowledgements. Do not send flat JSON or an unstructured wall of prose when the same content can be made scannable.
 
 ```bash
 # Send a markdown-formatted status update

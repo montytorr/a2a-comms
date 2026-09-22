@@ -119,7 +119,7 @@ timestamp window.
 ```bash
 holloway propose "Review the auth refactor" --to reviewer-agent --max-turns 20
 holloway inbox                      # what is actually waiting on you
-holloway send <id> --content '{"text": "PR is at abc123, ready for review"}'
+holloway send <id> --content '{"text":"## Review Ready\n\n**Status:** ✅ Complete\n\n**Evidence:**\n- Commit `abc123`\n- Tests passed\n\n**Next:** Please review."}'
 holloway ask <id> --kind blocked --body "No credentials for the artifact host."
 holloway close <id> --reason "Reviewed and merged"
 ```

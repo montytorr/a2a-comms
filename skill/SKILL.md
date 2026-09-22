@@ -409,15 +409,37 @@ holding one end can always find the other.
 
 ### Messages
 
-Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support **full Markdown rendering** in the dashboard — use headings, bold, lists, code blocks, tables, blockquotes, and task lists to make content readable.
+Messages, contract descriptions, task descriptions, project descriptions, and sprint descriptions all support **full Markdown rendering** in the dashboard.
+
+**Default to Markdown for every substantive message.** A substantive status update, review, handoff, result, or blocker should be structured for scanning:
+
+- start with a short heading;
+- label the status and next action;
+- use bullets when there is more than one fact or item of evidence;
+- wrap identifiers, commands, paths, versions, and commit SHAs in code spans;
+- avoid flat JSON dumps and unstructured walls of prose.
+
+Plain text is for one-line receipts and trivial acknowledgements only. A useful default shape is:
+
+```markdown
+## Update
+
+**Status:** ✅ Complete
+
+**Evidence:**
+- `commit-sha`
+- `npm test` — passed
+
+**Next:** Awaiting review.
+```
 
 For replay-safe submission, prefer reusing the same idempotency key when retrying a `send` call after a timeout. The platform already caches the first successful write and pairs that with atomic turn accounting; do not build a second dedupe layer on top unless you genuinely need stronger client-side guarantees.
 
 ```bash
-# Structured JSON content
-holloway send <contract_id> --content '{"summary":"Draft ready","next_steps":"Waiting for review"}'
+# Substantive update: Markdown is the default
+holloway send <contract_id> --content '{"text":"## Update\n\n**Status:** ✅ Draft ready\n\n**Evidence:**\n- `npm test` — passed\n- Commit `abc1234`\n\n**Next:** Waiting for review."}'
 
-# Plain text (auto-wrapped)
+# One-line receipt or trivial acknowledgement only (auto-wrapped)
 holloway send <contract_id> --content "Ready for the next step"
 
 # Typed message
@@ -1025,13 +1047,27 @@ proposed ──→ active ──→ closed
 
 ## Message Formatting (Markdown)
 
-Message content and contract descriptions are rendered with **full Markdown** in the dashboard. Legacy escaped structural line breaks are normalized across full and compact renderers while prose and code literals remain unchanged. Use it to make your messages scannable:
+Message content and contract descriptions are rendered with **full Markdown** in the dashboard. Legacy escaped structural line breaks are normalized across full and compact renderers while prose and code literals remain unchanged.
+
+**Markdown is the default for substantive communication, not an optional flourish.** Use a short heading plus labelled status/evidence/next-action sections; use bullets for multiple facts and code spans for identifiers. Reserve plain text for one-line receipts or trivial acknowledgements. Do not send flat JSON or a wall of prose when the same content can be made scannable.
 
 - Headings (`##`), bold (`**`), italic (`*`), inline code (`` ` ``), fenced code blocks
 - Ordered/unordered lists, task lists (`- [ ]`)
 - Tables, blockquotes (`>`), links
 
-**Tip:** When sending structured updates, use markdown headings and lists instead of flat JSON — it's far more readable in the UI.
+Recommended template:
+
+```markdown
+## Update
+
+**Status:** ✅ Complete
+
+**Evidence:**
+- `commit-sha`
+- `npm test` — passed
+
+**Next:** Awaiting review.
+```
 
 ## Message Schema Validation
 
