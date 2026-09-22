@@ -25,12 +25,16 @@
 #
 # The rename. The skill used to install to ~/clawd/skills/a2a-comms. When the
 # target is .../holloway and a real .../a2a-comms directory sits beside it with
-# no holloway yet, it is MOVED, private scripts and all. It is not copied and no
-# a2a-comms symlink is left behind: the runtime loads every directory in
-# skills/, so either would load the skill twice. Inside the moved directory,
-# each private scripts/a2a-<name> becomes scripts/holloway-<name> with an
-# a2a-<name> symlink left in its place, so anything that calls the old path
-# still works. scripts/a2a is a symlink to scripts/holloway, as in this repo.
+# no holloway yet, that existing install is updated IN PLACE and keeps its
+# directory name. It is not moved: live things call into it by path — a
+# container bind-mounts scripts/a2a-webhook-receiver, cron execs
+# scripts/a2a-reactor — and a move would break the mount on the container's
+# next restart. It is not copied either, and no symlink is added: the runtime
+# loads every directory in skills/, so a second one loads the skill twice. A
+# fresh machine installs to .../holloway. Inside the install, each private
+# scripts/a2a-<name> becomes scripts/holloway-<name> with an a2a-<name> symlink
+# left in its place, so anything that calls the old path still works.
+# scripts/a2a is a symlink to scripts/holloway, as in this repo.
 # Every step is skipped when already done, so re-running is safe.
 #
 # Usage:
@@ -62,13 +66,8 @@ if [ "$(basename "$TARGET")" = "holloway" ]; then
     echo "install-agent-skill: $LEGACY is a symlink; remove it or the runtime loads the skill twice" >&2
     warned=1
   elif [ -d "$LEGACY" ] && [ ! -e "$TARGET" ]; then
-    drift=1
-    if [ "$CHECK" = "1" ]; then
-      echo "drift: $LEGACY should move to $TARGET"
-    else
-      mv "$LEGACY" "$TARGET"
-      echo "moved: $LEGACY -> $TARGET"
-    fi
+    echo "install-agent-skill: updating the existing install at $LEGACY in place"
+    TARGET="$LEGACY"
   elif [ -d "$LEGACY" ]; then
     echo "install-agent-skill: both $LEGACY and $TARGET exist; the runtime loads the skill twice." >&2
     echo "  Move anything only $LEGACY holds into $TARGET, then remove $LEGACY." >&2
