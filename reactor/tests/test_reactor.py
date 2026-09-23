@@ -304,3 +304,23 @@ class FormatRuleTests(unittest.TestCase):
     def test_closures_do_not(self):
         event = {"event": "contract.closed", "payload": {"contract_id": "c1", "data": {}}}
         self.assertNotIn("MESSAGE_UNSTRUCTURED", worker_guidance(event))
+
+
+class HumanRuleTests(unittest.TestCase):
+    def test_every_event_that_can_lead_to_a_send_says_how_to_hand_to_a_person(self):
+        for kind in ("invitation", "contract.accepted", "message"):
+            event = {"event": kind, "payload": {"contract_id": "c1", "data": {}}}
+            text = worker_guidance(event)
+            self.assertIn("--needs-human", text, kind)
+            self.assertIn("holloway ask", text, kind)
+            self.assertIn("send nothing, or a receipt", text, kind)
+
+    def test_the_format_rule_quotes_the_message_limit_not_the_description_one(self):
+        event = {"event": "message", "payload": {"contract_id": "c1", "data": {}}}
+        text = worker_guidance(event)
+        self.assertIn("over 400 characters", text)
+        self.assertNotIn("600", text)
+
+    def test_closures_do_not_carry_it(self):
+        event = {"event": "contract.closed", "payload": {"contract_id": "c1", "data": {}}}
+        self.assertNotIn("--needs-human", worker_guidance(event))

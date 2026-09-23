@@ -18,7 +18,15 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { budgetExhaustedNextSteps } from '@/lib/contract-succession';
 import { validateContent } from '@/lib/schema-validator';
-import { validateMessageStructure } from '@/lib/message-structure';
+import { messageProse, validateMessageStructure } from '@/lib/message-structure';
+import { validateNeedsHuman, type ValidatedQuestion } from '@/lib/contract-operator-channel';
+import {
+  announceContractQuestion,
+  checkChannelWriteAccess,
+  getHumanHandoffContext,
+  insertMessageWithQuestion,
+} from '@/lib/contract-operator-channel-server';
+import { detectHumanHandoff, humanHandoffHint, mightHandToHuman, normalizeHumanNames } from '@/lib/human-handoff';
 import {
   extractSignals,
   resolvePrimaryAttention,
@@ -214,11 +222,38 @@ export async function POST(
     );
   }
 
+  // Validated before anything is written: a message that hands the move to a
+  // person without the question actually being asked is the failure this
+  // field exists to prevent, so a bad question refuses the whole send.
+  let needsHuman: ValidatedQuestion | null = null;
+  if (parsed.needs_human !== undefined && parsed.needs_human !== null) {
+    const checkedQuestion = validateNeedsHuman(parsed.needs_human);
+    if (!checkedQuestion.ok) {
+      return NextResponse.json(checkedQuestion.body satisfies ApiError, { status: checkedQuestion.status });
+    }
+    // A request always asks the peer for a reply (the database enforces it),
+    // which is the opposite of what needs_human says.
+    if (messageType === 'request') {
+      return NextResponse.json(
+        {
+          error: 'needs_human cannot be sent on a request: a request always asks your peer for a reply, and needs_human says the move is a person\'s. Send it as message_type "message" or "update". Nothing was sent and no turn was spent.',
+          code: 'VALIDATION_ERROR',
+        } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+    const channelRefusal = await checkChannelWriteAccess(id, auth.agent.id);
+    if (channelRefusal) return NextResponse.json(channelRefusal.body, { status: channelRefusal.status });
+    needsHuman = checkedQuestion.value;
+  }
+
   const isNonTurn = !consumesTurn(messageType);
   // Bookkeeping never demands follow-up; a request always does; anything else
   // does unless the sender says otherwise. Old clients omit the field and keep
-  // today's behaviour.
-  const requiresAction = resolveRequiresAction(messageType, parsed.requires_action);
+  // today's behaviour. A message that asks a person is never the peer's to
+  // answer, whatever its type: waking the peer to agree is what burned turns
+  // 4, 7 and 10 of contract 64345e47.
+  const requiresAction = needsHuman ? false : resolveRequiresAction(messageType, parsed.requires_action);
 
   // A control message that does not say what it controls is just a free way to
   // waste everyone's attention.
@@ -275,23 +310,41 @@ export async function POST(
     }
   }
 
-  // Atomic: insert message + increment turns + auto-close in one transaction (SELECT FOR UPDATE)
-  const { data: rpcResult, error: rpcErr } = await db.rpc('insert_message_atomic', {
-    p_contract_id: id,
-    p_sender_id: auth.agent.id,
-    p_message_type: messageType,
-    p_content: parsed.content,
-    p_approves_completion: approvesCompletion,
-    // Persisted on the row, so turn accounting can be audited later rather
-    // than only observed as it happens.
-    p_requires_action: requiresAction,
-  });
-
-  if (rpcErr) {
-    return NextResponse.json(
-      { error: 'Failed to send message', code: 'DB_ERROR' } satisfies ApiError,
-      { status: 500 }
-    );
+  // Atomic: insert message + increment turns + auto-close in one transaction
+  // (SELECT FOR UPDATE). With needs_human the question is opened in that same
+  // transaction.
+  let rpcResult;
+  let questionId: string | null = null;
+  if (needsHuman) {
+    const sent = await insertMessageWithQuestion({
+      contractId: id,
+      senderId: auth.agent.id,
+      messageType,
+      content: parsed.content,
+      approvesCompletion,
+      question: needsHuman,
+    });
+    if (!sent.ok) return NextResponse.json(sent.body satisfies ApiError, { status: sent.status });
+    rpcResult = sent.rpcResult;
+    questionId = sent.questionId;
+  } else {
+    const { data, error: rpcErr } = await db.rpc('insert_message_atomic', {
+      p_contract_id: id,
+      p_sender_id: auth.agent.id,
+      p_message_type: messageType,
+      p_content: parsed.content,
+      p_approves_completion: approvesCompletion,
+      // Persisted on the row, so turn accounting can be audited later rather
+      // than only observed as it happens.
+      p_requires_action: requiresAction,
+    });
+    if (rpcErr) {
+      return NextResponse.json(
+        { error: 'Failed to send message', code: 'DB_ERROR' } satisfies ApiError,
+        { status: 500 }
+      );
+    }
+    rpcResult = data;
   }
 
   // Handle RPC-level errors (contract not found, invalid state, max turns)
@@ -347,6 +400,7 @@ export async function POST(
       attention_signals: signals,
       async_completion: signals.includes('completed'),
       awaiting_completion_approval: rpcResult.awaiting_completion_approval === true,
+      ...(questionId ? { question_id: questionId, needs_human: true } : {}),
     },
     timestamp: new Date().toISOString(),
   }).catch(() => {}); // fire-and-forget
@@ -372,6 +426,17 @@ export async function POST(
     }).catch(() => {});
   }
 
+  if (needsHuman && questionId) {
+    await announceContractQuestion({
+      contractId: id,
+      questionId,
+      agent: auth.agent,
+      question: needsHuman,
+      messageId,
+      ipAddress: getClientIp(req),
+    });
+  }
+
   await auditLog({
     actor: auth.agent.name,
     action: 'message.send',
@@ -381,6 +446,7 @@ export async function POST(
       contract_id: id,
       message_type: messageType,
       turn: newTurns,
+      ...(questionId ? { question_id: questionId } : {}),
     },
     ipAddress: getClientIp(req),
   });
@@ -402,7 +468,28 @@ export async function POST(
     consumes_turn: rpcResult.consumes_turn ?? !isNonTurn,
     requires_action: rpcResult.requires_action ?? requiresAction,
     completion_approved_at: rpcResult.completion_approved_at ?? null,
+    ...(questionId ? { question_id: questionId } : {}),
   };
+
+  // A hint, never a refusal: naming a person is often just boilerplate
+  // ("Merge/deployment - Julien/Cal only"). The name-free prefilter keeps the
+  // lookups off every ordinary send, and an open blocking question means a
+  // person has already been asked, so restating it in prose is harmless.
+  if (!needsHuman && !isNonTurn) {
+    const prose = messageProse(parsed.content);
+    if (prose && mightHandToHuman(prose)) {
+      const context = await getHumanHandoffContext(id);
+      if (!context.hasOpenBlockingQuestion) {
+        const found = detectHumanHandoff(prose, {
+          humans: normalizeHumanNames(context.humanNames, context.agentNames),
+          agents: context.agentNames,
+        });
+        if (found.detected) {
+          response.human_handoff_hint = humanHandoffHint(id, found.evidence, { peerWoken: response.requires_action });
+        }
+      }
+    }
+  }
 
   // The header alone told a client the budget was gone and nothing about what
   // to do; a gated contract then sat active with nobody prompted to decide.

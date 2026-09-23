@@ -3,10 +3,11 @@ import { redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { Bell } from 'lucide-react';
 import AutoRefresh from '@/components/auto-refresh';
-import { getAuthUser } from '@/lib/auth-context';
+import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { getDashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { formatDate } from '@/lib/format-date';
 import { PageFrame, EmptyState } from '@/components/atoms';
+import { NotificationCountsSync } from './notification-counts-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,17 +19,21 @@ const kindPillTone: Record<string, string> = {
   'task-blocked-follow-through': 'pill--amber',
   'project-invitation': 'pill--mint',
   'approval-request': 'pill--amber',
+  'agent-question': 'pill--rose',
 };
 
 export default async function NotificationsPage() {
-  const user = await getAuthUser();
-  if (!user) redirect('/login');
+  // Same context and same function as /api/internal/notifications, which feeds
+  // the navigation badge, so the two cannot disagree on scope.
+  const auth = await getAuthActorContext();
+  if (!auth?.user) redirect('/login');
 
   noStore();
-  const { counts, items } = await getDashboardNotificationSummary(user);
+  const { counts, items } = await getDashboardNotificationSummary(auth);
 
   return (
-    <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'projects', 'approvals']}>
+    <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'tasks', 'projects', 'approvals']}>
+      <NotificationCountsSync counts={counts} />
       <PageFrame width="prose">
         {/* Header */}
         <div style={{ marginBottom: '32px' }} className="animate-fade-in">

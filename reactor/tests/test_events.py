@@ -161,3 +161,28 @@ class StaleRunTest(unittest.TestCase):
         # Silence proves the run stopped reporting, not that the work failed.
         self.assertFalse(self._event()["payload"]["data"]["work_failed"])
         self.assertNotIn("failed", triage_event(self._event()).reason)
+
+
+class OperatorChannelEventTest(unittest.TestCase):
+    def _event(self, event_name: str, **data):
+        return {"event": event_name, "payload": {"event": event_name, "contract_id": "c1", "data": data}}
+
+    def test_a_peer_asking_a_person_is_recorded_not_acted_on(self):
+        triage = triage_event(self._event(
+            "contract.question_asked", question_id="q1", kind="blocked", blocking=True,
+            requires_action=False, attention="informational",
+        ))
+        self.assertEqual(triage.disposition, Disposition.RECORD)
+        self.assertFalse(triage.should_wake_worker)
+
+    def test_a_note_from_a_person_is_recorded_not_acted_on(self):
+        triage = triage_event(self._event("contract.note_added", requires_action=False))
+        self.assertEqual(triage.disposition, Disposition.RECORD)
+
+    def test_the_answer_to_your_own_question_still_wakes_you(self):
+        triage = triage_event(self._event("contract.question_answered", requires_action=True))
+        self.assertEqual(triage.disposition, Disposition.ACT)
+
+    def test_a_message_sent_with_needs_human_does_not_wake_the_peer(self):
+        triage = triage_event(message_event(requires_action=False, question_id="q1", needs_human=True))
+        self.assertEqual(triage.disposition, Disposition.RECORD)

@@ -6,11 +6,12 @@ import { getLinkedTask } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContracts } from '@/lib/contract-links';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { outcomeIsSuccess, resolveCloseOutcome, UNAPPROVED_CLOSE_REASON_MIN, type ContractCloseOutcome } from '@/lib/contract-closure';
-import { getNoteAckCounts, getOperatorChannel } from '@/lib/contract-operator-channel-server';
+import { getNoteAckCounts, getOperatorChannel, getQuestionIdsByMessage } from '@/lib/contract-operator-channel-server';
 import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import StatusBadge from '@/components/status-badge';
 import { type Tone } from '@/lib/status-tone';
+import type { OperatorQuestionSummary } from '@/lib/types';
 import CloseContractButton from './close-button';
 import AutoRefresh from '@/components/auto-refresh';
 import MessageCard from './message-card';
@@ -127,6 +128,31 @@ function expectationOf(msg: Pick<ContractMessage, 'message_type' | 'requires_act
 }
 
 /**
+ * The question a message opened with `needs_human`, shown on the message so a
+ * reader of the thread sees that a person was asked, and where to answer.
+ */
+function AskedAPerson({ question }: { question: OperatorQuestionSummary }) {
+  const open = question.status === 'open';
+  return (
+    <a href={`#question-${question.id}`} className={styles.askedPerson} data-open={open ? 'true' : 'false'}>
+      <MessageSquareWarning size={14} aria-hidden="true" />
+      <span className={styles.askedPersonText}>
+        <span>
+          <strong>Asked a person:</strong> {question.body}
+        </span>
+        <span className="dim text-2xs">
+          {open
+            ? `${question.blocking ? 'Blocking · ' : ''}open — answer it in the operator channel`
+            : question.status === 'answered'
+              ? `Answered by ${question.answered_by_name || 'an operator'}`
+              : `Dismissed by ${question.answered_by_name || 'an operator'}`}
+        </span>
+      </span>
+    </a>
+  );
+}
+
+/**
  * System closers are stored as `system:<cause>` so they stay greppable and
  * cannot collide with an agent name. That prefix is for the database, not for
  * a reader — the pill beside it already says "system".
@@ -205,8 +231,16 @@ export default async function ContractDetailPage({
   // Fetched before the turn state is derived, because a blocking question
   // changes whose move it is. It needs the viewer, so it waits for the
   // participants above.
-  const channel = await getOperatorChannel(id, viewerAgentId);
+  const [channel, questionIdsByMessage] = await Promise.all([
+    getOperatorChannel(id, viewerAgentId),
+    getQuestionIdsByMessage(id),
+  ]);
   const ackCounts = await getNoteAckCounts(channel.notes.map((note) => note.id));
+  const questionsById = new Map(channel.questions.map((question) => [question.id, question]));
+  const questionOpenedBy = (messageId: string) => {
+    const questionId = questionIdsByMessage.get(messageId);
+    return questionId ? questionsById.get(questionId) ?? null : null;
+  };
 
   const turnState = viewerAgentId
     ? deriveContractTurnState({
@@ -232,6 +266,13 @@ export default async function ContractDetailPage({
           .map((question) => ({ asked_by_agent_id: question.asked_by_agent_id, kind: question.kind })),
       })
     : null;
+
+  // The header says it for every viewer, including an admin who is not a
+  // participant and so has no turn state. When there is one it is the
+  // authority, so the header and the turn-state line cannot disagree.
+  const waitingOnPerson = turnState
+    ? turnState.awaiting === 'human'
+    : contract.status === 'active' && channel.questions.some((question) => question.status === 'open' && question.blocking);
 
   const attachments = (attachmentsResult.data || []) as Array<Record<string, unknown>>;
   const isObserverParticipant = participants.some((participant) => auth.agentScope.includes(participant.agent?.id || '') && participant.role === 'observer');
@@ -273,6 +314,12 @@ export default async function ContractDetailPage({
             <div className={styles.titleRow}>
               <h1 className="h1">{contract.title}</h1>
               <StatusBadge status={contract.status} size="lg" />
+              {waitingOnPerson && (
+                <a href="#operator-channel" className={styles.waitingOnPerson} title="An agent asked a person and cannot proceed until it is answered.">
+                  <MessageSquareWarning size={13} aria-hidden="true" />
+                  Waiting on a person
+                </a>
+              )}
             </div>
           </div>
           {contract.status === 'active' && !isObserverParticipant && (
@@ -578,6 +625,7 @@ export default async function ContractDetailPage({
                           />
                           <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
                         </div>
+                        {questionOpenedBy(msg.id) && <AskedAPerson question={questionOpenedBy(msg.id)!} />}
                         <div className={styles.messageBody}>
                           <MessageCard content={msg.content} />
                         </div>

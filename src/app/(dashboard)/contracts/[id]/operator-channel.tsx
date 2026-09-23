@@ -49,7 +49,7 @@ export default function OperatorChannel({
   const resolved = questions.filter((q) => q.status !== 'open');
 
   return (
-    <section className={`card ${styles.channel}`} aria-labelledby="operator-channel-heading">
+    <section id="operator-channel" className={`card ${styles.channel}`} aria-labelledby="operator-channel-heading">
       <div className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.icon}><StickyNote size={16} /></span>
@@ -102,6 +102,7 @@ export default function OperatorChannel({
               return (
                 <div
                   key={question.id}
+                  id={`question-${question.id}`}
                   className="col"
                   style={{ gap: 8, padding: 14, borderRadius: 10, border: '1px solid var(--line-2)', background: tone.bg }}
                 >
@@ -225,7 +226,7 @@ export default function OperatorChannel({
             </summary>
             <div className={styles.resolvedList}>
               {resolved.map((question) => (
-                <article key={question.id} className={styles.resolvedItem}>
+                <article key={question.id} id={`question-${question.id}`} className={styles.resolvedItem}>
                   <div className={styles.resolvedMeta}>
                     {question.status === 'answered'
                       ? <Check size={12} style={{ color: 'var(--mint)' }} />

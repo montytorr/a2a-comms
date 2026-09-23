@@ -6,6 +6,9 @@
  */
 
 import { createServerClient } from '@/lib/db/server';
+import { normalizeDatabaseValue, transaction } from '@/lib/db/client';
+import { auditLog } from '@/lib/api-helpers';
+import { deliverWebhooks } from '@/lib/webhooks';
 import {
   isOperatorQuestionKind,
   isUuid,
@@ -13,6 +16,7 @@ import {
   safeIdList,
   summariseChannel,
   type ChannelRefusal,
+  type ValidatedQuestion,
 } from '@/lib/contract-operator-channel';
 import type {
   OperatorChannelCounts,
@@ -374,6 +378,204 @@ export async function createContractQuestion(params: {
     return { ok: false, ...refuse(500, 'Could not record the question.', 'INTERNAL_ERROR', error?.message) };
   }
   return { ok: true, id: (data as { id: string }).id };
+}
+
+/**
+ * Tell everyone a question was asked: the audit trail, and the peers by webhook.
+ * Shared by `holloway ask` and a message sent with `needs_human`, so the two
+ * ways of asking cannot drift apart in what they announce.
+ *
+ * The peers' event is explicitly not action-required: the answer is owed by a
+ * person, not by them, and a reactor that woke an agent for this would wake it
+ * to do nothing.
+ */
+export async function announceContractQuestion(params: {
+  contractId: string;
+  questionId: string;
+  agent: { id: string; name: string };
+  question: ValidatedQuestion;
+  messageId?: string | null;
+  ipAddress?: string;
+}): Promise<void> {
+  const { contractId, questionId, agent, question } = params;
+  await auditLog({
+    actor: agent.name,
+    action: 'contract.question_asked',
+    resourceType: 'contract',
+    resourceId: contractId,
+    details: {
+      question_id: questionId,
+      kind: question.kind,
+      blocking: question.blocking,
+      ...(params.messageId ? { message_id: params.messageId } : {}),
+    },
+    ipAddress: params.ipAddress,
+  });
+
+  const db = createServerClient();
+  const { data: participantRows } = await db
+    .from('contract_participants')
+    .select('agent_id')
+    .eq('contract_id', contractId);
+  const peers = ((participantRows || []) as Array<{ agent_id: string }>)
+    .map((row) => row.agent_id)
+    .filter((agentId) => agentId !== agent.id);
+  if (peers.length === 0) return;
+
+  deliverWebhooks(peers, {
+    event: 'contract.question_asked',
+    contract_id: contractId,
+    data: {
+      question_id: questionId,
+      asked_by: agent.name,
+      asked_by_agent_id: agent.id,
+      kind: question.kind,
+      blocking: question.blocking,
+      body: question.body,
+      ...(params.messageId ? { message_id: params.messageId } : {}),
+      requires_action: false,
+      attention: 'informational',
+    },
+    timestamp: new Date().toISOString(),
+  }).catch(() => {});
+}
+
+/**
+ * Store a message and open the question it hands to a person, or neither.
+ *
+ * One transaction, because the two halves are only correct together: the
+ * message is stored with requires_action false on the promise that a person
+ * has been asked, and a question without its message would show in the
+ * dashboard with nothing in the thread explaining it. The RPC is the same
+ * insert_message_atomic every other send uses, so the turn accounting is
+ * identical.
+ */
+export async function insertMessageWithQuestion(params: {
+  contractId: string;
+  senderId: string;
+  messageType: string;
+  content: Record<string, unknown>;
+  approvesCompletion: boolean;
+  question: ValidatedQuestion;
+}): Promise<
+  | { ok: true; rpcResult: Record<string, unknown>; questionId: string | null }
+  | ({ ok: false } & ChannelRefusal)
+> {
+  try {
+    return await transaction(async (client) => {
+      const { rows } = await client.query<{ result: unknown }>(
+        `select insert_message_atomic(
+           p_contract_id => $1, p_sender_id => $2, p_message_type => $3, p_content => $4,
+           p_approves_completion => $5, p_requires_action => false
+         ) as result`,
+        [params.contractId, params.senderId, params.messageType, params.content, params.approvesCompletion],
+      );
+      const rpcResult = normalizeDatabaseValue(rows[0]?.result ?? {}) as Record<string, unknown>;
+      // A refusal from the RPC (turn cap, state) inserted nothing, so there is
+      // nothing for a question to be about.
+      if (rpcResult.error) return { ok: true as const, rpcResult, questionId: null };
+
+      const inserted = await client.query<{ id: string }>(
+        `insert into contract_questions (contract_id, asked_by_agent_id, kind, body, blocking, message_id)
+         values ($1, $2, $3, $4, $5, $6) returning id`,
+        [
+          params.contractId,
+          params.senderId,
+          params.question.kind,
+          params.question.body,
+          params.question.blocking,
+          rpcResult.message_id,
+        ],
+      );
+      return { ok: true as const, rpcResult, questionId: inserted.rows[0]!.id };
+    });
+  } catch (error) {
+    const pgCode = (error as { code?: string } | null)?.code;
+    // 42703: undefined column. The code shipped before its migration.
+    if (pgCode === '42703') {
+      return {
+        ok: false,
+        ...refuse(
+          500,
+          'needs_human is not available yet: contract_questions.message_id is missing. Apply migrations/20260923120000_contract_question_message_link.sql. Nothing was sent; send without needs_human and use holloway ask meanwhile.',
+          'MIGRATION_MISSING',
+        ),
+      };
+    }
+    return {
+      ok: false,
+      ...refuse(500, 'Could not send the message and open the question. Nothing was sent.', 'DB_ERROR', (error as Error)?.message),
+    };
+  }
+}
+
+/**
+ * Which messages opened which questions, for the thread. Read separately from
+ * the channel rather than added to QUESTION_SELECT, so a database that has not
+ * had the message_id migration yet loses only the "Asked a person" marker and
+ * not the whole operator channel.
+ */
+export async function getQuestionIdsByMessage(contractId: string): Promise<Map<string, string>> {
+  const links = new Map<string, string>();
+  if (!isUuid(contractId)) return links;
+  const db = createServerClient();
+  const { data, error } = await db
+    .from('contract_questions')
+    .select('id, message_id')
+    .eq('contract_id', contractId)
+    .not('message_id', 'is', null);
+  if (error) return links;
+  for (const row of (data || []) as Array<{ id: string; message_id: string | null }>) {
+    if (row.message_id) links.set(row.message_id, row.id);
+  }
+  return links;
+}
+
+/**
+ * What the handoff detector needs about one contract: whether a person has
+ * already been asked (in which case a prose handoff is just a restatement),
+ * and who the people and the agents are.
+ *
+ * The people are the owners of the participating agents, the super admins who
+ * can see every contract, and anyone who has written a note or answered a
+ * question on this one - the same operators the dashboard names.
+ */
+export async function getHumanHandoffContext(contractId: string): Promise<{
+  hasOpenBlockingQuestion: boolean;
+  humanNames: string[];
+  agentNames: string[];
+}> {
+  const db = createServerClient();
+  const [questionsResult, participantsResult, notesResult, adminsResult] = await Promise.all([
+    db.from('contract_questions').select('status, blocking, answered_by_name').eq('contract_id', contractId),
+    db.from('contract_participants').select('agent:agents(name, display_name, owner_user_id)').eq('contract_id', contractId),
+    db.from('contract_notes').select('author_name').eq('contract_id', contractId),
+    db.from('user_profiles').select('display_name').eq('is_super_admin', true),
+  ]);
+
+  const questions = (questionsResult.data || []) as Array<{ status: string; blocking: boolean; answered_by_name: string | null }>;
+  type AgentRow = { name?: string | null; display_name?: string | null; owner_user_id?: string | null };
+  const agents = ((participantsResult.data || []) as Array<{ agent?: AgentRow | AgentRow[] | null }>)
+    .map((row) => one(row.agent))
+    .filter((agent): agent is AgentRow => Boolean(agent));
+
+  const ownerIds = safeIdList(agents.map((agent) => agent.owner_user_id ?? '').filter(Boolean));
+  const { data: owners } = ownerIds.length
+    ? await db.from('user_profiles').select('display_name').in('id', ownerIds)
+    : { data: [] };
+
+  const humanNames = [
+    ...((owners || []) as Array<{ display_name: string | null }>).map((row) => row.display_name),
+    ...((adminsResult.data || []) as Array<{ display_name: string | null }>).map((row) => row.display_name),
+    ...((notesResult.data || []) as Array<{ author_name: string | null }>).map((row) => row.author_name),
+    ...questions.map((row) => row.answered_by_name),
+  ].filter((name): name is string => typeof name === 'string' && name.trim().length > 0);
+
+  return {
+    hasOpenBlockingQuestion: questions.some((row) => row.status === 'open' && row.blocking === true),
+    humanNames,
+    agentNames: agents.flatMap((agent) => [agent.name, agent.display_name]).filter((name): name is string => Boolean(name)),
+  };
 }
 
 /**

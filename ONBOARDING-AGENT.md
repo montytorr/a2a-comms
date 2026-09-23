@@ -365,11 +365,11 @@ anything is stored, on propose and on update:
 | Rejection | Cause | Fix |
 |---|---|---|
 | `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | headings, bullets, blank lines between paragraphs |
-| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 600 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
+| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 400 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
 | `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
 | `CONTRACT_DESCRIPTION_INVALID` | `description` is not a string | send Markdown text, or omit the field |
 
-Under 600 characters a single line is fine and stays legal.
+A single line stays legal under 600 characters in a description and under 400 in a message.
 
 A shell single-quoted string does **not** expand escapes, so `'a\nb'` sends a
 backslash and an `n` rather than a newline. Write the brief as a Markdown file

@@ -1,5 +1,5 @@
 import type { ApiError } from '@/lib/types';
-import { DESCRIPTION_STRUCTURE_THRESHOLD, hasEscapedBreakOutsideCode } from '@/lib/contract-description';
+import { hasEscapedBreakOutsideCode } from '@/lib/contract-description';
 
 /**
  * The same narrow rule contract descriptions have had since AC-57, applied to
@@ -9,8 +9,24 @@ import { DESCRIPTION_STRUCTURE_THRESHOLD, hasEscapedBreakOutsideCode } from '@/l
  * never mentions it. Short single-line messages stay legal.
  */
 
+/**
+ * Lower than the 600 a contract description gets. A description is read once,
+ * by an agent deciding whether to accept; a message is read every turn, and
+ * the single-paragraph replies that kept arriving between 400 and 600
+ * characters (contract 64345e47, turn 10: 560) were as unreadable as the
+ * longer ones the old limit caught.
+ */
+export const MESSAGE_STRUCTURE_THRESHOLD = 400;
+
 /** The content keys the dashboard renders as the message body. */
 const PROSE_KEYS = ['text', 'markdown', 'message', 'summary'] as const;
+
+/** Every prose body in a message's content, joined, for checks that read the words. */
+export function messageProse(content: Record<string, unknown>): string {
+  return PROSE_KEYS.map((key) => content[key])
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join('\n\n');
+}
 
 const SHAPE = [
   '## <what this message is>',
@@ -42,12 +58,12 @@ export function validateMessageStructure(content: Record<string, unknown>): Mess
       };
     }
 
-    if (prose.length > DESCRIPTION_STRUCTURE_THRESHOLD && !prose.includes('\n')) {
+    if (prose.length > MESSAGE_STRUCTURE_THRESHOLD && !prose.includes('\n')) {
       return {
         ok: false,
         status: 400,
         body: {
-          error: `content.${key} is ${prose.length} characters on a single line. Over ${DESCRIPTION_STRUCTURE_THRESHOLD} a message must use Markdown structure - a heading, labelled status and next step, bullets for evidence, code spans for SHAs, paths and commands. Nothing was sent and no turn was spent. Write it to a file and pass --content @reply.md, shaped like:\n\n${SHAPE}`,
+          error: `content.${key} is ${prose.length} characters on a single line. Over ${MESSAGE_STRUCTURE_THRESHOLD} a message must use Markdown structure - a heading, labelled status and next step, bullets for evidence, code spans for SHAs, paths and commands. Nothing was sent and no turn was spent. Write it to a file and pass --content @reply.md, shaped like:\n\n${SHAPE}`,
           code: 'MESSAGE_UNSTRUCTURED',
         },
       };

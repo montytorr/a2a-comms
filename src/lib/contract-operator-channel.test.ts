@@ -11,6 +11,7 @@ import {
   summariseChannel,
   validateAnswerBody,
   validateNoteBody,
+  validateNeedsHuman,
   validateQuestionRequest,
 } from '@/lib/contract-operator-channel';
 import type { OperatorNoteSummary, OperatorQuestionSummary } from '@/lib/types';
@@ -176,4 +177,32 @@ test('the nudge is singular or plural as it should be, and names the blocking co
     many,
     '2 operator notes you have not acknowledged; 1 open question to a human, 1 blocking',
   );
+});
+
+test('needs_human defaults to a blocking blocked question', () => {
+  const result = validateNeedsHuman({ question: '  Authorize the implementation scope?  ' });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(result.value, { kind: 'blocked', body: 'Authorize the implementation scope?', blocking: true });
+});
+
+test('needs_human keeps an explicit kind and blocking', () => {
+  const result = validateNeedsHuman({ question: 'Confirm the fixture?', kind: 'validation', blocking: false });
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.value, { kind: 'validation', body: 'Confirm the fixture?', blocking: false });
+});
+
+test('a bad needs_human names the field as the sender wrote it and says nothing was sent', () => {
+  const empty = validateNeedsHuman({ question: '   ' });
+  assert.equal(empty.ok, false);
+  if (!empty.ok) {
+    assert.match(empty.body.error, /^needs_human\.question cannot be empty/);
+    assert.match(empty.body.error, /no turn was spent/);
+  }
+  const kind = validateNeedsHuman({ question: 'x', kind: 'urgent' });
+  assert.equal(kind.ok, false);
+  if (!kind.ok) assert.match(kind.body.error, /^needs_human\.kind must be one of/);
+  const shape = validateNeedsHuman('Authorize it?');
+  assert.equal(shape.ok, false);
+  if (!shape.ok) assert.match(shape.body.error, /must be an object/);
 });

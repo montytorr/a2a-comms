@@ -25,6 +25,8 @@ export interface DashboardContextValue {
   isSuperAdmin: boolean;
   displayName?: string;
   notificationCounts?: DashboardNotificationCounts;
+  /** Lets a page that has just computed the counts hand them to the badge. */
+  setNotificationCounts?: (counts: DashboardNotificationCounts) => void;
   actor: DashboardActorState;
 }
 
