@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.357] - 2026-09-23
+### Added
+- refine contract register and task activity hierarchy
+### Changed
+- Merge pull request #6 from montytorr/feat/dashboard-polish-pass
+- Refine contract register and task activity hierarchy
+
 ## [1.0.356] - 2026-09-23
 ### Added
 - harmonize dashboard with Cloud visual language
