@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.359] - 2026-09-23
+### Changed
+- Merge pull request #8 from montytorr/fix/display-locale-build
+- Fix dashboard date hydration across production build
+### Fixed
+- embed display locale in dashboard client bundle
+
 ## [1.0.358] - 2026-09-23
 ### Changed
 - Merge pull request #7 from montytorr/fix/ticker-relative-copy
