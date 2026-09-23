@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.355] - 2026-09-23
+### Added
+- expand contract detail into a full-width workspace
+- Move contract context to the left of the conversation, improve mobile ordering, and give closure details a dedicated outcome panel. Refine facts, message readability, and task-link guidance.
+### Changed
+- Merge pull request #3 from montytorr/feat/contract-detail-workspace
+- Expand contract detail into a full-width workspace
+
 ## [1.0.354] - 2026-09-23
 ### Added
 - make contract messages the focus of the detail page
