@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { Contract, ContractStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
-import ContractFilters from './filters';
-import ContractRow from './contract-row';
+import ContractFilters from '../filters';
+import ContractRow from '../contract-row';
 import StatusBadge from '@/components/status-badge';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
@@ -15,7 +15,7 @@ import { getOperatorChannelForContracts } from '@/lib/contract-operator-channel-
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { getLastMessages } from '@/app/api/v1/contracts/_helpers';
 import { CornerUpLeft, FolderGit2, GitBranch, Link2Off, FileText } from 'lucide-react';
-import styles from './contracts-list.module.css';
+import styles from '../contracts-list.module.css';
 
 export const dynamic = 'force-dynamic';
 

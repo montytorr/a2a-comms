@@ -149,19 +149,22 @@ export default async function ContractDetailPage({
   const db = createServerClient();
   noStore();
 
-  if (!user.isSuperAdmin) {
-    const { data: participation } = await db
-      .from('contract_participants')
-      .select('id')
-      .eq('contract_id', id)
-      .in('agent_id', auth.agentScope)
-      .limit(1);
-    if (!participation || participation.length === 0) notFound();
-  }
-
-  const { data: contract, error: contractError } = await db
-    .from('contracts')
-    .select(`
+  // Every read below depends only on the id, so they go out together. They
+  // used to be awaited one after another - nine round trips before the first
+  // byte of the contract - which is most of why opening one felt slow.
+  const [participationResult, contractResult, messagesResult, linkedTask, relatedContracts, attachmentsResult] =
+    await Promise.all([
+      user.isSuperAdmin
+        ? Promise.resolve(null)
+        : db
+            .from('contract_participants')
+            .select('id')
+            .eq('contract_id', id)
+            .in('agent_id', auth.agentScope)
+            .limit(1),
+      db
+        .from('contracts')
+        .select(`
       *,
       proposer:agents!contracts_proposer_id_fkey(id, name, display_name),
       contract_participants(
@@ -169,23 +172,30 @@ export default async function ContractDetailPage({
         agent:agents(id, name, display_name)
       )
     `)
-    .eq('id', id)
-    .single();
+        .eq('id', id)
+        .single(),
+      db
+        .from('messages')
+        .select(`*, sender:agents!messages_sender_id_fkey(id, name, display_name)`)
+        .eq('contract_id', id)
+        .order('created_at', { ascending: true }),
+      getLinkedTask(id),
+      getRelatedContracts(id),
+      db
+        .from('task_attachments')
+        .select('*')
+        .eq('contract_id', id)
+        .order('created_at', { ascending: false }),
+    ]);
 
+  if (participationResult && (!participationResult.data || participationResult.data.length === 0)) notFound();
+
+  const { data: contract, error: contractError } = contractResult;
   if (contractError || !contract) notFound();
 
-  const { data: messages } = await db
-    .from('messages')
-    .select(`*, sender:agents!messages_sender_id_fkey(id, name, display_name)`)
-    .eq('contract_id', id)
-    .order('created_at', { ascending: true });
-
-  const messageList = ((messages || []) as ContractMessage[]).slice().reverse();
+  const messageList = ((messagesResult.data || []) as ContractMessage[]).slice().reverse();
   const { threadMessages, observerNotes } = splitContractMessagesByVisibility(messageList);
   const participants = (contract.contract_participants || []) as ContractParticipant[];
-
-  const linkedTask = await getLinkedTask(id);
-  const relatedContracts = await getRelatedContracts(id);
 
   // Whose move it is, for whichever of this user's agents is in the contract.
   const viewerAgentId =
@@ -193,7 +203,8 @@ export default async function ContractDetailPage({
   const latestMessage = messageList[0] ?? null;
 
   // Fetched before the turn state is derived, because a blocking question
-  // changes whose move it is.
+  // changes whose move it is. It needs the viewer, so it waits for the
+  // participants above.
   const channel = await getOperatorChannel(id, viewerAgentId);
   const ackCounts = await getNoteAckCounts(channel.notes.map((note) => note.id));
 
@@ -222,13 +233,7 @@ export default async function ContractDetailPage({
       })
     : null;
 
-  let attachments: Array<Record<string, unknown>> = [];
-  const { data: contractAttachments } = await db
-    .from('task_attachments')
-    .select('*')
-    .eq('contract_id', id)
-    .order('created_at', { ascending: false });
-  attachments = (contractAttachments || []) as Array<Record<string, unknown>>;
+  const attachments = (attachmentsResult.data || []) as Array<Record<string, unknown>>;
   const isObserverParticipant = participants.some((participant) => auth.agentScope.includes(participant.agent?.id || '') && participant.role === 'observer');
 
   const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
