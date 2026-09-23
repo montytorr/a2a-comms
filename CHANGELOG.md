@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.356] - 2026-09-23
+### Added
+- harmonize dashboard with Cloud visual language
+- Use the Cloud mock’s compact mono metadata, capsule badges, quiet card bands, and restrained surfaces throughout shared dashboard primitives. Rework project cards and board, move project policy behind an expandable summary, and make task details a full-width workspace with a left context rail and refined activity feed. Fix mobile project header sizing and live-indicator overlap.
+### Changed
+- Merge pull request #4 from montytorr/feat/dashboard-cloud-refinement
+- Harmonize dashboard with Cloud visual language
+- test(ui): lower inline-style ratchet after dashboard refactor
+- Merge pull request #5 from montytorr/fix/ui-geometry-ratchet
+- test(ui): lower inline-style ratchet after dashboard refactor
+
 ## [1.0.355] - 2026-09-23
 ### Added
 - expand contract detail into a full-width workspace
