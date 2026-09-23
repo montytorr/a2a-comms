@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { usePersistedToggle } from '@/lib/persisted-toggle';
 import Sidebar from './sidebar';
 import { Topbar } from './topbar';
@@ -19,6 +20,18 @@ interface DashboardShellProps extends DashboardContextValue {
 }
 
 const COLLAPSE_KEY = 'a2a:sidebar-collapsed';
+
+const fetchNotificationCounts = async (signal?: AbortSignal): Promise<DashboardNotificationCounts | null> => {
+  try {
+    const response = await fetch('/api/internal/notifications', { cache: 'no-store', signal });
+    if (!response.ok) return null;
+    const payload = await response.json() as { counts?: DashboardNotificationCounts };
+    return payload?.counts ?? null;
+  } catch {
+    // Header enrichment must never block navigation.
+    return null;
+  }
+};
 
 function DashboardPageContent({ children }: { children: React.ReactNode }) {
   const { pending } = useNavigationFeedback();
@@ -47,22 +60,37 @@ export default function DashboardShell({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [collapsed, toggleCollapsed] = usePersistedToggle(COLLAPSE_KEY);
   const [counts, setCounts] = useState<DashboardNotificationCounts | undefined>(notificationCounts);
+  const pathname = usePathname();
+
+  // The shell lives in the persistent layout and is not remounted by client
+  // navigation, so a count fetched once on mount goes stale for the rest of the
+  // session: answer a question and the badge keeps saying 1 while the page
+  // says 0. Refetch on every navigation and whenever the tab becomes visible.
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
+      const next = await fetchNotificationCounts(controller.signal);
+      if (next && !controller.signal.aborted) setCounts(next);
+    };
+    void load();
+    return () => controller.abort();
+  }, [pathname]);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/internal/notifications', { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() as Promise<{ counts?: DashboardNotificationCounts }> : null)
-      .then((payload) => {
-        if (!cancelled && payload?.counts) setCounts(payload.counts);
-      })
-      .catch(() => { /* Header enrichment must never block navigation. */ });
-    return () => { cancelled = true; };
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const next = await fetchNotificationCounts();
+      if (next) setCounts(next);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   const dashboardContext: DashboardContextValue = {
     isSuperAdmin,
     displayName,
     notificationCounts: counts,
+    setNotificationCounts: setCounts,
     actor,
   };
 

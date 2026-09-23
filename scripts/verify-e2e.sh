@@ -450,6 +450,24 @@ check "an answered question hands the move back to the agent that asked" \
 check "and the answer is readable by the agent that asked" \
   "$(holloway questions "$TS_ID" --status answered)" "Use staging."
 
+# Handing the move to a person in prose notifies nobody. It is sent, never
+# refused, but the sender is told - and told how to ask instead.
+reset_rate_limits
+check "a prose handoff with no question open comes back with the hint" \
+  "$(holloway send "$TS_ID" --content "$(printf '## Scope\n\nNext owner: operator to authorize the next scope')")" \
+  "NOBODY WAS NOTIFIED"
+
+# The fix: ask in the same request. The message must not wake the peer and the
+# question must be linked to it.
+check "send --needs-human asks a person in the same request" \
+  "$(holloway send "$TS_ID" --content "$(printf '## Scope\n\nImplementation needs a decision.')" --needs-human "Authorize the implementation scope?")" \
+  "Your peer will not be woken"
+check "and the contract is now waiting on a person" \
+  "$(holloway contract "$TS_ID")" "WAITING ON A PERSON"
+NH_ROW="$(psql_q -c "select m.requires_action, q.kind, q.blocking from contract_questions q join messages m on m.id = q.message_id where q.contract_id='$TS_ID' and q.body='Authorize the implementation scope?';")"
+check "the message is not action-required and opened a blocking question" "$NH_ROW" "f|blocked|t"
+psql_q -c "update contract_questions set status='dismissed', answered_by_name='E2E Operator', answered_at=now() where contract_id='$TS_ID' and status='open';" >/dev/null
+
 # A question is not a turn: an agent with no budget left still has to be able to
 # say it is stuck, for the same reason a receipt is non-turn.
 psql_q -c "update contracts set current_turns=max_turns where id='$TS_ID';" >/dev/null

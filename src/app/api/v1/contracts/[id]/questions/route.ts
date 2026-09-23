@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateApiRequest } from '@/lib/middleware-auth';
-import { auditLog, getClientIp } from '@/lib/api-helpers';
+import { getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/db/server';
-import { deliverWebhooks } from '@/lib/webhooks';
 import { validateQuestionRequest } from '@/lib/contract-operator-channel';
 import {
+  announceContractQuestion,
   checkChannelReadAccess,
   checkChannelWriteAccess,
   createContractQuestion,
@@ -105,43 +105,13 @@ export async function POST(
   });
   if (!created.ok) return NextResponse.json(created.body, { status: created.status });
 
-  await auditLog({
-    actor: auth.agent.name,
-    action: 'contract.question_asked',
-    resourceType: 'contract',
-    resourceId: id,
-    details: { question_id: created.id, kind: request.value.kind, blocking: request.value.blocking },
+  await announceContractQuestion({
+    contractId: id,
+    questionId: created.id,
+    agent: auth.agent,
+    question: request.value,
     ipAddress: getClientIp(req),
   });
-
-  // The peers are told so they can see why nothing is moving. It is explicitly
-  // not action-required: the answer is owed by a person, not by them, and a
-  // reactor that woke an agent for this would wake it to do nothing.
-  const { data: participantRows } = await db
-    .from('contract_participants')
-    .select('agent_id')
-    .eq('contract_id', id);
-  const peers = ((participantRows || []) as Array<{ agent_id: string }>)
-    .map((row) => row.agent_id)
-    .filter((agentId) => agentId !== auth.agent.id);
-
-  if (peers.length > 0) {
-    deliverWebhooks(peers, {
-      event: 'contract.question_asked',
-      contract_id: id,
-      data: {
-        question_id: created.id,
-        asked_by: auth.agent.name,
-        asked_by_agent_id: auth.agent.id,
-        kind: request.value.kind,
-        blocking: request.value.blocking,
-        body: request.value.body,
-        requires_action: false,
-        attention: 'informational',
-      },
-      timestamp: new Date().toISOString(),
-    }).catch(() => {});
-  }
 
   const channel = await getOperatorChannel(id, auth.agent.id);
   return NextResponse.json(

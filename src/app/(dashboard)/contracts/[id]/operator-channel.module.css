@@ -1,4 +1,4 @@
-.channel { min-width: 0; overflow: hidden; border-color: var(--line-1); }
+.channel { min-width: 0; overflow: hidden; border-color: var(--line-1); scroll-margin-top: var(--space-6); }
 .header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line-1); background: linear-gradient(100deg, var(--peri-bg), var(--bg-1) 70%); }
 .header > button { grid-column: 2; grid-row: 1; }
 .heading { display: flex; grid-column: 1; grid-row: 1; align-items: center; gap: var(--space-2); min-width: 0; }

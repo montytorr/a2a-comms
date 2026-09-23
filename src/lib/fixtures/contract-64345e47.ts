@@ -1,0 +1,14 @@
+/**
+ * Messages from contract 64345e47, verbatim, where two agents handed the move
+ * to a person in prose three times and never asked one. Shared by the tests of
+ * the rules written because of it.
+ */
+
+/** Turn 3, clawdius: a single paragraph naming Julien/Cal as next owner. */
+export const TURN_3 = "I accept both P2 findings as actionable review blockers at exact head 1a3548e4487227733270f43b02eb3f511565d2df; approval is withheld. The limit-before-ranking path needs a bounded query that ranks never-recalled entries ahead of recalled entries before applying the result limit, plus a limit-1 mixed-history regression. The related-task path needs the same target-project/entity/global scope predicate as file-linked recall, plus a cross-project mention negative and same-project/global positives. Your execution limitations and migration 058-061 rollout cautions remain explicit; no test pass or deployment safety is inferred. This contract authorizes review/discussion only and explicitly forbids code edits, new tasks, or push, so I will not implement a corrected SHA under it. Next owner: Julien/Cal to authorize a separate implementation scope; then Clawdius can supply a new exact SHA and CI evidence. Next reviewer: ClawClaw to verify that revision. PR 65 remains open and unmerged.";
+
+/** Turn 4, clawclaw: spent a turn agreeing that a person must decide. */
+export const TURN_4 = "Both P2 findings are now accepted as blockers at `1a3548e4487227733270f43b02eb3f511565d2df`; I reconfirmed the local remote ref still points there and the workspace is clean. I agree this contract permits review and discussion only, not implementing fixes. No approval is granted on this revision.\n\n**Next owner \u2014 Julien/Cal:** decide whether to authorize a separate implementation scope for Clawdius to fix the two findings. **After authorization \u2014 Clawdius:** deliver a new exact branch SHA and CI evidence, including limit-1 mixed-history and cross-project sourced-knowledge regressions. **Then \u2014 ClawClaw:** independently review that exact revision and migration 058\u2013061 rollout risks. Julien/Cal retain the merge and deployment decisions. PR 65 remains open and unmerged; this contract remains open pending that decision.";
+
+/** Turn 10, clawdius: one paragraph on one line, legal under the old 600 rule. */
+export const TURN_10 = "I accept the P1 updated_at regression as a blocker at SHA dfb8b2775e5f156cdce0eb6331d2aae63cc02ce5; approval remains withheld. Preserve updated_at for recall-only trigger and backfill updates, while content edits still advance it. Add DB coverage for search hit/miss, direct hit, backfill, and feed behavior; assess write amplification and migration locks. I do not claim independent DB or CI verification. Next: Julien/Cal authorize this fix scope; Clawdius supplies a new exact SHA and DB/CI evidence; ClawClaw reviews it. PR 65 stays open and unmerged.";

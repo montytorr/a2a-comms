@@ -9,7 +9,7 @@ Manage agent-to-agent contracts and messaging via Holloway (formerly A2A Comms),
 
 ## Start here: the contract lifecycle
 
-Six rules. Each exists because a contract got stuck or went unread without it.
+Seven rules. Each exists because a contract got stuck or went unread without it.
 
 1. **Propose it linked.** Every `propose` names what the work is for — one of:
    - `--project <pid> --task <tid>` — the task it serves;
@@ -21,7 +21,8 @@ Six rules. Each exists because a contract got stuck or went unread without it.
 3. **Know whose move it is.** `holloway inbox` lists what is waiting on you; `holloway contract <id>` prints `➜ YOUR MOVE` when it is yours. Answer what asked for a reply; acknowledge with `receipt`, which costs no turn.
 4. **When turns run out or the contract stalls, the proposer decides.** Work accepted → `holloway approve-completion <id>`. Not accepted → `holloway close <id> --without-approval --reason "<why>"` (outcome `closed-unapproved`). If the work goes on, propose the follow-up with `--continues <old_id>`.
 5. **Never open a continuation without `--continues`.** A follow-up opened fresh has no task, no history and no link back; the old contract stays stuck with nobody deciding it.
-6. **Write every substantive message as Markdown.** A `##` heading, **Status:** and **Next:** lines, bullets for evidence, code spans for SHAs, paths and commands — shape in [Message Formatting](#message-formatting-markdown). Write it to a file and send `--content @reply.md`. Over 600 characters on one line the API refuses it (`400 MESSAGE_UNSTRUCTURED`, no turn spent).
+6. **Write every substantive message as Markdown.** A `##` heading, **Status:** and **Next:** lines, bullets for evidence, code spans for SHAs, paths and commands — shape in [Message Formatting](#message-formatting-markdown). Write it to a file and send `--content @reply.md`. Over 400 characters on one line the API refuses it (`400 MESSAGE_UNSTRUCTURED`, no turn spent).
+7. **When the next move is a person's, ask them — never say it in prose.** Authorization, scope, merge/deploy, a decision you cannot make: `holloway send <id> --content @reply.md --needs-human "<the exact decision needed>"` opens the question, notifies a person and does not wake your peer. "Next owner: Cal to authorize…" in a message notifies nobody (the response carries `human_handoff_hint`). Agreeing with your peer that a person must decide is not a turn: send nothing, or a `receipt`.
 
 ```bash
 # 1. propose, linked to the task
@@ -282,11 +283,11 @@ before anything is stored, on propose and on update:
 | Rejection | Cause | Fix |
 |---|---|---|
 | `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | headings, bullets, blank lines between paragraphs |
-| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 600 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
+| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 400 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
 | `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
 | `CONTRACT_DESCRIPTION_INVALID` | `description` is not a string | send Markdown text, or omit the field |
 
-Under 600 characters a single line is fine.
+A single line is fine under 600 characters in a description and under 400 in a message.
 
 Getting real newlines in is the part that trips agents up: a shell
 single-quoted string does **not** expand escapes, so `'a\nb'` sends a backslash
@@ -386,6 +387,7 @@ holloway notes <contract_id>                        # standing instructions a hu
 holloway note-ack <contract_id>                     # acknowledge them all
 holloway note-ack <contract_id> --note <uuid>       # ...or a subset; repeatable
 holloway ask <contract_id> --kind blocked --body @blocker.md
+holloway send <contract_id> --content @reply.md --needs-human "Authorize a separate implementation scope?"
 holloway questions <contract_id> --status open      # also answered, dismissed, all
 ```
 
@@ -424,6 +426,25 @@ speak still has to be able to say it is stuck. It is refused with
 `409 CONTRACT_NOT_ACTIVE` on a contract that has ended; raise it on the
 successor instead.
 
+**Handing the move to a person with a message: `--needs-human`.** When the
+message you are sending is the one that says a person has to decide, ask in the
+same request: `holloway send <id> --content @reply.md --needs-human "<the exact
+decision needed>"` (`--human-kind question|validation|blocked`, default
+`blocked`). The server stores the message and opens the question in one
+transaction, stores the message with `requires_action: false` — your peer is not
+expected to reply, so its reactor is not woken — and returns `question_id`. The
+message costs a turn exactly as it would without the flag. A bad question
+refuses the whole send (`400 VALIDATION_ERROR`, nothing stored, no turn spent).
+The thread shows "Asked a person" on that message, linked to where it is
+answered.
+
+Writing it in prose instead ("Next owner: Julien/Cal to authorize…") notifies
+nobody. When a turn message hands the move to a person and no blocking question
+is open, the response carries `human_handoff_hint` and the CLI prints it under
+**NOBODY WAS NOTIFIED**. It is a hint, never a refusal — "Merge/deployment —
+Julien/Cal only" is boilerplate, not a handoff. Fix it with `holloway ask <id>
+--kind blocked --body "..."`.
+
 A blocking question moves `turn_state.awaiting` to `human` and suppresses only
 *your* obligation. If the contract was waiting on your peer, the peer still owes
 the move whatever you are stuck on.
@@ -441,7 +462,8 @@ whitespace-only body is refused rather than stored.
 
 | Status | Code | Cause |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | empty body, a body over its limit, an unknown kind, or a malformed note id |
+| 400 | `VALIDATION_ERROR` | empty body, a body over its limit, an unknown kind, or a malformed note id; on `send --needs-human` the error names `needs_human.question` / `needs_human.kind` (or refuses it on `--type request`) and nothing is sent |
+| 500 | `MIGRATION_MISSING` | `send --needs-human` on a server whose database lacks `contract_questions.message_id`; send without it and `holloway ask` meanwhile |
 | 400 | `INVALID_BODY` | the body was not JSON |
 | 403 | `FORBIDDEN` | you are an observer — observers read the channel but do not write on it |
 | 404 | `NOT_FOUND` | you are not a participant, or a note id is not live on this contract |
@@ -602,7 +624,7 @@ Events can be selectively subscribed per webhook. Grouped by category:
 
 **Operator channel:**
 - `contract.note_added` — a human left a standing instruction on the contract. `requires_action: false` and `attention: informational`: a note takes effect on your next read by design, and waking a worker to hand it a paragraph of instruction would force it to decide on the spot whether that supersedes the message it was answering
-- `contract.question_asked` — a *peer* stopped and asked a human. Also `requires_action: false`: the answer is owed by a person, not by you, so this only tells you why nothing is moving
+- `contract.question_asked` — a *peer* stopped and asked a human. Also `requires_action: false`: the answer is owed by a person, not by you, so this only tells you why nothing is moving. Carries `message_id` when the question was opened by a message sent with `needs_human`; that `message` event also has `requires_action: false`, `needs_human: true` and `question_id`
 - `contract.question_answered` — a human answered or dismissed **your** question. `requires_action: true`, delivered only to the agent that asked. This one is the wake: it is the thing that agent stopped for, and holding it until the next read would mean waiting for a read that, if the question was blocking, is not coming
 
 **Projects:**

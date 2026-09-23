@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/db/server';
 import type { AuthUser } from '@/lib/auth-context';
 import type { AuthActorContext } from '@/lib/auth-actor-context';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
+import type { PulseKey } from '@/lib/pulse';
 
 export type NotificationKind =
   | 'contract-invitation'
@@ -39,6 +40,53 @@ export interface DashboardNotificationSummary {
 }
 
 const EMPTY_UUID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * Every domain whose change can add or remove a notification. The page watches
+ * these; missing one means the list goes stale for that category.
+ */
+export const NOTIFICATION_PULSE_KEYS = ['contracts', 'participants', 'tasks', 'projects', 'approvals'] as const satisfies readonly PulseKey[];
+
+/**
+ * The agents whose notifications count. The badge (via the API route) and the
+ * page must resolve this identically, or they disagree whenever an acting agent
+ * is selected.
+ */
+export const resolveNotificationAgentScope = (context: AuthUser | AuthActorContext): string[] => {
+  if ('agentScope' in context) return context.agentScope.length > 0 ? context.agentScope : [EMPTY_UUID];
+  return context.agentIds.length > 0 ? context.agentIds : [EMPTY_UUID];
+};
+
+export interface NotificationGroups {
+  questions: DashboardNotificationItem[];
+  blockers: DashboardNotificationItem[];
+  contracts: DashboardNotificationItem[];
+  tasks: DashboardNotificationItem[];
+  projects: DashboardNotificationItem[];
+  approvals: DashboardNotificationItem[];
+}
+
+/**
+ * Counts and list from the same arrays, so every counted item is listed and
+ * every listed item is counted. There is deliberately no truncation here: a
+ * total the list cannot show is exactly the badge/page disagreement to avoid.
+ */
+export const buildNotificationSummary = (groups: NotificationGroups): DashboardNotificationSummary => {
+  const items = [...groups.questions, ...groups.blockers, ...groups.contracts, ...groups.tasks, ...groups.projects, ...groups.approvals]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return {
+    counts: {
+      contracts: groups.contracts.length,
+      projects: groups.tasks.length + groups.projects.length,
+      blockers: groups.blockers.length,
+      approvals: groups.approvals.length,
+      questions: groups.questions.length,
+      total: items.length,
+    },
+    items,
+  };
+};
 
 type ContractInviteRow = {
   contract_id: string;
@@ -88,9 +136,7 @@ type ApprovalRow = {
 export async function getDashboardNotificationSummary(context: AuthUser | AuthActorContext): Promise<DashboardNotificationSummary> {
   const db = createServerClient();
   const user = 'user' in context ? context.user : context;
-  const agentScope = 'agentScope' in context
-    ? context.agentScope.length > 0 ? context.agentScope : [EMPTY_UUID]
-    : user.agentIds.length > 0 ? user.agentIds : [EMPTY_UUID];
+  const agentScope = resolveNotificationAgentScope(context);
 
   const [contractInvitesRes, assignedTasksRes, projectInvitesRes, blockedTasksRes, approvalsRes, myContractRowsRes] = await Promise.all([
     db
@@ -315,18 +361,12 @@ export async function getDashboardNotificationSummary(context: AuthUser | AuthAc
     meta: 'Sensitive action pending review',
   }));
 
-  const items = [...questionItems, ...blockerItems, ...contractItems, ...taskItems, ...projectItems, ...approvalItems]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 50);
-
-  const counts: DashboardNotificationCounts = {
-    contracts: contractItems.length,
-    projects: taskItems.length + projectItems.length,
-    blockers: blockerItems.length,
-    approvals: approvalItems.length,
-    questions: questionItems.length,
-    total: blockerItems.length + contractItems.length + taskItems.length + projectItems.length + approvalItems.length + questionItems.length,
-  };
-
-  return { counts, items };
+  return buildNotificationSummary({
+    questions: questionItems,
+    blockers: blockerItems,
+    contracts: contractItems,
+    tasks: taskItems,
+    projects: projectItems,
+    approvals: approvalItems,
+  });
 }

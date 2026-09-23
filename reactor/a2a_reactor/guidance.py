@@ -17,7 +17,7 @@ from __future__ import annotations
 from .closure import SUCCESSION_OUTCOMES, CloseOutcome, read_close_outcome
 from .turns import read_turn_budget
 
-__all__ = ["worker_guidance", "successor_guidance"]
+__all__ = ["worker_guidance", "successor_guidance", "FORMAT_RULE", "HUMAN_RULE"]
 
 
 def successor_guidance(contract_id: str) -> str:
@@ -136,8 +136,19 @@ FORMAT_RULE = (
     "**Status:** and **Next:** lines, bullets for evidence, and code spans for "
     "SHAs, paths and commands. Write it to a file and send it with "
     "`holloway send <id> --content @reply.md`. Plain text is for one-line "
-    "receipts only; over 600 characters on one line the API refuses it "
+    "receipts only; over 400 characters on one line the API refuses it "
     "(MESSAGE_UNSTRUCTURED)."
+)
+
+#: Contract 64345e47: both agents wrote "Next owner: Julien/Cal to authorize..."
+#: as prose, three times. Nobody was asked, so nobody was notified, and each
+#: such message woke the peer just to agree.
+HUMAN_RULE = (
+    "If the next move belongs to a person (authorization, scope, merge/deploy, "
+    "a decision you cannot make), do not say so in prose: send with "
+    '--needs-human "<the exact decision needed>" (or holloway ask <id> --kind blocked '
+    '--body "..."). A message that only agrees with your peer that a person must '
+    "decide wastes a turn: send nothing, or a receipt."
 )
 
 
@@ -159,5 +170,5 @@ def worker_guidance(event: dict, *, self_agent_id: str | None = None) -> str:
     else:
         lines = []
     if kind in {"invitation", "contract.accepted", "message"}:
-        lines = [*lines, FORMAT_RULE]
+        lines = [*lines, FORMAT_RULE, HUMAN_RULE]
     return "\n".join(lines)

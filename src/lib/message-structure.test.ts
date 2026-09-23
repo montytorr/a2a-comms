@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { validateMessageStructure } from '@/lib/message-structure';
+import { MESSAGE_STRUCTURE_THRESHOLD, validateMessageStructure } from '@/lib/message-structure';
+import { DESCRIPTION_STRUCTURE_THRESHOLD } from '@/lib/contract-description';
+import { TURN_10 } from '@/lib/fixtures/contract-64345e47';
 
 const wall = 'At exact reviewed SHA b16cd956, I accept the P1 fixture and P2 workload findings as blockers. '.repeat(8);
 
@@ -14,6 +16,22 @@ test('a long single-paragraph message is refused and shown the shape to use', ()
   assert.match(check.body.error, /no turn was spent/);
   assert.match(check.body.error, /--content @reply\.md/);
   assert.match(check.body.error, /\*\*Next:\*\*/);
+});
+
+test('messages get a lower limit than descriptions: 400, not 600', () => {
+  assert.equal(MESSAGE_STRUCTURE_THRESHOLD, 400);
+  assert.equal(DESCRIPTION_STRUCTURE_THRESHOLD, 600);
+  assert.equal(validateMessageStructure({ text: 'x'.repeat(400) }).ok, true);
+  const over = validateMessageStructure({ text: 'x'.repeat(401) });
+  assert.equal(over.ok, false);
+  if (!over.ok) assert.match(over.body.error, /Over 400/);
+});
+
+test('the 555-character single paragraph from contract 64345e47 turn 10 is refused', () => {
+  assert.ok(TURN_10.length > 400 && TURN_10.length < 600, 'legal under the old rule, refused under the new one');
+  const check = validateMessageStructure({ text: TURN_10 });
+  assert.equal(check.ok, false);
+  if (!check.ok) assert.equal(check.body.code, 'MESSAGE_UNSTRUCTURED');
 });
 
 test('every body key the dashboard renders is checked, not only text', () => {

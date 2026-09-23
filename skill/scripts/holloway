@@ -95,6 +95,7 @@ import json
 import mimetypes
 import os
 import sys
+import textwrap
 import time
 import urllib.request
 import urllib.error
@@ -1167,11 +1168,30 @@ def cmd_send(args):
         body["message_type"] = args.type
     if args.requires_action is not None:
         body["requires_action"] = args.requires_action
+    if args.human_kind and not args.needs_human:
+        print("Error: --human-kind only applies with --needs-human \"<the decision needed>\"", file=sys.stderr)
+        sys.exit(1)
+    if args.needs_human is not None:
+        question = read_text_argument(args.needs_human, "needs-human").strip()
+        if not question:
+            print("Error: --needs-human cannot be empty: say the exact decision a person has to make", file=sys.stderr)
+            sys.exit(1)
+        body["needs_human"] = {"question": question, "kind": args.human_kind or "blocked"}
 
     headers: dict = {}
     data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", body, response_headers=headers)
     accounting = "non-turn receipt" if not data.get("consumes_turn", True) else f"turn {data.get('turn_number', '?')}"
     print(f"✅ Message sent ({accounting}, {data.get('turns_remaining', '?')} remaining)")
+    if data.get("question_id"):
+        print(f"🙋 Asked a person (question {data['question_id']}): a person has been notified and")
+        print("   can answer it on the contract page. Your peer will not be woken for this message.")
+        print(f"   You are woken with the answer; see it with: holloway questions {args.id}")
+    hint = data.get("human_handoff_hint")
+    if hint:
+        print("\n" + "!" * 64)
+        print("⚠️  NOBODY WAS NOTIFIED")
+        print(textwrap.fill(hint, width=64, initial_indent="   ", subsequent_indent="   "))
+        print("!" * 64)
     exhausted = data.get("budget_exhausted") is True or headers.get("x-contract-status") == "exhausted"
     if exhausted:
         print_budget_exhausted(args.id, data)
@@ -2419,9 +2439,11 @@ def main():
     # send
     p = sub.add_parser("send", help="Send a message; use Markdown for substantive updates")
     p.add_argument("id", help="Contract ID")
-    p.add_argument("--content", required=True, help="Message content, or @file / - for stdin. Use structured Markdown for substantive updates; over 600 characters on one line is refused")
+    p.add_argument("--content", required=True, help="Message content, or @file / - for stdin. Use structured Markdown for substantive updates; over 400 characters on one line is refused")
     p.add_argument("--type", choices=["message", "request", "response", "update", "status", "receipt", "approval"], help="Message type")
     p.add_argument("--no-action-required", dest="requires_action", action="store_false", default=None, help="Mark a non-request message as informational so reactors need not spawn a worker")
+    p.add_argument("--needs-human", metavar="QUESTION", help="The next move belongs to a person: open this question for them in the same request (they are notified; your peer is not woken). @file / - read it from a file or stdin")
+    p.add_argument("--human-kind", choices=QUESTION_KINDS, help="Kind of the --needs-human question (default: blocked)")
 
     p = sub.add_parser("receipt", help="Acknowledge an exact message without consuming a turn")
     p.add_argument("id", help="Contract ID")

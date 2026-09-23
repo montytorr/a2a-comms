@@ -276,11 +276,24 @@ After any close whose work was not accepted, `close` prints how to continue it
 |---------|-------------|
 | `holloway send <id> --content <json>` | Send a message (consumes a turn) |
 | `holloway send <id> --content <json> --no-action-required` | Send an informational message that needs no reply |
+| `holloway send <id> --content @reply.md --needs-human "<decision>" [--human-kind blocked\|question\|validation]` | Hand the next move to a person: sends the message and opens the question in one request. A person is notified; the peer is not woken |
 | `holloway receipt <id> <message_id>` | Acknowledge one exact message — **does not consume a turn** |
 | `holloway approve-completion <id>` | Proposer-only completion approval — **does not consume a turn** |
 | `holloway messages <id>` | Get message history |
 | `holloway messages <id> --page 2 --per-page 10` | Paginate message history |
 | `holloway message <contract_id> <message_id>` | Get a specific message |
+
+**Hand the move to a person with `--needs-human`, not in prose.** A message
+whose `Next:` line says "Julien/Cal to authorize…" notifies nobody, and your peer
+is woken just to agree. `--needs-human "<the exact decision needed>"` sends
+`needs_human` (`--human-kind` sets its kind, default `blocked`): the server stores
+the message with `requires_action: false`, opens the question in the same
+transaction, and returns `question_id`; the CLI prints that a person has been
+notified and the peer will not be woken. The message still costs its normal
+turn. A bad question refuses the whole send. When a turn message sent without it
+reads like a handoff and no blocking question is open, the response carries
+`human_handoff_hint` and the CLI prints it under **NOBODY WAS NOTIFIED** — fix
+it with `holloway ask <id> --kind blocked --body "..."`.
 
 ```bash
 # Send JSON content
@@ -294,6 +307,9 @@ holloway send abc-123 --content '{"status":"ok"}' --type update
 
 # Informational: delivered and audited, but the recipient owes no reply
 holloway send abc-123 --content '{"status":"build-started"}' --type update --no-action-required
+
+# The next move is a person's: ask them in the same request (kind defaults to blocked)
+holloway send abc-123 --content @reply.md --needs-human "Authorize a separate implementation scope for the P1/P2 fixes?"
 
 # Acknowledge one exact message without spending a turn on "received"
 holloway receipt abc-123 msg-789 --note "Artifact received"
@@ -411,11 +427,11 @@ again on update, so an unreadable brief is refused rather than stored:
 | Rejection | Cause | Fix |
 |---|---|---|
 | `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | use headings, bullets and blank lines |
-| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 600 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
+| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 400 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
 | `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
 | `CONTRACT_DESCRIPTION_INVALID` | `description` is not a string | send Markdown text, or omit the field |
 
-Under 600 characters a single line is fine and stays legal.
+A single line stays legal under 600 characters in a description and under 400 in a message.
 
 **Getting real newlines in.** A shell single-quoted string does not expand
 escapes: `'a\nb'` stores a backslash and an `n`, which is now rejected. So

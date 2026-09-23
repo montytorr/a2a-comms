@@ -205,6 +205,21 @@ def triage_event(
             key,
         )
 
+    # Any other event that says it owes nothing is taken at its word. The
+    # operator channel's contract.question_asked and contract.note_added are
+    # sent with requires_action false: a peer asked a person, or a person left
+    # standing context, and waking a worker for either wakes it to do nothing.
+    if event.get("event") != "message" and (
+        data.get("requires_action") is False or data.get("attention") == "informational"
+    ):
+        if seen_keys is not None and key:
+            seen_keys.add(key)
+        return Triage(
+            Disposition.RECORD,
+            f"{event.get('event', 'event')} is informational; nothing is owed",
+            key,
+        )
+
     if seen_keys is not None and key:
         seen_keys.add(key)
     return Triage(Disposition.ACT, "actionable event", key)

@@ -79,6 +79,7 @@ column|contract_questions|contract_id|uuid|-|NO
 column|contract_questions|created_at|timestamp with time zone|now()|NO
 column|contract_questions|id|uuid|gen_random_uuid()|NO
 column|contract_questions|kind|text|-|NO
+column|contract_questions|message_id|uuid|-|YES
 column|contract_questions|status|text|'open'::text|NO
 column|contracts|close_reason|text|-|YES
 column|contracts|closed_at|timestamp with time zone|-|YES
@@ -373,6 +374,7 @@ constraint|contract_questions|contract_questions_body_check|CHECK ((length(btrim
 constraint|contract_questions|contract_questions_check|CHECK ((((status = 'open'::text) AND (answer IS NULL) AND (answered_at IS NULL)) OR ((status = 'answered'::text) AND (answer IS NOT NULL) AND (answered_at IS NOT NULL)) OR ((status = 'dismissed'::text) AND (answered_at IS NOT NULL))))
 constraint|contract_questions|contract_questions_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
 constraint|contract_questions|contract_questions_kind_check|CHECK ((kind = ANY (ARRAY['question'::text, 'validation'::text, 'blocked'::text])))
+constraint|contract_questions|contract_questions_message_id_fkey|FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE SET NULL
 constraint|contract_questions|contract_questions_pkey|PRIMARY KEY (id)
 constraint|contract_questions|contract_questions_status_check|CHECK ((status = ANY (ARRAY['open'::text, 'answered'::text, 'dismissed'::text])))
 constraint|contracts|contracts_closed_by_kind_check|CHECK (((closed_by_kind IS NULL) OR (closed_by_kind = ANY (ARRAY['agent'::text, 'user'::text, 'system'::text]))))
@@ -552,6 +554,7 @@ index|contract_participants|idx_contract_participants_contract|CREATE INDEX idx_
 index|contract_questions|contract_questions_pkey|CREATE UNIQUE INDEX contract_questions_pkey ON public.contract_questions USING btree (id)
 index|contract_questions|idx_contract_questions_agent|CREATE INDEX idx_contract_questions_agent ON public.contract_questions USING btree (asked_by_agent_id, status)
 index|contract_questions|idx_contract_questions_contract|CREATE INDEX idx_contract_questions_contract ON public.contract_questions USING btree (contract_id, created_at)
+index|contract_questions|idx_contract_questions_message|CREATE INDEX idx_contract_questions_message ON public.contract_questions USING btree (message_id) WHERE (message_id IS NOT NULL)
 index|contract_questions|idx_contract_questions_open|CREATE INDEX idx_contract_questions_open ON public.contract_questions USING btree (contract_id, created_at) WHERE (status = 'open'::text)
 index|contracts|contracts_pkey|CREATE UNIQUE INDEX contracts_pkey ON public.contracts USING btree (id)
 index|contracts|idx_contracts_proposer|CREATE INDEX idx_contracts_proposer ON public.contracts USING btree (proposer_id)

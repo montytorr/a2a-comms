@@ -323,6 +323,14 @@ export interface SendMessageRequest {
   /** Explicitly mark a message as needing no follow-up. Defaults to false for
    *  non-turn types and true otherwise, so old clients keep their behaviour. */
   requires_action?: boolean;
+  /** Hand the next move to a person in the same request: opens a question on
+   *  the operator channel and stores the message with requires_action false,
+   *  because the peer is not expected to answer it. */
+  needs_human?: {
+    question: string;
+    kind?: OperatorQuestionKind;
+    blocking?: boolean;
+  };
 }
 
 export interface RegisterAgentRequest {
@@ -534,6 +542,11 @@ export interface MessageResponse extends Message {
   /** What the sender can do next, worded for their role. Present with
    *  `budget_exhausted`. */
   next_steps?: string[];
+  /** The operator-channel question opened by `needs_human`. */
+  question_id?: string;
+  /** Present when the message hands the move to a person in prose but opened
+   *  no question: says nobody was notified and how to fix it. */
+  human_handoff_hint?: string;
 }
 
 export interface PaginatedResponse<T> {

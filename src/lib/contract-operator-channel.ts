@@ -164,6 +164,42 @@ export function validateQuestionRequest(
   return { ok: true, value: { kind, body: body.value, blocking } };
 }
 
+/**
+ * `needs_human` on a message: the same question, asked in the same request as
+ * the message that hands the move to a person. It defaults to `blocked`, not
+ * `question`, because a sender reaching for it is saying the next move is not
+ * an agent's - which is what blocked means. Errors name the field as the caller
+ * wrote it, so `needs_human.question` rather than the questions route's `body`.
+ */
+export function validateNeedsHuman(
+  input: unknown
+): { ok: true; value: ValidatedQuestion } | ({ ok: false } & ChannelRefusal) {
+  if (input === null || typeof input !== 'object' || Array.isArray(input)) {
+    return {
+      ok: false,
+      ...refuse(
+        400,
+        'needs_human must be an object: { "question": "<the exact decision needed>", "kind": "blocked" }.',
+        'VALIDATION_ERROR',
+      ),
+    };
+  }
+  const raw = input as Record<string, unknown>;
+  const checked = validateQuestionRequest({
+    kind: raw.kind === undefined ? 'blocked' : raw.kind,
+    body: raw.question,
+    blocking: raw.blocking,
+  });
+  if (checked.ok) return checked;
+  return {
+    ...checked,
+    body: {
+      ...checked.body,
+      error: `needs_human.${checked.body.error.replace(/^body\b/, 'question')} Nothing was sent and no turn was spent.`,
+    },
+  };
+}
+
 /* ── shaping ─────────────────────────────────────────────────────────────── */
 
 /**
