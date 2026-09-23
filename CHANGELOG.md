@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.367] - 2026-09-23
+### Changed
+- Merge pull request #17 from montytorr/fix/contract-open-loading
+- fix(ui): opening a contract no longer looks like several loads
+### Fixed
+- opening a contract no longer looks like several loads
+- Traced in a real browser against production. Three things stacked up:
+- The navigation bar looped every 1.2s, snapping from 94% back to 8%, so any wait longer than that read as the page starting to load again. It now makes one forward pass that creeps toward 90%.
+- contracts/loading.tsx sat directly in contracts/, so it was the fallback for [id] too: arriving from /messages showed the LIST skeleton, then the detail skeleton, then the page. The list page and its skeleton move into a (list) route group; URLs are unchanged.
+- The contract page awaited nine reads one after another. The six that depend only on the id now go out together; the operator channel still waits for the viewer.
+
 ## [1.0.366] - 2026-09-23
 ### Added
 - refuse long unstructured contract messages, and carry the format to workers
