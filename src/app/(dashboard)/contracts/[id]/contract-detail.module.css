@@ -50,8 +50,9 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-  gap: var(--space-5);
+  grid-template-columns: minmax(310px, 360px) minmax(0, 1fr);
+  grid-template-areas: 'context conversation';
+  gap: var(--space-6);
   align-items: start;
 }
 
@@ -62,6 +63,9 @@
   flex-direction: column;
   gap: var(--space-4);
 }
+
+.main { grid-area: conversation; }
+.sidebar { grid-area: context; }
 
 .main > :first-child,
 .sidebar > :first-child {
@@ -85,6 +89,8 @@
   overflow-wrap: anywhere;
 }
 
+.fullFact { grid-column: 1 / -1; }
+
 .participants {
   display: flex;
   flex-wrap: wrap;
@@ -107,12 +113,6 @@
   overflow-wrap: anywhere;
 }
 
-.contextDivider {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line-1);
-}
-
 .turnState {
   display: flex;
   flex-wrap: wrap;
@@ -123,7 +123,7 @@
 }
 
 .message {
-  padding: var(--space-5);
+  padding: var(--space-6);
 }
 
 .message > div > :nth-child(2) {
@@ -137,6 +137,148 @@
   gap: var(--space-2);
 }
 
+.messageBody {
+  max-width: 90ch;
+  color: var(--fg-1);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+}
+
+.outcome {
+  --outcome-accent: var(--mint);
+  --outcome-soft: var(--mint-bg);
+  padding: var(--space-5);
+  border-top: 2px solid var(--outcome-accent);
+}
+
+.outcomeCaution {
+  --outcome-accent: var(--rose);
+  --outcome-soft: var(--rose-bg);
+}
+
+.outcomeHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.outcomeIcon {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: var(--radius-3);
+  background: var(--outcome-soft);
+  color: var(--outcome-accent);
+}
+
+.outcomeHeader .sideHeading { margin-bottom: 2px; }
+
+.outcomeTitle {
+  color: var(--fg-0);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.outcomeReason {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--outcome-accent);
+  border-radius: 0 var(--radius-2) var(--radius-2) 0;
+  background: var(--bg-2);
+  color: var(--fg-1);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.outcomeMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line-1);
+}
+
+.metaLabel {
+  margin-bottom: var(--space-1);
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.outcomeValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--fg-1);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.panelHeading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.panelHeading .sideHeading { margin: 0; }
+
+.attention {
+  padding: var(--space-4);
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius);
+  background: var(--amber-bg);
+}
+
+.attentionHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-0);
+  font-size: var(--text-sm);
+}
+
+.attentionHeading svg { flex-shrink: 0; color: var(--amber); }
+
+.attention p {
+  margin: var(--space-2) 0 0;
+  color: var(--fg-2);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.attentionDetails { margin-top: var(--space-3); }
+.attentionDetails summary {
+  width: fit-content;
+  color: var(--amber);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.attentionDetails code {
+  display: block;
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  overflow-x: auto;
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-2);
+  background: var(--bg-0);
+  color: var(--fg-2);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  white-space: pre;
+}
+
 .messageDate {
   margin-left: auto;
   color: var(--fg-3);
@@ -148,7 +290,7 @@
 
 @media (max-width: 1050px) {
   .layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: var(--space-4);
   }
 }
@@ -156,6 +298,7 @@
 @media (max-width: 800px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'conversation' 'context';
   }
 
   .sidebar {
