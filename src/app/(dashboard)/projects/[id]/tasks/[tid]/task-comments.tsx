@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useRef, useTransition } from 'react';
 import MarkdownPreview from '@/components/markdown-preview';
 import { Avatar, EmptyState } from '@/components/atoms';
@@ -20,42 +21,65 @@ interface Comment {
   created_at: string;
 }
 
+type Detail = { label: string; value: string; href?: string; title?: string };
+
 const typeConfig: Record<string, { icon: LucideIcon; label: string }> = {
   comment: { icon: MessageSquare, label: 'Comment' },
   analysis: { icon: Eye, label: 'Observer note' },
-  status_change: { icon: RefreshCw, label: 'Status' },
+  status_change: { icon: RefreshCw, label: 'Status change' },
   assignment: { icon: UserRound, label: 'Assignment' },
-  system: { icon: Settings2, label: 'System' },
+  system: { icon: Settings2, label: 'System event' },
 };
 
-function summarizeMetadata(metadata: Record<string, unknown>) {
-  const delegatedBy = typeof metadata.delegated_by_agent_id === 'string' ? metadata.delegated_by_agent_id : null;
-  const executor = typeof metadata.executor_agent_id === 'string' ? metadata.executor_agent_id : typeof metadata.new_assignee === 'string' ? metadata.new_assignee : null;
-  const contractId = typeof metadata.delegation_contract_id === 'string' ? metadata.delegation_contract_id : typeof metadata.handoff_contract_id === 'string' ? metadata.handoff_contract_id : null;
-  const participantRole = typeof metadata.participant_role === 'string' ? metadata.participant_role : null;
-  const accessKind = typeof metadata.participant_access_kind === 'string' ? metadata.participant_access_kind : null;
-  const participantLabel = participantDescriptor({ role: participantRole, accessKind });
-  const observerNote = metadata.observer_note === true;
-  const brokerAgentId = typeof metadata.broker_agent_id === 'string' ? metadata.broker_agent_id : null;
-  const collaborationMode = typeof metadata.collaboration_mode === 'string' ? metadata.collaboration_mode : null;
-  const escalationReason = typeof metadata.escalation_reason === 'string' ? metadata.escalation_reason : null;
-  const requestedIntervention = typeof metadata.requested_intervention === 'string' ? metadata.requested_intervention : null;
-  const escalationStatus = typeof metadata.escalation_status === 'string' ? metadata.escalation_status : null;
+function shortId(id: string) {
+  return `#${id.slice(0, 8)}`;
+}
 
-  if (!delegatedBy && !executor && !contractId && !participantLabel && !observerNote && !brokerAgentId && !collaborationMode && !escalationReason && !requestedIntervention && !escalationStatus) return null;
+function getContractId(metadata: Record<string, unknown>) {
+  if (typeof metadata.delegation_contract_id === 'string') return metadata.delegation_contract_id;
+  if (typeof metadata.handoff_contract_id === 'string') return metadata.handoff_contract_id;
+  return null;
+}
 
-  const parts = [] as string[];
-  if (delegatedBy) parts.push(`delegated by ${delegatedBy}`);
-  if (executor) parts.push(`executor ${executor}`);
-  if (contractId) parts.push(`contract ${contractId}`);
-  if (participantLabel) parts.push(participantLabel);
-  if (observerNote) parts.push('note only');
-  if (brokerAgentId) parts.push(`broker ${brokerAgentId}`);
-  if (collaborationMode) parts.push(collaborationMode);
-  if (escalationStatus) parts.push(`escalation ${escalationStatus}`);
-  if (escalationReason) parts.push(`reason: ${escalationReason}`);
-  if (requestedIntervention) parts.push(`ask: ${requestedIntervention}`);
-  return parts.join(' · ');
+function describeMetadata(metadata: Record<string, unknown>, content: string): Detail[] {
+  const details: Detail[] = [];
+  const addId = (label: string, id: unknown) => {
+    if (typeof id === 'string' && id) details.push({ label, value: shortId(id), title: id });
+  };
+  addId('Delegated by', metadata.delegated_by_agent_id);
+  addId('Executor', metadata.executor_agent_id ?? metadata.new_assignee);
+  const contractId = getContractId(metadata);
+  if (contractId && !content.includes(contractId)) {
+    details.push({ label: 'Contract', value: shortId(contractId), href: `/contracts/${contractId}`, title: contractId });
+  }
+  const participant = participantDescriptor({
+    role: typeof metadata.participant_role === 'string' ? metadata.participant_role : null,
+    accessKind: typeof metadata.participant_access_kind === 'string' ? metadata.participant_access_kind : null,
+  });
+  if (participant) details.push({ label: 'Access', value: participant });
+  if (metadata.observer_note === true) details.push({ label: 'Note only', value: 'Observer' });
+  addId('Broker', metadata.broker_agent_id);
+  for (const [key, label] of [
+    ['collaboration_mode', 'Mode'],
+    ['escalation_status', 'Escalation'],
+    ['escalation_reason', 'Reason'],
+    ['requested_intervention', 'Request'],
+  ] as const) {
+    const value = metadata[key];
+    if (typeof value === 'string' && value) details.push({ label, value });
+  }
+  return details;
+}
+
+function eventText(content: string, contractId: string | null) {
+  const readable = content.replace(/`([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`/gi, '$1');
+  return readable.split(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi).map((part, index) => {
+    if (!/^[0-9a-f]{8}-/i.test(part)) return part;
+    if (contractId && part.toLowerCase() === contractId.toLowerCase()) {
+      return <Link key={index} href={`/contracts/${part}`} className={styles.inlineReference} title={part}>{shortId(part)}</Link>;
+    }
+    return <code key={index} className={styles.inlineReference} title={part}>{shortId(part)}</code>;
+  });
 }
 
 function CommentItem({ comment }: { comment: Comment }) {
@@ -63,49 +87,40 @@ function CommentItem({ comment }: { comment: Comment }) {
   const isSystem = comment.comment_type !== 'comment' && comment.comment_type !== 'analysis';
   const config = typeConfig[comment.comment_type] || typeConfig.comment;
   const Icon = config.icon;
-  const metadataSummary = summarizeMetadata(comment.metadata || {});
-
-  if (isSystem) {
-    return (
-      <div className={`${styles.entry} ${styles.system}`}>
-        <span className={styles.icon}><Icon size={14} aria-hidden="true" /></span>
-        <div className={styles.body}>
-          <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>
-            <span style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{authorName}</span>
-            {' · '}
-            <span>{comment.content}</span>
-          </p>
-          <p className={styles.entryMeta}>
-            {formatRelative(comment.created_at)}
-          </p>
-          {metadataSummary && (
-            <p className={styles.entryMeta}>{metadataSummary}</p>
-          )}
-        </div>
-        <span className="pill pill--ghost">
-          {config.label}
-        </span>
-      </div>
-    );
-  }
+  const metadata = comment.metadata || {};
+  const contractId = getContractId(metadata);
+  const details = describeMetadata(metadata, comment.content);
 
   return (
-    <div className={`${styles.entry} ${comment.comment_type === 'analysis' ? styles.observer : ''}`}>
-      <div>
-        <Avatar name={authorName} size={28} />
-      </div>
+    <div className={`${styles.entry} ${isSystem ? styles.system : ''} ${comment.comment_type === 'analysis' ? styles.observer : ''}`}>
+      <span className={styles.marker} aria-hidden="true">
+        {isSystem ? <Icon size={15} /> : <Avatar name={authorName} size={28} />}
+      </span>
       <div className={styles.body}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>{authorName}</span>
-          <span className="mono num text-2xs" style={{ color: 'var(--fg-4)' }}>
-            {formatRelative(comment.created_at)}
-          </span>
+        <div className={styles.entryHeader}>
+          <span className={styles.author}>{authorName}</span>
+          <span className={styles.kind}>{config.label}</span>
+          <time className={styles.time} dateTime={comment.created_at}>{formatRelative(comment.created_at)}</time>
         </div>
-        <div className="text-sm" style={{ color: 'var(--fg-2)' }}>
-          <MarkdownPreview content={comment.content} />
-        </div>
-        {metadataSummary && (
-          <p className={styles.entryMeta}>{metadataSummary}</p>
+        {isSystem ? (
+          <p className={styles.eventText}>{eventText(comment.content, contractId)}</p>
+        ) : (
+          <div className={styles.commentText}><MarkdownPreview content={comment.content} /></div>
+        )}
+        {details.length > 0 && (
+          <div className={styles.references}>
+            {details.map((detail, index) => (
+              detail.href ? (
+                <Link key={`${detail.label}-${index}`} href={detail.href} className={styles.reference} title={detail.title}>
+                  <span>{detail.label}</span><strong>{detail.value}</strong>
+                </Link>
+              ) : (
+                <span key={`${detail.label}-${index}`} className={styles.reference} title={detail.title}>
+                  <span>{detail.label}</span><strong>{detail.value}</strong>
+                </span>
+              )
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -128,95 +143,62 @@ export default function TaskComments({
   function handleSubmit() {
     const trimmed = content.trim();
     if (!trimmed) return;
-
     startTransition(async () => {
       await addComment(projectId, taskId, trimmed);
       setContent('');
     });
   }
 
-  // Show chronological (oldest first)
-  const sorted = [...comments].sort(
+  const visibleComments = [...comments].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  const visibleComments = sorted;
-
   return (
-    <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.25s' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <h2 className={styles.feedTitle}>
-          Activity & comments
-          {comments.length > 0 && (
-            <span style={{ marginLeft: 8, color: 'var(--fg-3)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
-              ({comments.length})
-            </span>
-          )}
-        </h2>
-        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Oldest first</span>
-      </div>
-
-      {visibleComments.length > 0 ? (
-        <div className={styles.feed}>
-          {visibleComments.map((c) => <CommentItem key={c.id} comment={c} />)}
+    <section className={`card animate-fade-in ${styles.shell}`} aria-labelledby="task-comments-title">
+      <div className={styles.feedHeader}>
+        <div>
+          <h2 id="task-comments-title" className={styles.feedTitle}>Activity & comments <span className={styles.count}>{comments.length}</span></h2>
+          <p className={styles.feedSubtitle}>The decisions, handoffs, and conversation behind this task.</p>
         </div>
-      ) : (
-        <EmptyState
-          title="No activity yet"
-          hint="Comments and status changes on this task appear here."
-        />
-      )}
-
-      <div style={{ borderTop: '1px solid var(--line-1)', paddingTop: 16 }}>
+        <span className={styles.order}>Oldest first</span>
+      </div>
+      <div className={styles.feedBody}>
+        {visibleComments.length > 0 ? (
+          <div className={styles.feed}>
+            {visibleComments.map((comment) => <CommentItem key={comment.id} comment={comment} />)}
+          </div>
+        ) : (
+          <EmptyState title="No activity yet" hint="Comments and status changes on this task appear here." />
+        )}
+      </div>
+      <div className={styles.composer}>
+        <label htmlFor="task-comment" className={styles.composerLabel}>Add to the conversation</label>
         <textarea
+          id="task-comment"
           ref={textareaRef}
           value={content}
-          onChange={(e) => {
-            setContent(e.target.value);
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+          onChange={(event) => {
+            setContent(event.target.value);
+            event.target.style.height = 'auto';
+            event.target.style.height = Math.min(event.target.scrollHeight, 200) + 'px';
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+              event.preventDefault();
               handleSubmit();
             }
           }}
-          placeholder="Add a comment… (markdown supported)"
+          placeholder="Write a comment…"
           disabled={isPending}
-          className="cp-textarea text-sm" style={{
-            width: '100%',
-            background: 'var(--bg-2)',
-            
-            color: 'var(--fg-1)',
-            lineHeight: 1.6,
-            borderRadius: 'var(--radius-2)',
-            padding: 'var(--space-3)',
-            outline: 'none',
-            border: '1px solid var(--line-1)',
-            resize: 'none',
-            minHeight: 60,
-            transition: 'border-color 0.15s',
-            fontFamily: 'inherit',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand)'; }}
-          onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-1)'; }}
+          className={`cp-textarea ${styles.textarea}`}
         />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-          <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>
-            Markdown supported · ⌘+Enter to submit
-          </span>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isPending || !content.trim()}
-            className="btn btn--primary btn--sm"
-            style={{ opacity: isPending || !content.trim() ? 0.35 : 1, cursor: isPending || !content.trim() ? 'not-allowed' : 'pointer' }}
-          >
+        <div className={styles.composerActions}>
+          <span>Markdown supported · ⌘+Enter to send</span>
+          <button type="button" onClick={handleSubmit} disabled={isPending || !content.trim()} className="btn btn--primary btn--sm">
             {isPending ? 'Sending…' : 'Comment'}
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -16,17 +16,17 @@ function ContractRowStatus() {
 
 export default function ContractRow({
   id,
+  title,
   children,
 }: {
   id: string;
+  title: string;
   children: ReactNode;
 }) {
   return (
     <Link
       href={`/contracts/${id}`}
-      aria-label="Open contract detail"
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      aria-label={`Open contract: ${title}`}
       style={{
         display: 'block',
         position: 'relative',

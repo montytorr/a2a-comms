@@ -15,6 +15,7 @@ import { getOperatorChannelForContracts } from '@/lib/contract-operator-channel-
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { getLastMessages } from '@/app/api/v1/contracts/_helpers';
 import { CornerUpLeft, FolderGit2, GitBranch, Link2Off, FileText } from 'lucide-react';
+import styles from './contracts-list.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,15 +27,6 @@ interface ContractWithRelations extends Contract {
     status: string;
   }>;
 }
-
-/**
- * The six columns, as one string so the header and every row cannot disagree.
- *
- * Below `md` they are not columns at all: the row stacks, because 15% of a
- * 390px phone is 58px and the cells were overlapping each other rather than
- * overflowing — which is why no horizontal-scroll check ever caught it.
- */
-const GRID_COLS = 'md:grid md:grid-cols-[3fr_1.5fr_2fr_1fr_1fr_1.5fr] md:items-center';
 
 /**
  * How long a live contract has left, or null when the question does not apply.
@@ -148,192 +140,105 @@ export default async function ContractsPage({
 
         <ContractFilters current={statusFilter} />
 
-        {/* Table */}
-        <div className="card" style={{ overflow: 'hidden', marginTop: 16 }}>
-          {/* Header row */}
-          {/* Column headings only make sense beside columns. Below `md` each
-              row is a stack, so the header is hidden rather than crushed. */}
-          <div className={`hidden text-2xs ${GRID_COLS}`} style={{
-            padding: '8px 18px',
-            background: 'var(--bg-2)',
-            borderBottom: '1px solid var(--line-1)',
-            fontFamily: 'var(--mono)',
-            color: 'var(--fg-3)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}>
-            <span>Title · Project</span>
-            <span>Proposer</span>
-            <span>Participants</span>
-            <span>Status</span>
-            <span>Turns</span>
-            <span style={{ textAlign: 'right' }}>Created</span>
+        <section className={styles.register} aria-label="Contract register">
+          <div className={styles.registerHead}>
+            <span>Contract register</span>
+            <span className={styles.registerCount}>{rows.length} shown<span className={styles.registerHint}> · open a contract for its conversation</span></span>
           </div>
-
           {rows.length === 0 ? (
             <EmptyState
               icon={<FileText size={20} />}
               title="No contracts found"
               hint="No contract matches the current filters. Widen them, or propose a contract to start one."
             />
-          ) : (
-            rows.map((contract, i) => {
-              const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
-              const participants = (contract.contract_participants || [])
-                .map((p) => {
-                  const label = p.agent?.display_name || p.agent?.name;
-                  if (!label) return null;
-                  return { name: label, role: p.role, status: p.status };
-                })
-                .filter(Boolean);
-              const linked = linkedTasks.get(contract.id);
-              const related = relatedContracts.get(contract.id) || [];
-              const expiry = describeExpiry(contract.status, contract.expires_at);
-              const viewerAgentId =
-                contract.contract_participants.find((p) => p.agent?.id && auth.agentScope.includes(p.agent.id))
-                  ?.agent?.id ?? null;
-              const turnState = viewerAgentId
-                ? deriveContractTurnState({
-                    contract,
-                    viewerAgentId,
-                    participants: contract.contract_participants.map((p) => ({
-                      agent_id: p.agent?.id ?? '',
-                      role: p.role as 'proposer' | 'invitee' | 'observer',
-                      status: p.status as 'pending' | 'accepted' | 'rejected',
-                      name: p.agent?.display_name || p.agent?.name || null,
-                    })),
-                    lastMessage: lastMessages.get(contract.id) ?? null,
-                    // Without these the list could never read `human`: a
-                    // contract parked on an unanswered question still showed
-                    // "your move". Only the blocking ones, same as the detail
-                    // page and the API.
-                    blockingQuestions: (channels.get(contract.id)?.questions ?? [])
-                      .filter((question) => question.status === 'open' && question.blocking)
-                      .map((question) => ({ asked_by_agent_id: question.asked_by_agent_id, kind: question.kind })),
-                  })
-                : null;
+          ) : rows.map((contract) => {
+            const proposerName = contract.proposer?.display_name || contract.proposer?.name || 'Unknown proposer';
+            const participants = (contract.contract_participants || [])
+              .map((participant) => {
+                const name = participant.agent?.display_name || participant.agent?.name;
+                return name ? { name, role: participant.role, status: participant.status } : null;
+              })
+              .filter((participant): participant is { name: string; role: string; status: string } => participant !== null);
+            const linked = linkedTasks.get(contract.id);
+            const related = relatedContracts.get(contract.id) || [];
+            const expiry = describeExpiry(contract.status, contract.expires_at);
+            const viewerAgentId = contract.contract_participants.find((participant) =>
+              participant.agent?.id && auth.agentScope.includes(participant.agent.id)
+            )?.agent?.id ?? null;
+            const turnState = viewerAgentId ? deriveContractTurnState({
+              contract,
+              viewerAgentId,
+              participants: contract.contract_participants.map((participant) => ({
+                agent_id: participant.agent?.id ?? '',
+                role: participant.role as 'proposer' | 'invitee' | 'observer',
+                status: participant.status as 'pending' | 'accepted' | 'rejected',
+                name: participant.agent?.display_name || participant.agent?.name || null,
+              })),
+              lastMessage: lastMessages.get(contract.id) ?? null,
+              blockingQuestions: (channels.get(contract.id)?.questions ?? [])
+                .filter((question) => question.status === 'open' && question.blocking)
+                .map((question) => ({ asked_by_agent_id: question.asked_by_agent_id, kind: question.kind })),
+            }) : null;
 
-              return (
-                <ContractRow key={contract.id} id={contract.id}>
-                  <div className={`flex flex-col gap-2 text-xs ${GRID_COLS} md:gap-0`} style={{
-                    padding: '10px 18px',
-                    borderBottom: i === rows.length - 1 ? 'none' : '1px solid var(--line-1)',
-                    cursor: 'pointer',
-                    transition: 'background 0.1s',
-                    width: '100%',
-                  }}>
-                    <span style={{ minWidth: 0, paddingRight: 12 }}>
-                      <span className="row gap-2" style={{ alignItems: 'center', minWidth: 0 }}>
-                        <span style={{ color: 'var(--fg-0)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {contract.title}
-                        </span>
-                        {/* The one thing a list of contracts could never tell
-                            you: which of them are waiting on you. */}
-                        {turnState?.awaiting === 'you' && (
-                          <StatusBadge
-                            status="your move"
-                            tone="amber"
-                            dot="none"
-                            style={{ flexShrink: 0 }}
-                            title={turnState.reason}
-                            label={<><CornerUpLeft size={10} />your move</>}
-                          />
-                        )}
+            return (
+              <ContractRow key={contract.id} id={contract.id} title={contract.title}>
+                <article className={styles.row}>
+                  <div className={styles.primary}>
+                    <div className={styles.titleLine}>
+                      <span className={styles.title}>{contract.title}</span>
+                      {turnState?.awaiting === 'you' && (
+                        <StatusBadge
+                          status="your move"
+                          tone="amber"
+                          dot="none"
+                          title={turnState.reason}
+                          label={<><CornerUpLeft size={10} />your move</>}
+                        />
+                      )}
+                    </div>
+                    <div className={styles.context}>
+                      <span className={`${styles.contextItem} ${linked ? '' : contract.status === 'active' || contract.status === 'proposed' ? styles.unlinkedOpen : styles.unlinked}`}>
+                        {linked ? <FolderGit2 size={13} /> : <Link2Off size={13} />}
+                        <span>{linked
+                          ? `${linked.project_title || 'Project'} › ${linked.task_title || 'Task'}`
+                          : 'No linked project task'}</span>
                       </span>
-                      {/* The project this contract tracks work in. Shown even when
-                          absent, because an unlinked contract has no board and no
-                          execution tracking — the gap is the point. */}
-                      <span
-                        className="row gap-1 text-2xs"
-                        style={{
-                          marginTop: 3,
-                          alignItems: 'center',
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                          color: linked ? 'var(--fg-3)' : 'var(--amber)',
-                        }}
-                      >
-                        {linked ? <FolderGit2 size={12} style={{ flexShrink: 0 }} /> : <Link2Off size={12} style={{ flexShrink: 0 }} />}
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {linked
-                            ? `${linked.project_title || 'Project'} › ${linked.task_title || 'Task'}`
-                            : 'No project — not tracked on any board'}
-                        </span>
-                      </span>
-                      {/* A contract that succeeds, replaces or delegated to
-                          another is half of a chain, and the chain is the part
-                          a reader cannot reconstruct from this row alone. */}
                       {related.length > 0 && (
-                        <span
-                          className="row gap-1 text-2xs"
-                          style={{
-                            marginTop: 3,
-                            alignItems: 'center',
-                            overflow: 'hidden',
-                            whiteSpace: 'nowrap',
-                            color: 'var(--peri)',
-                          }}
-                        >
-                          <GitBranch size={12} style={{ flexShrink: 0 }} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {describeContractLink(related[0].link_type, related[0].direction)} {related[0].title}
-                            {related.length > 1 ? ` +${related.length - 1}` : ''}
-                          </span>
+                        <span className={`${styles.contextItem} ${styles.related}`}>
+                          <GitBranch size={13} />
+                          <span>{describeContractLink(related[0].link_type, related[0].direction)} {related[0].title}{related.length > 1 ? ` +${related.length - 1}` : ''}</span>
                         </span>
                       )}
-                    </span>
-                    {/* `md:contents` dissolves this wrapper back into the grid
-                        on desktop, so the same five cells are a wrapped meta
-                        line on a phone and five columns on a monitor. */}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:contents">
-                    <span className="mono" style={{ color: 'var(--fg-2)' }}>{proposerName}</span>
-                    <span>
-                      <div className="row gap-1">
-                        {participants.slice(0, 3).map((p, j) => (
-                          <Avatar key={j} name={p!.name} size={20} />
-                        ))}
-                        {participants.length > 3 && (
-                          <span className="dim mono text-2xs">+{participants.length - 3}</span>
-                        )}
-                      </div>
-                    </span>
-                    <span className="row gap-1">
-                      <StatusBadge domain="contract" status={contract.status} dot="static" />
-                      {(channels.get(contract.id)?.counts.open_questions ?? 0) > 0 && (
-                        <span
-                          className="pill pill--rose text-2xs"
-                          title="An agent on this contract is waiting for a person to answer."
-                          style={{ height: 18, padding: '0 6px' }}
-                        >
-                          asking
-                        </span>
-                      )}
-                    </span>
-                    <span className="mono num" style={{ color: 'var(--fg-1)' }}>
-                      {contract.current_turns}/{contract.max_turns}
-                    </span>
-                    <span className="mono num text-2xs md:text-right">
-                      {/* A live contract with an expiry is the one row on this
-                          page with a deadline, and the column used to show only
-                          how old it was — the least urgent fact available. */}
-                      {expiry ? (
-                        <span
-                          style={{ color: expiry.soon ? 'var(--rose)' : 'var(--fg-2)' }}
-                          title={`Expires ${formatDateTime(expiry.at)}`}
-                        >
-                          {expiry.label}
-                        </span>
-                      ) : (
-                        <span className="dim">{formatDate(contract.created_at)}</span>
-                      )}
-                    </span>
                     </div>
                   </div>
-                </ContractRow>
-              );
-            })
-          )}
-        </div>
+                  <div className={styles.secondary}>
+                    <div className={styles.state}>
+                      <StatusBadge domain="contract" status={contract.status} dot="static" />
+                      {(channels.get(contract.id)?.counts.open_questions ?? 0) > 0 && (
+                        <span className="pill pill--rose" title="An agent is waiting for a person to answer">asking</span>
+                      )}
+                      <span className={`${styles.date} ${expiry?.soon ? styles.urgent : ''}`} title={expiry ? `Expires ${formatDateTime(expiry.at)}` : `Created ${formatDateTime(contract.created_at)}`}>
+                        {expiry ? expiry.label : formatDate(contract.created_at)}
+                      </span>
+                    </div>
+                    <div className={styles.people}>
+                      <span className={styles.peopleName}>{proposerName}</span>
+                      <span className={styles.avatars} aria-label={`${participants.length} participants`}>
+                        {participants.slice(0, 3).map((participant, index) => (
+                          <span key={`${participant.name}-${index}`} title={`${participant.name} · ${participant.role} · ${participant.status}`}>
+                            <Avatar name={participant.name} size={20} />
+                          </span>
+                        ))}
+                        {participants.length > 3 && <span>+{participants.length - 3}</span>}
+                      </span>
+                      <span className={styles.turns}><strong>{contract.current_turns}</strong> / {contract.max_turns} turns</span>
+                    </div>
+                  </div>
+                </article>
+              </ContractRow>
+            );
+          })}
+        </section>
       </PageFrame>
     </AutoRefresh>
   );
