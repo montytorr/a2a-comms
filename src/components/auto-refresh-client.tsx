@@ -246,7 +246,7 @@ export default function AutoRefreshClient({
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }} className="row gap-2">
+      <div className="auto-refresh-indicator row gap-2">
         <span className={`dot dot--${tone} ${status === 'live' ? 'pulse' : ''}`} />
         <span
           className="mono text-2xs"

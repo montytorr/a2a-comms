@@ -564,10 +564,9 @@ body::before {
 .upper {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: var(--text-2xs);
-  /* 500 at this size, uppercased, reads as grey mush; 600 gives the label the
-     weight to act as a divider without needing to be larger. */
-  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--fg-3);
 }
 .h1 {
@@ -614,17 +613,16 @@ body::before {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 22px;
+  height: 24px;
   padding: 0 var(--space-2);
   border: 1px solid var(--line-1);
-  border-radius: var(--radius-1);
+  border-radius: var(--radius-pill);
   font-family: var(--mono);
-  font-size: var(--text-2xs);
+  font-size: 11px;
   color: var(--fg-1);
   background: var(--bg-1);
   line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 .pill--mint  { border-color: var(--mint-line); color: var(--mint); background: var(--mint-bg); }
@@ -879,7 +877,7 @@ input[type="checkbox"], input[type="radio"] {
 .card {
   background: var(--bg-1);
   border: 1px solid var(--line-1);
-  border-radius: var(--radius);
+  border-radius: var(--radius-4);
   overflow: hidden;
   /* `none` in dark, a two-layer soft shadow in light. See --shadow-card:
      a white sheet on a cream ground needs the shadow to be a sheet, and a
@@ -904,6 +902,23 @@ input[type="checkbox"], input[type="radio"] {
   border: 1px solid var(--line-1);
   border-radius: var(--radius);
   box-shadow: none;
+}
+
+.auto-refresh-indicator {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .auto-refresh-indicator {
+    position: relative;
+    top: auto;
+    right: auto;
+    justify-content: flex-end;
+    padding: var(--space-2) var(--space-4) 0;
+  }
 }
 
 /* kbd */
@@ -932,8 +947,8 @@ input[type="checkbox"], input[type="radio"] {
   font-size: var(--text-xs);
   color: var(--fg-2);
   background: var(--bg-2);
-  padding: 2px 6px;
-  border-radius: var(--radius-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-1);
   cursor: pointer;
   transition: all 0.12s;

@@ -17,7 +17,8 @@ import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import { ProgressBar, PageFrame, EmptyState } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
 import { colorVarForTone, pillClassForTone } from '@/lib/status-tone';
-import { Users, Layers, Eye, Plus, MoreHorizontal, FolderKanban } from 'lucide-react';
+import { Users, Layers, Eye, Plus, FolderKanban } from 'lucide-react';
+import styles from './projects-list.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -267,7 +268,7 @@ async function renderProjectsPage({
         <ProjectFilters current={statusFilter} />
 
         {/* Project cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginTop: 16 }}>
+        <div className={styles.grid}>
           {rows.length === 0 ? (
             <div className="card" style={{ gridColumn: '1 / -1' }}>
               <EmptyState
@@ -293,26 +294,16 @@ async function renderProjectsPage({
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="card"
-                  style={{
-                    padding: 18,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    display: 'block',
-                  }}
+                  className={`card ${styles.projectCard}`}
                 >
-                  {/* Status pill */}
-                  <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div className={styles.cardBar}>
+                    <span>Project</span>
                     <StatusBadge domain="project" status={project.status} size="lg" />
-                    <span className="btn btn--ghost btn--sm btn--icon" style={{ width: 24, height: 24 }}>
-                      <MoreHorizontal size={13} />
-                    </span>
                   </div>
+                  <div className={styles.cardBody}>
 
                   {/* Title */}
-                  <div className="h2" style={{ marginBottom: 4 }}>{project.title}</div>
+                  <h2 className={styles.cardTitle}>{project.title}</h2>
                   {project.description && (
                     <div className="dim text-xs" style={{
                       
@@ -365,7 +356,7 @@ async function renderProjectsPage({
                   )}
 
                   {/* Footer */}
-                  <div className="row" style={{ justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line-1)' }}>
+                  <div className={`row ${styles.cardFooter}`} style={{ justifyContent: 'space-between' }}>
                     <div className="row gap-3">
                       {access?.canSeeParticipantCounts !== false && (
                         <>
@@ -384,6 +375,7 @@ async function renderProjectsPage({
                       </span>
                     </div>
                     <span className="mono dim text-2xs">{formatDate(project.created_at)}</span>
+                  </div>
                   </div>
                 </Link>
               );

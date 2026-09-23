@@ -32,14 +32,6 @@ const columns: { id: TaskStatus; label: string }[] = [
   { id: 'cancelled',   label: 'Cancelled' },
 ];
 
-/* Columns whose panel carries its tone as a tint. This is board emphasis, not
-   a colour decision: the two columns worth finding at a glance are the work
-   happening now and the work that landed. Every actual colour comes from
-   status-tone.ts, so the board can never disagree with a pill again — it used
-   to paint `in-progress` amber while /tasks painted it peri, and it had no row
-   at all for a status two other maps did have. */
-const TINTED_COLUMNS: readonly TaskStatus[] = ['in-progress', 'done'];
-
 const priorityLabel: Record<TaskPriority, string> = {
   urgent: 'Urgent',
   high:   'High',
@@ -147,16 +139,16 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
               <div
                 key={col.id}
                 style={{
-                  width: 'min(360px, 85vw)',
-                  minWidth: 'min(360px, 85vw)',
+                  width: 'clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px)',
+                  minWidth: 'clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px)',
                   scrollSnapAlign: 'start',
                   display: 'flex',
                   flexDirection: 'column',
                   maxHeight: 720,
-                  borderRadius: 20,
+                  borderRadius: 'var(--radius-4)',
                   border: '1px solid var(--line-1)',
-                  background: TINTED_COLUMNS.includes(col.id) ? surfaceVarForTone(colTone) : 'var(--bg-1)',
-                  padding: 10,
+                  background: 'var(--bg-1)',
+                  padding: 'var(--space-3)',
                 }}
               >
                 {/* Column header */}
@@ -167,9 +159,9 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 8,
-                    borderRadius: 14,
+                    borderRadius: 'var(--radius-3)',
                     border: '1px solid var(--line-1)',
-                    background: 'var(--bg-0)',
+                    background: 'var(--bg-2)',
                     padding: '8px 12px',
                   }}
                 >
@@ -192,7 +184,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   {colTasks.length === 0 && (
                     <div
                       style={{
-                        borderRadius: 16,
+                        borderRadius: 'var(--radius-3)',
                         border: '1px dashed var(--line-1)',
                         background: 'var(--bg-0)',
                       }}
@@ -241,10 +233,10 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                         href={`/projects/${projectId}/tasks/${task.id}`}
                         style={{
                           display: 'block',
-                          borderRadius: 20,
+                          borderRadius: 'var(--radius-3)',
                           border: '1px solid var(--line-1)',
-                          background: 'var(--bg-1)',
-                          padding: 14,
+                          background: 'var(--bg-2)',
+                          padding: 'var(--space-4)',
                           textDecoration: 'none',
                           transition: 'transform 0.15s, border-color 0.15s',
                         }}

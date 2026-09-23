@@ -440,8 +440,7 @@ export function tonePulses(tone: Tone): boolean {
   return tone === 'amber';
 }
 
-/** `in-progress` → `in progress`, `pending_retry` → `pending retry`. `.pill`
- *  uppercases in CSS, so this only has to fix the separators. */
+/** `in-progress` → `in progress`, `pending_retry` → `pending retry`. */
 export function statusLabel(status: string | null | undefined, fallback = 'unknown'): string {
   if (!status) return fallback;
   return status.replace(/[-_]/g, ' ');

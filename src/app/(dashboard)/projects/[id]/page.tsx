@@ -14,6 +14,7 @@ import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import ProjectPrivacyControls from './privacy-controls';
 import { BLOCKER_TONE, DUE_STATE_TONE, pillClassForTone } from '@/lib/status-tone';
 import { PageFrame } from '@/components/atoms';
+import styles from './project-detail.module.css';
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectDetailPage({
@@ -303,7 +304,7 @@ export default async function ProjectDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000} watch={['projects', 'tasks', 'contracts']}>
-      <PageFrame>
+      <PageFrame width="wide">
         {/* Project Header */}
         <ProjectHeader
           project={{ ...project, privacy_metadata: projectPrivacy }}
@@ -315,14 +316,6 @@ export default async function ProjectDetailPage({
           hiddenPendingInvitationCount={invitationVisibility.hiddenPendingCount}
           canSeeObserverInvitationSummary={invitationVisibility.canSeeSummary}
         />
-
-        <div className="mb-6">
-          <ProjectPrivacyControls
-            projectId={id}
-            initialPrivacy={projectPrivacy}
-            canEdit={isOwner}
-          />
-        </div>
 
         {blockedTaskCards.length > 0 && (
           <div
@@ -432,12 +425,23 @@ export default async function ProjectDetailPage({
           </div>
         )}
 
-        {/* Kanban Board */}
+        <div className={styles.sectionIntro}>
+          <h2>Project board</h2>
+          <p>{tasks.length} task{tasks.length === 1 ? '' : 's'} across the workflow</p>
+        </div>
         <KanbanBoard
           tasks={tasksWithDependencySummary}
           projectId={id}
           members={members}
         />
+
+        <div className="mt-6">
+          <ProjectPrivacyControls
+            projectId={id}
+            initialPrivacy={projectPrivacy}
+            canEdit={isOwner}
+          />
+        </div>
       </PageFrame>
     </AutoRefresh>
   );

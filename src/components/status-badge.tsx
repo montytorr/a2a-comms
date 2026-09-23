@@ -11,16 +11,15 @@ import {
 
 export type StatusBadgeSize = 'sm' | 'md' | 'lg';
 
-/** `.pill` is 22px in CSS (`lg`). The call sites that overrode it wanted 16,
- *  17 or 18; 17 was a rounding of 18, so two smaller steps cover all of them. */
+/** Compact and regular badges share the same capsule shape throughout the UI. */
 const SIZE_HEIGHT: Record<StatusBadgeSize, number | undefined> = {
-  sm: 16,
-  md: 18,
+  sm: 20,
+  md: 22,
   lg: undefined, // the stylesheet's own height
 };
 
 /** The dot shrinks with the chip so it stays a marker and not a bullet. */
-const SIZE_DOT: Record<StatusBadgeSize, number> = { sm: 4, md: 4, lg: 6 };
+const SIZE_DOT: Record<StatusBadgeSize, number> = { sm: 4, md: 5, lg: 6 };
 
 export interface StatusBadgeProps {
   status: string | null | undefined;

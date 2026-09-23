@@ -31,7 +31,9 @@ import {
   type DependencyKind,
   type Tone,
 } from '@/lib/status-tone';
-import { PageFrame, EmptyState } from '@/components/atoms';
+import { PageFrame } from '@/components/atoms';
+import StatusBadge from '@/components/status-badge';
+import styles from './task-detail.module.css';
 export const dynamic = 'force-dynamic';
 
 /* Labels here, colours from DEPENDENCY_KIND_TONE — kanban-board.tsx renders the
@@ -120,7 +122,7 @@ export default async function TaskDetailPage({
   const [
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
-    membersRes, sprintsRes, commentsRes,
+    membersRes, commentsRes,
     attachmentsRes, activityRes,
   ] = await Promise.all([
     db.from('projects').select('id, title').eq('id', projectId).single(),
@@ -150,11 +152,6 @@ export default async function TaskDetailPage({
       .select('id, role, agent:agents(id, name, display_name)')
       .eq('project_id', projectId),
     db
-      .from('sprints')
-      .select('id, title, status')
-      .eq('project_id', projectId)
-      .order('position', { ascending: true }),
-    db
       .from('task_comments')
       .select('*, author:agents!task_comments_author_agent_id_fkey(id, name, display_name)')
       .eq('task_id', tid)
@@ -174,7 +171,6 @@ export default async function TaskDetailPage({
   const reporter = reporterRes.data;
   const _sprint = sprintRes.data;
   const members = membersRes.data || [];
-  const sprints = sprintsRes.data || [];
 
   interface TaskDep {
     id: string;
@@ -323,130 +319,55 @@ export default async function TaskDetailPage({
 
   return (
     <AutoRefresh intervalMs={15000} watch={['tasks', 'projects', 'contracts', 'participants']}>
-      <PageFrame>
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-6 animate-fade-in">
-          <Link href="/projects" className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>Projects</Link>
-          <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>›</span>
-          <Link href={`/projects/${projectId}`} className="text-2xs" style={{ color: 'var(--fg-3)', textDecoration: 'none' }}>
-            {project?.title || 'Project'}
-          </Link>
-          <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>›</span>
-          <span className="text-2xs" style={{ color: 'var(--fg-2)' }}>Task</span>
-        </div>
+      <PageFrame width="wide">
+        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+          <Link href="/projects">Projects</Link>
+          <span aria-hidden="true">›</span>
+          <Link href={`/projects/${projectId}`}>{project?.title || 'Project'}</Link>
+          <span aria-hidden="true">›</span>
+          <span>Task</span>
+        </nav>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)] 2xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.9fr)]">
-          <div className="space-y-6">
-            {/* Main task card */}
-            <section className="card animate-fade-in" style={{ padding: 'var(--space-5)' }}>
-              <div style={{ minWidth: 0 }}>
+        <div className={styles.layout}>
+          <main className={styles.main}>
+            <section className="card" aria-label="Task overview">
+              <div className={styles.heroBar}>
+                <span className={styles.heroBarLabel}>Task</span>
                 {hasReadOnlyObserverAccess ? (
-                  <h1 className="text-2xl" style={{ fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.02em' }}>{task.title}</h1>
+                  <StatusBadge status={task.status} domain="task" dot="static" size="lg" />
+                ) : (
+                  <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
+                )}
+                {hasReadOnlyObserverAccess ? (
+                  <span className="pill">{task.priority} priority</span>
+                ) : (
+                  <PriorityPicker value={task.priority as TaskPriority} projectId={projectId} taskId={tid} />
+                )}
+                {isOverdue && <StatusBadge status={null} label="Overdue" tone="rose" dot="none" size="lg" />}
+                {blockerState && (
+                  <StatusBadge
+                    status={null}
+                    label={blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
+                    tone={blockerState.tone === 'follow-through' ? 'amber' : 'rose'}
+                    dot="none"
+                    size="lg"
+                  />
+                )}
+              </div>
+              <div className={styles.heroBody}>
+                {hasReadOnlyObserverAccess ? (
+                  <h1 className="h1">{task.title}</h1>
                 ) : (
                   <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
                 )}
-                <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.625rem' }}>
+                <div className={styles.description}>
+                  <p className={styles.sectionLabel}>Description</p>
                   {hasReadOnlyObserverAccess ? (
-                    <span
-                      className="text-2xs" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.375rem',
-                        padding: '0.125rem 0.5rem',
-                        borderRadius: '9999px',
-                        
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        color: taskStatusColor(task.status),
-                        background: 'var(--bg-2)',
-                        border: '1px solid var(--line-1)',
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: '0.375rem',
-                          height: '0.375rem',
-                          borderRadius: '50%',
-                          background: taskStatusColor(task.status),
-                          display: 'inline-block',
-                        }}
-                      />
-                      {task.status}
-                    </span>
+                    <div className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{task.description || 'No description yet.'}</div>
                   ) : (
-                    <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
-                  )}
-                  {hasReadOnlyObserverAccess ? (
-                    <span
-                      className="text-2xs" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.375rem',
-                        borderRadius: '9999px',
-                        padding: '0.25rem 0.625rem',
-                        
-                        fontWeight: 600,
-                        background: 'var(--bg-2)',
-                        border: '1px solid var(--line-1)',
-                        color: 'var(--fg-1)',
-                      }}
-                    >
-                      {task.priority}
-                    </span>
-                  ) : (
-                    <PriorityPicker value={task.priority as TaskPriority} projectId={projectId} taskId={tid} />
-                  )}
-                  {isOverdue && (
-                    <span
-                      className="text-2xs" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '0.25rem 0.625rem',
-                        borderRadius: '9999px',
-                        
-                        fontWeight: 700,
-                        color: 'var(--rose)',
-                        background: 'var(--rose-bg)',
-                        border: '1px solid var(--rose)',
-                      }}
-                    >
-                      Overdue
-                    </span>
-                  )}
-                  {blockerState && (
-                    <span
-                      className="text-2xs" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '0.25rem 0.625rem',
-                        borderRadius: '9999px',
-                        
-                        fontWeight: 700,
-                        border: '1px solid',
-                        color: blockerState.tone === 'stale' ? 'var(--rose)' : blockerState.tone === 'follow-through' ? 'var(--amber)' : 'var(--rose)',
-                        background: blockerState.tone === 'stale' ? 'var(--rose-bg)' : blockerState.tone === 'follow-through' ? 'var(--amber-bg)' : 'var(--rose-bg)',
-                        borderColor: blockerState.tone === 'stale' ? 'var(--rose)' : blockerState.tone === 'follow-through' ? 'var(--amber)' : 'var(--rose)',
-                      }}
-                    >
-                      {blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
-                    </span>
+                    <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
                   )}
                 </div>
-              </div>
-
-              <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--line-1)', paddingTop: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Description</p>
-                    <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Keep the brief close to the task metadata instead of pushing it further down the page.</p>
-                  </div>
-                </div>
-                {hasReadOnlyObserverAccess ? (
-                  <div className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{task.description || 'No description yet.'}</div>
-                ) : (
-                  <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
-                )}
               </div>
             </section>
 
@@ -554,36 +475,25 @@ export default async function TaskDetailPage({
 
               <TaskComments comments={comments} projectId={projectId} taskId={tid} />
             </div>
-          </div>
+          </main>
 
-          {/* Sidebar */}
-          <aside className="space-y-6 xl:sticky xl:top-6 self-start">
-            {/* Snapshot */}
-            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.05s' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                <div>
-                  <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Task snapshot</p>
-                  <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Fast ownership and scheduling context while reading the task.</p>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }} className="xl:grid-cols-1">
-                {detailItems.map((item) => (
-                  <div key={`rail-${item.label}`} className="card--inset" style={{ padding: 'var(--space-3)' }}>
-                    <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
-                    <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
+          {/* Context rail */}
+          <aside className={styles.sidebar}>
+            <section className={`card ${styles.railCard}`} aria-labelledby="task-glance-heading">
+              <h2 id="task-glance-heading" className={styles.sectionLabel}>At a glance</h2>
+              <div className={styles.railFacts}>
+                {[...detailItems, ...secondaryDetailItems].map((item) => (
+                  <div key={item.label} className={styles.railFact}>
+                    <p className="upper">{item.label}</p>
+                    <div>{item.value}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
             {/* Labels */}
-            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.06s' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                <div>
-                  <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Labels</p>
-                  <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>Compact taxonomy for routing and filtering.</p>
-                </div>
-              </div>
+            <section className={`card ${styles.railCard}`} aria-labelledby="task-labels-heading">
+              <h2 id="task-labels-heading" className={styles.sectionLabel}>Labels</h2>
               {hasReadOnlyObserverAccess ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                   {(task.labels || []).length
@@ -597,16 +507,11 @@ export default async function TaskDetailPage({
               ) : (
                 <LabelsEditor labels={task.labels || []} projectId={projectId} taskId={tid} />
               )}
-            </div>
+            </section>
 
             {/* Attachments */}
-            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.08s' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                <div>
-                  <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Attachments</p>
-                  <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.5rem' }}>Task artifacts stay handy in the supporting rail.</p>
-                </div>
-              </div>
+            <section className={`card ${styles.railCard}`} aria-labelledby="task-attachments-heading">
+              <h2 id="task-attachments-heading" className={styles.sectionLabel}>Attachments</h2>
               {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
               {hasReadOnlyObserverAccess && (
                 <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>Observers can inspect attachments but cannot upload new artifacts.</p>
@@ -614,13 +519,13 @@ export default async function TaskDetailPage({
               <div style={{ marginTop: '1rem' }}>
                 <AttachmentList attachments={attachments} />
               </div>
-            </div>
+            </section>
 
             {/* Linked Contracts */}
             {visibleContracts.length > 0 && (
-              <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.1s' }}>
-                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Linked Contracts</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              <section className={`card ${styles.railCard}`} aria-labelledby="task-contracts-heading">
+                <h2 id="task-contracts-heading" className={styles.sectionLabel}>Linked contracts</h2>
+                <div className={styles.railList}>
                   {visibleContracts.map((lc) => {
                     const c = lc.contract;
                     if (!c) return null;
@@ -628,67 +533,43 @@ export default async function TaskDetailPage({
                       <Link
                         key={lc.id}
                         href={`/contracts/${c.id}`}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '0.5rem',
-                          background: 'var(--bg-2)',
-                          textDecoration: 'none',
-                          transition: 'background 0.1s',
-                        }}
+                        className={styles.railLink}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--peri)', flexShrink: 0 }}>
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                           <path d="M14 2v6h6" />
                         </svg>
                         <span className="text-xs" style={{ color: 'var(--fg-1)', flex: 1 }}>{c.title}</span>
-                        <span className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>{c.status}</span>
+                        <StatusBadge status={c.status} dot="none" size="sm" />
                       </Link>
                     );
                   })}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Timeline */}
-            <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.12s' }}>
-              <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Timeline</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }} className="xl:grid-cols-1">
-                {secondaryDetailItems.map((item) => (
-                  <div key={`secondary-${item.label}`} className="card--inset" style={{ padding: 'var(--space-3)' }}>
-                    <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '0.375rem' }}>{item.label}</p>
-                    <div style={{ minHeight: '1.25rem' }}>{item.value}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="card--inset" style={{ padding: 'var(--space-3)' }}>
-                <p className="upper text-2xs" style={{ color: 'var(--fg-3)', marginBottom: '0.75rem' }}>Activity feed</p>
-                {taskActivity.length === 0 ? (
-                  <EmptyState title="No activity captured yet" />
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {taskActivity.map((event) => (
-                      <div key={event.id} style={{ borderLeft: '1px solid var(--peri)', paddingLeft: '0.75rem' }}>
-                        <p className="text-xs" style={{ color: 'var(--fg-1)' }}>{event.summary}</p>
-                        <p className="upper text-2xs" style={{ marginTop: '0.25rem', color: 'var(--fg-3)' }}>
-                          {event.actor_agent?.display_name || event.actor_agent?.name || event.actor_user?.display_name || 'System'} · {formatDateTime(event.created_at)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            {taskActivity.length > 0 && (
+              <section className={`card ${styles.railCard}`} aria-labelledby="task-activity-heading">
+                <h2 id="task-activity-heading" className={styles.sectionLabel}>Activity</h2>
+                <div className={styles.activity}>
+                  {taskActivity.map((event) => (
+                    <div key={event.id} className={styles.activityItem}>
+                      <p className="text-xs" style={{ color: 'var(--fg-1)' }}>{event.summary}</p>
+                      <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>
+                        {event.actor_agent?.display_name || event.actor_agent?.name || event.actor_user?.display_name || 'System'} · {formatDateTime(event.created_at)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Task controls */}
             {!hasReadOnlyObserverAccess && (
-              <div className="card animate-fade-in" style={{ padding: '1.25rem', animationDelay: '0.14s' }}>
-                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)', marginBottom: '1rem' }}>Task controls</p>
-                <p className="text-xs" style={{ color: 'var(--fg-3)', marginBottom: '1rem' }}>Destructive actions stay tucked into the rail to keep the main flow focused.</p>
+              <section className={`card ${styles.railCard}`} aria-labelledby="task-controls-heading">
+                <h2 id="task-controls-heading" className={styles.sectionLabel}>Task controls</h2>
                 <DeleteTaskButton projectId={projectId} taskId={tid} />
-              </div>
+              </section>
             )}
           </aside>
         </div>
