@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { usePersistedToggle } from '@/lib/persisted-toggle';
 import Sidebar from './sidebar';
 import { Topbar } from './topbar';
@@ -30,6 +31,8 @@ export default function DashboardShell({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [collapsed, toggleCollapsed] = usePersistedToggle(COLLAPSE_KEY);
   const [counts, setCounts] = useState<DashboardNotificationCounts | undefined>(notificationCounts);
+  const pathname = usePathname();
+  const isContractDetail = /^\/contracts\/[^/]+\/?$/.test(pathname);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,7 +82,7 @@ export default function DashboardShell({
           {/* children used to be a sibling of the padded acting-agent row, so
               the two were inset by different amounts — a permanent 16px step
               down the left edge of every page. One wrapper now pads both. */}
-          <div className="mx-auto w-full" style={{ maxWidth: 'var(--content-max)' }}>
+          <div className="mx-auto w-full" style={isContractDetail ? undefined : { maxWidth: 'var(--content-max)' }}>
             <div className="px-4 pt-1 sm:px-6 lg:px-8">
               <ActingAgentSelector />
             </div>

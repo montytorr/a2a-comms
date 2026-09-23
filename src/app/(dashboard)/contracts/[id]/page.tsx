@@ -236,7 +236,7 @@ export default async function ContractDetailPage({
 
   return (
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks']}>
-      <PageFrame>
+      <PageFrame width="wide">
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link href="/contracts" className="dim" style={{ textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
           <ChevronRight size={11} aria-hidden="true" />
@@ -316,7 +316,7 @@ export default async function ContractDetailPage({
                         />
                         <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
                       </div>
-                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                      <div className={styles.messageBody}>
                         <MessageCard content={msg.content} />
                       </div>
                     </div>
@@ -354,7 +354,7 @@ export default async function ContractDetailPage({
                         <StatusBadge status={null} label="observer note" tone="peri" dot="none" size="sm" />
                         <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
                       </div>
-                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                      <div className={styles.messageBody}>
                         <MessageCard content={msg.content} />
                       </div>
                     </div>
@@ -391,24 +391,26 @@ export default async function ContractDetailPage({
                 )}
               </KV>
               <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
-              {contract.completion_requires_approval && (
-                <KV label="Completion gate">
-                  {/* An approved completion gate is a good end (mint); an
-                      unapproved one is waiting on a person (amber). It used to
-                      paint the approved case peri, the "queued" tone. */}
-                  <StatusBadge
-                    status={null}
-                    label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
-                    tone={contract.completion_approved_at ? 'mint' : 'amber'}
-                    dot="none"
-                    size="md"
-                  />
-                </KV>
-              )}
+              <KV label="Message format">
+                <span>{contract.message_schema && Object.keys(contract.message_schema).length > 0 ? 'Structured' : 'Free-form'}</span>
+              </KV>
               <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
-              <KV label="Expires" align="right">
+              <KV label="Expires">
                 <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>
               </KV>
+              {contract.completion_requires_approval && (
+                <div className={styles.fullFact}>
+                  <KV label="Completion gate">
+                    <StatusBadge
+                      status={null}
+                      label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
+                      tone={contract.completion_approved_at ? 'mint' : 'amber'}
+                      dot="none"
+                      size="md"
+                    />
+                  </KV>
+                </div>
+              )}
             </div>
 
             {/* Participants */}
@@ -438,42 +440,17 @@ export default async function ContractDetailPage({
           </div>
 
           {!linkedTask && (
-            <div
-              className="col gap-2"
-              style={{
-                marginTop: 16,
-                padding: '14px 16px',
-                borderRadius: 10,
-                border: '1px solid var(--amber-line)',
-                background: 'var(--amber-bg)',
-              }}
-            >
-              <div className="row gap-2" style={{ alignItems: 'center' }}>
-                <LinkOff size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />
-                <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
-                  Not linked to a project task
-                </span>
+            <section className={styles.attention} aria-label="Project task link needed">
+              <div className={styles.attentionHeading}>
+                <LinkOff size={16} aria-hidden="true" />
+                <strong>Not linked to a project task</strong>
               </div>
-              <p className="text-sm" style={{ color: 'var(--fg-2)', margin: 0 }}>
-                This contract appears on no board, carries no execution tracking, and
-                cannot take attachments. Linking it to a task fixes all three.
-              </p>
-              <code
-                className="mono text-2xs"
-                style={{
-                  display: 'block',
-                  padding: '8px 10px',
-                  borderRadius: 'var(--radius-2)',
-                  background: 'var(--bg-0)',
-                  border: '1px solid var(--line-1)',
-                  color: 'var(--fg-2)',
-                  overflowX: 'auto',
-                  whiteSpace: 'pre',
-                }}
-              >
-                {`holloway contract-link ${id} --project <project_id> --task <task_id>`}
-              </code>
-            </div>
+              <p>Linking this contract adds board tracking and enables attachments.</p>
+              <details className={styles.attentionDetails}>
+                <summary>How to link it</summary>
+                <code>{`holloway contract-link ${id} --project <project_id> --task <task_id>`}</code>
+              </details>
+            </section>
           )}
 
             {contract.description && (
@@ -536,63 +513,61 @@ export default async function ContractDetailPage({
             </div>
           )}
 
-          <div className="card card--pad">
-            {hasClosure && (
-            <div>
-              <div className="upper" style={{ marginBottom: 8 }}>Closed</div>
-              <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+          {hasClosure && (
+            <section className={`card ${styles.outcome} ${contract.status === 'closed' ? '' : styles.outcomeCaution}`} aria-labelledby="contract-outcome-heading">
+              <div className={styles.outcomeHeader}>
+                <span className={styles.outcomeIcon}>
+                  {contract.status === 'closed' ? <CheckCheck size={18} /> : <MessageSquareWarning size={18} />}
+                </span>
+                <div>
+                  <h2 id="contract-outcome-heading" className={styles.sideHeading}>Outcome</h2>
+                  <div className={styles.outcomeTitle}>
+                    {contract.status === 'closed' ? 'Contract completed' : `Contract ${contract.status}`}
+                  </div>
+                </div>
+              </div>
+              {contract.close_reason && <p className={styles.outcomeReason}>{contract.close_reason}</p>}
+              <div className={styles.outcomeMeta}>
                 {contract.closed_by && (
-                  <KV label="Closed by">
-                    <span className="text-sm" style={{ color: 'var(--fg-1)' }}>
+                  <div>
+                    <div className={styles.metaLabel}>Closed by</div>
+                    <div className={styles.outcomeValue}>
                       {formatCloser(contract.closed_by)}
-                    </span>
-                    {contract.closed_by_kind && (
-                      <StatusBadge
-                        status={contract.closed_by_kind}
-                        tone={contract.closed_by_kind === 'system' ? 'neutral' : 'peri'}
-                        dot="none"
-                        size="sm"
-                        style={{ marginLeft: 6 }}
-                      />
-                    )}
-                  </KV>
+                      {contract.closed_by_kind && (
+                        <StatusBadge
+                          status={contract.closed_by_kind}
+                          tone={contract.closed_by_kind === 'system' ? 'neutral' : 'peri'}
+                          dot="none"
+                          size="sm"
+                        />
+                      )}
+                    </div>
+                  </div>
                 )}
                 {contract.closed_at && (
-                  <KV label="Closed at">
-                    <span className="num mono text-sm">{formatDateTime(contract.closed_at)}</span>
-                  </KV>
+                  <div>
+                    <div className={styles.metaLabel}>Closed at</div>
+                    <time className={styles.outcomeValue} dateTime={contract.closed_at}>
+                      {formatDateTime(contract.closed_at)}
+                    </time>
+                  </div>
                 )}
               </div>
-              {contract.close_reason && (
-                <div style={{ marginTop: 12 }}>
-                  <div className="upper" style={{ marginBottom: 4 }}>Reason</div>
-                  <div className="text-sm" style={{ color: 'var(--fg-1)' }}>{contract.close_reason}</div>
-                </div>
-              )}
-            </div>
+            </section>
           )}
 
-          {/* Schema */}
           {contract.message_schema && Object.keys(contract.message_schema).length > 0 && (
-            <div className={hasClosure ? styles.contextDivider : undefined}>
-              <div className="row gap-2" style={{ marginBottom: 8, alignItems: 'center' }}>
-                <div className="upper">Message Schema</div>
-                <StatusBadge status={null} label="Zod Enforced" tone="mint" dot="none" size="sm" />
+            <section className="card card--pad" aria-labelledby="contract-schema-heading">
+              <div className={styles.panelHeading}>
+                <h2 id="contract-schema-heading" className={styles.sideHeading}>Message format</h2>
+                <StatusBadge status={null} label="Enforced" tone="mint" dot="none" size="sm" />
               </div>
               <div className="card card--inset" style={{ padding: 14, overflow: 'auto' }}>
                 <SchemaDisplay schema={contract.message_schema} />
               </div>
-            </div>
+            </section>
           )}
-          {(!contract.message_schema || Object.keys(contract.message_schema).length === 0) && (
-            <div className={hasClosure ? styles.contextDivider : undefined}>
-              <div className="row gap-2" style={{ alignItems: 'center' }}>
-                <div className="upper">Message Schema</div>
-                <StatusBadge status={null} label="None — Free-form" tone="neutral" dot="none" size="sm" />
-              </div>
-            </div>
-          )}
-          </div>
+
           {/* Attachments */}
         <div className="card">
           <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
