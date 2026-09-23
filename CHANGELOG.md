@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.360] - 2026-09-23
+### Changed
+- make dashboard full-width and sharpen communication views
+- Merge pull request #9 from montytorr/ui/full-width-dashboard-refinement
+- Refine full-width dashboard and communication views
+### Fixed
+- explain unavailable approvals instead of redirecting
+
 ## [1.0.359] - 2026-09-23
 ### Changed
 - Merge pull request #8 from montytorr/fix/display-locale-build
