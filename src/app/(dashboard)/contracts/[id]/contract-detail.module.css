@@ -80,7 +80,6 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
-.operatorRail { min-width: 0; }
 .context { display: flex; min-width: 0; flex-direction: column; gap: var(--space-4); }
 
 .main > :first-child,
@@ -315,12 +314,11 @@
 @media (max-width: 800px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'operator' 'conversation' 'context';
+    grid-template-areas: 'conversation' 'context';
   }
 
-  .sidebar { display: contents; }
-  .operatorRail { grid-area: operator; }
-  .context { grid-area: context; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .sidebar { position: static; max-height: none; overflow: visible; }
+  .context { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 
 @media (max-width: 600px) {
