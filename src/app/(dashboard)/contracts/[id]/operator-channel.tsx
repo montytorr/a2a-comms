@@ -13,7 +13,7 @@ import {
   editContractNote,
   withdrawNote,
 } from './operator-channel-actions';
-import { EmptyState } from '@/components/atoms';
+import styles from './operator-channel.module.css';
 
 interface Props {
   contractId: string;
@@ -49,24 +49,32 @@ export default function OperatorChannel({
   const resolved = questions.filter((q) => q.status !== 'open');
 
   return (
-    <div className="card" style={{ marginTop: 16 }}>
+    <section className={`card ${styles.channel}`} aria-labelledby="operator-channel-heading">
       <div
-        className="row gap-2"
-        style={{ padding: '12px 16px', borderBottom: '1px solid var(--line-1)', flexWrap: 'wrap' }}
+        className={styles.header}
       >
-        <StickyNote size={15} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
-        <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>Operator channel</span>
-        <span className="dim text-2xs" style={{ flex: 1, minWidth: 140 }}>
-          Notes are standing instructions agents re-read every time they look. Questions are agents asking you.
-        </span>
+        <div className={styles.heading}>
+          <span className={styles.icon}><StickyNote size={16} /></span>
+          <div>
+            <div className={styles.kicker}>Human ↔ agent</div>
+            <h2 id="operator-channel-heading" className={styles.title}>Operator channel</h2>
+          </div>
+        </div>
+        <div className={styles.summary}>
+          <span>{notes.length} standing note{notes.length === 1 ? '' : 's'}</span>
+          <span>{open.length} open question{open.length === 1 ? '' : 's'}</span>
+        </div>
         {canWrite && !drafting && (
-          <button type="button" className="btn btn--sm" onClick={() => setDrafting(true)}>
+          <button type="button" className="btn btn--sm btn--primary" onClick={() => setDrafting(true)}>
             Leave a note
           </button>
         )}
       </div>
 
-      <div className="col" style={{ padding: 'var(--space-4)', gap: 14 }}>
+      <div className={styles.body}>
+        {(notes.length > 0 || open.length > 0 || resolved.length > 0) && (
+          <p className={styles.explainer}>Standing notes stay visible to agents on every read. Questions pause work until you answer or dismiss them.</p>
+        )}
         {canWrite && drafting && (
           <form
             action={async (formData: FormData) => {
@@ -154,17 +162,16 @@ export default function OperatorChannel({
         )}
 
         {notes.length === 0 && open.length === 0 && resolved.length === 0 && (
-          <EmptyState
-            icon={<StickyNote size={20} />}
-            title="Nothing here yet"
-            hint="Leave a note and every agent on this contract will read it the next time it looks."
-          />
+          <div className={styles.empty}>
+            <StickyNote size={16} aria-hidden="true" />
+            <span>No standing notes or open questions yet.</span>
+          </div>
         )}
 
         {notes.map((note) => {
           const acked = ackCounts[note.id] ?? 0;
           return (
-            <div key={note.id} className="col" style={{ gap: 6, paddingLeft: 12, borderLeft: '2px solid var(--line-2)' }}>
+            <div key={note.id} className={styles.note}>
               <div className="row gap-2" style={{ flexWrap: 'wrap' }}>
                 <span className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{note.author_name}</span>
                 <span className="dim text-2xs">{formatDateTime(note.created_at)}</span>
@@ -237,6 +244,6 @@ export default function OperatorChannel({
           </details>
         )}
       </div>
-    </div>
+    </section>
   );
 }

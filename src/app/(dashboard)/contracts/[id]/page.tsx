@@ -238,13 +238,12 @@ export default async function ContractDetailPage({
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks']}>
       <PageFrame width="wide">
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-          <Link href="/contracts" className="dim" style={{ textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
+          <Link href="/contracts">Contracts</Link>
           <ChevronRight size={11} aria-hidden="true" />
-          <span>Contract detail</span>
+          <span>Contract <span className="mono num">{contractIdShort}</span></span>
         </nav>
         <header className={styles.header}>
           <div className={styles.heading}>
-            <div className={styles.eyebrow}>Contract <span className="mono num">{contractIdShort}</span></div>
             <div className={styles.titleRow}>
               <h1 className="h1">{contract.title}</h1>
               <StatusBadge status={contract.status} size="lg" />
@@ -283,6 +282,15 @@ export default async function ContractDetailPage({
               <span className="text-sm" style={{ color: 'var(--fg-2)' }}>{turnState.reason}</span>
             </div>
           )}
+
+        <OperatorChannel
+          contractId={id}
+          notes={channel.notes}
+          questions={channel.questions}
+          agentCount={participants.filter((participant) => participant.role !== 'observer').length}
+          ackCounts={ackCounts}
+          canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
+        />
 
         {/* Message Thread */}
         <section className="card" aria-labelledby="contract-thread-heading">
@@ -326,15 +334,6 @@ export default async function ContractDetailPage({
             })
           )}
         </section>
-
-        <OperatorChannel
-          contractId={id}
-          notes={channel.notes}
-          questions={channel.questions}
-          agentCount={participants.filter((participant) => participant.role !== 'observer').length}
-          ackCounts={ackCounts}
-          canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
-        />
 
         {/* Observer Notes */}
         {observerNotes.length > 0 && (

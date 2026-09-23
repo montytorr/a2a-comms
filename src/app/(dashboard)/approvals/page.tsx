@@ -19,7 +19,24 @@ export default async function ApprovalsPage({
   if (!user || !auth) redirect('/login');
 
   const visibility = await getDashboardApprovalVisibility(auth);
-  if (!visibility.canViewPage) redirect('/');
+  if (!visibility.canViewPage) {
+    return (
+      <PageFrame>
+        <div style={{ marginBottom: 28 }}>
+          <p className="upper" style={{ marginBottom: 6 }}>System</p>
+          <h1 className="h1">Approvals</h1>
+          <p className="muted text-sm">Sensitive operations waiting for an authorized reviewer.</p>
+        </div>
+        <div className="card">
+          <EmptyState
+            icon={<ShieldCheck size={20} />}
+            title="No approvals available to this account"
+            hint="An eligible reviewer or a requesting agent can see approvals here."
+          />
+        </div>
+      </PageFrame>
+    );
+  }
 
   const params = await searchParams;
   const filter = params.filter || 'pending';

@@ -10,6 +10,7 @@ import { extractMessagePreview } from '@/lib/message-preview';
 import MessageFilters from './message-filters';
 import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
+import styles from './messages-list.module.css';
 export const dynamic = 'force-dynamic';
 
 function timeAgo(dateStr: string): string {
@@ -153,7 +154,7 @@ export default async function MessagesPage({
         <MessageFilters agents={[...agentMap.values()]} />
 
         {/* Messages */}
-        <div className="card">
+        <div className={styles.list}>
           {allMessages.length === 0 ? (
             <EmptyState
               icon={<MessageSquare size={20} />}
@@ -162,7 +163,7 @@ export default async function MessagesPage({
             />
           ) : (
             <div>
-              {allMessages.map((msg, idx) => {
+              {allMessages.map((msg) => {
                 const sender = agentMap.get(msg.sender_id);
                 const contract = contractMap.get(msg.contract_id);
                 const senderName = sender?.display_name || 'Unknown';
@@ -172,23 +173,14 @@ export default async function MessagesPage({
                   <Link
                     key={msg.id}
                     href={`/contracts/${msg.contract_id}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '14px',
-                      padding: '14px 20px',
-                      borderBottom: idx < allMessages.length - 1 ? '1px solid var(--line-1)' : 'none',
-                      transition: 'background 0.12s',
-                      textDecoration: 'none',
-                    }}
+                    className={styles.item}
                   >
-                    <Avatar name={senderName} size={34} />
+                    <Avatar name={senderName} size={36} />
 
-                    {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="row gap-2" style={{ marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <StatusBadge domain="message-type" status={msg.message_type} dot="none" size="lg" />
+                    <div className={styles.content}>
+                      <div className={styles.meta}>
+                        <strong className={styles.sender}>{senderName}</strong>
+                        <StatusBadge domain="message-type" status={msg.message_type} dot="none" size="sm" />
                         {msg.consumes_turn === false ? (
                           <StatusBadge status={null} label="no reply needed" tone="neutral" dot="none" size="sm" />
                         ) : msg.requires_action === false ? (
@@ -196,21 +188,14 @@ export default async function MessagesPage({
                         ) : (
                           <StatusBadge status={null} label="reply expected" tone="peri" dot="none" size="sm" />
                         )}
-                        {contract && (
-                          <span className="dim text-2xs" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            in {contract.title}
-                          </span>
-                        )}
                       </div>
-                      <CompactMarkdownPreview content={preview} />
+                      <div className={styles.preview}><CompactMarkdownPreview content={preview} /></div>
+                      <div className={styles.context}>{contract?.title || `Contract ${msg.contract_id.slice(0, 8)}`}</div>
                     </div>
 
-                    {/* Time + arrow */}
-                    <div className="row gap-2" style={{ flexShrink: 0, paddingTop: '2px', alignItems: 'center' }}>
-                      <span className="mono num dim text-2xs">
-                        {timeAgo(msg.created_at)}
-                      </span>
-                      <ChevronRight size={14} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />
+                    <div className={styles.end}>
+                      <time dateTime={msg.created_at} title={msg.created_at}>{timeAgo(msg.created_at)}</time>
+                      <ChevronRight size={15} aria-hidden="true" />
                     </div>
                   </Link>
                 );
