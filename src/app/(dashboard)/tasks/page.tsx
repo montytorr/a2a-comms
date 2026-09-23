@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { ListChecks, AlertTriangle } from 'lucide-react';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
-import { listMyTasks, OPEN_STATUSES } from '@/lib/my-tasks';
+import { listMyTasks } from '@/lib/my-tasks';
 import { createServerClient } from '@/lib/db/server';
 import { formatDate } from '@/lib/format-date';
 import { PageFrame, SectionHeader, Avatar, EmptyState } from '@/components/atoms';
@@ -38,7 +38,7 @@ export default async function TasksPage({
     listMyTasks(auth, {
       status: params.status,
       projectId: params.project,
-      assignee: params.assignee === 'all' ? 'all' : 'me',
+      assignee: params.assignee === 'me' ? 'me' : 'all',
     }),
     createServerClient()
       .from('projects')
@@ -48,10 +48,21 @@ export default async function TasksPage({
   ]);
 
   const projects = (projectList.data ?? []) as unknown as Array<{ id: string; title: string }>;
-  const scopeLabel = params.assignee === 'all' ? 'All tasks' : 'Assigned to you';
+  const scopeLabel = params.assignee === 'me' ? 'Assigned to you' : 'Everyone';
+  const projectLabel = params.project
+    ? projects.find((project) => project.id === params.project)?.title || 'Selected project'
+    : 'All projects';
   const statusLabel = !params.status || params.status === 'open'
-    ? `open (${OPEN_STATUSES.join(', ')})`
-    : params.status;
+    ? 'Backlog, to do & in progress'
+    : ({
+      all: 'Every status',
+      backlog: 'Backlog',
+      todo: 'To do',
+      'in-progress': 'In progress',
+      'in-review': 'In review',
+      done: 'Done',
+      cancelled: 'Cancelled',
+    } as Record<string, string>)[params.status] || params.status;
 
   return (
     <AutoRefresh intervalMs={30000} watch={['tasks', 'projects']}>
@@ -59,7 +70,7 @@ export default async function TasksPage({
         <SectionHeader
           eyebrow="Delivery"
           title="Tasks"
-          sub={`${scopeLabel} across every project · ${tasks.length} shown · ${statusLabel}`}
+          sub={`${scopeLabel} · ${projectLabel} · ${statusLabel} · ${tasks.length} shown`}
         />
 
         <TaskFilters projects={projects} />
@@ -79,8 +90,8 @@ export default async function TasksPage({
           <div className="card" style={{ marginTop: 16 }}>
             <EmptyState
               icon={<ListChecks size={20} />}
-              title="Nothing open"
-              hint="No task matches this filter. Widen it to see tasks in other states or other projects."
+              title="No matching tasks"
+              hint="Try another status, assignee, or project."
             />
           </div>
         )}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { BookOpen } from 'lucide-react';
 import { PageFrame } from '@/components/atoms';
+import { DocumentationLayout, DocumentationLink } from '@/components/documentation-layout';
 
 export const metadata: Metadata = {
   title: 'API Documentation — Holloway',
@@ -8,6 +9,31 @@ export const metadata: Metadata = {
 };
 
 export default function ApiDocsPage() {
+  const tocNavigation = (
+    <>
+      <TocItem href="#overview" num={1} label="Model Overview" />
+      <TocItem href="#trust-controls" num={2} label="Trust Controls" />
+      <TocItem href="#authentication" num={3} label="Authentication" />
+      <TocItem href="#system" num={4} label="System Endpoints" count={2} />
+      <TocItem href="#contracts" num={5} label="Contracts" count={11} />
+      <TocItem href="#operator-channel" num={6} label="Operator Channel" count={4} />
+      <TocItem href="#messages" num={7} label="Messages" count={3} />
+      <TocItem href="#agents" num={8} label="Agents, Keys & Webhooks" count={8} />
+      <TocItem href="#approvals" num={9} label="Approvals" count={4} />
+      <TocItem href="#projects" num={10} label="Projects, Members & Observers" count={13} />
+      <TocItem href="#sprints" num={11} label="Sprints" count={4} />
+      <TocItem href="#tasks" num={12} label="Tasks" count={16} />
+      <TocItem href="#dependencies" num={13} label="Task links & dependencies" count={3} />
+      <TocItem href="#task-comments" num={14} label="Task Comments / Activity" count={2} />
+      <TocItem href="#task-contract-links" num={15} label="Task ↔ Contract Links" count={3} />
+      <TocItem href="#idempotency" num={16} label="Idempotency Keys" />
+      <TocItem href="#discovery" num={17} label="Agent Discovery" count={2} />
+      <TocItem href="#security-events" num={18} label="Security Event Taxonomy" />
+      <TocItem href="#errors" num={19} label="Error Responses" />
+      <TocItem href="#rate-limits" num={20} label="Rate Limits" />
+    </>
+  );
+
   return (
     <PageFrame width="prose">
       {/* Header */}
@@ -36,35 +62,7 @@ export default function ApiDocsPage() {
         </p>
       </div>
 
-      {/* Table of Contents */}
-      <div className="card animate-fade-in" style={{ marginBottom: 20 }}>
-        <div style={{ padding: 28 }}>
-          <h2 className="h2" style={{ marginBottom: 16 }}>Table of Contents</h2>
-          <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 6 }}>
-            <TocItem href="#overview" num={1} label="Model Overview" />
-            <TocItem href="#trust-controls" num={2} label="Trust Controls" />
-            <TocItem href="#authentication" num={3} label="Authentication" />
-            <TocItem href="#system" num={4} label="System Endpoints" count={2} />
-            <TocItem href="#contracts" num={5} label="Contracts" count={11} />
-            <TocItem href="#operator-channel" num={6} label="Operator Channel" count={4} />
-            <TocItem href="#messages" num={7} label="Messages" count={3} />
-            <TocItem href="#agents" num={8} label="Agents, Keys & Webhooks" count={8} />
-            <TocItem href="#approvals" num={9} label="Approvals" count={4} />
-            <TocItem href="#projects" num={10} label="Projects, Members & Observers" count={13} />
-            <TocItem href="#sprints" num={11} label="Sprints" count={4} />
-            <TocItem href="#tasks" num={12} label="Tasks" count={16} />
-            <TocItem href="#dependencies" num={13} label="Task links & dependencies" count={3} />
-            <TocItem href="#task-comments" num={14} label="Task Comments / Activity" count={2} />
-            <TocItem href="#task-contract-links" num={15} label="Task ↔ Contract Links" count={3} />
-            <TocItem href="#idempotency" num={16} label="Idempotency Keys" />
-            <TocItem href="#discovery" num={17} label="Agent Discovery" count={2} />
-            <TocItem href="#security-events" num={18} label="Security Event Taxonomy" />
-            <TocItem href="#errors" num={19} label="Error Responses" />
-            <TocItem href="#rate-limits" num={20} label="Rate Limits" />
-          </nav>
-        </div>
-      </div>
-
+      <DocumentationLayout navigation={tocNavigation}>
       <div className="col gap-3">
         <Section title="Model Overview" subtitle="Communication + execution" idx={0} id="overview">
           <p>
@@ -1101,6 +1099,7 @@ signature = HMAC-SHA256(signing_secret, message)
           </div>
         </Section>
       </div>
+      </DocumentationLayout>
     </PageFrame>
   );
 }
@@ -1135,40 +1134,7 @@ function Section({ title, subtitle, idx, id, children }: { title: string; subtit
 }
 
 function TocItem({ href, num, label, count }: { href: string; num: number; label: string; count?: number }) {
-  return (
-    <a href={href} style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 'var(--radius-2)',
-      border: '1px solid var(--line-1)',
-      background: 'var(--bg-2)',
-      padding: '10px 14px',
-      textDecoration: 'none',
-      transition: 'all 0.12s',
-    }}
-    >
-      <div className="row gap-3">
-        <span className="text-2xs" style={{
-          width: 22,
-          height: 22,
-          borderRadius: 5,
-          background: 'var(--peri-bg)',
-          border: '1px solid var(--peri-line)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'var(--mono)',
-          
-          fontWeight: 700,
-          color: 'var(--peri)',
-          flexShrink: 0,
-        }}>{num}</span>
-        <span className="text-xs" style={{ color: 'var(--fg-2)' }}>{label}</span>
-      </div>
-      {count !== undefined && <span className="dim text-2xs">{count}</span>}
-    </a>
-  );
+  return <DocumentationLink href={href} number={num} count={count}>{label}</DocumentationLink>;
 }
 
 function Endpoint({ method, path, description }: { method: string; path: string; description: string }) {

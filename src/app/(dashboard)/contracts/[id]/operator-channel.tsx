@@ -50,9 +50,7 @@ export default function OperatorChannel({
 
   return (
     <section className={`card ${styles.channel}`} aria-labelledby="operator-channel-heading">
-      <div
-        className={styles.header}
-      >
+      <div className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.icon}><StickyNote size={16} /></span>
           <div>
@@ -72,9 +70,6 @@ export default function OperatorChannel({
       </div>
 
       <div className={styles.body}>
-        {(notes.length > 0 || open.length > 0 || resolved.length > 0) && (
-          <p className={styles.explainer}>Standing notes stay visible to agents on every read. Questions pause work until you answer or dismiss them.</p>
-        )}
         {canWrite && drafting && (
           <form
             action={async (formData: FormData) => {
@@ -172,7 +167,7 @@ export default function OperatorChannel({
           const acked = ackCounts[note.id] ?? 0;
           return (
             <div key={note.id} className={styles.note}>
-              <div className="row gap-2" style={{ flexWrap: 'wrap' }}>
+              <div className={styles.noteMeta}>
                 <span className="text-xs" style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{note.author_name}</span>
                 <span className="dim text-2xs">{formatDateTime(note.created_at)}</span>
                 {note.updated_at !== note.created_at && <span className="dim text-2xs">· edited</span>}
@@ -183,7 +178,7 @@ export default function OperatorChannel({
                   · read by {acked} of {agentCount}
                 </span>
                 {canWrite && editing !== note.id && (
-                  <span className="row gap-1" style={{ marginLeft: 'auto' }}>
+                  <span className={styles.noteActions}>
                     <button type="button" className="btn btn--ghost btn--sm btn--icon" style={{ width: 24, height: 24 }} onClick={() => setEditing(note.id)} aria-label="Edit note">
                       <Pencil size={12} />
                     </button>
@@ -218,27 +213,32 @@ export default function OperatorChannel({
         })}
 
         {resolved.length > 0 && (
-          <details>
-            <summary className="dim text-2xs" style={{ cursor: 'pointer' }}>
-              {resolved.length} answered or dismissed question{resolved.length === 1 ? '' : 's'}
+          <details className={styles.resolvedQuestions} open>
+            <summary className={styles.resolvedSummary}>
+              <Check size={13} aria-hidden="true" />
+              <span>Resolved questions</span>
+              <span className={styles.resolvedCount}>{resolved.length}</span>
             </summary>
-            <div className="col" style={{ gap: 10, marginTop: 10 }}>
+            <div className={styles.resolvedList}>
               {resolved.map((question) => (
-                <div key={question.id} className="col" style={{ gap: 4, paddingLeft: 12, borderLeft: '2px solid var(--line-1)' }}>
-                  <div className="row gap-2" style={{ flexWrap: 'wrap' }}>
+                <article key={question.id} className={styles.resolvedItem}>
+                  <div className={styles.resolvedMeta}>
                     {question.status === 'answered'
                       ? <Check size={12} style={{ color: 'var(--mint)' }} />
                       : <X size={12} style={{ color: 'var(--fg-3)' }} />}
-                    <span className="text-xs" style={{ color: 'var(--fg-1)' }}>{question.asked_by_agent_name || 'An agent'} asked</span>
-                    <span className="dim text-2xs">{formatDateTime(question.created_at)}</span>
+                    <strong>{question.asked_by_agent_name || 'An agent'} asked</strong>
+                    <time dateTime={question.created_at}>{formatDateTime(question.created_at)}</time>
                   </div>
-                  <span className="dim text-xs">{question.body}</span>
-                  <span className="text-xs" style={{ color: 'var(--fg-1)' }}>
+                  <div className={styles.questionBody}><MarkdownPreview content={question.body} className="" /></div>
+                  <div className={styles.resolution}>
+                    <span className={styles.resolutionLabel}>
+                      {question.status === 'answered' ? `Answered by ${question.answered_by_name || 'an operator'}` : `Dismissed by ${question.answered_by_name || 'an operator'}`}
+                    </span>
                     {question.status === 'answered'
-                      ? `${question.answered_by_name || 'An operator'}: ${question.answer}`
-                      : `Dismissed by ${question.answered_by_name || 'an operator'} — no answer needed.`}
-                  </span>
-                </div>
+                      ? <MarkdownPreview content={question.answer || ''} className="" />
+                      : <span>No answer needed.</span>}
+                  </div>
+                </article>
               ))}
             </div>
           </details>

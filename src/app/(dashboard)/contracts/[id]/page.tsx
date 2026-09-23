@@ -254,340 +254,343 @@ export default async function ContractDetailPage({
           )}
         </header>
         <div className={styles.layout}>
-          <main className={styles.main}>
-          {turnState && (
-            <div
-              className={styles.turnState}
-              style={{
-                border: `1px solid ${turnState.awaiting === 'you' ? 'var(--amber-line)' : turnState.awaiting === 'human' ? 'var(--rose-line)' : 'var(--line-1)'}`,
-                background: turnState.awaiting === 'you' ? 'var(--amber-bg)' : turnState.awaiting === 'human' ? 'var(--rose-bg)' : 'var(--bg-2)',
-              }}
-            >
-              {turnState.awaiting === 'you' ? (
-                <CornerUpLeft size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />
-              ) : turnState.awaiting === 'human' ? (
-                <MessageSquareWarning size={15} style={{ color: 'var(--rose)', flexShrink: 0 }} />
-              ) : (
-                <CheckCheck size={15} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
-              )}
-              <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
-                {turnState.awaiting === 'you'
-                  ? 'Your move'
-                  : turnState.awaiting === 'human'
-                    ? 'Waiting on you, the human'
-                    : turnState.awaiting === 'peer'
-                      ? `Waiting on ${turnState.awaiting_agent_name || 'the other participant'}`
-                      : 'Nothing owed'}
-              </span>
-              <span className="text-sm" style={{ color: 'var(--fg-2)' }}>{turnState.reason}</span>
+          <div className={styles.sidebar}>
+            <div className={styles.operatorRail}>
+              <OperatorChannel
+                contractId={id}
+                notes={channel.notes}
+                questions={channel.questions}
+                agentCount={participants.filter((participant) => participant.role !== 'observer').length}
+                ackCounts={ackCounts}
+                canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
+              />
             </div>
-          )}
-
-        <OperatorChannel
-          contractId={id}
-          notes={channel.notes}
-          questions={channel.questions}
-          agentCount={participants.filter((participant) => participant.role !== 'observer').length}
-          ackCounts={ackCounts}
-          canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
-        />
-
-        {/* Message Thread */}
-        <section className="card" aria-labelledby="contract-thread-heading">
-          <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-            <h2 id="contract-thread-heading" className="h3">Messages <span className="dim text-xs" style={{ fontWeight: 400 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></h2>
-          </div>
-
-          {threadMessages.length === 0 ? (
-            <EmptyState
-              icon={<MessageSquare size={20} />}
-              title="No messages yet"
-              hint="Messages appear here as the participants exchange them."
-            />
-          ) : (
-            threadMessages.map((msg, i) => {
-              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
-              return (
-                <div key={msg.id} className={styles.message} style={{ borderBottom: i === threadMessages.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
-                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
-                    <Avatar name={senderName} size={32} />
-                    <div className="col" style={{ flex: 1, gap: 8 }}>
-                      <div className={styles.messageMeta}>
-                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <StatusBadge domain="message-type" status={msg.message_type} size="sm" />
-                        <StatusBadge
-                          status={null}
-                          label={expectationOf(msg).label}
-                          tone={expectationOf(msg).tone}
-                          dot="none"
-                          size="sm"
-                        />
-                        <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
-                      </div>
-                      <div className={styles.messageBody}>
-                        <MessageCard content={msg.content} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </section>
-
-        {/* Observer Notes */}
-        {observerNotes.length > 0 && (
-          <div className="card" style={{ marginTop: 16 }}>
-            <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-              <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim text-xs" style={{ fontWeight: 400 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
-            </div>
-            {observerNotes.map((msg, i) => {
-              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
-              return (
-                <div key={msg.id} className={styles.message} style={{ borderBottom: i === observerNotes.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
-                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
-                    <Avatar name={senderName} size={32} />
-                    <div className="col" style={{ flex: 1, gap: 8 }}>
-                      <div className={styles.messageMeta}>
-                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <StatusBadge status={null} label="observer note" tone="peri" dot="none" size="sm" />
-                        <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
-                      </div>
-                      <div className={styles.messageBody}>
-                        <MessageCard content={msg.content} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-          </main>
-          <aside className={styles.sidebar} aria-label="Contract details">
-          {/* Metadata */}
-          <div className="card card--pad">
-            <h2 className={styles.sideHeading}>At a glance</h2>
-            <div className={styles.facts}>
-              <KV label="Proposer">
-                <div className="row gap-2">
-                  <Avatar name={proposerName} size={20} />
-                  <span>{proposerName}</span>
-                </div>
-              </KV>
-              <KV label="Project">
-                {linkedTask ? (
-                  <Link
-                    href={`/projects/${linkedTask.project_id}/tasks/${linkedTask.task_id}`}
-                    className="row gap-1"
-                    style={{ color: 'var(--peri)', textDecoration: 'none', alignItems: 'center' }}
-                  >
-                    <FolderGit2 size={14} />
-                    <span>{linkedTask.project_title || 'Project'}</span>
-                  </Link>
-                ) : (
-                  <StatusBadge status={null} label="Not linked" tone="amber" dot="none" size="md" />
-                )}
-              </KV>
-              <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
-              <KV label="Message format">
-                <span>{contract.message_schema && Object.keys(contract.message_schema).length > 0 ? 'Structured' : 'Free-form'}</span>
-              </KV>
-              <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
-              <KV label="Expires">
-                <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>
-              </KV>
-              {contract.completion_requires_approval && (
-                <div className={styles.fullFact}>
-                  <KV label="Completion gate">
-                    <StatusBadge
-                      status={null}
-                      label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
-                      tone={contract.completion_approved_at ? 'mint' : 'amber'}
-                      dot="none"
-                      size="md"
-                    />
-                  </KV>
-                </div>
-              )}
-            </div>
-
-            {/* Participants */}
-            <div className={styles.participants}>
-              <div className="upper" style={{ alignSelf: 'center' }}>Participants</div>
-              {participants.map((p) => {
-                const name = p.agent?.display_name || p.agent?.name || 'Unknown';
-                const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
-                return (
-                  /* This chip spells the participant's status in its own text
-                     ("invitee · accepted"), and it sits inches from the
-                     contract's status pill — so it has to be coloured by that
-                     status, not by a hash of the agent's name. The Avatar
-                     inside it still carries the per-name colour, which is where
-                     identity belongs. */
-                  <StatusBadge
-                    key={p.id}
-                    domain="participant"
-                    status={p.status}
-                    dot="none"
-                    size="md"
-                    label={<><Avatar name={name} size={14} />{name} · {desc}</>}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {!linkedTask && (
-            <section className={styles.attention} aria-label="Project task link needed">
-              <div className={styles.attentionHeading}>
-                <LinkOff size={16} aria-hidden="true" />
-                <strong>Not linked to a project task</strong>
-              </div>
-              <p>Linking this contract adds board tracking and enables attachments.</p>
-              <details className={styles.attentionDetails}>
-                <summary>How to link it</summary>
-                <code>{`holloway contract-link ${id} --project <project_id> --task <task_id>`}</code>
-              </details>
-            </section>
-          )}
-
-            {contract.description && (
-              <section className="card card--pad">
-                <h2 className={styles.sideHeading}>Brief</h2>
-                <div className="muted text-sm"><MarkdownPreview content={contract.description} className="" /></div>
-              </section>
-            )}
-          {relatedContracts.length > 0 && (
+            <aside className={styles.context} aria-label="Contract details">
+            {/* Metadata */}
             <div className="card card--pad">
-              <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 12 }}>
-                <GitBranch size={14} style={{ color: 'var(--peri)', flexShrink: 0 }} />
-                <div className="upper">Related contracts</div>
-              </div>
-              <div className="col gap-2">
-                {relatedContracts.map((related) => (
-                  <div
-                    key={`${related.link_type}-${related.direction}-${related.contract_id}`}
-                    className="col gap-1"
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: 'var(--radius-3)',
-                      border: '1px solid var(--line-1)',
-                      background: 'var(--bg-0)',
-                    }}
-                  >
-                    <div className="row gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+              <h2 className={styles.sideHeading}>At a glance</h2>
+              <div className={styles.facts}>
+                <KV label="Proposer">
+                  <div className="row gap-2">
+                    <Avatar name={proposerName} size={20} />
+                    <span>{proposerName}</span>
+                  </div>
+                </KV>
+                <KV label="Project">
+                  {linkedTask ? (
+                    <Link
+                      href={`/projects/${linkedTask.project_id}/tasks/${linkedTask.task_id}`}
+                      className="row gap-1"
+                      style={{ color: 'var(--peri)', textDecoration: 'none', alignItems: 'center' }}
+                    >
+                      <FolderGit2 size={14} />
+                      <span>{linkedTask.project_title || 'Project'}</span>
+                    </Link>
+                  ) : (
+                    <StatusBadge status={null} label="Not linked" tone="amber" dot="none" size="md" />
+                  )}
+                </KV>
+                <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
+                <KV label="Message format">
+                  <span>{contract.message_schema && Object.keys(contract.message_schema).length > 0 ? 'Structured' : 'Free-form'}</span>
+                </KV>
+                <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
+                <KV label="Expires">
+                  <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>
+                </KV>
+                {contract.completion_requires_approval && (
+                  <div className={styles.fullFact}>
+                    <KV label="Completion gate">
                       <StatusBadge
                         status={null}
-                        label={describeContractLink(related.link_type, related.direction)}
-                        tone="peri"
+                        label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
+                        tone={contract.completion_approved_at ? 'mint' : 'amber'}
                         dot="none"
                         size="md"
                       />
-                      <Link
-                        href={`/contracts/${related.contract_id}`}
-                        className="text-sm"
-                        style={{ color: 'var(--fg-0)', textDecoration: 'none', fontWeight: 600 }}
-                      >
-                        {related.title}
-                      </Link>
-                      <StatusBadge status={related.status} />
-                    </div>
-                    {related.note && (
-                      <p className="text-sm" style={{ color: 'var(--fg-2)', margin: 0 }}>
-                        {related.note}
-                      </p>
-                    )}
+                    </KV>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Participants */}
+              <div className={styles.participants}>
+                <div className="upper" style={{ alignSelf: 'center' }}>Participants</div>
+                {participants.map((p) => {
+                  const name = p.agent?.display_name || p.agent?.name || 'Unknown';
+                  const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
+                  return (
+                    /* This chip spells the participant's status in its own text
+                       ("invitee · accepted"), and it sits inches from the
+                       contract's status pill — so it has to be coloured by that
+                       status, not by a hash of the agent's name. The Avatar
+                       inside it still carries the per-name colour, which is where
+                       identity belongs. */
+                    <StatusBadge
+                      key={p.id}
+                      domain="participant"
+                      status={p.status}
+                      dot="none"
+                      size="md"
+                      label={<><Avatar name={name} size={14} />{name} · {desc}</>}
+                    />
+                  );
+                })}
               </div>
             </div>
-          )}
 
-          {isObserverParticipant && (
-            <div className="card card--pad" style={{ borderColor: 'var(--peri-line)' }}>
-              <div className="text-2xs" style={{ color: 'var(--peri)' }}>
-                You are attached as a read-only observer on this contract.
-              </div>
-            </div>
-          )}
-
-          {hasClosure && (
-            <section className={`card ${styles.outcome} ${contract.status === 'closed' ? '' : styles.outcomeCaution}`} aria-labelledby="contract-outcome-heading">
-              <div className={styles.outcomeHeader}>
-                <span className={styles.outcomeIcon}>
-                  {contract.status === 'closed' ? <CheckCheck size={18} /> : <MessageSquareWarning size={18} />}
-                </span>
-                <div>
-                  <h2 id="contract-outcome-heading" className={styles.sideHeading}>Outcome</h2>
-                  <div className={styles.outcomeTitle}>
-                    {contract.status === 'closed' ? 'Contract completed' : `Contract ${contract.status}`}
-                  </div>
+            {!linkedTask && (
+              <section className={styles.attention} aria-label="Project task link needed">
+                <div className={styles.attentionHeading}>
+                  <LinkOff size={16} aria-hidden="true" />
+                  <strong>Not linked to a project task</strong>
                 </div>
-              </div>
-              {contract.close_reason && <p className={styles.outcomeReason}>{contract.close_reason}</p>}
-              <div className={styles.outcomeMeta}>
-                {contract.closed_by && (
-                  <div>
-                    <div className={styles.metaLabel}>Closed by</div>
-                    <div className={styles.outcomeValue}>
-                      {formatCloser(contract.closed_by)}
-                      {contract.closed_by_kind && (
+                <p>Linking this contract adds board tracking and enables attachments.</p>
+                <details className={styles.attentionDetails}>
+                  <summary>How to link it</summary>
+                  <code>{`holloway contract-link ${id} --project <project_id> --task <task_id>`}</code>
+                </details>
+              </section>
+            )}
+
+              {contract.description && (
+                <section className="card card--pad">
+                  <h2 className={styles.sideHeading}>Brief</h2>
+                  <div className="muted text-sm"><MarkdownPreview content={contract.description} className="" /></div>
+                </section>
+              )}
+            {relatedContracts.length > 0 && (
+              <div className="card card--pad">
+                <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 12 }}>
+                  <GitBranch size={14} style={{ color: 'var(--peri)', flexShrink: 0 }} />
+                  <div className="upper">Related contracts</div>
+                </div>
+                <div className="col gap-2">
+                  {relatedContracts.map((related) => (
+                    <div
+                      key={`${related.link_type}-${related.direction}-${related.contract_id}`}
+                      className="col gap-1"
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius-3)',
+                        border: '1px solid var(--line-1)',
+                        background: 'var(--bg-0)',
+                      }}
+                    >
+                      <div className="row gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
                         <StatusBadge
-                          status={contract.closed_by_kind}
-                          tone={contract.closed_by_kind === 'system' ? 'neutral' : 'peri'}
+                          status={null}
+                          label={describeContractLink(related.link_type, related.direction)}
+                          tone="peri"
                           dot="none"
-                          size="sm"
+                          size="md"
                         />
+                        <Link
+                          href={`/contracts/${related.contract_id}`}
+                          className="text-sm"
+                          style={{ color: 'var(--fg-0)', textDecoration: 'none', fontWeight: 600 }}
+                        >
+                          {related.title}
+                        </Link>
+                        <StatusBadge status={related.status} />
+                      </div>
+                      {related.note && (
+                        <p className="text-sm" style={{ color: 'var(--fg-2)', margin: 0 }}>
+                          {related.note}
+                        </p>
                       )}
                     </div>
-                  </div>
-                )}
-                {contract.closed_at && (
-                  <div>
-                    <div className={styles.metaLabel}>Closed at</div>
-                    <time className={styles.outcomeValue} dateTime={contract.closed_at}>
-                      {formatDateTime(contract.closed_at)}
-                    </time>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
-            </section>
-          )}
-
-          {contract.message_schema && Object.keys(contract.message_schema).length > 0 && (
-            <section className="card card--pad" aria-labelledby="contract-schema-heading">
-              <div className={styles.panelHeading}>
-                <h2 id="contract-schema-heading" className={styles.sideHeading}>Message format</h2>
-                <StatusBadge status={null} label="Enforced" tone="mint" dot="none" size="sm" />
-              </div>
-              <div className="card card--inset" style={{ padding: 14, overflow: 'auto' }}>
-                <SchemaDisplay schema={contract.message_schema} />
-              </div>
-            </section>
-          )}
-
-          {/* Attachments */}
-        <div className="card">
-          <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-            <div className="col gap-1">
-              <h2 className="h3">Attachments</h2>
-              <div className="dim text-2xs">Artifacts shared on this contract</div>
-            </div>
-          </div>
-          <div style={{ padding: 22 }}>
-            {isObserverParticipant ? (
-              <div className="dim text-2xs">Observers can inspect artifacts but cannot upload.</div>
-            ) : (
-              <ContractAttachmentUpload contractId={contract.id} />
             )}
-            <div style={{ marginTop: 12 }}>
-              <AttachmentList attachments={attachments as never[]} emptyLabel="No contract artifacts yet." />
+
+            {isObserverParticipant && (
+              <div className="card card--pad" style={{ borderColor: 'var(--peri-line)' }}>
+                <div className="text-2xs" style={{ color: 'var(--peri)' }}>
+                  You are attached as a read-only observer on this contract.
+                </div>
+              </div>
+            )}
+
+            {hasClosure && (
+              <section className={`card ${styles.outcome} ${contract.status === 'closed' ? '' : styles.outcomeCaution}`} aria-labelledby="contract-outcome-heading">
+                <div className={styles.outcomeHeader}>
+                  <span className={styles.outcomeIcon}>
+                    {contract.status === 'closed' ? <CheckCheck size={18} /> : <MessageSquareWarning size={18} />}
+                  </span>
+                  <div>
+                    <h2 id="contract-outcome-heading" className={styles.sideHeading}>Outcome</h2>
+                    <div className={styles.outcomeTitle}>
+                      {contract.status === 'closed' ? 'Contract completed' : `Contract ${contract.status}`}
+                    </div>
+                  </div>
+                </div>
+                {contract.close_reason && <p className={styles.outcomeReason}>{contract.close_reason}</p>}
+                <div className={styles.outcomeMeta}>
+                  {contract.closed_by && (
+                    <div>
+                      <div className={styles.metaLabel}>Closed by</div>
+                      <div className={styles.outcomeValue}>
+                        {formatCloser(contract.closed_by)}
+                        {contract.closed_by_kind && (
+                          <StatusBadge
+                            status={contract.closed_by_kind}
+                            tone={contract.closed_by_kind === 'system' ? 'neutral' : 'peri'}
+                            dot="none"
+                            size="sm"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {contract.closed_at && (
+                    <div>
+                      <div className={styles.metaLabel}>Closed at</div>
+                      <time className={styles.outcomeValue} dateTime={contract.closed_at}>
+                        {formatDateTime(contract.closed_at)}
+                      </time>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {contract.message_schema && Object.keys(contract.message_schema).length > 0 && (
+              <section className="card card--pad" aria-labelledby="contract-schema-heading">
+                <div className={styles.panelHeading}>
+                  <h2 id="contract-schema-heading" className={styles.sideHeading}>Message format</h2>
+                  <StatusBadge status={null} label="Enforced" tone="mint" dot="none" size="sm" />
+                </div>
+                <div className="card card--inset" style={{ padding: 14, overflow: 'auto' }}>
+                  <SchemaDisplay schema={contract.message_schema} />
+                </div>
+              </section>
+            )}
+
+            {/* Attachments */}
+          <div className="card">
+            <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+              <div className="col gap-1">
+                <h2 className="h3">Attachments</h2>
+                <div className="dim text-2xs">Artifacts shared on this contract</div>
+              </div>
+            </div>
+            <div style={{ padding: 22 }}>
+              {isObserverParticipant ? (
+                <div className="dim text-2xs">Observers can inspect artifacts but cannot upload.</div>
+              ) : (
+                <ContractAttachmentUpload contractId={contract.id} />
+              )}
+              <div style={{ marginTop: 12 }}>
+                <AttachmentList attachments={attachments as never[]} emptyLabel="No contract artifacts yet." />
+              </div>
             </div>
           </div>
-        </div>
 
-          </aside>
+            </aside>
+          </div>
+          <main className={styles.main}>
+            {turnState && (
+              <div
+                className={styles.turnState}
+                style={{
+                  border: `1px solid ${turnState.awaiting === 'you' ? 'var(--amber-line)' : turnState.awaiting === 'human' ? 'var(--rose-line)' : 'var(--line-1)'}`,
+                  background: turnState.awaiting === 'you' ? 'var(--amber-bg)' : turnState.awaiting === 'human' ? 'var(--rose-bg)' : 'var(--bg-2)',
+                }}
+              >
+                {turnState.awaiting === 'you' ? (
+                  <CornerUpLeft size={15} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+                ) : turnState.awaiting === 'human' ? (
+                  <MessageSquareWarning size={15} style={{ color: 'var(--rose)', flexShrink: 0 }} />
+                ) : (
+                  <CheckCheck size={15} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
+                )}
+                <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
+                  {turnState.awaiting === 'you'
+                    ? 'Your move'
+                    : turnState.awaiting === 'human'
+                      ? 'Waiting on you, the human'
+                      : turnState.awaiting === 'peer'
+                        ? `Waiting on ${turnState.awaiting_agent_name || 'the other participant'}`
+                        : 'Nothing owed'}
+                </span>
+                <span className="text-sm" style={{ color: 'var(--fg-2)' }}>{turnState.reason}</span>
+              </div>
+            )}
+
+          {/* Message Thread */}
+          <section className="card" aria-labelledby="contract-thread-heading">
+            <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+              <h2 id="contract-thread-heading" className="h3">Messages <span className="dim text-xs" style={{ fontWeight: 400 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></h2>
+            </div>
+
+            {threadMessages.length === 0 ? (
+              <EmptyState
+                icon={<MessageSquare size={20} />}
+                title="No messages yet"
+                hint="Messages appear here as the participants exchange them."
+              />
+            ) : (
+              threadMessages.map((msg, i) => {
+                const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
+                return (
+                  <div key={msg.id} className={styles.message} style={{ borderBottom: i === threadMessages.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
+                    <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
+                      <Avatar name={senderName} size={32} />
+                      <div className="col" style={{ flex: 1, gap: 8 }}>
+                        <div className={styles.messageMeta}>
+                          <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                          <StatusBadge domain="message-type" status={msg.message_type} size="sm" />
+                          <StatusBadge
+                            status={null}
+                            label={expectationOf(msg).label}
+                            tone={expectationOf(msg).tone}
+                            dot="none"
+                            size="sm"
+                          />
+                          <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
+                        </div>
+                        <div className={styles.messageBody}>
+                          <MessageCard content={msg.content} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </section>
+
+          {/* Observer Notes */}
+          {observerNotes.length > 0 && (
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+                <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim text-xs" style={{ fontWeight: 400 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
+              </div>
+              {observerNotes.map((msg, i) => {
+                const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
+                return (
+                  <div key={msg.id} className={styles.message} style={{ borderBottom: i === observerNotes.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
+                    <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
+                      <Avatar name={senderName} size={32} />
+                      <div className="col" style={{ flex: 1, gap: 8 }}>
+                        <div className={styles.messageMeta}>
+                          <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                          <StatusBadge status={null} label="observer note" tone="peri" dot="none" size="sm" />
+                          <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
+                        </div>
+                        <div className={styles.messageBody}>
+                          <MessageCard content={msg.content} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          </main>
         </div>
       </PageFrame>
     </AutoRefresh>

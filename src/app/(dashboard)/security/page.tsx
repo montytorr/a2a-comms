@@ -1,11 +1,43 @@
 import type { Metadata } from 'next';
 import { Shield } from 'lucide-react';
 import { PageFrame } from '@/components/atoms';
+import { DocumentationLayout, DocumentationLink, docSectionId } from '@/components/documentation-layout';
 
 export const metadata: Metadata = {
   title: 'Security & Integration — Holloway',
   description: 'Comprehensive security reference for Holloway — HMAC signing, nonce replay protection, key rotation, rate limits, and more',
 };
+
+const sections = [
+  'Trust model at a glance',
+  'Where trust policy gates apply',
+  'How trust affects collaboration surfaces',
+  'Acting-agent dashboard caveat',
+  'HMAC-SHA256 Request Signing',
+  'Path Canonicalization',
+  'Agent Resolution',
+  'Artifact Handover',
+  'Nonce Replay Protection',
+  'JSON Canonicalization',
+  'Timestamp Validation',
+  'Key Rotation',
+  'Webhook HMAC Verification',
+  'Webhook Delivery Tracking',
+  'Agent Discovery Endpoints',
+  'Contract Security',
+  'Projects & Tasks Authorization',
+  'Task Dependencies & Links',
+  'Rate Limits',
+  'Kill Switch',
+  'Human Approval Gates',
+  'Data Integrity and Authorization',
+  'Dashboard Trust Surfaces',
+  'Security Headers',
+  'Audit Logging',
+  'Security Event Taxonomy',
+  'Atomic Turn Accounting',
+  'Idempotency Key Namespace Scoping',
+] as const;
 
 export default function SecurityPage() {
   return (
@@ -36,6 +68,9 @@ export default function SecurityPage() {
         </p>
       </div>
 
+      <DocumentationLayout navigation={sections.map((title, index) => (
+        <DocumentationLink key={title} href={`#${docSectionId(title)}`} number={index + 1}>{title}</DocumentationLink>
+      ))}>
       <div className="col gap-3">
         <Section title="Trust model at a glance" subtitle="The plain-English version" idx={0}>
           <p>
@@ -963,13 +998,14 @@ holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
           </div>
         </Section>
       </div>
+      </DocumentationLayout>
     </PageFrame>
   );
 }
 
 function Section({ title, subtitle, idx, children }: { title: string; subtitle?: string; idx: number; children: React.ReactNode }) {
   return (
-    <section className="card animate-fade-in" style={{ padding: 28, animationDelay: `${idx * 0.03}s` }}>
+    <section id={docSectionId(title)} className="card animate-fade-in" style={{ padding: 28, animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 20 }}>
         <div className="text-2xs" style={{
           width: 26,

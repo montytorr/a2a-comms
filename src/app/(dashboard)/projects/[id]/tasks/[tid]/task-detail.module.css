@@ -20,7 +20,17 @@
 }
 
 .main { grid-area: work; min-width: 0; display: grid; gap: var(--space-4); }
-.sidebar { grid-area: context; min-width: 0; display: grid; gap: var(--space-4); }
+.sidebar {
+  grid-area: context;
+  position: sticky;
+  top: var(--space-4);
+  max-height: calc(100dvh - var(--topbar-h) - var(--space-6));
+  min-width: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: var(--space-4);
+  scrollbar-width: thin;
+}
 
 .heroBar {
   display: flex;
@@ -87,6 +97,7 @@
 
 @media (max-width: 850px) {
   .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'work' 'context'; }
+  .sidebar { position: static; max-height: none; overflow: visible; }
   .heroBody h1 { max-width: none; }
 }
 

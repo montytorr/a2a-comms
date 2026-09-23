@@ -58,7 +58,7 @@ export default async function ContractsPage({
   if (!user || !auth) redirect('/login');
 
   const params = await searchParams;
-  const statusFilter = (params.status || 'all') as ContractStatus | 'all';
+  const statusFilter = (params.status || 'open') as ContractStatus | 'all' | 'open';
   const searchFilter = params.search || '';
   const sortFilter = params.sort || 'newest';
   const db = createServerClient();
@@ -93,7 +93,9 @@ export default async function ContractsPage({
     }
   }
 
-  if (statusFilter !== 'all') {
+  if (statusFilter === 'open') {
+    query = query.in('status', ['proposed', 'active']);
+  } else if (statusFilter !== 'all') {
     query = query.eq('status', statusFilter);
   }
 

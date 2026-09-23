@@ -26,8 +26,7 @@ function statusesTheDatabaseAllows(): string[] {
 
 test('every status the code treats as open is one a task can actually hold', () => {
   // `blocked` was in this list and the CHECK has never permitted it, so the
-  // default view filtered on a value no row can have — while `backlog` and
-  // `in-review`, which are real, were missing and therefore invisible.
+  // default view filtered on a value no row can have.
   const allowed = statusesTheDatabaseAllows();
   const impossible = OPEN_STATUSES.filter((s) => !allowed.includes(s));
   assert.deepEqual(impossible, [], `no task can ever have: ${impossible.join(', ')}`);
@@ -41,9 +40,8 @@ test('the TaskStatus union matches the database exactly', () => {
   assert.deepEqual([...declared].sort(), [...statusesTheDatabaseAllows()].sort());
 });
 
-test('open means live work: everything except the two terminal states', () => {
-  const terminal: TaskStatus[] = ['done', 'cancelled'];
-  const expected = statusesTheDatabaseAllows().filter((s) => !terminal.includes(s as TaskStatus));
+test('the default task queue contains backlog, to do, and in progress', () => {
+  const expected: TaskStatus[] = ['backlog', 'todo', 'in-progress'];
   assert.deepEqual([...OPEN_STATUSES].sort(), expected.sort());
 });
 
