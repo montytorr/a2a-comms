@@ -4,7 +4,7 @@ import { auditLog, getClientIp } from '@/lib/api-helpers';
 import { createServerClient } from '@/lib/db/server';
 import type { ApiError, CloseContractRequest, Contract } from '@/lib/types';
 import { enrichContract, getParticipant } from '../../_helpers';
-import { emitContractClosed } from '@/lib/contract-closure';
+import { emitContractClosed, evaluateGatedClose } from '@/lib/contract-closure';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 
 export async function POST(
@@ -53,37 +53,38 @@ export async function POST(
     );
   }
 
-  // Exhausting a turn budget, or a participant deciding they are finished, is
-  // not the same as the proposer accepting the work. While the gate is open the
-  // contract cannot be closed at all - the proposer records an approval first,
-  // which closes it if the budget is already spent.
-  const gated = contract as Contract;
-  if (gated.completion_requires_approval && !gated.completion_approved_at) {
-    return NextResponse.json(
-      {
-        error:
-          'This contract requires proposer approval before it can be closed. The proposer must send an approval message first.',
-        code: 'COMPLETION_APPROVAL_REQUIRED',
-      } satisfies ApiError,
-      { status: 409 }
-    );
-  }
-
   let reason = `Closed by ${auth.agent.name}`;
+  let parsed: CloseContractRequest = {};
   if (body) {
-    let parsed: CloseContractRequest;
     try {
-      parsed = JSON.parse(body);
+      const raw = JSON.parse(body);
+      parsed = raw && typeof raw === 'object' ? raw : {};
     } catch {
       return NextResponse.json(
         { error: 'Invalid JSON body', code: 'INVALID_BODY' } satisfies ApiError,
         { status: 400 }
       );
     }
-    if (parsed.reason) reason = parsed.reason;
+    if (typeof parsed.reason === 'string' && parsed.reason.trim()) reason = parsed.reason.trim();
   }
 
-  const { data: updated } = await db
+  // Exhausting a turn budget, or a participant deciding they are finished, is
+  // not the same as the proposer accepting the work. While the gate is open
+  // the only close allowed is the proposer's explicit, reasoned refusal of the
+  // work, recorded as closed-unapproved.
+  const gated = contract as Contract;
+  const gate = evaluateGatedClose({
+    contractId: id,
+    gatePending: gated.completion_requires_approval && !gated.completion_approved_at,
+    isProposer: gated.proposer_id === auth.agent.id,
+    withoutApproval: parsed.without_approval,
+    reason: parsed.reason,
+  });
+  if (!gate.allowed) {
+    return NextResponse.json(gate.body satisfies ApiError, { status: gate.status });
+  }
+
+  let closeQuery = db
     .from('contracts')
     .update({
       status: 'closed',
@@ -92,13 +93,15 @@ export async function POST(
       // `reason` in the request body is free to replace.
       closed_by: auth.agent.name,
       closed_by_kind: 'agent',
+      closed_without_approval: gate.closedWithoutApproval,
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
-    .eq('status', 'active')
-    .select()
-    .maybeSingle();
+    .eq('status', 'active');
+  // An approval landing mid-close would otherwise be recorded as a refusal.
+  if (gate.closedWithoutApproval) closeQuery = closeQuery.is('completion_approved_at', null);
+  const { data: updated } = await closeQuery.select().maybeSingle();
 
   if (!updated) {
     return NextResponse.json(
@@ -120,6 +123,7 @@ export async function POST(
     currentTurns: gated.current_turns,
     maxTurns: gated.max_turns,
     completionApprovedAt: gated.completion_approved_at,
+    closedWithoutApproval: gate.closedWithoutApproval,
   }).catch(() => {});
 
   await auditLog({
@@ -127,7 +131,7 @@ export async function POST(
     action: 'contract.close',
     resourceType: 'contract',
     resourceId: id,
-    details: { reason },
+    details: { reason, without_approval: gate.closedWithoutApproval },
     ipAddress: getClientIp(req),
   });
 

@@ -15,6 +15,7 @@ from a2a_reactor import (
     read_turn_budget,
     reactor_lease,
     work_was_accepted,
+    worker_guidance,
 )
 
 
@@ -71,6 +72,10 @@ class TurnBudgetTest(unittest.TestCase):
         self.assertTrue(budget.is_low)
         self.assertIn("LOW_BUDGET", budget.describe())
 
+    def test_a_thin_budget_points_at_a_linked_follow_up(self):
+        budget = read_turn_budget({"consumes_turn": True, "turns_remaining": 1, "turn": 9, "max_turns": 10})
+        self.assertIn("--continues", budget.describe())
+
     def test_a_legacy_event_is_assumed_to_have_cost_a_turn(self):
         self.assertIn("cost=turn", read_turn_budget({"turn": 3, "max_turns": 10}).describe())
 
@@ -79,7 +84,7 @@ class CloseOutcomeTest(unittest.TestCase):
     def test_only_an_approved_completion_means_the_work_was_accepted(self):
         self.assertTrue(work_was_accepted(CloseOutcome.COMPLETED_APPROVED))
         for outcome in (CloseOutcome.TURNS_EXHAUSTED, CloseOutcome.EXPIRED,
-                        CloseOutcome.CLOSED_BY_PARTICIPANT):
+                        CloseOutcome.CLOSED_BY_PARTICIPANT, CloseOutcome.CLOSED_UNAPPROVED):
             with self.subTest(outcome=outcome):
                 self.assertFalse(work_was_accepted(outcome))
 
@@ -87,6 +92,15 @@ class CloseOutcomeTest(unittest.TestCase):
         self.assertEqual(read_close_outcome({"closed_by": "system:max-turns"}), CloseOutcome.TURNS_EXHAUSTED)
         self.assertEqual(read_close_outcome({"closed_by": "system:expiry"}), CloseOutcome.EXPIRED)
         self.assertEqual(read_close_outcome({"closed_by": "alice"}), CloseOutcome.CLOSED_BY_PARTICIPANT)
+
+    def test_a_declared_unapproved_close_is_read(self):
+        self.assertEqual(read_close_outcome({"outcome": "closed-unapproved"}), CloseOutcome.CLOSED_UNAPPROVED)
+
+    def test_a_gated_contract_closed_by_a_participant_without_approval_is_unapproved(self):
+        self.assertEqual(
+            read_close_outcome({"closed_by": "alice", "completion_requires_approval": True}),
+            CloseOutcome.CLOSED_UNAPPROVED,
+        )
 
     def test_a_gated_contract_approved_at_its_cap_completed(self):
         self.assertEqual(
@@ -154,6 +168,47 @@ class ReactorLoopTest(unittest.TestCase):
         self.assertEqual(len(tracker.annotated), 1)
         self.assertIn("needs a decision", tracker.annotated[0][1])
 
+    def test_an_unapproved_close_stays_open_and_points_at_a_linked_follow_up(self):
+        event = {"id": "e1", "event": "contract.closed", "payload": {"contract_id": "c-1", "data": {
+            "outcome": "closed-unapproved", "closed_by": "alice", "current_turns": 10, "max_turns": 10,
+            "successor_hint": "Propose the follow-up with continues: c-1."}}}
+        tracker = RecordingTracker(["TASK-1"])
+        Reactor(tracker=tracker, worker=NullWorkerRuntime()).drain(write_queue_file([event]))
+        self.assertEqual(tracker.closed, [], "closing without approval is not acceptance")
+        note = tracker.annotated[0][1]
+        self.assertIn("without accepting", note)
+        self.assertIn("--continues c-1", note)
+        self.assertIn("Platform says: Propose the follow-up", note)
+
+    def test_a_spent_budget_points_at_a_linked_follow_up(self):
+        event = {"id": "e1", "event": "contract.closed", "payload": {"contract_id": "c-1", "data": {
+            "outcome": "turns-exhausted", "closed_by": "system:max-turns"}}}
+        tracker = RecordingTracker(["TASK-1"])
+        Reactor(tracker=tracker, worker=NullWorkerRuntime()).drain(write_queue_file([event]))
+        self.assertIn("--continues c-1", tracker.annotated[0][1])
+
+    def test_an_approved_closure_suggests_no_successor(self):
+        event = {"id": "e1", "event": "contract.closed", "payload": {"contract_id": "c-1", "data": {
+            "outcome": "completed-approved"}}}
+        tracker = RecordingTracker(["TASK-1"])
+        Reactor(tracker=tracker, worker=NullWorkerRuntime()).drain(write_queue_file([event]))
+        self.assertNotIn("--continues", tracker.annotated[0][1])
+
+    def test_the_worker_receives_guidance_with_the_event(self):
+        class CapturingWorker:
+            def __init__(self):
+                self.events = []
+
+            def spawn(self, event, label):
+                self.events.append(event)
+                return True
+
+        path = write_queue_file([{"id": "i1", "event": "invitation", "payload": {
+            "contract_id": "c-2", "data": {"title": "Review", "proposer": "alice"}}}])
+        worker = CapturingWorker()
+        Reactor(worker=worker).drain(path)
+        self.assertIn("YOU OPEN", worker.events[0]["worker_guidance"])
+
     def test_a_dry_run_changes_nothing(self):
         path = write_queue_file([message_event("e1")])
         worker = NullWorkerRuntime()
@@ -167,6 +222,55 @@ class ReactorLoopTest(unittest.TestCase):
             handle.write("{not json\n")
         result = Reactor(worker=NullWorkerRuntime()).drain(path)
         self.assertEqual(result.acted, 1)
+
+
+class WorkerGuidanceTest(unittest.TestCase):
+    def invitation(self, **data):
+        return {"id": "i1", "event": "invitation", "payload": {"contract_id": "c-new", "data": data}}
+
+    def test_an_invitation_says_accept_then_open_in_the_same_run(self):
+        text = worker_guidance(self.invitation(title="Review", proposer="alice"))
+        self.assertIn("holloway accept c-new", text)
+        self.assertIn("YOU OPEN", text)
+        self.assertIn("holloway send c-new", text)
+
+    def test_an_unlinked_invitation_asks_for_the_task(self):
+        self.assertIn("holloway contract-link c-new", worker_guidance(self.invitation()))
+        linked = worker_guidance(self.invitation(linked_task={"project_id": "p", "task_id": "t", "title": "T"}))
+        self.assertNotIn("contract-link", linked)
+        self.assertIn("holloway task p t", linked)
+
+    def test_an_unrelated_continuation_asks_for_the_relation(self):
+        text = worker_guidance(self.invitation(likely_predecessors=[
+            {"id": "c-old", "title": "Cairn PR 65", "status": "active", "current_turns": 10, "max_turns": 10}]))
+        self.assertIn("holloway contract-relate c-new --to c-old --type continues", text)
+        related = worker_guidance(self.invitation(
+            likely_predecessors=[{"id": "c-old"}],
+            related_contracts=[{"id": "c-old", "title": "Cairn PR 65", "link_type": "continues"}]))
+        self.assertNotIn("contract-relate", related)
+
+    def test_the_platform_next_action_is_quoted(self):
+        text = worker_guidance(self.invitation(next_action="Accept, then send the first message."))
+        self.assertIn("Platform says: Accept, then send the first message.", text)
+
+    def test_the_opener_is_told_to_open(self):
+        event = {"id": "a1", "event": "contract.accepted", "payload": {"contract_id": "c-1", "data": {
+            "opens_next_agent_id": "me", "next_action": "Send the first message."}}}
+        text = worker_guidance(event, self_agent_id="me")
+        self.assertIn("YOU OPEN", text)
+        self.assertIn("Platform says: Send the first message.", text)
+
+    def test_a_low_budget_message_points_at_a_linked_follow_up(self):
+        text = worker_guidance(message_event("e1", turns_remaining=2))
+        self.assertIn("--continues c-1", text)
+        self.assertEqual(worker_guidance(message_event("e1")), "")
+
+    def test_an_exhausted_budget_names_both_ways_to_end_it(self):
+        text = worker_guidance(message_event("e1", turns_remaining=0,
+                                             next_steps=["Proposer: approve or close without approval."]))
+        self.assertIn("approve-completion c-1", text)
+        self.assertIn("--without-approval", text)
+        self.assertIn("Platform says: Proposer: approve", text)
 
 
 class LeaseTest(unittest.TestCase):

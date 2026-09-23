@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { ensureAttachmentBucket, uploadAttachmentBinary, validateAttachmentInput, buildAttachmentStoragePath, sha256Buffer } from '@/lib/attachments';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { EMPTY_UUID } from '@/lib/dashboard-actor-helpers';
+import { emitContractClosed, UNAPPROVED_CLOSE_REASON_MIN } from '@/lib/contract-closure';
 
 export async function uploadContractAttachment(contractId: string, formData: FormData) {
   const auth = await getAuthActorContext();
@@ -80,14 +81,24 @@ export async function uploadContractAttachment(contractId: string, formData: For
   revalidatePath(`/contracts/${contractId}`);
 }
 
-export async function closeContract(contractId: string) {
+export type CloseContractResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+// Returned, never thrown: Next.js replaces a thrown server-action error with a
+// generic "Server Components render" message in production builds, so the
+// operator would never see why the close was refused.
+export async function closeContract(
+  contractId: string,
+  options: { withoutApproval?: boolean; reason?: string } = {}
+): Promise<CloseContractResult> {
   const auth = await getAuthActorContext();
   const user = auth?.user ?? null;
-  if (!user || !auth) throw new Error('Unauthorized');
+  if (!user || !auth) return { ok: false, error: 'You are signed out. Sign in again to close this contract.' };
 
-  // Check participation unless superAdmin
+  const db = createServerClient();
+
   if (!user.isSuperAdmin) {
-    const db = createServerClient();
     const { data: participation } = await db
       .from('contract_participants')
       .select('id, role, agent_id')
@@ -96,61 +107,96 @@ export async function closeContract(contractId: string) {
       .limit(1);
 
     if (!participation || participation.length === 0) {
-      throw new Error('Forbidden: not a participant');
+      return { ok: false, error: 'You are not a participant in this contract.' };
     }
 
     if (participation[0]?.role === 'observer') {
-      throw new Error('Forbidden: observers may inspect contract context but cannot close contracts');
+      return { ok: false, error: 'Observers may inspect a contract but cannot close it.' };
     }
   }
 
-  const db = createServerClient();
-
-  const { data: closePolicy } = await db
+  const { data: contract } = await db
     .from('contracts')
-    .select('completion_requires_approval, completion_approved_at')
+    .select('status, current_turns, max_turns, completion_requires_approval, completion_approved_at, proposer:agents!contracts_proposer_id_fkey(name, display_name)')
     .eq('id', contractId)
-    .single();
-  if (closePolicy?.completion_requires_approval && !closePolicy.completion_approved_at) {
-    throw new Error('Contract completion requires proposer approval before closure');
+    .maybeSingle();
+  if (!contract) return { ok: false, error: 'Contract not found.' };
+  if (contract.status !== 'active') {
+    return { ok: false, error: `This contract is ${contract.status}; only active contracts can be closed.` };
+  }
+  // An operator may close a stuck gated contract, but only as an explicit,
+  // reasoned refusal of the work - never as a completion. Without that the
+  // contract could sit active forever when its proposer never approved.
+  const typedReason = options.reason?.trim() ?? '';
+  let closedWithoutApproval = false;
+  if (contract.completion_requires_approval && !contract.completion_approved_at) {
+    const proposer = Array.isArray(contract.proposer) ? contract.proposer[0] : contract.proposer;
+    const proposerName = proposer?.display_name || proposer?.name || 'the proposer';
+    if (!options.withoutApproval) {
+      return {
+        ok: false,
+        error: `This contract needs completion approval from ${proposerName} before it can close. ${proposerName} approves it with \`holloway approve-completion ${contractId}\`, or you can close it without approving and give a reason.`,
+      };
+    }
+    if (typedReason.length < UNAPPROVED_CLOSE_REASON_MIN) {
+      return {
+        ok: false,
+        error: `Say why the work is not being accepted, in at least ${UNAPPROVED_CLOSE_REASON_MIN} characters.`,
+      };
+    }
+    closedWithoutApproval = true;
   }
 
   const actor = user.email || user.displayName;
+  const reason = closedWithoutApproval
+    ? `Closed without approval by operator: ${typedReason}`
+    : 'Closed by operator via UI';
 
-  const { data: closed, error } = await db
+  let closeQuery = db
     .from('contracts')
     .update({
       status: 'closed',
-      close_reason: 'Closed by operator via UI',
+      close_reason: reason,
       closed_by: actor,
       closed_by_kind: 'user',
+      closed_without_approval: closedWithoutApproval,
       closed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', contractId)
-    .eq('status', 'active')
-    .select('id, status')
-    .maybeSingle();
+    .eq('status', 'active');
+  // An approval landing mid-close would otherwise be recorded as a refusal.
+  if (closedWithoutApproval) closeQuery = closeQuery.is('completion_approved_at', null);
+  const { data: closed, error } = await closeQuery.select('id, status').maybeSingle();
 
-  if (error) {
-    throw new Error(`Failed to close contract: ${error.message}`);
-  }
-  if (!closed) {
-    throw new Error('Contract was not closed because it is no longer active or you cannot update it');
-  }
+  if (error) return { ok: false, error: `The contract could not be closed: ${error.message}` };
+  if (!closed) return { ok: false, error: 'The contract changed while you were closing it. Reload to see its current state.' };
 
-  // Log the action
+  emitContractClosed({
+    contractId,
+    status: 'closed',
+    closedBy: actor,
+    closedByKind: 'user',
+    reason,
+    currentTurns: contract.current_turns,
+    maxTurns: contract.max_turns,
+    completionApprovedAt: contract.completion_approved_at,
+    closedWithoutApproval,
+  }).catch(() => {});
+
   await db.from('audit_log').insert({
     actor,
     action: 'contract.close',
     resource_type: 'contract',
     resource_id: contractId,
     details: {
-      reason: 'Closed by operator via UI',
+      reason,
+      without_approval: closedWithoutApproval,
       actor_agent_id: auth.actingAgentId || null,
     },
   });
 
   revalidatePath(`/contracts/${contractId}`);
   revalidatePath('/contracts');
+  return { ok: true };
 }

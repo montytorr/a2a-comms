@@ -62,6 +62,7 @@ import type {
   Task,
   ApiError,
 } from '@/lib/types';
+import { invitationGuidance } from '@/lib/contract-succession';
 
 async function verifyMembership(projectId: string, agentId: string) {
   return getProjectAccess(projectId, agentId);
@@ -473,7 +474,7 @@ export async function POST(
       contract_id: contract.id,
       project_id: id,
       task_id: task.id,
-      data: { title: contract.title, proposer: auth.agent.name, expires_at: expiresAt, handoff: true },
+      data: { title: contract.title, proposer: auth.agent.name, expires_at: expiresAt, handoff: true, ...invitationGuidance(contract.id) },
       timestamp: new Date().toISOString(),
     }).catch(() => {});
 
@@ -610,6 +611,7 @@ export async function POST(
         brokered_collaboration: true,
         escalation_reason: escalationReason,
         requested_intervention: requestedIntervention,
+        ...invitationGuidance(contract.id),
       },
       timestamp: new Date().toISOString(),
     }).catch(() => {});

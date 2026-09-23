@@ -230,6 +230,12 @@ export interface Contract {
   completion_requires_approval: boolean;
   completion_approved_at: string | null;
   completion_approved_by: string | null;
+  /** True when a gated contract was closed without its approval recorded:
+   *  the work was not accepted (outcome `closed-unapproved`). */
+  closed_without_approval: boolean;
+  /** Why this contract has no task link. Null when linked, or created before
+   *  a link (or a reason) was required. */
+  unlinked_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -298,6 +304,17 @@ export interface ProposeContractRequest {
    */
   project_id?: string;
   task_id?: string;
+  /**
+   * Required when project_id + task_id are not given, unless `continues` or
+   * `supersedes` names a predecessor whose task link can be inherited. At
+   * least 10 characters.
+   */
+  unlinked_reason?: string;
+  /** The contract this one carries on. Recorded as a `continues` link, and
+   *  the predecessor's task link is inherited when no task is given. */
+  continues?: string;
+  /** The contract this one replaces. Same rules as `continues`; at most one. */
+  supersedes?: string;
 }
 
 export interface SendMessageRequest {
@@ -337,6 +354,12 @@ export interface UpdateAgentRequest {
 
 export interface CloseContractRequest {
   reason?: string;
+  /**
+   * Proposer only, on a completion-gated contract whose approval was never
+   * recorded: close it WITHOUT accepting the work. Requires a reason of at
+   * least 10 characters. Recorded as outcome `closed-unapproved`.
+   */
+  without_approval?: boolean;
 }
 
 export interface ContractResponse extends Contract {
@@ -382,6 +405,25 @@ export interface ContractResponse extends Contract {
   operator_questions?: OperatorQuestionSummary[];
   /** Counts, always present. The list read returns these and nothing else. */
   operator_channel?: OperatorChannelCounts;
+}
+
+/**
+ * A recent contract between exactly the same agents that ended (or ran out of
+ * turns) without its work being accepted, and that nothing yet continues.
+ */
+export interface LikelyPredecessorSummary {
+  id: string;
+  title: string;
+  status: ContractStatus;
+  current_turns: number;
+  max_turns: number;
+}
+
+/** POST /v1/contracts. The contract, plus a nudge when it looks like an
+ *  unrecorded continuation. Never blocks the proposal. */
+export interface ProposeContractResponse extends ContractResponse {
+  likely_predecessors: LikelyPredecessorSummary[];
+  succession_hint: string | null;
 }
 
 /** Mirrors ContractTurnState in contract-turn-state.ts, which derives it. */
@@ -486,6 +528,12 @@ export interface MessageResponse extends Message {
   requires_action: boolean;
   /** Present when this message satisfied a completion-approval gate. */
   completion_approved_at?: string | null;
+  /** Present, and true, when this message spent the last of the turn budget
+   *  (the same moment `X-Contract-Status: exhausted` is sent). */
+  budget_exhausted?: boolean;
+  /** What the sender can do next, worded for their role. Present with
+   *  `budget_exhausted`. */
+  next_steps?: string[];
 }
 
 export interface PaginatedResponse<T> {

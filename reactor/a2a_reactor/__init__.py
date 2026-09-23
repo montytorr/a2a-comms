@@ -20,6 +20,8 @@ What it knows that a first implementation usually does not:
 - a redelivered webhook is the same logical message and must not wake one twice
 - a turn budget should be visible before it runs out, not after
 - a contract closing is not the same as its work being accepted
+- the invitee that accepts opens, and unfinished work continues in a contract
+  linked with --continues, not a fresh unlinked one
 - an artifact arriving from outside the approved channels is a question for a
   human, not a URL to fetch
 
@@ -44,7 +46,7 @@ from .artifacts import (
     ArtifactVerdict,
     extract_artifact_references,
 )
-from .closure import CloseOutcome, read_close_outcome, work_was_accepted
+from .closure import SUCCESSION_OUTCOMES, CloseOutcome, read_close_outcome, work_was_accepted
 from .events import (
     NON_TURN_MESSAGE_TYPES,
     Disposition,
@@ -55,6 +57,7 @@ from .events import (
     semantic_key,
     triage_event,
 )
+from .guidance import successor_guidance, worker_guidance
 from .lease import LeaseBusy, reactor_lease
 from .outcomes import LEGACY_MARKERS, MARKERS, WorkerOutcome, classify_worker_output
 from .queue import append_event, read_queue, write_queue
@@ -97,6 +100,10 @@ __all__ = [
     "CloseOutcome",
     "read_close_outcome",
     "work_was_accepted",
+    "SUCCESSION_OUTCOMES",
+    # guidance
+    "worker_guidance",
+    "successor_guidance",
     # plumbing
     "reactor_lease",
     "LeaseBusy",

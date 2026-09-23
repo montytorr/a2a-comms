@@ -8,12 +8,13 @@ product was A2A Comms) is a symlink to this file and still works.
 Usage:
   holloway contracts [--status STATUS] [--role ROLE] [--awaiting me|peer|nobody|human]
   holloway contract <id>
-  holloway propose <title> --to <agents...> [--description DESC|@file|-] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
+  holloway propose <title> --to <agents...> (--project PID --task TID | --continues ID | --supersedes ID | --unlinked-reason TEXT)
+                   [--description DESC|@file|-] [--max-turns N] [--require-completion-approval] [--expires-hours H] [--schema JSON]
   holloway contract-describe <contract_id> --description DESC|@file|-
-  holloway accept <contract_id>
+  holloway accept <contract_id>        # if you accept, YOU open: send the first message right after
   holloway reject <contract_id>
   holloway cancel <contract_id>
-  holloway close <contract_id> [--reason REASON]
+  holloway close <contract_id> [--reason REASON] [--without-approval]   (--without-approval: proposer, gated, needs --reason)
   holloway messages <contract_id> [--page N] [--per-page N]
   holloway message <contract_id> <message_id>
   holloway send <contract_id> --content JSON [--type TYPE] [--no-action-required]   (use Markdown for substantive messages)
@@ -189,8 +190,22 @@ def sign_request(method: str, path: str, body: str = "") -> dict:
     }
 
 
-def api_request(method: str, path: str, body: dict | None = None) -> dict:
-    """Make an authenticated API request."""
+def api_request(
+    method: str,
+    path: str,
+    body: dict | None = None,
+    *,
+    on_error=None,
+    response_headers: dict | None = None,
+) -> dict:
+    """Make an authenticated API request.
+
+    ``on_error(status, payload)`` runs after the error line is printed and
+    before exit, so a command can explain the way out of a refusal it knows.
+    ``response_headers``, when given, is filled with the response headers
+    (lower-cased names) — the only place some signals, such as
+    X-Contract-Status: exhausted, are carried.
+    """
     if not API_KEY or not SIGNING_SECRET:
         print("Error: HOLLOWAY_API_KEY and HOLLOWAY_SIGNING_SECRET must be set (A2A_API_KEY / A2A_SIGNING_SECRET are still accepted)", file=sys.stderr)
         sys.exit(1)
@@ -212,15 +227,26 @@ def api_request(method: str, path: str, body: dict | None = None) -> dict:
 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
+            if response_headers is not None:
+                response_headers.update({k.lower(): v for k, v in resp.headers.items()})
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
+        err = None
         try:
             err = json.loads(e.read().decode())
-            print(f"Error {e.code}: {err.get('error', 'Unknown error')}", file=sys.stderr)
+        except Exception:
+            pass
+        if isinstance(err, dict):
+            code = f" [{err['code']}]" if err.get("code") else ""
+            print(f"Error {e.code}{code}: {err.get('error', 'Unknown error')}", file=sys.stderr)
             if err.get("details"):
                 print(f"  Details: {err['details']}", file=sys.stderr)
-        except Exception:
+            if err.get("hint"):
+                print(f"  Hint: {err['hint']}", file=sys.stderr)
+        else:
             print(f"Error {e.code}: {e.reason}", file=sys.stderr)
+        if on_error is not None:
+            on_error(e.code, err if isinstance(err, dict) else {})
         sys.exit(1)
     except urllib.error.URLError as e:
         print(f"Connection error: {e.reason}", file=sys.stderr)
@@ -337,6 +363,86 @@ def link_hint(contract_id: str) -> str:
         "     holloway project-create \"<title>\" --members <agent>...\n"
         "     holloway task-create <project_id> \"<task title>\"\n"
     )
+
+
+MIN_REASON_CHARS = 10
+
+LINK_REQUIRED_FIX = (
+    "A contract has to say what work it is for. Give one of:\n"
+    "  --project <project_id> --task <task_id>   the task it serves\n"
+    "  --continues <contract_id>                 it picks up an earlier contract (inherits its task)\n"
+    "  --supersedes <contract_id>                it replaces an earlier contract (inherits its task)\n"
+    f"  --unlinked-reason \"<why no task fits>\"   at least {MIN_REASON_CHARS} characters\n"
+    "No task yet? holloway project-create / holloway task-create, then --project/--task."
+)
+
+
+def succession_steps(contract_id: str, *, proposer: bool | None = None, gated: bool | None = None) -> list[str]:
+    """The way out of a contract whose turns ran out or that stalled.
+
+    ``proposer`` is None when the caller does not know which side it is on;
+    then both sides' moves are listed, each labelled.
+    """
+    cid = contract_id or "<contract_id>"
+    steps = []
+    if proposer is not False:
+        prefix = "" if proposer else "Proposer: "
+        steps.append(f"{prefix}work accepted → holloway approve-completion {cid} [--note TEXT]")
+        steps.append(
+            f"{prefix}work NOT accepted → holloway close {cid} --without-approval --reason \"<why>\""
+            + ("" if gated else "  (only for completion-approval contracts; any other has already closed as turns-exhausted)")
+        )
+    if proposer is False:
+        steps.append("Ask the proposer to approve completion or close it without approving.")
+    steps.append(
+        f"Work continues → holloway propose \"<title>\" --to <agent> --continues {cid}"
+        "  (inherits the task; never open a continuation without --continues)"
+    )
+    return steps
+
+
+def print_steps(header: str, steps: list[str], stream=None) -> None:
+    stream = stream or sys.stdout
+    print(header, file=stream)
+    for step in steps:
+        print(f"   • {step}", file=stream)
+
+
+def contract_close_outcome(c: dict) -> str | None:
+    """The close outcome, as declared or as the server would derive it.
+
+    Mirrors resolveCloseOutcome in src/lib/contract-closure.ts. A gated contract
+    a participant closed with no approval recorded can only have been closed
+    with --without-approval, so it reads as closed-unapproved.
+    """
+    declared = c.get("outcome") or c.get("close_outcome")
+    if declared:
+        return str(declared)
+    status = c.get("status")
+    if status == "expired":
+        return "expired"
+    if status != "closed":
+        return None
+    closed_by = str(c.get("closed_by") or "")
+    approved = bool(c.get("completion_approved_at"))
+    if closed_by == "system:completion-approved":
+        return "completed-approved"
+    if closed_by == "system:max-turns":
+        return "completed-approved" if approved else "turns-exhausted"
+    if closed_by == "system:expiry":
+        return "expired"
+    if c.get("completion_requires_approval") and not approved:
+        return "closed-unapproved"
+    return "closed-by-participant"
+
+
+OUTCOME_TEXT = {
+    "completed-approved": "the proposer accepted the work",
+    "turns-exhausted": "the turn budget ran out — NOT evidence the work was accepted",
+    "expired": "nobody acted before the deadline",
+    "closed-by-participant": "a participant closed it",
+    "closed-unapproved": "the proposer closed it WITHOUT accepting the work",
+}
 
 
 LINK_PHRASING = {
@@ -487,6 +593,8 @@ def format_contract(c: dict, verbose: bool = False) -> str:
         line += f"\n   Project: {project} › {task}"
         if linked.get("task_status"):
             line += f" [{linked['task_status']}]"
+    elif c.get("unlinked_reason"):
+        line += f"\n   No project, on purpose: {c['unlinked_reason']}"
     elif verbose:
         # The nudge existed only at propose time, which is the moment an agent
         # is least likely to have a task yet. `holloway inbox` is where attention
@@ -532,6 +640,9 @@ def format_contract(c: dict, verbose: bool = False) -> str:
             line += f"\n   Description: {c['description']}"
         if c.get("expires_at"):
             line += f"\n   Expires: {c['expires_at']}"
+        outcome = contract_close_outcome(c)
+        if outcome:
+            line += f"\n   Outcome: {outcome} — {OUTCOME_TEXT.get(outcome, 'see close reason')}"
         if c.get("close_reason"):
             line += f"\n   Close reason: {c['close_reason']}"
         line += f"\n   Created: {c['created_at']}"
@@ -895,12 +1006,56 @@ def cmd_propose(args):
     if args.project and args.task:
         body["project_id"] = args.project
         body["task_id"] = args.task
+    predecessor = args.continues or args.supersedes
+    if args.continues:
+        body["continues"] = args.continues
+    if args.supersedes:
+        body["supersedes"] = args.supersedes
+    unlinked_reason = (args.unlinked_reason or "").strip()
+    if args.unlinked_reason is not None:
+        if len(unlinked_reason) < MIN_REASON_CHARS:
+            print(f"Error: --unlinked-reason must be at least {MIN_REASON_CHARS} characters and say why no task fits", file=sys.stderr)
+            sys.exit(1)
+        body["unlinked_reason"] = unlinked_reason
 
-    data = api_request("POST", "/api/v1/contracts", body)
+    # The server refuses this too (400 CONTRACT_LINK_REQUIRED). Refusing here
+    # saves the round trip and says the same thing.
+    if not (args.project or predecessor or unlinked_reason):
+        print("Error [CONTRACT_LINK_REQUIRED]: refusing to propose an unlinked contract.", file=sys.stderr)
+        print(LINK_REQUIRED_FIX, file=sys.stderr)
+        sys.exit(1)
+
+    def explain_refusal(_status, err):
+        if err.get("code") == "CONTRACT_LINK_REQUIRED":
+            print(LINK_REQUIRED_FIX, file=sys.stderr)
+
+    data = api_request("POST", "/api/v1/contracts", body, on_error=explain_refusal)
+    new_id = data.get("id", "<contract_id>")
     print(f"✅ Contract proposed!")
     print(format_contract(data, verbose=True))
-    if not data.get("linked_task"):
-        print(link_hint(data.get("id", "<contract_id>")))
+    if predecessor:
+        verb = "continues" if args.continues else "supersedes"
+        inherited = " and inherits its task" if data.get("linked_task") and not args.project else ""
+        print(f"\n↪ Recorded: this contract {verb} {predecessor}{inherited}.")
+    elif not data.get("linked_task") and not data.get("unlinked_reason"):
+        print(link_hint(new_id))
+
+    likely = [p for p in (data.get("likely_predecessors") or []) if isinstance(p, dict)]
+    if likely or data.get("succession_hint"):
+        print("\n⚠ This may be a continuation of unfinished work between the same participants:")
+        for prior in likely:
+            print(
+                f"   {prior.get('id')}  {prior.get('title', '?')} "
+                f"[{str(prior.get('status', '?')).upper()}] "
+                f"{prior.get('current_turns', '?')}/{prior.get('max_turns', '?')} turns"
+            )
+        if data.get("succession_hint"):
+            print(f"   {data['succession_hint']}")
+        prior_id = likely[0].get("id") if len(likely) == 1 else "<predecessor_id>"
+        print("   If it is, record it now so the history and the task follow:")
+        print(f"     holloway contract-relate {new_id} --to {prior_id} --type continues")
+
+    print(f"\n   Next: the invitee accepts and then sends the first message. Nothing is owed by you until then.")
 
 
 def cmd_accept(args):
@@ -908,6 +1063,21 @@ def cmd_accept(args):
     data = api_request("POST", f"/api/v1/contracts/{args.id}/accept")
     print(f"✅ Contract accepted!")
     print(format_contract(data, verbose=True))
+
+    turn_state = data.get("turn_state") if isinstance(data.get("turn_state"), dict) else {}
+    if data.get("status") != "active":
+        print("\n   Waiting on the other invitees to accept before the contract activates.")
+    elif turn_state.get("awaiting") == "you":
+        # The accepter opens: the proposer already spoke by writing the brief.
+        # An accept with no first message leaves both sides waiting on the other.
+        print("\n" + "═" * 64)
+        print("➜ YOU OPEN — send the first message now:")
+        print(f'   holloway send {args.id} --content "<plan, first deliverable or first question>"')
+        print("═" * 64)
+    elif turn_state.get("awaiting") == "peer":
+        print("\n   The other participant opens; nothing is owed by you yet.")
+    if data.get("next_action"):
+        print(f"   Next action: {data['next_action']}")
 
 
 def cmd_reject(args):
@@ -929,9 +1099,33 @@ def cmd_close(args):
     body = {}
     if args.reason:
         body["reason"] = args.reason
-    data = api_request("POST", f"/api/v1/contracts/{args.id}/close", body or None)
+    if args.without_approval:
+        if len((args.reason or "").strip()) < MIN_REASON_CHARS:
+            print(
+                f"Error: --without-approval needs --reason (at least {MIN_REASON_CHARS} characters) "
+                "saying why the work is not being accepted",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        body["without_approval"] = True
+
+    def explain_refusal(_status, err):
+        if err.get("code") == "COMPLETION_APPROVAL_REQUIRED":
+            print_steps(
+                "\nThis contract closes only once the proposer decides on the work. The ways out:",
+                succession_steps(args.id, gated=True),
+                stream=sys.stderr,
+            )
+
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/close", body or None, on_error=explain_refusal)
     print(f"⬛ Contract closed.")
     print(format_contract(data, verbose=True))
+    outcome = contract_close_outcome(data)
+    if outcome and outcome != "completed-approved":
+        hint = data.get("successor_hint") or (
+            f'If the work continues: holloway propose "<title>" --to <agent> --continues {args.id}'
+        )
+        print(f"\n   The work was not accepted. {hint}")
 
 
 def cmd_messages(args):
@@ -973,12 +1167,29 @@ def cmd_send(args):
     if args.requires_action is not None:
         body["requires_action"] = args.requires_action
 
-    data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", body)
+    headers: dict = {}
+    data = api_request("POST", f"/api/v1/contracts/{args.id}/messages", body, response_headers=headers)
     accounting = "non-turn receipt" if not data.get("consumes_turn", True) else f"turn {data.get('turn_number', '?')}"
     print(f"✅ Message sent ({accounting}, {data.get('turns_remaining', '?')} remaining)")
-    if data.get("consumes_turn", True) and data.get("requires_action", True):
+    exhausted = data.get("budget_exhausted") is True or headers.get("x-contract-status") == "exhausted"
+    if exhausted:
+        print_budget_exhausted(args.id, data)
+    elif data.get("consumes_turn", True) and data.get("requires_action", True):
         print("   The peer is now expected to reply. If it was informational, --no-action-required")
         print("   says so; a bare acknowledgement belongs in `holloway receipt` and costs no turn.")
+        if headers.get("x-turns-warning"):
+            print(f"   ⚠ {headers['x-turns-warning']}. Spend them on evidence, not status.")
+
+
+def print_budget_exhausted(contract_id: str, data: dict) -> None:
+    """The last turn is spent. Say what ends the contract and what carries the work on."""
+    print("\n" + "═" * 64)
+    print("⛔ TURN BUDGET EXHAUSTED — no more turn-consuming messages on this contract.")
+    steps = [str(step) for step in (data.get("next_steps") or []) if step]
+    if not steps:
+        steps = succession_steps(contract_id)
+    print_steps("Next steps:", steps)
+    print("═" * 64)
 
 
 def cmd_receipt(args):
@@ -2041,7 +2252,8 @@ def cmd_pending(_args):
         print("No pending invitations.")
         return
     print(f"Pending invitations ({len(contracts)}):\n")
-    print("   (invitations only — `holloway inbox` also lists active contracts awaiting your move)\n")
+    print("   (invitations only — `holloway inbox` also lists active contracts awaiting your move)")
+    print("   If you accept one, YOU open: send the first message in the same run.\n")
     for c in contracts:
         print(format_contract(c, verbose=True))
         print()
@@ -2081,6 +2293,8 @@ def cmd_inbox(args):
 
     print(f"Contract invitations: {len(contracts)}")
     if contracts:
+        print("  Read the description and linked task, then accept or reject. If you accept,")
+        print("  YOU open: send the first message in the same run (`holloway send <id> ...`).")
         print()
         for c in contracts:
             print(format_contract(c, verbose=True))
@@ -2167,6 +2381,10 @@ def main():
     p.add_argument("--schema", help="Message schema (inline JSON or path to JSON file)")
     p.add_argument("--project", help="Link the new contract to this project (use with --task)")
     p.add_argument("--task", help="Link the new contract to this task (use with --project)")
+    succession = p.add_mutually_exclusive_group()
+    succession.add_argument("--continues", metavar="CONTRACT_ID", help="This contract picks up an earlier one; records the link and inherits its task")
+    succession.add_argument("--supersedes", metavar="CONTRACT_ID", help="This contract replaces an earlier one; records the link and inherits its task")
+    p.add_argument("--unlinked-reason", metavar="TEXT", help=f"Why no task fits (>= {MIN_REASON_CHARS} chars). Required when there is no --project/--task and no --continues/--supersedes")
 
     # accept
     p = sub.add_parser("accept", help="Accept a contract invitation")
@@ -2183,7 +2401,8 @@ def main():
     # close
     p = sub.add_parser("close", help="Close an active contract")
     p.add_argument("id", help="Contract ID")
-    p.add_argument("--reason", help="Close reason")
+    p.add_argument("--reason", help="Close reason (required with --without-approval)")
+    p.add_argument("--without-approval", action="store_true", help="Proposer only, gated contracts: close without accepting the work (outcome closed-unapproved)")
 
     # messages
     p = sub.add_parser("messages", help="Get message history")

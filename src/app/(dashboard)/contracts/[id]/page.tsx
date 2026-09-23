@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getLinkedTask } from '@/lib/contract-task-link';
 import { describeContractLink, getRelatedContracts } from '@/lib/contract-links';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
+import { outcomeIsSuccess, resolveCloseOutcome, UNAPPROVED_CLOSE_REASON_MIN, type ContractCloseOutcome } from '@/lib/contract-closure';
 import { getNoteAckCounts, getOperatorChannel } from '@/lib/contract-operator-channel-server';
 import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
@@ -233,6 +234,26 @@ export default async function ContractDetailPage({
   const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
   const contractIdShort = id.slice(0, 6) + '…' + id.slice(-4);
   const hasClosure = Boolean(contract.close_reason || contract.closed_at || contract.closed_by);
+  // "Closed" is not "completed": only an accepted outcome may read as success.
+  const closeOutcome = contract.status === 'closed'
+    ? resolveCloseOutcome({
+        closedBy: contract.closed_by,
+        completionApprovedAt: contract.completion_approved_at,
+        closedWithoutApproval: contract.closed_without_approval,
+      })
+    : null;
+  // A participant closing an ungated contract is the ordinary ending, so only
+  // the endings that positively say the work was not accepted get the caution.
+  const closeOutcomeSucceeded = closeOutcome
+    ? outcomeIsSuccess(closeOutcome) || closeOutcome === 'closed-by-participant'
+    : false;
+  const outcomeTitles: Record<ContractCloseOutcome, string> = {
+    'completed-approved': 'Contract completed',
+    'turns-exhausted': 'Turn budget ran out',
+    expired: 'Contract expired',
+    'closed-by-participant': 'Contract closed',
+    'closed-unapproved': 'Closed without approval',
+  };
 
   return (
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks']}>
@@ -250,7 +271,11 @@ export default async function ContractDetailPage({
             </div>
           </div>
           {contract.status === 'active' && !isObserverParticipant && (
-            <CloseContractButton contractId={contract.id} />
+            <CloseContractButton
+              contractId={contract.id}
+              approvalPendingFrom={contract.completion_requires_approval && !contract.completion_approved_at ? proposerName : null}
+              reasonMin={UNAPPROVED_CLOSE_REASON_MIN}
+            />
           )}
         </header>
         <div className={styles.layout}>
@@ -404,15 +429,15 @@ export default async function ContractDetailPage({
             )}
 
             {hasClosure && (
-              <section className={`card ${styles.outcome} ${contract.status === 'closed' ? '' : styles.outcomeCaution}`} aria-labelledby="contract-outcome-heading">
+              <section className={`card ${styles.outcome} ${closeOutcomeSucceeded ? '' : styles.outcomeCaution}`} aria-labelledby="contract-outcome-heading">
                 <div className={styles.outcomeHeader}>
                   <span className={styles.outcomeIcon}>
-                    {contract.status === 'closed' ? <CheckCheck size={18} /> : <MessageSquareWarning size={18} />}
+                    {closeOutcomeSucceeded ? <CheckCheck size={18} /> : <MessageSquareWarning size={18} />}
                   </span>
                   <div>
                     <h2 id="contract-outcome-heading" className={styles.sideHeading}>Outcome</h2>
                     <div className={styles.outcomeTitle}>
-                      {contract.status === 'closed' ? 'Contract completed' : `Contract ${contract.status}`}
+                      {closeOutcome ? outcomeTitles[closeOutcome] : `Contract ${contract.status}`}
                     </div>
                   </div>
                 </div>

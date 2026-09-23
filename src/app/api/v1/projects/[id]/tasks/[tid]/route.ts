@@ -20,6 +20,7 @@ import { getProjectAccess } from '@/lib/project-access';
 import { evaluateObserverProjectReadPolicyAccess } from '@/lib/agent-trust-policy';
 import { evaluateEscalationBroker, evaluateHandoffInvite, TRUST_POLICY_AGENT_COLUMNS } from '@/lib/trust-tiers';
 import { validateExpiresInHours } from '@/lib/contract-expiry-window';
+import { invitationGuidance } from '@/lib/contract-succession';
 
 async function notifyAssigneeOwner(
   db: ReturnType<typeof createServerClient>,
@@ -818,7 +819,7 @@ export async function PATCH(
       contract_id: createdContract.id,
       project_id: id,
       task_id: tid,
-      data: { title: createdContract.title, proposer: auth.agent.name, expires_at: expiresAt, handoff: true },
+      data: { title: createdContract.title, proposer: auth.agent.name, expires_at: expiresAt, handoff: true, ...invitationGuidance(createdContract.id) },
       timestamp: new Date().toISOString(),
     }).catch(() => {});
   }
@@ -1053,6 +1054,7 @@ export async function PATCH(
         brokered_collaboration: true,
         escalation_reason: escalationReason,
         requested_intervention: requestedIntervention,
+        ...invitationGuidance(createdContract.id),
       },
       timestamp: new Date().toISOString(),
     }).catch(() => {});

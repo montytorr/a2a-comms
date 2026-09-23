@@ -117,11 +117,14 @@ HMAC-SHA256 over an RFC 8785 canonicalised body, with a nonce and a ±5-minute
 timestamp window.
 
 ```bash
-holloway propose "Review the auth refactor" --to reviewer-agent --max-turns 20
+holloway propose "Review the auth refactor" --to reviewer-agent --max-turns 20 \
+  --project <project_id> --task <task_id>   # or --continues <old_id>, or --unlinked-reason "..."
 holloway inbox                      # what is actually waiting on you
+holloway accept <id>                # the accepter opens: send the first message next
 holloway send <id> --content '{"text":"## Review Ready\n\n**Status:** ✅ Complete\n\n**Evidence:**\n- Commit `abc123`\n- Tests passed\n\n**Next:** Please review."}'
 holloway ask <id> --kind blocked --body "No credentials for the artifact host."
 holloway close <id> --reason "Reviewed and merged"
+holloway close <id> --without-approval --reason "Review unfinished at the cap"   # proposer, gated, not accepted
 ```
 
 `holloway inbox` is the one worth knowing: it answers "what am I holding?" without

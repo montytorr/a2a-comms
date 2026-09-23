@@ -218,8 +218,8 @@ say "8. project_id and task_id must travel together"
 check "half a link is refused" "$(holloway propose "E2E half" --to beta --project "$PROJECT_ID")" "must be used together"
 
 say "9. Unlinked contracts are flagged and cannot take attachments"
-OUT="$(holloway propose "E2E unlinked" --to beta)"
-check "unlinked proposal warns" "$OUT" "not linked to a project task"
+OUT="$(holloway propose "E2E unlinked" --to beta --unlinked-reason "E2E: exercising the unlinked path")"
+check "unlinked proposal shows its reason" "$OUT" "No project, on purpose"
 UNLINKED_ID="$(printf '%s' "$OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
 printf 'a,b\n1,2\n' > "$WORK/sample.csv"
 check "attach refused while unlinked" "$(holloway contract-attach "$UNLINKED_ID" --file "$WORK/sample.csv")" "not linked to a project task"
@@ -276,6 +276,26 @@ psql_q -c "update contract_participants set role='proposer' where contract_id='$
 check "and recording works again once they are not" \
   "$(holloway contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "continues"
 
+say "13b. Succession is required or inherited at propose time"
+# The rule lives in the propose route, so only a real request exercises it.
+check "a proposal with neither a task nor a reason is refused" \
+  "$(holloway propose "E2E no reason" --to beta)" "unlinked-reason"
+CONT_OUT="$(holloway propose "E2E continuation" --to beta --continues "$UNLINKED_ID")"
+CONT_ID="$(printf '%s' "$CONT_OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+check "a continuation needs no task of its own" "$CONT_OUT" "Contract proposed"
+check "it inherits the predecessor's task" "$CONT_OUT" "Project: E2E project"
+check "and records the link" "$(holloway contract-relations "$CONT_ID")" "Continues: E2E unlinked"
+
+say "13c. A stuck completion gate can be closed without approving"
+GATED_ID="$(holloway propose "E2E gated" --to beta --project "$PROJECT_ID" --task "$TASK_ID" --require-completion-approval | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
+psql_q -c "update contracts set status='active', current_turns=max_turns where id='$GATED_ID'; update contract_participants set status='accepted' where contract_id='$GATED_ID';" >/dev/null
+check "a pending gate refuses a plain close and names both ways out" \
+  "$(holloway close "$GATED_ID")" "without-approval"
+check "the proposer can close it without approving" \
+  "$(holloway close "$GATED_ID" --without-approval --reason 'E2E: scope changed, work not accepted')" "closed"
+check "recorded as not accepted" \
+  "$(psql_q -c "select closed_without_approval from contracts where id='$GATED_ID';")" "t"
+
 say "14. Whose move is it"
 # Only alpha holds a signing key here, so beta's half is done in SQL. What is
 # under test is the derivation and every surface that reports it, not the peer.
@@ -325,13 +345,13 @@ except SystemExit:
 " 2>&1)" "must be one of"
 
 # UNLINKED_ID was linked back in stage 11, so this needs its own.
-PROPOSAL_OUT="$(holloway propose "E2E still unlinked" --to beta)"
+PROPOSAL_OUT="$(holloway propose "E2E still unlinked" --to beta --unlinked-reason "E2E: exercising the unlinked path")"
 NO_PROJECT_ID="$(printf '%s' "$PROPOSAL_OUT" | grep -oE 'ID: [0-9a-f-]{36}' | head -1 | cut -d' ' -f2)"
 # A proposal used to come back with turn_state null: the one response that
 # enriched a contract without telling it who was asking.
 check "a proposal reports whose move it is" "$PROPOSAL_OUT" "waiting on peer"
-check "an unlinked contract says so where attention is, not only at propose time" \
-  "$(holloway contract "$NO_PROJECT_ID")" "not on any board"
+check "an unlinked contract carries its reason where attention is, not only at propose time" \
+  "$(holloway contract "$NO_PROJECT_ID")" "No project, on purpose"
 
 say "15. Deploy-skew watchdog"
 # Every deploy gives an already-open tab a stale build id. Next answers that by

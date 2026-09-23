@@ -16,6 +16,7 @@ import { consumesTurn } from '@/lib/types';
 import { autoCloseIfExpired, getParticipant } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { emitContractClosed } from '@/lib/contract-closure';
+import { budgetExhaustedNextSteps } from '@/lib/contract-succession';
 import { validateContent } from '@/lib/schema-validator';
 import {
   extractSignals,
@@ -394,6 +395,19 @@ export async function POST(
     requires_action: rpcResult.requires_action ?? requiresAction,
     completion_approved_at: rpcResult.completion_approved_at ?? null,
   };
+
+  // The header alone told a client the budget was gone and nothing about what
+  // to do; a gated contract then sat active with nobody prompted to decide.
+  if (turnsRemaining === 0) {
+    const approvedAt = rpcResult.completion_approved_at ?? checked.completion_approved_at;
+    response.budget_exhausted = true;
+    response.next_steps = budgetExhaustedNextSteps({
+      contractId: id,
+      isProposer: auth.agent.id === checked.proposer_id,
+      gatePending: checked.completion_requires_approval && !approvedAt,
+      completed: closedByApproval || (closedByMaxTurns && !!approvedAt),
+    });
+  }
 
   await storeIdempotencyResponse(idempotency.key, auth, `POST /v1/contracts/${id}/messages`, 201, response);
 

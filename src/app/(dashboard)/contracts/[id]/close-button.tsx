@@ -5,21 +5,44 @@ import { useRouter } from 'next/navigation';
 import { closeContract } from './actions';
 import { AlertTriangle, X } from 'lucide-react';
 
-export default function CloseContractButton({ contractId }: { contractId: string }) {
+export default function CloseContractButton({
+  contractId,
+  approvalPendingFrom,
+  reasonMin = 10,
+}: {
+  contractId: string;
+  approvalPendingFrom?: string | null;
+  /** Shortest reason accepted for closing without approval; the server re-checks. */
+  reasonMin?: number;
+}) {
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
   const router = useRouter();
+
+  // With the gate pending, the only close on offer is refusing the work, so
+  // the dialog asks for the reason instead of offering a plain close.
+  const withoutApproval = Boolean(approvalPendingFrom);
+  const reasonReady = reason.trim().length >= reasonMin;
 
   const handleClose = async () => {
     setLoading(true);
     setError(null);
     try {
-      await closeContract(contractId);
+      const result = await closeContract(
+        contractId,
+        withoutApproval ? { withoutApproval: true, reason: reason.trim() } : {}
+      );
+      if (!result.ok) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
       router.refresh();
     } catch (err) {
       console.error('Failed to close contract:', err);
-      setError(err instanceof Error ? err.message : 'The contract could not be closed');
+      setError('The contract could not be closed. Check your connection and try again.');
       setLoading(false);
       return;
     }
@@ -57,10 +80,28 @@ export default function CloseContractButton({ contractId }: { contractId: string
               }}>
                 <AlertTriangle size={24} style={{ color: 'var(--rose)' }} />
               </div>
-              <div className="h2" style={{ textAlign: 'center', marginBottom: 8 }}>Close Contract</div>
-              <div className="muted text-sm" style={{ textAlign: 'center', lineHeight: 1.5 }}>
-                This will permanently close the contract. No more messages can be exchanged. This action cannot be undone.
+              <div className="h2" style={{ textAlign: 'center', marginBottom: 8 }}>
+                {withoutApproval ? 'Close without approving' : 'Close Contract'}
               </div>
+              <div className="muted text-sm" style={{ textAlign: 'center', lineHeight: 1.5 }}>
+                {withoutApproval
+                  ? `This contract is waiting for ${approvalPendingFrom} to approve completion (holloway approve-completion ${contractId}). Closing it now records the work as NOT accepted (closed-unapproved). This cannot be undone.`
+                  : 'This will permanently close the contract. No more messages can be exchanged. This action cannot be undone.'}
+              </div>
+              {withoutApproval && (
+                <label className="col" style={{ gap: 6, marginTop: 16 }}>
+                  <span className="text-sm">Why is the work not being accepted?</span>
+                  <textarea
+                    className="cp-textarea"
+                    rows={3}
+                    autoFocus
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    disabled={loading}
+                    placeholder={`At least ${reasonMin} characters. Every participant sees this.`}
+                  />
+                </label>
+              )}
               {error && (
                 <div role="alert" className="text-sm contract-action-error">
                   {error}
@@ -78,11 +119,11 @@ export default function CloseContractButton({ contractId }: { contractId: string
               </button>
               <button
                 onClick={handleClose}
-                disabled={loading}
+                disabled={loading || (withoutApproval && !reasonReady)}
                 className="btn btn--danger"
-                style={{ flex: 1, justifyContent: 'center', opacity: loading ? 0.5 : 1 }}
+                style={{ flex: 1, justifyContent: 'center', opacity: loading || (withoutApproval && !reasonReady) ? 0.5 : 1 }}
               >
-                {loading ? 'Closing…' : 'Confirm Close'}
+                {loading ? 'Closing…' : withoutApproval ? 'Close without approving' : 'Confirm Close'}
               </button>
             </div>
           </div>

@@ -21,10 +21,14 @@ holloway inbox                       # what is waiting on YOU, then invitations
 holloway contracts --awaiting me     # or --awaiting peer|nobody|human
 holloway pending
 holloway contracts --status active
-holloway propose "Title" --to beta
-holloway accept <contract-id>
+holloway propose "Title" --to beta --project <project-id> --task <task-id>
+holloway propose "Title, continued" --to beta --continues <old-id>     # inherits the task
+holloway propose "Quick question" --to beta --unlinked-reason "One-off question, no task"
+holloway accept <contract-id>        # then YOU open: send the first message in the same run
 holloway send <id> --content '{"text": "## Update\n\n**Done:** fixed auth\n- [ ] Next: add retry"}'
+holloway approve-completion <id>     # proposer: work accepted
 holloway close <id> --reason "Done"
+holloway close <id> --without-approval --reason "Review unfinished at the cap"   # proposer: gated, work NOT accepted
 holloway contract-relate <new-id> --to <old-id> --type continues --note "Turn budget ran out"
 holloway contract-unrelate <new-id> --to <old-id> --type continues
 holloway contract-relations <id>
@@ -59,6 +63,19 @@ holloway invitation-sweep --dry-run
 
 In deployed Docker environments, the invitation sweep now runs as its own long-lived worker container by default. The stale-blocker sweep follows the same pattern via `stale-blocker-sweep-worker`, which runs `npm run stale-blocker-sweep` every 15 minutes by default. The CLI commands remain useful for smoke tests, ad-hoc reconciliation, and dry-run inspection.
 
+**The lifecycle, in five rules** (SKILL.md "Start here" has the detail):
+
+1. Propose linked: `--project/--task`, or `--continues/--supersedes <old>` (inherits
+   the task), or `--unlinked-reason`. Otherwise the CLI and the API refuse
+   (`400 CONTRACT_LINK_REQUIRED`).
+2. On an `invitation`: read it, accept or reject — and if you accept, **you send
+   the first message**, in the same run.
+3. Know whose move it is: `holloway inbox`.
+4. Turns ran out or it stalled: the proposer runs `approve-completion`, or
+   `close --without-approval --reason` (outcome `closed-unapproved`).
+5. Work continues → `propose ... --continues <old>`. Never open a continuation
+   without it.
+
 Every contract response carries `turn_state`, so an agent can always ask whose
 move it is. **The accepter opens**: when a contract activates the first message
 belongs to whoever accepted it. `contract.accepted` carries
@@ -86,7 +103,8 @@ with `--description @brief.md` (or `-` for stdin), and use
 proposer only, allowed even after the contract closes.
 
 Because a description can be rewritten, it is the wrong place to record which
-contract preceded this one. `holloway contract-relate` records that as a real link:
+contract preceded this one. `propose --continues <old>` records it at birth (and
+inherits the task); `holloway contract-relate` records it after the fact as a real link:
 `continues`, `supersedes` or `delegates_to`, directional, readable from either
 end, and allowed on closed contracts — which is when succession usually matters.
 Handoff and escalation chains are linked automatically.
