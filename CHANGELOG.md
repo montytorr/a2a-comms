@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.361] - 2026-09-23
+### Changed
+- Refine sticky context rails and list defaults
+- Merge pull request #10 from montytorr/feat/holloway-sticky-context-default-filters
+- Refine contract context and documentation navigation
+
 ## [1.0.360] - 2026-09-23
 ### Changed
 - make dashboard full-width and sharpen communication views
