@@ -58,7 +58,7 @@ export const Ticker = ({ items, paused = false }: TickerProps) => {
             <span className={`dot dot--${it.tone}`} />
             <span style={{ color: 'var(--fg-3)' }}>{it.actor}</span>
             <span style={{ color: 'var(--fg-1)' }}>{it.type}</span>
-            <span style={{ color: 'var(--fg-3)' }}>{it.time} ago</span>
+            <span style={{ color: 'var(--fg-3)' }}>{it.time === 'just now' ? it.time : `${it.time} ago`}</span>
           </span>
         ))}
       </div>
