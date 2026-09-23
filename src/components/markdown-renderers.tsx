@@ -143,7 +143,7 @@ export const markdownComponents: Components = {
 };
 
 const inlineHeading: NonNullable<Components['h1']> = ({ children }) => {
-  return <strong style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{children} </strong>;
+  return <strong style={{ display: 'block', marginBottom: 3, fontWeight: 600, color: 'var(--fg-0)' }}>{children}</strong>;
 };
 
 export const compactMarkdownComponents: Components = {

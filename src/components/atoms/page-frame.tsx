@@ -3,14 +3,8 @@ import { cn } from '@/lib/utils';
 /**
  * The one page container.
  *
- * Width is a named intent rather than a number. The app previously carried
- * nine competing per-page max-widths between 560px and 2240px — two of them
- * above the shell's own cap and therefore silently clamped — because every
- * page picked its own. Three widths cover every real case:
- *
- *   prose    long-form documentation, held near 72ch for readability
- *   default  lists, boards and detail views
- *   wide     tables and anything that genuinely wants the monitor
+ * The page canvas fills the dashboard. Individual reading and form surfaces
+ * can set their own comfortable line length inside that canvas.
  *
  * Horizontal padding matches the shell's own so the acting-agent row and the
  * page body line up at every breakpoint.
@@ -18,9 +12,9 @@ import { cn } from '@/lib/utils';
 type PageWidth = 'narrow' | 'prose' | 'default' | 'wide';
 
 const widths: Record<PageWidth, string> = {
-  narrow: 'max-w-[46rem]',
-  prose: 'max-w-[58rem]',
-  default: 'max-w-[var(--content-max)]',
+  narrow: 'max-w-none',
+  prose: 'max-w-none',
+  default: 'max-w-none',
   wide: 'max-w-none',
 };
 

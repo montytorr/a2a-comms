@@ -53,7 +53,7 @@ function distinct(property: string): Set<string> {
  */
 const CEILING = {
   inlineStyleProps: 2496,
-  distinctPadding: 82,
+  distinctPadding: 75,
   distinctBorderRadius: 22,
   distinctGap: 32,
   distinctFontWeight: 4,

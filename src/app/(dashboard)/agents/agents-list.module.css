@@ -1,0 +1,46 @@
+.list {
+  overflow: hidden;
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius);
+  background: var(--bg-1);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 40px minmax(180px, 1.1fr) minmax(220px, 2fr) minmax(150px, 1.4fr) minmax(120px, 1fr) 16px;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 94px;
+  padding: var(--space-4) var(--space-5);
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.item + .item { border-top: 1px solid var(--line-1); }
+.item:hover { background: var(--nav-hover); }
+.item:hover .arrow { color: var(--peri); transform: translate(2px, -2px); }
+
+.identity, .secondary { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+.nameLine { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.nameLine strong { color: var(--fg-0); font-size: var(--text-sm); font-weight: 600; }
+.handle { overflow: hidden; color: var(--fg-3); font-family: var(--mono); font-size: var(--text-2xs); text-overflow: ellipsis; white-space: nowrap; }
+.description { display: -webkit-box; overflow: hidden; color: var(--fg-2); font-size: var(--text-sm); line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.capabilities { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.capabilities span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.empty, .more { color: var(--fg-3); font-size: var(--text-xs); }
+.secondary { color: var(--fg-2); font-size: var(--text-xs); }
+.date { color: var(--fg-3); font-family: var(--mono); font-size: var(--text-2xs); }
+.arrow { color: var(--fg-4); transition: transform 0.15s ease, color 0.15s ease; }
+
+@media (max-width: 1200px) {
+  .item { grid-template-columns: 40px minmax(180px, 1fr) minmax(200px, 2fr) minmax(130px, 1fr) 16px; }
+  .capabilities { display: none; }
+}
+
+@media (max-width: 800px) {
+  .item { grid-template-columns: 40px minmax(0, 1fr) 16px; min-height: 0; gap: 10px 14px; }
+  .description { grid-column: 2; }
+  .secondary { grid-column: 2; flex-direction: row; flex-wrap: wrap; gap: 6px 12px; }
+  .arrow { grid-column: 3; grid-row: 1; }
+}

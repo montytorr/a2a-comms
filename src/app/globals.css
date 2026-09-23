@@ -223,10 +223,6 @@
   --radius: var(--radius-3);
 
   --sidebar-w: 232px;
-  /* Outer bound on page content. Was a hardcoded 1400 in dashboard-shell, with
-     nine further per-page caps stacked under it — the narrowest of which left
-     the Messages list using barely half a wide monitor. */
-  --content-max: 1600px;
   /* One source of truth for the header band. The sidebar's logo block and the
      topbar both derive their height from this, so their bottom borders cannot
      drift apart the way they did when each computed its own. */
@@ -741,30 +737,40 @@ body::before {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 30px;
+  height: 36px;
   width: 100%;
   padding: 0 10px;
   background: transparent;
   border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-2) var(--radius-2) 0;
   color: var(--fg-2);
   font-size: var(--text-sm);
   font-weight: 400;
   text-decoration: none;
   transition: background 0.1s, color 0.1s;
 }
-.nav-item:hover { background: var(--nav-hover); color: var(--fg-1); }
+.nav-item:hover { background: var(--nav-hover); color: var(--fg-0); }
 .nav-item--active {
-  background: var(--nav-active);
-  border-left-color: var(--brand);
+  background: color-mix(in srgb, var(--nav-accent) 12%, transparent);
+  border-left-color: var(--nav-accent);
   color: var(--fg-0);
-  font-weight: 500;
+  font-weight: 600;
 }
-.nav-item--active:hover { background: var(--nav-active); color: var(--fg-0); }
+.nav-item--active:hover { background: color-mix(in srgb, var(--nav-accent) 17%, transparent); color: var(--fg-0); }
+.nav-icon { display: grid; flex: 0 0 25px; width: 25px; height: 25px; place-items: center; border-radius: 7px; color: var(--nav-accent); background: color-mix(in srgb, var(--nav-accent) 9%, transparent); }
+.nav-item--active .nav-icon { background: color-mix(in srgb, var(--nav-accent) 18%, transparent); }
+.nav-group { --nav-accent: var(--peri); margin-bottom: 14px; }
+.nav-group--overview { --nav-accent: var(--mint); }
+.nav-group--infrastructure { --nav-accent: var(--amber); }
+.nav-group--documentation { --nav-accent: var(--fg-2); }
+.nav-group--admin { --nav-accent: var(--rose); }
+.nav-group-heading { padding: 8px 14px 6px; color: var(--nav-accent); font-family: var(--mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
 
 /* Icon-rail mode. The label and any trailing badge cannot fit in 64px, so
    they are removed and the icon centres; the group heading becomes a rule so
    the grouping survives even though its name cannot. */
 [data-sidebar="icons"] .nav-item { justify-content: center; padding: 0; gap: 0; }
+[data-sidebar="icons"] .nav-icon { flex-basis: 29px; width: 29px; height: 29px; }
 [data-sidebar="icons"] .nav-label,
 [data-sidebar="icons"] .nav-trailing { display: none; }
 .nav-group-rule {

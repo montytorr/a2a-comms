@@ -25,7 +25,7 @@ export default function CompactMarkdownPreview({
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
         wordBreak: 'break-word',
-        color: 'var(--fg-3)',
+        color: 'var(--fg-2)',
       }}
     >
       <ReactMarkdown

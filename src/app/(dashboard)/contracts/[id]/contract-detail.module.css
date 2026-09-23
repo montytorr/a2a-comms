@@ -3,9 +3,16 @@
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
-  color: var(--fg-2);
+  color: var(--peri);
   font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.breadcrumb a { color: var(--fg-2); text-decoration: none; }
+.breadcrumb a:hover { color: var(--peri); }
+.breadcrumb svg { flex-shrink: 0; color: var(--fg-4); }
 
 .header {
   display: flex;
@@ -138,7 +145,8 @@
 }
 
 .messageBody {
-  max-width: 90ch;
+  width: 100%;
+  min-width: 0;
   color: var(--fg-1);
   font-size: var(--text-sm);
   line-height: 1.65;

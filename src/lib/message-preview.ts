@@ -2,7 +2,7 @@ const FALLBACK_OBJECT_FIELDS = 4;
 export const MAX_MESSAGE_PREVIEW_CHARS = 280;
 
 function truncatePreview(text: string, maxChars = MAX_MESSAGE_PREVIEW_CHARS): string {
-  const trimmed = text.trim();
+  const trimmed = text.replace(/\\r\\n|\\n|\\r/g, '\n').trim();
   if (trimmed.length <= maxChars) {
     return trimmed;
   }
@@ -64,8 +64,10 @@ export function extractMessagePreview(
     obj.summary,
     obj.text,
     obj.message,
+    obj.markdown,
     payload?.summary,
     payload?.message,
+    payload?.markdown,
     obj.description,
     obj.solution,
   ];

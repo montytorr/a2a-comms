@@ -166,7 +166,7 @@ export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, 
         // destination is on hover.
         title={collapsed ? item.label : undefined}
       >
-        <span style={{ color: 'inherit', display: 'flex', flexShrink: 0 }}>{iconMap[item.iconName]}</span>
+        <span className="nav-icon">{iconMap[item.iconName]}</span>
         <span className="nav-label truncate-text" style={{ flex: 1, color: item.danger ? 'var(--rose)' : 'inherit' }}>{item.label}</span>
         {item.badge === 'live' && <span className="dot dot--mint pulse nav-trailing" style={{ marginRight: 2 }} />}
         {item.badge === 'admin' && (
@@ -182,12 +182,12 @@ export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, 
   };
 
   const renderGroup = (label: string, items: NavItemDef[]) => (
-    <div key={label} style={{ marginBottom: 12 }}>
+    <div key={label} className={`nav-group nav-group--${label.toLowerCase()}`}>
       {/* In rail mode the group heading becomes a rule: the label would not
           fit in 64px, but the grouping it conveys still should. */}
       {collapsed
         ? <div className="nav-group-rule" role="presentation" />
-        : <div className="upper" style={{ padding: '6px 14px 4px' }}>{label}</div>}
+        : <div className="nav-group-heading">{label}</div>}
       <div>{items.map(renderNavItem)}</div>
     </div>
   );
