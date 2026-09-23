@@ -22,6 +22,7 @@ import { participantDescriptor } from '@/lib/observer-mode';
 import { splitContractMessagesByVisibility } from '@/lib/contract-observers';
 import { Avatar, KV, PageFrame, EmptyState } from '@/components/atoms';
 import { ChevronRight, FolderGit2, GitBranch, Link2Off as LinkOff, CornerUpLeft, CheckCheck, MessageSquareWarning, MessageSquare } from 'lucide-react';
+import styles from './contract-detail.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -231,44 +232,34 @@ export default async function ContractDetailPage({
 
   const proposerName = contract.proposer?.display_name || contract.proposer?.name || '—';
   const contractIdShort = id.slice(0, 6) + '…' + id.slice(-4);
+  const hasClosure = Boolean(contract.close_reason || contract.closed_at || contract.closed_by);
 
   return (
     <AutoRefresh intervalMs={10000} watch={['contracts', 'participants', 'messages', 'tasks']}>
       <PageFrame>
-        {/* Breadcrumb */}
-        <div className="row gap-2 text-xs" style={{ marginBottom: 14 }}>
-          <Link href="/contracts" className="dim" style={{ cursor: 'pointer', textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
-          <ChevronRight size={11} style={{ color: 'var(--fg-3)' }} />
-          <span style={{ color: 'var(--fg-1)' }}>{contractIdShort}</span>
-        </div>
-
-        {/* Contract header card */}
-        <div className="card card--pad" style={{ marginBottom: 16 }}>
-          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <div className="col gap-2" style={{ flex: 1 }}>
-              <div className="row gap-2" style={{ alignItems: 'center' }}>
-                <h1 className="h1">{contract.title}</h1>
-                <StatusBadge status={contract.status} />
-              </div>
-              {contract.description && (
-                <div className="muted text-sm">
-                  <MarkdownPreview content={contract.description} className="" />
-                </div>
-              )}
+        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+          <Link href="/contracts" className="dim" style={{ textDecoration: 'none', color: 'var(--fg-3)' }}>Contracts</Link>
+          <ChevronRight size={11} aria-hidden="true" />
+          <span>Contract detail</span>
+        </nav>
+        <header className={styles.header}>
+          <div className={styles.heading}>
+            <div className={styles.eyebrow}>Contract <span className="mono num">{contractIdShort}</span></div>
+            <div className={styles.titleRow}>
+              <h1 className="h1">{contract.title}</h1>
+              <StatusBadge status={contract.status} size="lg" />
             </div>
-            {contract.status === 'active' && !isObserverParticipant && (
-              <CloseContractButton contractId={contract.id} />
-            )}
           </div>
-
+          {contract.status === 'active' && !isObserverParticipant && (
+            <CloseContractButton contractId={contract.id} />
+          )}
+        </header>
+        <div className={styles.layout}>
+          <main className={styles.main}>
           {turnState && (
             <div
-              className="row gap-2"
+              className={styles.turnState}
               style={{
-                marginTop: 16,
-                padding: '12px 16px',
-                borderRadius: 10,
-                alignItems: 'center',
                 border: `1px solid ${turnState.awaiting === 'you' ? 'var(--amber-line)' : turnState.awaiting === 'human' ? 'var(--rose-line)' : 'var(--line-1)'}`,
                 background: turnState.awaiting === 'you' ? 'var(--amber-bg)' : turnState.awaiting === 'human' ? 'var(--rose-bg)' : 'var(--bg-2)',
               }}
@@ -292,6 +283,159 @@ export default async function ContractDetailPage({
               <span className="text-sm" style={{ color: 'var(--fg-2)' }}>{turnState.reason}</span>
             </div>
           )}
+
+        {/* Message Thread */}
+        <section className="card" aria-labelledby="contract-thread-heading">
+          <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+            <h2 id="contract-thread-heading" className="h3">Messages <span className="dim text-xs" style={{ fontWeight: 400 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></h2>
+          </div>
+
+          {threadMessages.length === 0 ? (
+            <EmptyState
+              icon={<MessageSquare size={20} />}
+              title="No messages yet"
+              hint="Messages appear here as the participants exchange them."
+            />
+          ) : (
+            threadMessages.map((msg, i) => {
+              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
+              return (
+                <div key={msg.id} className={styles.message} style={{ borderBottom: i === threadMessages.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
+                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
+                    <Avatar name={senderName} size={32} />
+                    <div className="col" style={{ flex: 1, gap: 8 }}>
+                      <div className={styles.messageMeta}>
+                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                        <StatusBadge domain="message-type" status={msg.message_type} size="sm" />
+                        <StatusBadge
+                          status={null}
+                          label={expectationOf(msg).label}
+                          tone={expectationOf(msg).tone}
+                          dot="none"
+                          size="sm"
+                        />
+                        <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
+                      </div>
+                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                        <MessageCard content={msg.content} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </section>
+
+        <OperatorChannel
+          contractId={id}
+          notes={channel.notes}
+          questions={channel.questions}
+          agentCount={participants.filter((participant) => participant.role !== 'observer').length}
+          ackCounts={ackCounts}
+          canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
+        />
+
+        {/* Observer Notes */}
+        {observerNotes.length > 0 && (
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
+              <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim text-xs" style={{ fontWeight: 400 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
+            </div>
+            {observerNotes.map((msg, i) => {
+              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
+              return (
+                <div key={msg.id} className={styles.message} style={{ borderBottom: i === observerNotes.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
+                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
+                    <Avatar name={senderName} size={32} />
+                    <div className="col" style={{ flex: 1, gap: 8 }}>
+                      <div className={styles.messageMeta}>
+                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
+                        <StatusBadge status={null} label="observer note" tone="peri" dot="none" size="sm" />
+                        <span className={styles.messageDate}>{formatDateTime(msg.created_at)}</span>
+                      </div>
+                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
+                        <MessageCard content={msg.content} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+          </main>
+          <aside className={styles.sidebar} aria-label="Contract details">
+          {/* Metadata */}
+          <div className="card card--pad">
+            <h2 className={styles.sideHeading}>At a glance</h2>
+            <div className={styles.facts}>
+              <KV label="Proposer">
+                <div className="row gap-2">
+                  <Avatar name={proposerName} size={20} />
+                  <span>{proposerName}</span>
+                </div>
+              </KV>
+              <KV label="Project">
+                {linkedTask ? (
+                  <Link
+                    href={`/projects/${linkedTask.project_id}/tasks/${linkedTask.task_id}`}
+                    className="row gap-1"
+                    style={{ color: 'var(--peri)', textDecoration: 'none', alignItems: 'center' }}
+                  >
+                    <FolderGit2 size={14} />
+                    <span>{linkedTask.project_title || 'Project'}</span>
+                  </Link>
+                ) : (
+                  <StatusBadge status={null} label="Not linked" tone="amber" dot="none" size="md" />
+                )}
+              </KV>
+              <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
+              {contract.completion_requires_approval && (
+                <KV label="Completion gate">
+                  {/* An approved completion gate is a good end (mint); an
+                      unapproved one is waiting on a person (amber). It used to
+                      paint the approved case peri, the "queued" tone. */}
+                  <StatusBadge
+                    status={null}
+                    label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
+                    tone={contract.completion_approved_at ? 'mint' : 'amber'}
+                    dot="none"
+                    size="md"
+                  />
+                </KV>
+              )}
+              <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
+              <KV label="Expires" align="right">
+                <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>
+              </KV>
+            </div>
+
+            {/* Participants */}
+            <div className={styles.participants}>
+              <div className="upper" style={{ alignSelf: 'center' }}>Participants</div>
+              {participants.map((p) => {
+                const name = p.agent?.display_name || p.agent?.name || 'Unknown';
+                const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
+                return (
+                  /* This chip spells the participant's status in its own text
+                     ("invitee · accepted"), and it sits inches from the
+                     contract's status pill — so it has to be coloured by that
+                     status, not by a hash of the agent's name. The Avatar
+                     inside it still carries the per-name colour, which is where
+                     identity belongs. */
+                  <StatusBadge
+                    key={p.id}
+                    domain="participant"
+                    status={p.status}
+                    dot="none"
+                    size="md"
+                    label={<><Avatar name={name} size={14} />{name} · {desc}</>}
+                  />
+                );
+              })}
+            </div>
+          </div>
 
           {!linkedTask && (
             <div
@@ -332,78 +476,14 @@ export default async function ContractDetailPage({
             </div>
           )}
 
-          {/* Metadata */}
-          <div className="card card--inset" style={{ padding: 14, marginTop: 18 }}>
-            <div className="row" style={{ justifyContent: 'space-between' }}>
-              <KV label="Proposer">
-                <div className="row gap-2">
-                  <Avatar name={proposerName} size={20} />
-                  <span>{proposerName}</span>
-                </div>
-              </KV>
-              <KV label="Project">
-                {linkedTask ? (
-                  <Link
-                    href={`/projects/${linkedTask.project_id}/tasks/${linkedTask.task_id}`}
-                    className="row gap-1"
-                    style={{ color: 'var(--peri)', textDecoration: 'none', alignItems: 'center' }}
-                  >
-                    <FolderGit2 size={14} />
-                    <span>{linkedTask.project_title || 'Project'}</span>
-                  </Link>
-                ) : (
-                  <StatusBadge status={null} label="Not linked" tone="amber" dot="none" size="lg" />
-                )}
-              </KV>
-              <KV label="Turns"><span className="num mono">{contract.current_turns} · {contract.max_turns}</span></KV>
-              {contract.completion_requires_approval && (
-                <KV label="Completion gate">
-                  {/* An approved completion gate is a good end (mint); an
-                      unapproved one is waiting on a person (amber). It used to
-                      paint the approved case peri, the "queued" tone. */}
-                  <StatusBadge
-                    status={null}
-                    label={contract.completion_approved_at ? 'Approved' : 'Approval required'}
-                    tone={contract.completion_approved_at ? 'mint' : 'amber'}
-                    dot="none"
-                    size="lg"
-                  />
-                </KV>
-              )}
-              <KV label="Created"><span className="num mono">{formatDateTime(contract.created_at)}</span></KV>
-              <KV label="Expires" align="right">
-                <span className="num mono">{contract.expires_at ? formatDate(contract.expires_at) : '—'}</span>
-              </KV>
-            </div>
-
-            {/* Participants */}
-            <div className="row gap-3" style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line-1)', flexWrap: 'wrap' }}>
-              <div className="upper" style={{ alignSelf: 'center' }}>Participants</div>
-              {participants.map((p) => {
-                const name = p.agent?.display_name || p.agent?.name || 'Unknown';
-                const desc = participantDescriptor({ participantRole: p.role, participantStatus: p.status }) || p.role;
-                return (
-                  /* This chip spells the participant's status in its own text
-                     ("invitee · accepted"), and it sits inches from the
-                     contract's status pill — so it has to be coloured by that
-                     status, not by a hash of the agent's name. The Avatar
-                     inside it still carries the per-name colour, which is where
-                     identity belongs. */
-                  <StatusBadge
-                    key={p.id}
-                    domain="participant"
-                    status={p.status}
-                    dot="none"
-                    size="lg"
-                    label={<><Avatar name={name} size={14} />{name} · {desc}</>}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
+            {contract.description && (
+              <section className="card card--pad">
+                <h2 className={styles.sideHeading}>Brief</h2>
+                <div className="muted text-sm"><MarkdownPreview content={contract.description} className="" /></div>
+              </section>
+            )}
           {relatedContracts.length > 0 && (
-            <div className="card card--inset" style={{ padding: 14, marginTop: 18 }}>
+            <div className="card card--pad">
               <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 12 }}>
                 <GitBranch size={14} style={{ color: 'var(--peri)', flexShrink: 0 }} />
                 <div className="upper">Related contracts</div>
@@ -421,9 +501,13 @@ export default async function ContractDetailPage({
                     }}
                   >
                     <div className="row gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span className="pill pill--peri">
-                        {describeContractLink(related.link_type, related.direction)}
-                      </span>
+                      <StatusBadge
+                        status={null}
+                        label={describeContractLink(related.link_type, related.direction)}
+                        tone="peri"
+                        dot="none"
+                        size="md"
+                      />
                       <Link
                         href={`/contracts/${related.contract_id}`}
                         className="text-sm"
@@ -445,15 +529,16 @@ export default async function ContractDetailPage({
           )}
 
           {isObserverParticipant && (
-            <div className="card card--inset" style={{ padding: 'var(--space-3)', marginTop: 14, borderColor: 'var(--peri-line)' }}>
+            <div className="card card--pad" style={{ borderColor: 'var(--peri-line)' }}>
               <div className="text-2xs" style={{ color: 'var(--peri)' }}>
                 You are attached as a read-only observer on this contract.
               </div>
             </div>
           )}
 
-          {(contract.close_reason || contract.closed_at || contract.closed_by) && (
-            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
+          <div className="card card--pad">
+            {hasClosure && (
+            <div>
               <div className="upper" style={{ marginBottom: 8 }}>Closed</div>
               <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
                 {contract.closed_by && (
@@ -489,7 +574,7 @@ export default async function ContractDetailPage({
 
           {/* Schema */}
           {contract.message_schema && Object.keys(contract.message_schema).length > 0 && (
-            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
+            <div className={hasClosure ? styles.contextDivider : undefined}>
               <div className="row gap-2" style={{ marginBottom: 8, alignItems: 'center' }}>
                 <div className="upper">Message Schema</div>
                 <StatusBadge status={null} label="Zod Enforced" tone="mint" dot="none" size="sm" />
@@ -500,33 +585,19 @@ export default async function ContractDetailPage({
             </div>
           )}
           {(!contract.message_schema || Object.keys(contract.message_schema).length === 0) && (
-            <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line-1)' }}>
+            <div className={hasClosure ? styles.contextDivider : undefined}>
               <div className="row gap-2" style={{ alignItems: 'center' }}>
                 <div className="upper">Message Schema</div>
                 <StatusBadge status={null} label="None — Free-form" tone="neutral" dot="none" size="sm" />
               </div>
             </div>
           )}
-        </div>
-
-        {/* The operator channel: what a person has told the agents here, and
-            what the agents have asked back. Placed above the attachments and
-            the thread because an unanswered blocking question is the reason
-            nothing below it has moved. */}
-        <OperatorChannel
-          contractId={id}
-          notes={channel.notes}
-          questions={channel.questions}
-          agentCount={participants.filter((participant) => participant.role !== 'observer').length}
-          ackCounts={ackCounts}
-          canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
-        />
-
-        {/* Attachments */}
-        <div className="card" style={{ marginBottom: 16 }}>
+          </div>
+          {/* Attachments */}
+        <div className="card">
           <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
             <div className="col gap-1">
-              <div className="h3">Attachments</div>
+              <h2 className="h3">Attachments</h2>
               <div className="dim text-2xs">Artifacts shared on this contract</div>
             </div>
           </div>
@@ -542,77 +613,8 @@ export default async function ContractDetailPage({
           </div>
         </div>
 
-        {/* Message Thread */}
-        <div className="card">
-          <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-            <div className="h3">Message Thread <span className="dim text-xs" style={{ fontWeight: 400 }}>· {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}</span></div>
-          </div>
-
-          {threadMessages.length === 0 ? (
-            <EmptyState
-              icon={<MessageSquare size={20} />}
-              title="No messages yet"
-              hint="Messages appear here as the participants exchange them."
-            />
-          ) : (
-            threadMessages.map((msg, i) => {
-              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
-              return (
-                <div key={msg.id} style={{ padding: 22, borderBottom: i === threadMessages.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
-                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
-                    <Avatar name={senderName} size={32} />
-                    <div className="col" style={{ flex: 1, gap: 8 }}>
-                      <div className="row gap-2" style={{ alignItems: 'center' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <StatusBadge domain="message-type" status={msg.message_type} />
-                        <StatusBadge
-                          status={null}
-                          label={expectationOf(msg).label}
-                          tone={expectationOf(msg).tone}
-                          dot="none"
-                          size="sm"
-                        />
-                        <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
-                      </div>
-                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
-                        <MessageCard content={msg.content} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
+          </aside>
         </div>
-
-        {/* Observer Notes */}
-        {observerNotes.length > 0 && (
-          <div className="card" style={{ marginTop: 16 }}>
-            <div className="row" style={{ padding: '14px 22px', borderBottom: '1px solid var(--line-1)', justifyContent: 'space-between' }}>
-              <div className="h3" style={{ color: 'var(--peri)' }}>Observer Notes <span className="dim text-xs" style={{ fontWeight: 400 }}>· {observerNotes.length} note{observerNotes.length !== 1 ? 's' : ''}</span></div>
-            </div>
-            {observerNotes.map((msg, i) => {
-              const senderName = msg.sender?.display_name || msg.sender?.name || 'Unknown';
-              return (
-                <div key={msg.id} style={{ padding: 22, borderBottom: i === observerNotes.length - 1 ? 'none' : '1px solid var(--line-1)' }}>
-                  <div className="row gap-3" style={{ alignItems: 'flex-start' }}>
-                    <Avatar name={senderName} size={32} />
-                    <div className="col" style={{ flex: 1, gap: 8 }}>
-                      <div className="row gap-2" style={{ alignItems: 'center' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{senderName}</span>
-                        <StatusBadge status={null} label="observer note" tone="peri" dot="none" size="sm" />
-                        <span className="dim mono num text-2xs" style={{ marginLeft: 'auto' }}>{formatDateTime(msg.created_at)}</span>
-                      </div>
-                      <div className="text-sm" style={{ color: 'var(--fg-1)', lineHeight: 1.65 }}>
-                        <MessageCard content={msg.content} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </PageFrame>
     </AutoRefresh>
   );
