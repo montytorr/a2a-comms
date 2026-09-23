@@ -160,7 +160,7 @@ export function SidebarContent({ isSuperAdmin, displayName, notificationCounts, 
       <Link
         key={item.href}
         href={item.href}
-        onNavigate={() => { onNavigate?.(); begin(); }}
+        onNavigate={() => { onNavigate?.(); if (item.href !== pathname) begin(); }}
         className={`nav-item ${active ? 'nav-item--active' : ''}`}
         // In rail mode the label is hidden, so the icon needs to say what the
         // destination is on hover.

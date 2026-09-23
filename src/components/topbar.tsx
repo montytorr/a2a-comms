@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Search, RefreshCw, Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Ticker } from '@/components/atoms';
 import { useDashboardContext } from '@/app/(dashboard)/dashboard-context';
@@ -20,6 +20,7 @@ interface TopbarProps {
 
 export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collapsed, onToggleCollapsed }: TopbarProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { notificationCounts } = useDashboardContext();
   const { begin } = useNavigationFeedback();
   // Derived per request in lib/dashboard-notifications.ts; there is no read
@@ -155,7 +156,7 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
         </button>
         <Link
           href="/notifications"
-          onNavigate={begin}
+          onNavigate={() => { if (pathname !== '/notifications') begin(); }}
           className="btn btn--ghost btn--sm btn--icon"
           title={actionable > 0 ? `Notifications — ${actionable} needing attention` : 'Notifications'}
           aria-label={

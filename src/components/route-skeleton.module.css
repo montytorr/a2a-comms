@@ -1,0 +1,22 @@
+.shell { display: grid; gap: var(--space-3); min-width: 0; padding: var(--space-6) var(--space-4); }
+.shell > div { background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-2); }
+.eyebrow { width: 85px; height: 12px; border: 0 !important; }
+.title { width: min(320px, 70%); height: 30px; border: 0 !important; }
+.subtitle { width: min(460px, 90%); height: 16px; margin-bottom: var(--space-4); border: 0 !important; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); background: none !important; border: 0 !important; }
+.metric { height: 112px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-2); background: none !important; border: 0 !important; }
+.chart { height: 310px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
+.filters { height: 48px; margin-bottom: var(--space-1); }
+.rows { overflow: hidden; background: var(--bg-1) !important; }
+.row { height: 72px; border-bottom: 1px solid var(--line-1); }
+.row:last-child { border-bottom: 0; }
+.detail { display: grid; grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); gap: var(--space-5); background: none !important; border: 0 !important; }
+.rail { height: 460px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
+.detailBody { display: grid; gap: var(--space-4); background: none !important; }
+.panel { height: 220px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
+.document { height: 580px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
+@media (min-width: 640px) { .shell { padding-inline: var(--space-6); } }
+@media (min-width: 1024px) { .shell { padding-inline: var(--space-6); } }
+@media (max-width: 800px) { .detail { grid-template-columns: 1fr; } .rail { height: 150px; } }
+@media (max-width: 600px) { .metrics, .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chart { height: 220px; } }

@@ -9,7 +9,8 @@ import { CommandPalette } from './command-palette';
 import type { TickerItem } from '@/lib/live-feed';
 import { DashboardProvider, type DashboardContextValue } from '@/app/(dashboard)/dashboard-context';
 import ActingAgentSelector from '@/app/(dashboard)/acting-agent-selector';
-import { NavigationFeedbackProvider } from './navigation-feedback';
+import { NavigationFeedbackProvider, useNavigationFeedback } from './navigation-feedback';
+import RouteSkeleton from './route-skeleton';
 import type { DashboardNotificationCounts } from '@/lib/dashboard-notifications';
 
 interface DashboardShellProps extends DashboardContextValue {
@@ -18,6 +19,22 @@ interface DashboardShellProps extends DashboardContextValue {
 }
 
 const COLLAPSE_KEY = 'a2a:sidebar-collapsed';
+
+function DashboardPageContent({ children }: { children: React.ReactNode }) {
+  const { pending } = useNavigationFeedback();
+  const [showSkeleton, setShowSkeleton] = useState(false);
+
+  useEffect(() => {
+    if (!pending) {
+      const reset = window.setTimeout(() => setShowSkeleton(false), 0);
+      return () => window.clearTimeout(reset);
+    }
+    const timer = window.setTimeout(() => setShowSkeleton(true), 180);
+    return () => window.clearTimeout(timer);
+  }, [pending]);
+
+  return pending && showSkeleton ? <RouteSkeleton /> : <>{children}</>;
+}
 
 export default function DashboardShell({
   isSuperAdmin,
@@ -83,7 +100,7 @@ export default function DashboardShell({
             <div className="px-4 pt-1 sm:px-6 lg:px-8">
               <ActingAgentSelector />
             </div>
-            {children}
+            <DashboardPageContent>{children}</DashboardPageContent>
           </div>
         </div>
       </main>

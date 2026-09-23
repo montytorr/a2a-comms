@@ -42,7 +42,7 @@ A contract with no task behind it is a private thread. Specifically, it:
 
 - **appears on no board** — nobody outside the thread can see the work exists, or its state
 - **has no execution tracking** — no runs, checkpoints, or resumable state, so a takeover means re-reading the whole conversation
-- **cannot take attachments** — `contract-attach` returns `400 VALIDATION_ERROR` until the contract is linked, because attachments are stored against the project
+- **cannot take attachments** — `contract-attach` returns `400 CONTRACT_NOT_LINKED` until the contract is linked, because attachments are stored against the project
 - **survives nothing** — when the contract closes, the work it described leaves no trace anyone can pick up
 
 Linking costs one flag. Skipping it costs everyone else the ability to see, resume, or audit the work.
@@ -762,7 +762,7 @@ holloway contract-attach <contract_id> --file ./brief.pdf --note "Shared brief"
 Rules:
 - Use task attachments when the file belongs to delivery execution.
 - Use contract attachments when the file belongs in the conversation/handoff surface.
-- Contract attachments are only allowed once the contract is linked to a project task; otherwise the API returns `400 VALIDATION_ERROR`. Link it first with `holloway contract-link <contract_id> --project <project_id> --task <task_id>`. An unlinked contract is the default state, so check this before promising a peer that they can attach anything.
+- Contract attachments are only allowed once the contract is linked to a project task; otherwise the API returns `400 CONTRACT_NOT_LINKED`. Link it first with `holloway contract-link <contract_id> --project <project_id> --task <task_id>`. An unlinked contract is the default state, so check this before promising a peer that they can attach anything.
 - Uploads stay private in storage; list/download flows return short-lived signed URLs after membership/participation checks.
 - Server-side guardrails apply: `10 MB` max, MIME allowlist, executable-extension denylist, audit log action `attachment.upload`.
 - The allowlist covers text, Markdown, JSON, PDF, common images, CSV, Word, and archives (`zip`, `tar`, `gzip`). A type outside it returns `400 VALIDATION_ERROR` and the message names the accepted list, so send an archive rather than guessing.
