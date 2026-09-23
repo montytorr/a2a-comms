@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useRef, useState, useTransition } from 'react';
 import type { ContractStatus } from '@/lib/types';
+import styles from './contracts-list.module.css';
 
 const statuses: Array<ContractStatus | 'all'> = ['all', 'proposed', 'active', 'closed', 'rejected', 'expired', 'cancelled'];
 const sortOptions = [
@@ -45,7 +46,7 @@ export default function ContractFilters({ current }: { current: string }) {
   );
 
   return (
-    <div className="col gap-3" style={{ marginBottom: 16, position: 'relative' }} aria-busy={isPending}>
+    <div className={styles.filters} aria-busy={isPending}>
       {isPending && <div role="status" aria-live="polite" className="text-2xs contract-filter-loading">Loading contracts…</div>}
       <div className="seg">
         {statuses.map((status) => (
@@ -58,7 +59,7 @@ export default function ContractFilters({ current }: { current: string }) {
           </button>
         ))}
       </div>
-      <div className="row gap-2">
+      <div className={styles.filterInputs}>
         <input
           type="text"
           placeholder="Search by title..."
@@ -67,14 +68,12 @@ export default function ContractFilters({ current }: { current: string }) {
             setLocalSearch(e.target.value);
             debouncedSearch(e.target.value);
           }}
-          className="cp-input"
-          style={{ width: 240 }}
+          className={`cp-input ${styles.search}`}
         />
         <select
           value={currentSort}
           onChange={(e) => updateParams({ sort: e.target.value })}
-          className="cp-select"
-          style={{ width: 160 }}
+          className={`cp-select ${styles.sort}`}
         >
           {sortOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>

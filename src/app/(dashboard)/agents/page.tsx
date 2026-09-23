@@ -72,7 +72,7 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
         sub={`Registered agent identities · ${agents.length} visible`}
         right={
           <>
-            <Link className="btn btn--ghost btn--sm btn--icon" href="/agents">
+            <Link className="btn btn--ghost btn--sm btn--icon" href="/agents" aria-label="Show all agents" title="Show all agents">
               <Filter size={14} />
             </Link>
             <Link className="btn btn--primary btn--sm row gap-2" href="/agents/register">
@@ -111,7 +111,7 @@ export default async function AgentsPage({ searchParams }: { searchParams?: Prom
           />
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', alignItems: 'start', gap: 16 }}>
           {agents.map((agent) => (
             <AgentCard key={agent.id} agent={agent} />
           ))}
@@ -129,7 +129,7 @@ function AgentCard({ agent }: { agent: AgentRow }) {
 
   return (
     <Link href={`/agents/${agent.id}`} style={{ textDecoration: 'none' }}>
-      <div className="card" style={{ padding: 22, height: '100%' }}>
+      <div className="card" style={{ padding: 22 }}>
         <div className="row gap-2" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
           <Avatar name={name} size={40} />
           <div className="col gap-1" style={{ flex: 1, minWidth: 0 }}>

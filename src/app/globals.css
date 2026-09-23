@@ -995,8 +995,10 @@ input[type="checkbox"], input[type="radio"] {
   scrollbar-width: none;
 }
 .seg::-webkit-scrollbar { display: none; }
-.seg button { flex: 0 0 auto; white-space: nowrap; }
-.seg button {
+.seg :is(button, a) { flex: 0 0 auto; white-space: nowrap; }
+.seg :is(button, a) {
+  display: inline-flex;
+  align-items: center;
   height: 24px;
   padding: 0 10px;
   background: transparent;
@@ -1007,9 +1009,10 @@ input[type="checkbox"], input[type="radio"] {
   font-weight: 500;
   cursor: pointer;
   border-radius: var(--radius-1);
+  text-decoration: none;
 }
-.seg button.active { background: var(--bg-3); color: var(--fg-0); }
-.seg button:hover:not(.active) { color: var(--fg-1); }
+.seg :is(button, a).active { background: var(--bg-3); color: var(--fg-0); }
+.seg :is(button, a):hover:not(.active) { color: var(--fg-1); }
 
 /* utility
    .gap-1..6 and .grow used to live here and shadowed Tailwind's own
