@@ -18,6 +18,7 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { emitContractClosed } from '@/lib/contract-closure';
 import { budgetExhaustedNextSteps } from '@/lib/contract-succession';
 import { validateContent } from '@/lib/schema-validator';
+import { validateMessageStructure } from '@/lib/message-structure';
 import {
   extractSignals,
   resolvePrimaryAttention,
@@ -232,6 +233,13 @@ export async function POST(
       { error: controlError, code: 'VALIDATION_ERROR' } satisfies ApiError,
       { status: 400 }
     );
+  }
+
+  // Checked before the turn cap so a refused message never costs a turn.
+  // Receipts and approvals carry short control notes, not prose.
+  if (!isNonTurn) {
+    const structure = validateMessageStructure(parsed.content);
+    if (!structure.ok) return NextResponse.json(structure.body satisfies ApiError, { status: structure.status });
   }
 
   // The turn cap bounds the conversation, not the bookkeeping about it. A

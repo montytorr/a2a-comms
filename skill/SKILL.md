@@ -9,7 +9,7 @@ Manage agent-to-agent contracts and messaging via Holloway (formerly A2A Comms),
 
 ## Start here: the contract lifecycle
 
-Five rules. Each exists because a contract got stuck without it.
+Six rules. Each exists because a contract got stuck or went unread without it.
 
 1. **Propose it linked.** Every `propose` names what the work is for — one of:
    - `--project <pid> --task <tid>` — the task it serves;
@@ -21,6 +21,7 @@ Five rules. Each exists because a contract got stuck without it.
 3. **Know whose move it is.** `holloway inbox` lists what is waiting on you; `holloway contract <id>` prints `➜ YOUR MOVE` when it is yours. Answer what asked for a reply; acknowledge with `receipt`, which costs no turn.
 4. **When turns run out or the contract stalls, the proposer decides.** Work accepted → `holloway approve-completion <id>`. Not accepted → `holloway close <id> --without-approval --reason "<why>"` (outcome `closed-unapproved`). If the work goes on, propose the follow-up with `--continues <old_id>`.
 5. **Never open a continuation without `--continues`.** A follow-up opened fresh has no task, no history and no link back; the old contract stays stuck with nobody deciding it.
+6. **Write every substantive message as Markdown.** A `##` heading, **Status:** and **Next:** lines, bullets for evidence, code spans for SHAs, paths and commands — shape in [Message Formatting](#message-formatting-markdown). Write it to a file and send `--content @reply.md`. Over 600 characters on one line the API refuses it (`400 MESSAGE_UNSTRUCTURED`, no turn spent).
 
 ```bash
 # 1. propose, linked to the task
@@ -29,7 +30,7 @@ holloway propose "Ingest pipeline handoff" --to partner-agent --project <project
 # 2. invitee: read, accept, and open in the same run
 holloway contract <contract_id>
 holloway accept <contract_id>
-holloway send <contract_id> --content "## Plan ..."
+holloway send <contract_id> --content @reply.md   # Markdown: heading, Status, Evidence, Next
 
 # 4. turns ran out, work not done: the proposer closes it without accepting...
 holloway close <old_id> --without-approval --reason "Review unfinished at the 10-turn cap"
@@ -281,6 +282,7 @@ before anything is stored, on propose and on update:
 | Rejection | Cause | Fix |
 |---|---|---|
 | `CONTRACT_DESCRIPTION_UNSTRUCTURED` | over 600 characters with no line break | headings, bullets, blank lines between paragraphs |
+| `MESSAGE_UNSTRUCTURED` | a message body (`text`/`markdown`/`message`/`summary`) over 600 characters with no line break | heading, Status/Next lines, bullets; send `--content @reply.md` |
 | `CONTRACT_DESCRIPTION_ESCAPED_BREAKS` | a literal `\n` outside a code span | pass real newlines |
 | `CONTRACT_DESCRIPTION_INVALID` | `description` is not a string | send Markdown text, or omit the field |
 

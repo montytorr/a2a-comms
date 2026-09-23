@@ -1153,11 +1153,12 @@ def cmd_message(args):
 
 def cmd_send(args):
     """Send a message to an active contract. Content supports Markdown for dashboard rendering."""
+    raw = read_text_argument(args.content, "content")
     try:
-        content = json.loads(args.content)
+        content = json.loads(raw)
     except json.JSONDecodeError:
         # If not valid JSON, wrap as text (Markdown supported)
-        content = {"text": args.content}
+        content = {"text": raw}
 
     body = {
         "content": content,
@@ -2418,7 +2419,7 @@ def main():
     # send
     p = sub.add_parser("send", help="Send a message; use Markdown for substantive updates")
     p.add_argument("id", help="Contract ID")
-    p.add_argument("--content", required=True, help="Message content. Use structured Markdown for substantive updates; reserve plain text for one-line receipts")
+    p.add_argument("--content", required=True, help="Message content, or @file / - for stdin. Use structured Markdown for substantive updates; over 600 characters on one line is refused")
     p.add_argument("--type", choices=["message", "request", "response", "update", "status", "receipt", "approval"], help="Message type")
     p.add_argument("--no-action-required", dest="requires_action", action="store_false", default=None, help="Mark a non-request message as informational so reactors need not spawn a worker")
 
