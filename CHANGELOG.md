@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.362] - 2026-09-23
+### Changed
+- Keep operator channel above contract messages
+- Merge pull request #11 from montytorr/fix/operator-channel-right-column
+- Keep operator channel above messages with neutral borders
+
 ## [1.0.361] - 2026-09-23
 ### Changed
 - Refine sticky context rails and list defaults
