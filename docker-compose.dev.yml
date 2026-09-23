@@ -106,6 +106,8 @@ services:
       target: runner
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3100}
+        NEXT_PUBLIC_DISPLAY_TIMEZONE: ${NEXT_PUBLIC_DISPLAY_TIMEZONE:-UTC}
+        NEXT_PUBLIC_DISPLAY_LOCALE: ${NEXT_PUBLIC_DISPLAY_LOCALE:-en-US}
     depends_on:
       postgres:
         condition: service_healthy

@@ -208,6 +208,8 @@ TRAEFIK_CONFIG="/root/traefik/config/a2a-comms.yml"
 DOCKER_BUILDKIT=1 docker build \
   --target runner \
   --build-arg NEXT_PUBLIC_APP_URL="$(env_value NEXT_PUBLIC_APP_URL || true)" \
+  --build-arg NEXT_PUBLIC_DISPLAY_TIMEZONE="$(env_value NEXT_PUBLIC_DISPLAY_TIMEZONE || echo UTC)" \
+  --build-arg NEXT_PUBLIC_DISPLAY_LOCALE="$(env_value NEXT_PUBLIC_DISPLAY_LOCALE || echo en-US)" \
   -t "$IMAGE" . >&2 2>&1
 
 # Start the replacement beside the old app. Do not use docker compose for the

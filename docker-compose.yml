@@ -14,6 +14,8 @@ services:
       target: runner
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://holloway.montytorr.com}
+        NEXT_PUBLIC_DISPLAY_TIMEZONE: ${NEXT_PUBLIC_DISPLAY_TIMEZONE:-UTC}
+        NEXT_PUBLIC_DISPLAY_LOCALE: ${NEXT_PUBLIC_DISPLAY_LOCALE:-en-US}
     container_name: a2a-comms
     env_file:
       - .env
