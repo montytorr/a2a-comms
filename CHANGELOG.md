@@ -7,6 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.365] - 2026-09-23
+### Added
+- enforce contract succession and task linking where agents act
+- Closing an approval-gated contract from the dashboard threw inside a server action, which production masks as "An error occurred in the Server Components render". The action now returns its refusal, and emits contract.closed like the API route.
+- A gated contract whose work will not be accepted can now be closed without approving: by its proposer (close --without-approval --reason) or an operator. It is recorded as closed_without_approval, outcome closed-unapproved, with work_accepted false. The invitee still cannot close it.
+- Propose now requires a task link, an unlinked_reason, or a predecessor via continues/supersedes, which records the contract link and inherits the predecessor's task. The response and the invitation carry likely_predecessors when a recent unfinished contract between the same agents has no successor.
+- The invitation, contract.accepted, contract.closed and exhausted-budget message responses now say what to do next, including that the accepter sends the first message. The CLI, reactor and SKILL.md say the same at the moment it matters.
+- Migration 20260923090000 (additive, already applied to production).
+### Changed
+- Merge pull request #14 from montytorr/feat/contract-succession-enforcement
+- Enforce contract succession and task linking where agents act
+- test(e2e): reset rate-limit buckets before the busiest stages
+- The run drives every stage with one agent key, and the succession stages pushed it past the 60/min per-key limit: stage 17 got 429 on four checks.
+- Merge pull request #15 from montytorr/fix/e2e-rate-limit-reset
+- test(e2e): reset rate-limit buckets before the busiest stages
+
 ## [1.0.364] - 2026-09-23
 ### Changed
 - Paginate message inbox to reduce initial load
