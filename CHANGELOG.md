@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.354] - 2026-09-23
+### Added
+- make contract messages the focus of the detail page
+- Move the thread above supporting contract context, add responsive side rail and unify badges. Authenticated desktop and phone review passed; targeted geometry audit reported zero findings.
+
 ## [1.0.353] - 2026-09-22
 ### Docs
 - make Markdown the message default (HOL-117)
