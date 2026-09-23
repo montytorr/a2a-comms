@@ -34,6 +34,7 @@ export default function MessageFilters({ agents }: MessageFiltersProps) {
       } else {
         params.set(key, value);
       }
+      params.delete('page');
       const qs = params.toString();
       router.push(`/messages${qs ? `?${qs}` : ''}`);
     },

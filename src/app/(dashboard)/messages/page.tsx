@@ -12,6 +12,7 @@ import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
 import styles from './messages-list.module.css';
 export const dynamic = 'force-dynamic';
+const PAGE_SIZE = 30;
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -26,7 +27,7 @@ function timeAgo(dateStr: string): string {
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ agent?: string; type?: string; search?: string }>;
+  searchParams: Promise<{ agent?: string; type?: string; search?: string; page?: string }>;
 }) {
   const auth = await getAuthActorContext();
   const user = auth?.user ?? null;
@@ -36,6 +37,17 @@ export default async function MessagesPage({
   const agentFilter = params.agent || 'all';
   const typeFilter = params.type || 'all';
   const searchFilter = params.search || '';
+  const requestedPage = Number(params.page);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 1000 ? requestedPage : 1;
+  const pageUrl = (target: number) => {
+    const query = new URLSearchParams();
+    if (agentFilter !== 'all') query.set('agent', agentFilter);
+    if (typeFilter !== 'all') query.set('type', typeFilter);
+    if (searchFilter) query.set('search', searchFilter);
+    if (target > 1) query.set('page', String(target));
+    const suffix = query.toString();
+    return `/messages${suffix ? `?${suffix}` : ''}`;
+  };
   const db = createServerClient();
   noStore();
 
@@ -66,7 +78,8 @@ export default async function MessagesPage({
     // these were asking for anything.
     .select('id, contract_id, sender_id, message_type, content, created_at, requires_action, consumes_turn')
     .order('created_at', { ascending: false })
-    .limit(100);
+    // Fetch one extra row to show Next without an expensive total-count query.
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Scope messages to user's contracts
   if (scopedContractIds !== null) {
@@ -127,7 +140,8 @@ export default async function MessagesPage({
     agentMap.set(agent.id, agent);
   }
 
-  const allMessages = messages || [];
+  const hasMore = (messages || []).length > PAGE_SIZE;
+  const allMessages = (messages || []).slice(0, PAGE_SIZE);
 
   return (
     <AutoRefresh intervalMs={10000} watch={['messages', 'contracts']}>
@@ -156,8 +170,8 @@ export default async function MessagesPage({
           {allMessages.length === 0 ? (
             <EmptyState
               icon={<MessageSquare size={20} />}
-              title="No messages found"
-              hint="No message matches the current filters. Widen them to see more of the stream."
+              title={page > 1 ? 'No more messages' : 'No messages found'}
+              hint={page > 1 ? 'Go back to a newer page of the stream.' : 'No message matches the current filters. Widen them to see more of the stream.'}
             />
           ) : (
             <div>
@@ -201,6 +215,13 @@ export default async function MessagesPage({
             </div>
           )}
         </div>
+        {(page > 1 || hasMore) && (
+          <nav aria-label="Message pages" className="row gap-3" style={{ justifyContent: 'center', alignItems: 'center', marginTop: 'var(--space-5)' }}>
+            {page > 1 && <Link className="btn btn--sm" href={pageUrl(page - 1)}>Newer messages</Link>}
+            <span className="dim mono text-xs">Page {page}</span>
+            {hasMore && <Link className="btn btn--sm" href={pageUrl(page + 1)}>Older messages</Link>}
+          </nav>
+        )}
       </PageFrame>
     </AutoRefresh>
   );
