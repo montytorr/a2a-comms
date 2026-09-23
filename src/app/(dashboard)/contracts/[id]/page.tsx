@@ -255,16 +255,6 @@ export default async function ContractDetailPage({
         </header>
         <div className={styles.layout}>
           <div className={styles.sidebar}>
-            <div className={styles.operatorRail}>
-              <OperatorChannel
-                contractId={id}
-                notes={channel.notes}
-                questions={channel.questions}
-                agentCount={participants.filter((participant) => participant.role !== 'observer').length}
-                ackCounts={ackCounts}
-                canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
-              />
-            </div>
             <aside className={styles.context} aria-label="Contract details">
             {/* Metadata */}
             <div className="card card--pad">
@@ -487,10 +477,17 @@ export default async function ContractDetailPage({
               </div>
             </div>
           </div>
-
             </aside>
           </div>
           <main className={styles.main}>
+            <OperatorChannel
+              contractId={id}
+              notes={channel.notes}
+              questions={channel.questions}
+              agentCount={participants.filter((participant) => participant.role !== 'observer').length}
+              ackCounts={ackCounts}
+              canWrite={Boolean(user.isSuperAdmin || (viewerAgentId && !isObserverParticipant))}
+            />
             {turnState && (
               <div
                 className={styles.turnState}

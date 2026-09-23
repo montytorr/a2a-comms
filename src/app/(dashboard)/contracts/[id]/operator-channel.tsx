@@ -25,10 +25,10 @@ interface Props {
   canWrite: boolean;
 }
 
-const KIND_TONE: Record<string, { line: string; bg: string; fg: string; label: string }> = {
-  question: { line: 'var(--line-2)', bg: 'var(--bg-2)', fg: 'var(--fg-2)', label: 'question' },
-  validation: { line: 'var(--peri-line)', bg: 'var(--peri-bg)', fg: 'var(--peri)', label: 'validation' },
-  blocked: { line: 'var(--rose-line)', bg: 'var(--rose-bg)', fg: 'var(--rose)', label: 'blocked' },
+const KIND_TONE: Record<string, { bg: string; fg: string; label: string }> = {
+  question: { bg: 'var(--bg-2)', fg: 'var(--fg-2)', label: 'question' },
+  validation: { bg: 'var(--peri-bg)', fg: 'var(--peri)', label: 'validation' },
+  blocked: { bg: 'var(--rose-bg)', fg: 'var(--rose)', label: 'blocked' },
 };
 
 /**
@@ -103,14 +103,14 @@ export default function OperatorChannel({
                 <div
                   key={question.id}
                   className="col"
-                  style={{ gap: 8, padding: 14, borderRadius: 10, border: `1px solid ${tone.line}`, background: tone.bg }}
+                  style={{ gap: 8, padding: 14, borderRadius: 10, border: '1px solid var(--line-2)', background: tone.bg }}
                 >
                   <div className="row gap-2" style={{ flexWrap: 'wrap' }}>
                     <MessageSquareWarning size={14} style={{ color: tone.fg, flexShrink: 0 }} />
                     <span className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>
                       {question.asked_by_agent_name || 'An agent'} is asking you
                     </span>
-                    <span className="pill" style={{ borderColor: tone.line, color: tone.fg }}>{tone.label}</span>
+                    <span className="pill" style={{ borderColor: 'var(--line-2)', color: tone.fg }}>{tone.label}</span>
                     {question.blocking && (
                       <span className="pill pill--rose" title="The agent said it cannot proceed until this is answered.">
                         blocking
@@ -163,7 +163,9 @@ export default function OperatorChannel({
           </div>
         )}
 
-        {notes.map((note) => {
+        {notes.length > 0 && (
+          <div className={styles.notesGrid}>
+            {notes.map((note) => {
           const acked = ackCounts[note.id] ?? 0;
           return (
             <div key={note.id} className={styles.note}>
@@ -210,7 +212,9 @@ export default function OperatorChannel({
               )}
             </div>
           );
-        })}
+            })}
+          </div>
+        )}
 
         {resolved.length > 0 && (
           <details className={styles.resolvedQuestions} open>
