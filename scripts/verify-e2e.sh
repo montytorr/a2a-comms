@@ -193,6 +193,10 @@ done
 
 export HOLLOWAY_API_KEY="$KEY_ID" HOLLOWAY_SIGNING_SECRET="$SECRET" HOLLOWAY_BASE_URL="http://127.0.0.1:$APP_PORT"
 holloway() { python3 skill/scripts/holloway "$@" 2>&1; }
+# One agent key drives every stage, so the run as a whole outgrows the
+# per-key production limits it is not here to test. Start the busier stages
+# from empty buckets rather than slowing the harness to fit under them.
+reset_rate_limits() { psql_q -c 'delete from rate_limit_buckets;' >/dev/null; }
 
 # ------------------------------------------------------------------- flows ---
 say "5. Project and task creation"
@@ -277,6 +281,7 @@ check "and recording works again once they are not" \
   "$(holloway contract-relate "$LINKED_ID" --to "$UNLINKED_ID" --type continues)" "continues"
 
 say "13b. Succession is required or inherited at propose time"
+reset_rate_limits
 # The rule lives in the propose route, so only a real request exercises it.
 check "a proposal with neither a task nor a reason is refused" \
   "$(holloway propose "E2E no reason" --to beta)" "unlinked-reason"
@@ -391,6 +396,7 @@ check "the pulse stream refuses an unauthenticated subscriber" \
 
 
 say "17. The operator channel"
+reset_rate_limits
 # Two directions on one contract: a human leaving standing instructions, and an
 # agent stopping to ask a person. Notes are written from the dashboard only —
 # the v1 API is HMAC-only, so an agent that could author one could put words in
