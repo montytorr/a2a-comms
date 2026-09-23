@@ -81,7 +81,8 @@ test('one message produces exactly one webhook delivery, carrying its own identi
 test('the close route refuses to complete a contract whose approval gate is open', () => {
   const closeRoute = read('src/app/api/v1/contracts/[id]/close/route.ts');
   assert.match(closeRoute, /completion_requires_approval && !gated\.completion_approved_at/);
-  assert.match(closeRoute, /COMPLETION_APPROVAL_REQUIRED/);
+  assert.match(closeRoute, /evaluateGatedClose\(/);
+  assert.match(read('src/lib/contract-closure.ts'), /COMPLETION_APPROVAL_REQUIRED/);
 });
 
 test('the migration keeps non-turn messages free and holds a gated contract open at the cap', () => {
@@ -169,7 +170,7 @@ test('the dashboard shows a contract held open by its completion gate', () => {
   assert.match(page, /completion_requires_approval/);
   assert.match(page, /Approval required/);
   const actions = read('src/app/(dashboard)/contracts/[id]/actions.ts');
-  assert.match(actions, /requires proposer approval before closure/);
+  assert.match(actions, /needs completion approval from/);
 });
 
 test('the attachment dead end tells an agent how to get out of it', () => {

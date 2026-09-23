@@ -39,7 +39,11 @@ class TurnBudget:
         if self.remaining is not None:
             parts.append(f"remaining={self.remaining}")
             if self.is_low:
-                parts.append("LOW_BUDGET=spend what is left on evidence, not status")
+                parts.append(
+                    "LOW_BUDGET=spend what is left on evidence, not status; if the work "
+                    "will not fit, propose the follow-up with --continues <this contract> "
+                    "so it inherits the task"
+                )
         if self.awaiting_completion_approval:
             parts.append("awaiting_completion_approval=true")
         return " ".join(parts)

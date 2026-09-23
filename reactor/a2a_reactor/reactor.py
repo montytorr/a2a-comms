@@ -21,8 +21,9 @@ from .adapters import (
     WorkerRuntime,
 )
 from .artifacts import ArtifactPolicy
-from .closure import CloseOutcome, read_close_outcome, work_was_accepted
+from .closure import SUCCESSION_OUTCOMES, CloseOutcome, read_close_outcome, work_was_accepted
 from .events import Disposition, Triage, triage_event
+from .guidance import successor_guidance, worker_guidance
 from .outcomes import WorkerOutcome
 from .queue import read_queue, write_queue
 from .turns import read_turn_budget
@@ -176,6 +177,13 @@ class Reactor:
             return True
 
         label = f"Holloway {event.get('event', 'event')} on contract {contract_id}"
+        # The protocol steps for this kind of event — accept AND open, carry
+        # unfinished work on with --continues — travel with the event so the
+        # worker's prompt can include them. A copy: the queued event stays as
+        # it arrived.
+        guidance = worker_guidance(event, self_agent_id=self.agent_id)
+        if guidance:
+            event = {**event, "worker_guidance": guidance}
         # A runtime may return a WorkerOutcome to say HOW the run ended. A bool
         # still works and still means acted-or-failed, which is all a bool can
         # say.
@@ -229,13 +237,25 @@ class Reactor:
         if not refs:
             return True
 
-        for ref in refs:
-            note = summary + (
-                ". The proposer recorded approval, so this is closed with it."
-                if accepted
-                else ". This is how the conversation ended, not evidence the work "
-                     "was accepted, so it stays open and needs a decision."
+        if accepted:
+            tail = ". The proposer recorded approval, so this is closed with it."
+        elif outcome is CloseOutcome.CLOSED_UNAPPROVED:
+            tail = (
+                ". The proposer closed it without accepting the work, so it stays "
+                "open and needs a decision."
             )
+        else:
+            tail = (
+                ". This is how the conversation ended, not evidence the work "
+                "was accepted, so it stays open and needs a decision."
+            )
+        if outcome in SUCCESSION_OUTCOMES:
+            tail += " " + successor_guidance(contract_id)
+            if isinstance(data.get("successor_hint"), str) and data["successor_hint"].strip():
+                tail += f" Platform says: {data['successor_hint']}"
+
+        for ref in refs:
+            note = summary + tail
             if not self.tracker.annotate(ref, note):
                 result.failed += 1
                 continue

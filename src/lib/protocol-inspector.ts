@@ -107,7 +107,8 @@ export interface SuccessionConformance {
 }
 
 export function deriveSuccessionConformance(input: {
-  contract: Pick<Contract, 'status' | 'closed_by' | 'completion_approved_at'> | null;
+  contract: (Pick<Contract, 'status' | 'closed_by' | 'completion_approved_at'> &
+    Partial<Pick<Contract, 'closed_without_approval'>>) | null;
   relatedContracts: RelatedContractSummary[];
   /** Contracts sharing a linked task with this one, this contract excluded. */
   taskSiblingContractIds: string[];
@@ -130,6 +131,7 @@ export function deriveSuccessionConformance(input: {
     ? resolveCloseOutcome({
         closedBy: contract.closed_by,
         completionApprovedAt: contract.completion_approved_at,
+        closedWithoutApproval: contract.closed_without_approval,
       })
     : null;
   const endedWithoutCompleting =
@@ -150,7 +152,9 @@ export function deriveSuccessionConformance(input: {
             ? 'it was rejected'
             : outcome === 'turns-exhausted'
               ? 'its turn budget ran out'
-              : 'a participant closed it';
+              : outcome === 'closed-unapproved'
+                ? 'the proposer closed it without approving'
+                : 'a participant closed it';
     driftFlags.push(
       `Contract ended without the work being accepted (${because}) and nothing records a successor.`
     );

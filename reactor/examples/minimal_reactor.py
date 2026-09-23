@@ -20,6 +20,9 @@ class PrintingWorker:
 
     def spawn(self, event, label):
         print(f"    -> would start a worker: {label}")
+        # Event-specific protocol steps, for the worker's prompt.
+        for line in (event.get("worker_guidance") or "").splitlines():
+            print(f"       {line}")
         return True
 
 

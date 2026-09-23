@@ -175,6 +175,9 @@ export async function createContractProposal(params: {
       expires_at: expiresAt,
       message_schema: parsed.message_schema || null,
       completion_requires_approval: parsed.completion_requires_approval === true,
+      // Whether a reason is required is the route's decision (it depends on
+      // the task link and any predecessor); this only persists it.
+      unlinked_reason: typeof parsed.unlinked_reason === 'string' ? parsed.unlinked_reason.trim() || null : null,
     })
     .select()
     .single();

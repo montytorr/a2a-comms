@@ -1,0 +1,689 @@
+column|agents|capabilities|ARRAY|'{}'::text[]|YES
+column|agents|created_at|timestamp with time zone|now()|YES
+column|agents|description|text|-|YES
+column|agents|display_name|text|-|NO
+column|agents|id|uuid|gen_random_uuid()|NO
+column|agents|max_concurrent_contracts|integer|10|YES
+column|agents|name|text|-|NO
+column|agents|owner_user_id|uuid|-|YES
+column|agents|owner|text|-|NO
+column|agents|privacy_metadata|jsonb|'{"version": 1, "data_handling": "standard", "allow_training": false, "retention_days": 90, "redaction_level": "standard", "allow_operator_exports": true}'::jsonb|NO
+column|agents|protocols|ARRAY|ARRAY['a2a-comms-v1'::text]|YES
+column|agents|reputation_snapshot|jsonb|-|YES
+column|agents|trust_notes|text|-|YES
+column|agents|trust_policy|jsonb|'{"version": 1, "webhooks": {"management": "partner"}}'::jsonb|NO
+column|agents|trust_tier|text|'external'::text|NO
+column|agents|updated_at|timestamp with time zone|now()|YES
+column|app_password_resets|created_at|timestamp with time zone|now()|NO
+column|app_password_resets|expires_at|timestamp with time zone|-|NO
+column|app_password_resets|id|uuid|gen_random_uuid()|NO
+column|app_password_resets|token_hash|text|-|NO
+column|app_password_resets|used_at|timestamp with time zone|-|YES
+column|app_password_resets|user_id|uuid|-|NO
+column|app_sessions|created_at|timestamp with time zone|now()|NO
+column|app_sessions|expires_at|timestamp with time zone|-|NO
+column|app_sessions|id|uuid|gen_random_uuid()|NO
+column|app_sessions|last_seen_at|timestamp with time zone|now()|NO
+column|app_sessions|token_hash|text|-|NO
+column|app_sessions|user_agent|text|-|YES
+column|app_sessions|user_id|uuid|-|NO
+column|app_users|banned_until|timestamp with time zone|-|YES
+column|app_users|created_at|timestamp with time zone|now()|NO
+column|app_users|deleted_at|timestamp with time zone|-|YES
+column|app_users|email|text|-|NO
+column|app_users|encrypted_password|text|-|NO
+column|app_users|id|uuid|gen_random_uuid()|NO
+column|app_users|raw_user_meta_data|jsonb|'{}'::jsonb|NO
+column|app_users|updated_at|timestamp with time zone|now()|NO
+column|audit_log|action|text|-|NO
+column|audit_log|actor|text|-|NO
+column|audit_log|created_at|timestamp with time zone|now()|YES
+column|audit_log|details|jsonb|-|YES
+column|audit_log|id|uuid|gen_random_uuid()|NO
+column|audit_log|ip_address|text|-|YES
+column|audit_log|resource_id|uuid|-|YES
+column|audit_log|resource_type|text|-|YES
+column|contract_links|created_at|timestamp with time zone|now()|NO
+column|contract_links|created_by_agent_id|uuid|-|YES
+column|contract_links|from_contract_id|uuid|-|NO
+column|contract_links|id|uuid|gen_random_uuid()|NO
+column|contract_links|link_type|text|-|NO
+column|contract_links|note|text|-|YES
+column|contract_links|to_contract_id|uuid|-|NO
+column|contract_note_acks|acked_at|timestamp with time zone|now()|NO
+column|contract_note_acks|agent_id|uuid|-|NO
+column|contract_note_acks|note_id|uuid|-|NO
+column|contract_notes|author_name|text|-|NO
+column|contract_notes|author_user_id|uuid|-|YES
+column|contract_notes|body|text|-|NO
+column|contract_notes|contract_id|uuid|-|NO
+column|contract_notes|created_at|timestamp with time zone|now()|NO
+column|contract_notes|id|uuid|gen_random_uuid()|NO
+column|contract_notes|updated_at|timestamp with time zone|now()|NO
+column|contract_notes|withdrawn_at|timestamp with time zone|-|YES
+column|contract_participants|agent_id|uuid|-|NO
+column|contract_participants|contract_id|uuid|-|NO
+column|contract_participants|created_at|timestamp with time zone|now()|YES
+column|contract_participants|id|uuid|gen_random_uuid()|NO
+column|contract_participants|responded_at|timestamp with time zone|-|YES
+column|contract_participants|role|text|'invitee'::text|NO
+column|contract_participants|status|text|'pending'::text|NO
+column|contract_questions|answer|text|-|YES
+column|contract_questions|answered_at|timestamp with time zone|-|YES
+column|contract_questions|answered_by_name|text|-|YES
+column|contract_questions|answered_by_user_id|uuid|-|YES
+column|contract_questions|asked_by_agent_id|uuid|-|NO
+column|contract_questions|blocking|boolean|false|NO
+column|contract_questions|body|text|-|NO
+column|contract_questions|contract_id|uuid|-|NO
+column|contract_questions|created_at|timestamp with time zone|now()|NO
+column|contract_questions|id|uuid|gen_random_uuid()|NO
+column|contract_questions|kind|text|-|NO
+column|contract_questions|status|text|'open'::text|NO
+column|contracts|close_reason|text|-|YES
+column|contracts|closed_at|timestamp with time zone|-|YES
+column|contracts|closed_by_kind|text|-|YES
+column|contracts|closed_by|text|-|YES
+column|contracts|closed_without_approval|boolean|false|NO
+column|contracts|completion_approved_at|timestamp with time zone|-|YES
+column|contracts|completion_approved_by|uuid|-|YES
+column|contracts|completion_requires_approval|boolean|false|NO
+column|contracts|created_at|timestamp with time zone|now()|YES
+column|contracts|current_turns|integer|0|YES
+column|contracts|description|text|-|YES
+column|contracts|expires_at|timestamp with time zone|-|YES
+column|contracts|id|uuid|gen_random_uuid()|NO
+column|contracts|max_turns|integer|50|YES
+column|contracts|message_schema|jsonb|-|YES
+column|contracts|proposer_id|uuid|-|NO
+column|contracts|status|text|'proposed'::text|NO
+column|contracts|title|text|-|NO
+column|contracts|unlinked_reason|text|-|YES
+column|contracts|updated_at|timestamp with time zone|now()|YES
+column|idempotency_keys|agent_id|uuid|-|NO
+column|idempotency_keys|created_at|timestamp with time zone|now()|NO
+column|idempotency_keys|endpoint|text|-|NO
+column|idempotency_keys|expires_at|timestamp with time zone|(now() + '24:00:00'::interval)|NO
+column|idempotency_keys|key|text|-|NO
+column|idempotency_keys|response|jsonb|-|NO
+column|idempotency_keys|status_code|integer|-|NO
+column|messages|consumes_turn|boolean|true|NO
+column|messages|content|jsonb|-|NO
+column|messages|contract_id|uuid|-|NO
+column|messages|created_at|timestamp with time zone|now()|YES
+column|messages|id|uuid|gen_random_uuid()|NO
+column|messages|message_type|text|'message'::text|NO
+column|messages|requires_action|boolean|true|NO
+column|messages|sender_id|uuid|-|NO
+column|messages|turn_number|integer|-|YES
+column|nonce_cache|expires_at|timestamp with time zone|-|NO
+column|nonce_cache|nonce|text|-|NO
+column|notification_preferences|approval_request|boolean|true|NO
+column|notification_preferences|contract_invitation|boolean|true|NO
+column|notification_preferences|password_reset|boolean|true|NO
+column|notification_preferences|project_member_invitation|boolean|true|NO
+column|notification_preferences|stale_blocker|boolean|true|NO
+column|notification_preferences|task_assigned|boolean|true|NO
+column|notification_preferences|updated_at|timestamp with time zone|now()|NO
+column|notification_preferences|user_id|uuid|-|NO
+column|notification_preferences|welcome|boolean|true|NO
+column|pending_approvals|action|text|-|NO
+column|pending_approvals|actor|text|-|NO
+column|pending_approvals|created_at|timestamp with time zone|now()|NO
+column|pending_approvals|details|jsonb|'{}'::jsonb|YES
+column|pending_approvals|id|uuid|gen_random_uuid()|NO
+column|pending_approvals|reviewed_at|timestamp with time zone|-|YES
+column|pending_approvals|reviewed_by|text|-|YES
+column|pending_approvals|status|text|'pending'::text|NO
+column|project_member_invitations|agent_id|uuid|-|NO
+column|project_member_invitations|created_at|timestamp with time zone|now()|NO
+column|project_member_invitations|expires_at|timestamp with time zone|(now() + '7 days'::interval)|YES
+column|project_member_invitations|id|uuid|gen_random_uuid()|NO
+column|project_member_invitations|invited_by_agent_id|uuid|-|NO
+column|project_member_invitations|project_id|uuid|-|NO
+column|project_member_invitations|reminder_sent_at|timestamp with time zone|-|YES
+column|project_member_invitations|responded_at|timestamp with time zone|-|YES
+column|project_member_invitations|role|text|'member'::text|NO
+column|project_member_invitations|status|text|'pending'::text|NO
+column|project_member_invitations|updated_at|timestamp with time zone|now()|NO
+column|project_members|agent_id|uuid|-|NO
+column|project_members|id|uuid|gen_random_uuid()|NO
+column|project_members|joined_at|timestamp with time zone|now()|NO
+column|project_members|project_id|uuid|-|NO
+column|project_members|role|text|'member'::text|NO
+column|project_observers|agent_id|uuid|-|NO
+column|project_observers|created_at|timestamp with time zone|now()|NO
+column|project_observers|id|uuid|gen_random_uuid()|NO
+column|project_observers|invited_by_agent_id|uuid|-|YES
+column|project_observers|note|text|-|YES
+column|project_observers|project_id|uuid|-|NO
+column|projects|created_at|timestamp with time zone|now()|NO
+column|projects|created_by_agent_id|uuid|-|YES
+column|projects|description|text|-|YES
+column|projects|id|uuid|gen_random_uuid()|NO
+column|projects|owner_user_id|uuid|-|YES
+column|projects|privacy_metadata|jsonb|'{"version": 1, "visibility": "standard", "allow_exports": true, "retention_days": 90, "retention_mode": "standard", "redaction_level": "standard", "allow_observer_access": true}'::jsonb|NO
+column|projects|status|text|'planning'::text|NO
+column|projects|title|text|-|NO
+column|projects|updated_at|timestamp with time zone|now()|NO
+column|rate_limit_buckets|count|integer|0|NO
+column|rate_limit_buckets|key|text|-|NO
+column|rate_limit_buckets|reset_at|timestamp with time zone|-|NO
+column|reputation_ledger_events|agent_id|uuid|-|NO
+column|reputation_ledger_events|contract_id|uuid|-|YES
+column|reputation_ledger_events|id|uuid|gen_random_uuid()|NO
+column|reputation_ledger_events|metadata|jsonb|'{}'::jsonb|NO
+column|reputation_ledger_events|occurred_at|timestamp with time zone|now()|NO
+column|reputation_ledger_events|project_id|uuid|-|YES
+column|reputation_ledger_events|recorded_at|timestamp with time zone|now()|NO
+column|reputation_ledger_events|reviewer_agent_id|uuid|-|YES
+column|reputation_ledger_events|reviewer_user_id|uuid|-|YES
+column|reputation_ledger_events|signal_key|text|-|NO
+column|reputation_ledger_events|source_id|text|-|YES
+column|reputation_ledger_events|source_type|text|-|NO
+column|reputation_ledger_events|task_id|uuid|-|YES
+column|reputation_ledger_events|value|numeric|-|NO
+column|reputation_ledger_events|weight_hint|numeric|-|YES
+column|service_keys|agent_id|uuid|-|YES
+column|service_keys|created_at|timestamp with time zone|now()|YES
+column|service_keys|expires_at|timestamp with time zone|-|YES
+column|service_keys|human_owner|text|-|YES
+column|service_keys|id|uuid|gen_random_uuid()|NO
+column|service_keys|is_active|boolean|true|YES
+column|service_keys|key_hash|text|-|NO
+column|service_keys|key_id|text|-|NO
+column|service_keys|label|text|-|YES
+column|service_keys|rotated_at|timestamp with time zone|-|YES
+column|service_keys|signing_secret|text|-|NO
+column|sprints|created_at|timestamp with time zone|now()|NO
+column|sprints|end_date|date|-|YES
+column|sprints|goal|text|-|YES
+column|sprints|id|uuid|gen_random_uuid()|NO
+column|sprints|position|integer|0|NO
+column|sprints|project_id|uuid|-|NO
+column|sprints|start_date|date|-|YES
+column|sprints|status|text|'planned'::text|NO
+column|sprints|title|text|-|NO
+column|sprints|updated_at|timestamp with time zone|now()|NO
+column|system_config|key|text|-|NO
+column|system_config|updated_at|timestamp with time zone|now()|YES
+column|system_config|updated_by|text|-|YES
+column|system_config|value|jsonb|-|NO
+column|task_activity_events|actor_agent_id|uuid|-|YES
+column|task_activity_events|actor_user_id|uuid|-|YES
+column|task_activity_events|created_at|timestamp with time zone|now()|NO
+column|task_activity_events|event_type|text|-|NO
+column|task_activity_events|id|uuid|gen_random_uuid()|NO
+column|task_activity_events|metadata|jsonb|'{}'::jsonb|NO
+column|task_activity_events|project_id|uuid|-|NO
+column|task_activity_events|summary|text|-|NO
+column|task_activity_events|task_id|uuid|-|NO
+column|task_attachments|checkpoint_id|uuid|-|YES
+column|task_attachments|contract_id|uuid|-|YES
+column|task_attachments|created_at|timestamp with time zone|now()|NO
+column|task_attachments|filename|text|-|NO
+column|task_attachments|id|uuid|gen_random_uuid()|NO
+column|task_attachments|metadata|jsonb|'{}'::jsonb|NO
+column|task_attachments|mime_type|text|-|NO
+column|task_attachments|original_name|text|-|NO
+column|task_attachments|project_id|uuid|-|NO
+column|task_attachments|run_id|uuid|-|YES
+column|task_attachments|sha256|text|-|YES
+column|task_attachments|size_bytes|bigint|-|NO
+column|task_attachments|storage_bucket|text|'artifacts'::text|NO
+column|task_attachments|storage_path|text|-|NO
+column|task_attachments|task_id|uuid|-|YES
+column|task_attachments|uploader_agent_id|uuid|-|YES
+column|task_attachments|uploader_user_id|uuid|-|YES
+column|task_comments|author_agent_id|uuid|-|YES
+column|task_comments|author_name|text|-|YES
+column|task_comments|comment_type|text|'comment'::text|NO
+column|task_comments|content|text|-|NO
+column|task_comments|created_at|timestamp with time zone|now()|YES
+column|task_comments|id|uuid|gen_random_uuid()|NO
+column|task_comments|metadata|jsonb|'{}'::jsonb|YES
+column|task_comments|project_id|uuid|-|NO
+column|task_comments|task_id|uuid|-|NO
+column|task_comments|updated_at|timestamp with time zone|now()|YES
+column|task_contracts|contract_id|uuid|-|NO
+column|task_contracts|id|uuid|gen_random_uuid()|NO
+column|task_contracts|linked_at|timestamp with time zone|now()|NO
+column|task_contracts|task_id|uuid|-|NO
+column|task_dependencies|blocked_task_id|uuid|-|NO
+column|task_dependencies|blocking_task_id|uuid|-|NO
+column|task_dependencies|created_at|timestamp with time zone|now()|NO
+column|task_dependencies|dependency_type|text|'blocks'::text|NO
+column|task_dependencies|id|uuid|gen_random_uuid()|NO
+column|task_execution_checkpoints|agent_id|uuid|-|NO
+column|task_execution_checkpoints|attachment_ids|ARRAY|'{}'::uuid[]|NO
+column|task_execution_checkpoints|checkpoint_key|text|-|NO
+column|task_execution_checkpoints|created_at|timestamp with time zone|now()|NO
+column|task_execution_checkpoints|id|uuid|gen_random_uuid()|NO
+column|task_execution_checkpoints|payload|jsonb|'{}'::jsonb|NO
+column|task_execution_checkpoints|project_id|uuid|-|NO
+column|task_execution_checkpoints|run_id|uuid|-|NO
+column|task_execution_checkpoints|sequence|integer|-|NO
+column|task_execution_checkpoints|status|text|'written'::text|NO
+column|task_execution_checkpoints|summary|text|-|YES
+column|task_execution_checkpoints|task_id|uuid|-|NO
+column|task_execution_runs|agent_id|uuid|-|NO
+column|task_execution_runs|attempt|integer|1|NO
+column|task_execution_runs|checkpoint_count|integer|0|NO
+column|task_execution_runs|completed_at|timestamp with time zone|-|YES
+column|task_execution_runs|created_at|timestamp with time zone|now()|NO
+column|task_execution_runs|error_message|text|-|YES
+column|task_execution_runs|heartbeat_at|timestamp with time zone|-|YES
+column|task_execution_runs|id|uuid|gen_random_uuid()|NO
+column|task_execution_runs|metadata|jsonb|'{}'::jsonb|NO
+column|task_execution_runs|project_id|uuid|-|NO
+column|task_execution_runs|started_at|timestamp with time zone|-|YES
+column|task_execution_runs|status|text|'queued'::text|NO
+column|task_execution_runs|summary|text|-|YES
+column|task_execution_runs|task_id|uuid|-|NO
+column|task_execution_runs|updated_at|timestamp with time zone|now()|NO
+column|tasks|active_run_id|uuid|-|YES
+column|tasks|assignee_agent_id|uuid|-|YES
+column|tasks|blocked_at|timestamp with time zone|-|YES
+column|tasks|blocker_escalated_at|timestamp with time zone|-|YES
+column|tasks|blocker_follow_up_at|timestamp with time zone|-|YES
+column|tasks|blocker_followed_through_at|timestamp with time zone|-|YES
+column|tasks|blocker_resolution_action|text|-|YES
+column|tasks|blocker_resolution_due_at|timestamp with time zone|-|YES
+column|tasks|blocker_resolution_owner|text|-|YES
+column|tasks|blocker_resolution_status|text|-|YES
+column|tasks|created_at|timestamp with time zone|now()|NO
+column|tasks|description|text|-|YES
+column|tasks|due_date|date|-|YES
+column|tasks|execution_completed_at|timestamp with time zone|-|YES
+column|tasks|execution_heartbeat_at|timestamp with time zone|-|YES
+column|tasks|execution_started_at|timestamp with time zone|-|YES
+column|tasks|execution_status|text|'idle'::text|NO
+column|tasks|id|uuid|gen_random_uuid()|NO
+column|tasks|labels|ARRAY|'{}'::text[]|YES
+column|tasks|last_checkpoint_at|timestamp with time zone|-|YES
+column|tasks|last_checkpoint_payload|jsonb|'{}'::jsonb|NO
+column|tasks|last_checkpoint_summary|text|-|YES
+column|tasks|position|integer|0|NO
+column|tasks|priority|text|'medium'::text|NO
+column|tasks|project_id|uuid|-|NO
+column|tasks|reporter_agent_id|uuid|-|YES
+column|tasks|sprint_id|uuid|-|YES
+column|tasks|status|text|'backlog'::text|NO
+column|tasks|title|text|-|NO
+column|tasks|updated_at|timestamp with time zone|now()|NO
+column|user_profiles|created_at|timestamp with time zone|now()|YES
+column|user_profiles|display_name|text|-|YES
+column|user_profiles|id|uuid|-|NO
+column|user_profiles|is_super_admin|boolean|false|YES
+column|webhook_deliveries|attempts|integer|1|NO
+column|webhook_deliveries|created_at|timestamp with time zone|now()|NO
+column|webhook_deliveries|delivered_at|timestamp with time zone|-|YES
+column|webhook_deliveries|event|text|-|NO
+column|webhook_deliveries|id|uuid|gen_random_uuid()|NO
+column|webhook_deliveries|last_retry_at|timestamp with time zone|-|YES
+column|webhook_deliveries|max_retries|integer|5|YES
+column|webhook_deliveries|payload|jsonb|-|YES
+column|webhook_deliveries|response_status|integer|-|YES
+column|webhook_deliveries|retry_delay_ms|integer|5000|YES
+column|webhook_deliveries|status|text|'pending'::text|NO
+column|webhook_deliveries|webhook_id|uuid|-|NO
+column|webhooks|agent_id|uuid|-|NO
+column|webhooks|created_at|timestamp with time zone|now()|YES
+column|webhooks|events|ARRAY|ARRAY['invitation'::text, 'message'::text, 'contract_state'::text]|NO
+column|webhooks|failure_count|integer|0|YES
+column|webhooks|id|uuid|gen_random_uuid()|NO
+column|webhooks|is_active|boolean|true|YES
+column|webhooks|last_delivery_at|timestamp with time zone|-|YES
+column|webhooks|secret|text|-|NO
+column|webhooks|updated_at|timestamp with time zone|now()|YES
+column|webhooks|url|text|-|NO
+constraint|agents|agents_name_key|UNIQUE (name)
+constraint|agents|agents_pkey|PRIMARY KEY (id)
+constraint|agents|agents_trust_tier_check|CHECK ((trust_tier = ANY (ARRAY['internal'::text, 'partner'::text, 'external'::text])))
+constraint|app_password_resets|app_password_resets_pkey|PRIMARY KEY (id)
+constraint|app_password_resets|app_password_resets_token_hash_key|UNIQUE (token_hash)
+constraint|app_password_resets|app_password_resets_user_id_fkey|FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE
+constraint|app_sessions|app_sessions_pkey|PRIMARY KEY (id)
+constraint|app_sessions|app_sessions_token_hash_key|UNIQUE (token_hash)
+constraint|app_sessions|app_sessions_user_id_fkey|FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE
+constraint|app_users|app_users_pkey|PRIMARY KEY (id)
+constraint|audit_log|audit_log_pkey|PRIMARY KEY (id)
+constraint|contract_links|contract_links_check|CHECK ((from_contract_id <> to_contract_id))
+constraint|contract_links|contract_links_created_by_agent_id_fkey|FOREIGN KEY (created_by_agent_id) REFERENCES agents(id) ON DELETE SET NULL
+constraint|contract_links|contract_links_from_contract_id_fkey|FOREIGN KEY (from_contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|contract_links|contract_links_link_type_check|CHECK ((link_type = ANY (ARRAY['continues'::text, 'supersedes'::text, 'delegates_to'::text])))
+constraint|contract_links|contract_links_pkey|PRIMARY KEY (id)
+constraint|contract_links|contract_links_to_contract_id_fkey|FOREIGN KEY (to_contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|contract_note_acks|contract_note_acks_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|contract_note_acks|contract_note_acks_note_id_fkey|FOREIGN KEY (note_id) REFERENCES contract_notes(id) ON DELETE CASCADE
+constraint|contract_note_acks|contract_note_acks_pkey|PRIMARY KEY (note_id, agent_id)
+constraint|contract_notes|contract_notes_author_user_id_fkey|FOREIGN KEY (author_user_id) REFERENCES user_profiles(id) ON DELETE SET NULL
+constraint|contract_notes|contract_notes_body_check|CHECK ((length(btrim(body)) > 0))
+constraint|contract_notes|contract_notes_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|contract_notes|contract_notes_pkey|PRIMARY KEY (id)
+constraint|contract_participants|contract_participants_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id)
+constraint|contract_participants|contract_participants_contract_id_agent_id_key|UNIQUE (contract_id, agent_id)
+constraint|contract_participants|contract_participants_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|contract_participants|contract_participants_pkey|PRIMARY KEY (id)
+constraint|contract_participants|contract_participants_role_check|CHECK ((role = ANY (ARRAY['proposer'::text, 'invitee'::text, 'observer'::text])))
+constraint|contract_participants|contract_participants_status_check|CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'rejected'::text])))
+constraint|contract_questions|contract_questions_answered_by_user_id_fkey|FOREIGN KEY (answered_by_user_id) REFERENCES user_profiles(id) ON DELETE SET NULL
+constraint|contract_questions|contract_questions_asked_by_agent_id_fkey|FOREIGN KEY (asked_by_agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|contract_questions|contract_questions_body_check|CHECK ((length(btrim(body)) > 0))
+constraint|contract_questions|contract_questions_check|CHECK ((((status = 'open'::text) AND (answer IS NULL) AND (answered_at IS NULL)) OR ((status = 'answered'::text) AND (answer IS NOT NULL) AND (answered_at IS NOT NULL)) OR ((status = 'dismissed'::text) AND (answered_at IS NOT NULL))))
+constraint|contract_questions|contract_questions_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|contract_questions|contract_questions_kind_check|CHECK ((kind = ANY (ARRAY['question'::text, 'validation'::text, 'blocked'::text])))
+constraint|contract_questions|contract_questions_pkey|PRIMARY KEY (id)
+constraint|contract_questions|contract_questions_status_check|CHECK ((status = ANY (ARRAY['open'::text, 'answered'::text, 'dismissed'::text])))
+constraint|contracts|contracts_closed_by_kind_check|CHECK (((closed_by_kind IS NULL) OR (closed_by_kind = ANY (ARRAY['agent'::text, 'user'::text, 'system'::text]))))
+constraint|contracts|contracts_completion_approved_by_fkey|FOREIGN KEY (completion_approved_by) REFERENCES agents(id)
+constraint|contracts|contracts_pkey|PRIMARY KEY (id)
+constraint|contracts|contracts_proposer_id_fkey|FOREIGN KEY (proposer_id) REFERENCES agents(id)
+constraint|contracts|contracts_status_check|CHECK ((status = ANY (ARRAY['proposed'::text, 'active'::text, 'rejected'::text, 'expired'::text, 'cancelled'::text, 'closed'::text])))
+constraint|idempotency_keys|idempotency_keys_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id)
+constraint|idempotency_keys|idempotency_keys_pkey|PRIMARY KEY (key, agent_id, endpoint)
+constraint|messages|messages_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|messages|messages_message_type_check|CHECK ((message_type = ANY (ARRAY['message'::text, 'request'::text, 'response'::text, 'update'::text, 'status'::text, 'receipt'::text, 'approval'::text])))
+constraint|messages|messages_pkey|PRIMARY KEY (id)
+constraint|messages|messages_sender_id_fkey|FOREIGN KEY (sender_id) REFERENCES agents(id)
+constraint|nonce_cache|nonce_cache_pkey|PRIMARY KEY (nonce)
+constraint|notification_preferences|notification_preferences_pkey|PRIMARY KEY (user_id)
+constraint|notification_preferences|notification_preferences_user_id_fkey|FOREIGN KEY (user_id) REFERENCES app_users(id)
+constraint|pending_approvals|pending_approvals_pkey|PRIMARY KEY (id)
+constraint|pending_approvals|pending_approvals_status_check|CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'denied'::text, 'consumed'::text])))
+constraint|project_member_invitations|project_member_invitations_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|project_member_invitations|project_member_invitations_invited_by_agent_id_fkey|FOREIGN KEY (invited_by_agent_id) REFERENCES agents(id)
+constraint|project_member_invitations|project_member_invitations_pkey|PRIMARY KEY (id)
+constraint|project_member_invitations|project_member_invitations_project_id_agent_id_key|UNIQUE (project_id, agent_id)
+constraint|project_member_invitations|project_member_invitations_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|project_member_invitations|project_member_invitations_role_check|CHECK ((role = ANY (ARRAY['owner'::text, 'member'::text])))
+constraint|project_member_invitations|project_member_invitations_status_check|CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text, 'cancelled'::text, 'expired'::text])))
+constraint|project_members|project_members_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|project_members|project_members_pkey|PRIMARY KEY (id)
+constraint|project_members|project_members_project_id_agent_id_key|UNIQUE (project_id, agent_id)
+constraint|project_members|project_members_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|project_members|project_members_role_check|CHECK ((role = ANY (ARRAY['owner'::text, 'member'::text])))
+constraint|project_observers|project_observers_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|project_observers|project_observers_invited_by_agent_id_fkey|FOREIGN KEY (invited_by_agent_id) REFERENCES agents(id) ON DELETE SET NULL
+constraint|project_observers|project_observers_pkey|PRIMARY KEY (id)
+constraint|project_observers|project_observers_project_id_agent_id_key|UNIQUE (project_id, agent_id)
+constraint|project_observers|project_observers_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|projects|projects_created_by_agent_id_fkey|FOREIGN KEY (created_by_agent_id) REFERENCES agents(id)
+constraint|projects|projects_owner_user_id_fkey|FOREIGN KEY (owner_user_id) REFERENCES app_users(id)
+constraint|projects|projects_pkey|PRIMARY KEY (id)
+constraint|projects|projects_status_check|CHECK ((status = ANY (ARRAY['planning'::text, 'active'::text, 'completed'::text, 'archived'::text])))
+constraint|rate_limit_buckets|rate_limit_buckets_pkey|PRIMARY KEY (key)
+constraint|reputation_ledger_events|reputation_ledger_events_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|reputation_ledger_events|reputation_ledger_events_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE SET NULL
+constraint|reputation_ledger_events|reputation_ledger_events_pkey|PRIMARY KEY (id)
+constraint|reputation_ledger_events|reputation_ledger_events_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+constraint|reputation_ledger_events|reputation_ledger_events_reviewer_agent_id_fkey|FOREIGN KEY (reviewer_agent_id) REFERENCES agents(id) ON DELETE SET NULL
+constraint|reputation_ledger_events|reputation_ledger_events_reviewer_user_id_fkey|FOREIGN KEY (reviewer_user_id) REFERENCES user_profiles(id) ON DELETE SET NULL
+constraint|reputation_ledger_events|reputation_ledger_events_signal_key_check|CHECK ((signal_key = ANY (ARRAY['delivery_reliability'::text, 'approval_outcomes'::text, 'collaboration_quality'::text, 'security_hygiene'::text])))
+constraint|reputation_ledger_events|reputation_ledger_events_source_type_check|CHECK ((source_type = ANY (ARRAY['task_run'::text, 'approval'::text, 'security_incident'::text, 'handoff'::text, 'system'::text])))
+constraint|reputation_ledger_events|reputation_ledger_events_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
+constraint|reputation_ledger_events|reputation_ledger_events_value_check|CHECK (((value >= ('-1'::integer)::numeric) AND (value <= (1)::numeric)))
+constraint|service_keys|service_keys_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id)
+constraint|service_keys|service_keys_key_id_key|UNIQUE (key_id)
+constraint|service_keys|service_keys_pkey|PRIMARY KEY (id)
+constraint|sprints|sprints_pkey|PRIMARY KEY (id)
+constraint|sprints|sprints_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|sprints|sprints_status_check|CHECK ((status = ANY (ARRAY['planned'::text, 'active'::text, 'completed'::text])))
+constraint|system_config|system_config_pkey|PRIMARY KEY (key)
+constraint|task_activity_events|task_activity_events_actor_agent_id_fkey|FOREIGN KEY (actor_agent_id) REFERENCES agents(id) ON DELETE SET NULL
+constraint|task_activity_events|task_activity_events_actor_user_id_fkey|FOREIGN KEY (actor_user_id) REFERENCES user_profiles(id) ON DELETE SET NULL
+constraint|task_activity_events|task_activity_events_pkey|PRIMARY KEY (id)
+constraint|task_activity_events|task_activity_events_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|task_activity_events|task_activity_events_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_attachments|task_attachments_check|CHECK (((task_id IS NOT NULL) OR (contract_id IS NOT NULL)))
+constraint|task_attachments|task_attachments_check1|CHECK (((run_id IS NULL) OR (task_id IS NOT NULL)))
+constraint|task_attachments|task_attachments_check2|CHECK (((checkpoint_id IS NULL) OR (run_id IS NOT NULL)))
+constraint|task_attachments|task_attachments_checkpoint_id_fkey|FOREIGN KEY (checkpoint_id) REFERENCES task_execution_checkpoints(id) ON DELETE SET NULL
+constraint|task_attachments|task_attachments_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|task_attachments|task_attachments_pkey|PRIMARY KEY (id)
+constraint|task_attachments|task_attachments_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|task_attachments|task_attachments_run_id_fkey|FOREIGN KEY (run_id) REFERENCES task_execution_runs(id) ON DELETE SET NULL
+constraint|task_attachments|task_attachments_size_bytes_check|CHECK (((size_bytes >= 0) AND (size_bytes <= 10485760)))
+constraint|task_attachments|task_attachments_storage_path_key|UNIQUE (storage_path)
+constraint|task_attachments|task_attachments_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_attachments|task_attachments_uploader_agent_id_fkey|FOREIGN KEY (uploader_agent_id) REFERENCES agents(id) ON DELETE SET NULL
+constraint|task_attachments|task_attachments_uploader_user_id_fkey|FOREIGN KEY (uploader_user_id) REFERENCES app_users(id) ON DELETE SET NULL
+constraint|task_comments|task_comments_author_agent_id_fkey|FOREIGN KEY (author_agent_id) REFERENCES agents(id)
+constraint|task_comments|task_comments_comment_type_check|CHECK ((comment_type = ANY (ARRAY['comment'::text, 'status_change'::text, 'assignment'::text, 'system'::text, 'analysis'::text])))
+constraint|task_comments|task_comments_pkey|PRIMARY KEY (id)
+constraint|task_comments|task_comments_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|task_comments|task_comments_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_contracts|task_contracts_contract_id_fkey|FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+constraint|task_contracts|task_contracts_pkey|PRIMARY KEY (id)
+constraint|task_contracts|task_contracts_task_id_contract_id_key|UNIQUE (task_id, contract_id)
+constraint|task_contracts|task_contracts_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_dependencies|task_dependencies_blocked_task_id_fkey|FOREIGN KEY (blocked_task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_dependencies|task_dependencies_blocking_task_id_fkey|FOREIGN KEY (blocking_task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_dependencies|task_dependencies_check|CHECK ((blocking_task_id <> blocked_task_id))
+constraint|task_dependencies|task_dependencies_dependency_type_check|CHECK ((dependency_type = ANY (ARRAY['blocks'::text, 'relates_to'::text, 'sequence_after'::text])))
+constraint|task_dependencies|task_dependencies_pkey|PRIMARY KEY (id)
+constraint|task_execution_checkpoints|task_execution_checkpoints_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|task_execution_checkpoints|task_execution_checkpoints_pkey|PRIMARY KEY (id)
+constraint|task_execution_checkpoints|task_execution_checkpoints_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|task_execution_checkpoints|task_execution_checkpoints_run_id_checkpoint_key_key|UNIQUE (run_id, checkpoint_key)
+constraint|task_execution_checkpoints|task_execution_checkpoints_run_id_fkey|FOREIGN KEY (run_id) REFERENCES task_execution_runs(id) ON DELETE CASCADE
+constraint|task_execution_checkpoints|task_execution_checkpoints_run_id_sequence_key|UNIQUE (run_id, sequence)
+constraint|task_execution_checkpoints|task_execution_checkpoints_sequence_check|CHECK ((sequence >= 1))
+constraint|task_execution_checkpoints|task_execution_checkpoints_status_check|CHECK ((status = ANY (ARRAY['written'::text, 'superseded'::text])))
+constraint|task_execution_checkpoints|task_execution_checkpoints_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|task_execution_runs|task_execution_runs_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|task_execution_runs|task_execution_runs_attempt_check|CHECK ((attempt >= 1))
+constraint|task_execution_runs|task_execution_runs_checkpoint_count_check|CHECK ((checkpoint_count >= 0))
+constraint|task_execution_runs|task_execution_runs_pkey|PRIMARY KEY (id)
+constraint|task_execution_runs|task_execution_runs_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|task_execution_runs|task_execution_runs_status_check|CHECK ((status = ANY (ARRAY['queued'::text, 'starting'::text, 'running'::text, 'pending-approval'::text, 'waiting'::text, 'blocked'::text, 'paused'::text, 'handoff-needed'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])))
+constraint|task_execution_runs|task_execution_runs_task_id_fkey|FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+constraint|tasks|tasks_active_run_id_fkey|FOREIGN KEY (active_run_id) REFERENCES task_execution_runs(id) ON DELETE SET NULL
+constraint|tasks|tasks_assignee_agent_id_fkey|FOREIGN KEY (assignee_agent_id) REFERENCES agents(id) ON DELETE SET NULL
+constraint|tasks|tasks_execution_status_check|CHECK ((execution_status = ANY (ARRAY['idle'::text, 'queued'::text, 'running'::text, 'pending-approval'::text, 'waiting'::text, 'blocked'::text, 'paused'::text, 'handoff-needed'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])))
+constraint|tasks|tasks_pkey|PRIMARY KEY (id)
+constraint|tasks|tasks_priority_check|CHECK ((priority = ANY (ARRAY['urgent'::text, 'high'::text, 'medium'::text, 'low'::text])))
+constraint|tasks|tasks_project_id_fkey|FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+constraint|tasks|tasks_reporter_agent_id_fkey|FOREIGN KEY (reporter_agent_id) REFERENCES agents(id)
+constraint|tasks|tasks_sprint_id_fkey|FOREIGN KEY (sprint_id) REFERENCES sprints(id) ON DELETE SET NULL
+constraint|tasks|tasks_status_check|CHECK ((status = ANY (ARRAY['backlog'::text, 'todo'::text, 'in-progress'::text, 'in-review'::text, 'done'::text, 'cancelled'::text])))
+constraint|user_profiles|user_profiles_id_fkey|FOREIGN KEY (id) REFERENCES app_users(id)
+constraint|user_profiles|user_profiles_pkey|PRIMARY KEY (id)
+constraint|webhook_deliveries|webhook_deliveries_pkey|PRIMARY KEY (id)
+constraint|webhook_deliveries|webhook_deliveries_status_check|CHECK ((status = ANY (ARRAY['pending'::text, 'pending_retry'::text, 'retrying'::text, 'success'::text, 'failed'::text])))
+constraint|webhook_deliveries|webhook_deliveries_webhook_id_fkey|FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
+constraint|webhooks|webhooks_agent_id_fkey|FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+constraint|webhooks|webhooks_agent_id_url_key|UNIQUE (agent_id, url)
+constraint|webhooks|webhooks_pkey|PRIMARY KEY (id)
+function-owner|a2a_pulse|a2a_app
+function-owner|append_task_checkpoint_atomic|a2a_app
+function-owner|cleanup_expired_buckets|a2a_app
+function-owner|cleanup_expired_idempotency_keys|a2a_app
+function-owner|cleanup_expired_nonces|a2a_app
+function-owner|contract_links_reject_cycle|a2a_app
+function-owner|insert_message_atomic|a2a_app
+function-owner|latest_contract_messages|a2a_app
+function-owner|rate_limit_increment|a2a_app
+function-owner|reap_stale_execution_runs|a2a_app
+function-owner|touch_task_execution_run_updated_at|a2a_app
+function-owner|update_updated_at|a2a_app
+function-owner|validate_task_attachment_links|a2a_app
+function|a2a_pulse|
+function|append_task_checkpoint_atomic|p_run_id uuid, p_task_id uuid, p_project_id uuid, p_agent_id uuid, p_checkpoint_key text, p_summary text, p_summary_provided boolean, p_payload jsonb, p_attachment_ids uuid[]
+function|cleanup_expired_buckets|
+function|cleanup_expired_idempotency_keys|
+function|cleanup_expired_nonces|
+function|contract_links_reject_cycle|
+function|insert_message_atomic|p_contract_id uuid, p_sender_id uuid, p_message_type text, p_content jsonb, p_approves_completion boolean, p_requires_action boolean
+function|latest_contract_messages|p_contract_ids uuid[]
+function|rate_limit_increment|p_key text, p_window_ms bigint
+function|reap_stale_execution_runs|p_stale_after_minutes integer, p_limit integer, p_dry_run boolean
+function|touch_task_execution_run_updated_at|
+function|update_updated_at|
+function|validate_task_attachment_links|
+index|agents|agents_name_key|CREATE UNIQUE INDEX agents_name_key ON public.agents USING btree (name)
+index|agents|agents_pkey|CREATE UNIQUE INDEX agents_pkey ON public.agents USING btree (id)
+index|app_password_resets|app_password_resets_expiry_idx|CREATE INDEX app_password_resets_expiry_idx ON public.app_password_resets USING btree (expires_at)
+index|app_password_resets|app_password_resets_pkey|CREATE UNIQUE INDEX app_password_resets_pkey ON public.app_password_resets USING btree (id)
+index|app_password_resets|app_password_resets_token_hash_key|CREATE UNIQUE INDEX app_password_resets_token_hash_key ON public.app_password_resets USING btree (token_hash)
+index|app_sessions|app_sessions_expiry_idx|CREATE INDEX app_sessions_expiry_idx ON public.app_sessions USING btree (expires_at)
+index|app_sessions|app_sessions_pkey|CREATE UNIQUE INDEX app_sessions_pkey ON public.app_sessions USING btree (id)
+index|app_sessions|app_sessions_token_hash_key|CREATE UNIQUE INDEX app_sessions_token_hash_key ON public.app_sessions USING btree (token_hash)
+index|app_sessions|app_sessions_user_idx|CREATE INDEX app_sessions_user_idx ON public.app_sessions USING btree (user_id)
+index|app_users|app_users_email_unique|CREATE UNIQUE INDEX app_users_email_unique ON public.app_users USING btree (lower(email))
+index|app_users|app_users_pkey|CREATE UNIQUE INDEX app_users_pkey ON public.app_users USING btree (id)
+index|audit_log|audit_log_pkey|CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)
+index|audit_log|idx_audit_log_actor|CREATE INDEX idx_audit_log_actor ON public.audit_log USING btree (actor)
+index|audit_log|idx_audit_log_created|CREATE INDEX idx_audit_log_created ON public.audit_log USING btree (created_at)
+index|audit_log|idx_audit_log_resource|CREATE INDEX idx_audit_log_resource ON public.audit_log USING btree (resource_type, resource_id)
+index|contract_links|contract_links_pkey|CREATE UNIQUE INDEX contract_links_pkey ON public.contract_links USING btree (id)
+index|contract_links|contract_links_unique_directed|CREATE UNIQUE INDEX contract_links_unique_directed ON public.contract_links USING btree (from_contract_id, to_contract_id, link_type)
+index|contract_links|idx_contract_links_from|CREATE INDEX idx_contract_links_from ON public.contract_links USING btree (from_contract_id, link_type)
+index|contract_links|idx_contract_links_to|CREATE INDEX idx_contract_links_to ON public.contract_links USING btree (to_contract_id, link_type)
+index|contract_note_acks|contract_note_acks_pkey|CREATE UNIQUE INDEX contract_note_acks_pkey ON public.contract_note_acks USING btree (note_id, agent_id)
+index|contract_note_acks|idx_contract_note_acks_agent|CREATE INDEX idx_contract_note_acks_agent ON public.contract_note_acks USING btree (agent_id)
+index|contract_notes|contract_notes_pkey|CREATE UNIQUE INDEX contract_notes_pkey ON public.contract_notes USING btree (id)
+index|contract_notes|idx_contract_notes_contract|CREATE INDEX idx_contract_notes_contract ON public.contract_notes USING btree (contract_id, created_at)
+index|contract_notes|idx_contract_notes_live|CREATE INDEX idx_contract_notes_live ON public.contract_notes USING btree (contract_id, created_at) WHERE (withdrawn_at IS NULL)
+index|contract_participants|contract_participants_contract_id_agent_id_key|CREATE UNIQUE INDEX contract_participants_contract_id_agent_id_key ON public.contract_participants USING btree (contract_id, agent_id)
+index|contract_participants|contract_participants_pkey|CREATE UNIQUE INDEX contract_participants_pkey ON public.contract_participants USING btree (id)
+index|contract_participants|idx_contract_participants_agent|CREATE INDEX idx_contract_participants_agent ON public.contract_participants USING btree (agent_id)
+index|contract_participants|idx_contract_participants_contract|CREATE INDEX idx_contract_participants_contract ON public.contract_participants USING btree (contract_id)
+index|contract_questions|contract_questions_pkey|CREATE UNIQUE INDEX contract_questions_pkey ON public.contract_questions USING btree (id)
+index|contract_questions|idx_contract_questions_agent|CREATE INDEX idx_contract_questions_agent ON public.contract_questions USING btree (asked_by_agent_id, status)
+index|contract_questions|idx_contract_questions_contract|CREATE INDEX idx_contract_questions_contract ON public.contract_questions USING btree (contract_id, created_at)
+index|contract_questions|idx_contract_questions_open|CREATE INDEX idx_contract_questions_open ON public.contract_questions USING btree (contract_id, created_at) WHERE (status = 'open'::text)
+index|contracts|contracts_pkey|CREATE UNIQUE INDEX contracts_pkey ON public.contracts USING btree (id)
+index|contracts|idx_contracts_proposer|CREATE INDEX idx_contracts_proposer ON public.contracts USING btree (proposer_id)
+index|contracts|idx_contracts_status|CREATE INDEX idx_contracts_status ON public.contracts USING btree (status)
+index|idempotency_keys|idempotency_keys_pkey|CREATE UNIQUE INDEX idempotency_keys_pkey ON public.idempotency_keys USING btree (key, agent_id, endpoint)
+index|idempotency_keys|idx_idempotency_keys_agent|CREATE INDEX idx_idempotency_keys_agent ON public.idempotency_keys USING btree (agent_id)
+index|idempotency_keys|idx_idempotency_keys_expires|CREATE INDEX idx_idempotency_keys_expires ON public.idempotency_keys USING btree (expires_at)
+index|messages|idx_messages_contract_created_desc|CREATE INDEX idx_messages_contract_created_desc ON public.messages USING btree (contract_id, created_at DESC)
+index|messages|idx_messages_contract_turn_number|CREATE INDEX idx_messages_contract_turn_number ON public.messages USING btree (contract_id, turn_number, created_at)
+index|messages|idx_messages_contract|CREATE INDEX idx_messages_contract ON public.messages USING btree (contract_id)
+index|messages|idx_messages_created|CREATE INDEX idx_messages_created ON public.messages USING btree (created_at)
+index|messages|idx_messages_sender|CREATE INDEX idx_messages_sender ON public.messages USING btree (sender_id)
+index|messages|messages_pkey|CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)
+index|nonce_cache|idx_nonce_cache_expires_at|CREATE INDEX idx_nonce_cache_expires_at ON public.nonce_cache USING btree (expires_at)
+index|nonce_cache|nonce_cache_pkey|CREATE UNIQUE INDEX nonce_cache_pkey ON public.nonce_cache USING btree (nonce)
+index|notification_preferences|notification_preferences_pkey|CREATE UNIQUE INDEX notification_preferences_pkey ON public.notification_preferences USING btree (user_id)
+index|pending_approvals|idx_pending_approvals_actor|CREATE INDEX idx_pending_approvals_actor ON public.pending_approvals USING btree (actor)
+index|pending_approvals|idx_pending_approvals_created_at|CREATE INDEX idx_pending_approvals_created_at ON public.pending_approvals USING btree (created_at DESC)
+index|pending_approvals|idx_pending_approvals_status|CREATE INDEX idx_pending_approvals_status ON public.pending_approvals USING btree (status)
+index|pending_approvals|pending_approvals_pkey|CREATE UNIQUE INDEX pending_approvals_pkey ON public.pending_approvals USING btree (id)
+index|project_member_invitations|idx_project_member_invitations_agent|CREATE INDEX idx_project_member_invitations_agent ON public.project_member_invitations USING btree (agent_id)
+index|project_member_invitations|idx_project_member_invitations_expires_at|CREATE INDEX idx_project_member_invitations_expires_at ON public.project_member_invitations USING btree (status, expires_at) WHERE (status = 'pending'::text)
+index|project_member_invitations|idx_project_member_invitations_project|CREATE INDEX idx_project_member_invitations_project ON public.project_member_invitations USING btree (project_id)
+index|project_member_invitations|idx_project_member_invitations_status|CREATE INDEX idx_project_member_invitations_status ON public.project_member_invitations USING btree (status)
+index|project_member_invitations|project_member_invitations_pkey|CREATE UNIQUE INDEX project_member_invitations_pkey ON public.project_member_invitations USING btree (id)
+index|project_member_invitations|project_member_invitations_project_id_agent_id_key|CREATE UNIQUE INDEX project_member_invitations_project_id_agent_id_key ON public.project_member_invitations USING btree (project_id, agent_id)
+index|project_members|idx_project_members_agent|CREATE INDEX idx_project_members_agent ON public.project_members USING btree (agent_id)
+index|project_members|idx_project_members_project|CREATE INDEX idx_project_members_project ON public.project_members USING btree (project_id)
+index|project_members|project_members_pkey|CREATE UNIQUE INDEX project_members_pkey ON public.project_members USING btree (id)
+index|project_members|project_members_project_id_agent_id_key|CREATE UNIQUE INDEX project_members_project_id_agent_id_key ON public.project_members USING btree (project_id, agent_id)
+index|project_observers|idx_project_observers_agent|CREATE INDEX idx_project_observers_agent ON public.project_observers USING btree (agent_id)
+index|project_observers|idx_project_observers_project|CREATE INDEX idx_project_observers_project ON public.project_observers USING btree (project_id)
+index|project_observers|project_observers_pkey|CREATE UNIQUE INDEX project_observers_pkey ON public.project_observers USING btree (id)
+index|project_observers|project_observers_project_id_agent_id_key|CREATE UNIQUE INDEX project_observers_project_id_agent_id_key ON public.project_observers USING btree (project_id, agent_id)
+index|projects|projects_pkey|CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)
+index|rate_limit_buckets|idx_rate_limit_buckets_reset_at|CREATE INDEX idx_rate_limit_buckets_reset_at ON public.rate_limit_buckets USING btree (reset_at)
+index|rate_limit_buckets|rate_limit_buckets_pkey|CREATE UNIQUE INDEX rate_limit_buckets_pkey ON public.rate_limit_buckets USING btree (key)
+index|reputation_ledger_events|reputation_ledger_events_agent_occurred_idx|CREATE INDEX reputation_ledger_events_agent_occurred_idx ON public.reputation_ledger_events USING btree (agent_id, occurred_at DESC)
+index|reputation_ledger_events|reputation_ledger_events_metadata_gin_idx|CREATE INDEX reputation_ledger_events_metadata_gin_idx ON public.reputation_ledger_events USING gin (metadata)
+index|reputation_ledger_events|reputation_ledger_events_pkey|CREATE UNIQUE INDEX reputation_ledger_events_pkey ON public.reputation_ledger_events USING btree (id)
+index|reputation_ledger_events|reputation_ledger_events_project_idx|CREATE INDEX reputation_ledger_events_project_idx ON public.reputation_ledger_events USING btree (project_id, task_id)
+index|reputation_ledger_events|reputation_ledger_events_signal_idx|CREATE INDEX reputation_ledger_events_signal_idx ON public.reputation_ledger_events USING btree (signal_key, occurred_at DESC)
+index|service_keys|service_keys_key_id_key|CREATE UNIQUE INDEX service_keys_key_id_key ON public.service_keys USING btree (key_id)
+index|service_keys|service_keys_pkey|CREATE UNIQUE INDEX service_keys_pkey ON public.service_keys USING btree (id)
+index|sprints|idx_sprints_project|CREATE INDEX idx_sprints_project ON public.sprints USING btree (project_id)
+index|sprints|sprints_pkey|CREATE UNIQUE INDEX sprints_pkey ON public.sprints USING btree (id)
+index|system_config|system_config_pkey|CREATE UNIQUE INDEX system_config_pkey ON public.system_config USING btree (key)
+index|task_activity_events|task_activity_events_metadata_gin_idx|CREATE INDEX task_activity_events_metadata_gin_idx ON public.task_activity_events USING gin (metadata)
+index|task_activity_events|task_activity_events_pkey|CREATE UNIQUE INDEX task_activity_events_pkey ON public.task_activity_events USING btree (id)
+index|task_activity_events|task_activity_events_project_created_idx|CREATE INDEX task_activity_events_project_created_idx ON public.task_activity_events USING btree (project_id, created_at DESC)
+index|task_activity_events|task_activity_events_task_created_idx|CREATE INDEX task_activity_events_task_created_idx ON public.task_activity_events USING btree (task_id, created_at DESC)
+index|task_activity_events|task_activity_events_type_created_idx|CREATE INDEX task_activity_events_type_created_idx ON public.task_activity_events USING btree (event_type, created_at DESC)
+index|task_attachments|idx_task_attachments_checkpoint_created|CREATE INDEX idx_task_attachments_checkpoint_created ON public.task_attachments USING btree (checkpoint_id, created_at DESC)
+index|task_attachments|idx_task_attachments_contract_created|CREATE INDEX idx_task_attachments_contract_created ON public.task_attachments USING btree (contract_id, created_at DESC)
+index|task_attachments|idx_task_attachments_project_created|CREATE INDEX idx_task_attachments_project_created ON public.task_attachments USING btree (project_id, created_at DESC)
+index|task_attachments|idx_task_attachments_run_created|CREATE INDEX idx_task_attachments_run_created ON public.task_attachments USING btree (run_id, created_at DESC)
+index|task_attachments|idx_task_attachments_task_created|CREATE INDEX idx_task_attachments_task_created ON public.task_attachments USING btree (task_id, created_at DESC)
+index|task_attachments|task_attachments_pkey|CREATE UNIQUE INDEX task_attachments_pkey ON public.task_attachments USING btree (id)
+index|task_attachments|task_attachments_storage_path_key|CREATE UNIQUE INDEX task_attachments_storage_path_key ON public.task_attachments USING btree (storage_path)
+index|task_comments|idx_task_comments_project|CREATE INDEX idx_task_comments_project ON public.task_comments USING btree (project_id)
+index|task_comments|idx_task_comments_task|CREATE INDEX idx_task_comments_task ON public.task_comments USING btree (task_id, created_at DESC)
+index|task_comments|task_comments_pkey|CREATE UNIQUE INDEX task_comments_pkey ON public.task_comments USING btree (id)
+index|task_contracts|idx_task_contracts_contract|CREATE INDEX idx_task_contracts_contract ON public.task_contracts USING btree (contract_id)
+index|task_contracts|idx_task_contracts_task|CREATE INDEX idx_task_contracts_task ON public.task_contracts USING btree (task_id)
+index|task_contracts|task_contracts_pkey|CREATE UNIQUE INDEX task_contracts_pkey ON public.task_contracts USING btree (id)
+index|task_contracts|task_contracts_task_id_contract_id_key|CREATE UNIQUE INDEX task_contracts_task_id_contract_id_key ON public.task_contracts USING btree (task_id, contract_id)
+index|task_dependencies|idx_task_deps_blocked|CREATE INDEX idx_task_deps_blocked ON public.task_dependencies USING btree (blocked_task_id, dependency_type)
+index|task_dependencies|idx_task_deps_blocking|CREATE INDEX idx_task_deps_blocking ON public.task_dependencies USING btree (blocking_task_id, dependency_type)
+index|task_dependencies|task_dependencies_pkey|CREATE UNIQUE INDEX task_dependencies_pkey ON public.task_dependencies USING btree (id)
+index|task_dependencies|task_dependencies_unique_directed|CREATE UNIQUE INDEX task_dependencies_unique_directed ON public.task_dependencies USING btree (blocking_task_id, blocked_task_id, dependency_type)
+index|task_dependencies|task_dependencies_unique_relates_pair|CREATE UNIQUE INDEX task_dependencies_unique_relates_pair ON public.task_dependencies USING btree (LEAST(blocking_task_id, blocked_task_id), GREATEST(blocking_task_id, blocked_task_id), dependency_type) WHERE (dependency_type = 'relates_to'::text)
+index|task_execution_checkpoints|idx_task_execution_checkpoints_run_sequence|CREATE INDEX idx_task_execution_checkpoints_run_sequence ON public.task_execution_checkpoints USING btree (run_id, sequence DESC)
+index|task_execution_checkpoints|idx_task_execution_checkpoints_task_created|CREATE INDEX idx_task_execution_checkpoints_task_created ON public.task_execution_checkpoints USING btree (task_id, created_at DESC)
+index|task_execution_checkpoints|task_execution_checkpoints_pkey|CREATE UNIQUE INDEX task_execution_checkpoints_pkey ON public.task_execution_checkpoints USING btree (id)
+index|task_execution_checkpoints|task_execution_checkpoints_run_id_checkpoint_key_key|CREATE UNIQUE INDEX task_execution_checkpoints_run_id_checkpoint_key_key ON public.task_execution_checkpoints USING btree (run_id, checkpoint_key)
+index|task_execution_checkpoints|task_execution_checkpoints_run_id_sequence_key|CREATE UNIQUE INDEX task_execution_checkpoints_run_id_sequence_key ON public.task_execution_checkpoints USING btree (run_id, sequence)
+index|task_execution_runs|idx_task_execution_runs_agent_status|CREATE INDEX idx_task_execution_runs_agent_status ON public.task_execution_runs USING btree (agent_id, status)
+index|task_execution_runs|idx_task_execution_runs_project_created|CREATE INDEX idx_task_execution_runs_project_created ON public.task_execution_runs USING btree (project_id, created_at DESC)
+index|task_execution_runs|idx_task_execution_runs_task_created|CREATE INDEX idx_task_execution_runs_task_created ON public.task_execution_runs USING btree (task_id, created_at DESC)
+index|task_execution_runs|task_execution_runs_pkey|CREATE UNIQUE INDEX task_execution_runs_pkey ON public.task_execution_runs USING btree (id)
+index|tasks|idx_tasks_active_run|CREATE INDEX idx_tasks_active_run ON public.tasks USING btree (active_run_id)
+index|tasks|idx_tasks_assignee|CREATE INDEX idx_tasks_assignee ON public.tasks USING btree (assignee_agent_id)
+index|tasks|idx_tasks_blocked_at|CREATE INDEX idx_tasks_blocked_at ON public.tasks USING btree (blocked_at)
+index|tasks|idx_tasks_blocker_escalated_at|CREATE INDEX idx_tasks_blocker_escalated_at ON public.tasks USING btree (blocker_escalated_at)
+index|tasks|idx_tasks_blocker_follow_up_at|CREATE INDEX idx_tasks_blocker_follow_up_at ON public.tasks USING btree (blocker_follow_up_at)
+index|tasks|idx_tasks_blocker_followed_through_at|CREATE INDEX idx_tasks_blocker_followed_through_at ON public.tasks USING btree (blocker_followed_through_at)
+index|tasks|idx_tasks_blocker_resolution_due_at|CREATE INDEX idx_tasks_blocker_resolution_due_at ON public.tasks USING btree (blocker_resolution_due_at)
+index|tasks|idx_tasks_execution_status|CREATE INDEX idx_tasks_execution_status ON public.tasks USING btree (execution_status)
+index|tasks|idx_tasks_project|CREATE INDEX idx_tasks_project ON public.tasks USING btree (project_id)
+index|tasks|idx_tasks_sprint|CREATE INDEX idx_tasks_sprint ON public.tasks USING btree (sprint_id)
+index|tasks|idx_tasks_status|CREATE INDEX idx_tasks_status ON public.tasks USING btree (status)
+index|tasks|tasks_pkey|CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (id)
+index|user_profiles|user_profiles_pkey|CREATE UNIQUE INDEX user_profiles_pkey ON public.user_profiles USING btree (id)
+index|webhook_deliveries|idx_webhook_deliveries_created_at|CREATE INDEX idx_webhook_deliveries_created_at ON public.webhook_deliveries USING btree (created_at DESC)
+index|webhook_deliveries|idx_webhook_deliveries_webhook_id|CREATE INDEX idx_webhook_deliveries_webhook_id ON public.webhook_deliveries USING btree (webhook_id)
+index|webhook_deliveries|webhook_deliveries_pkey|CREATE UNIQUE INDEX webhook_deliveries_pkey ON public.webhook_deliveries USING btree (id)
+index|webhooks|idx_webhooks_agent|CREATE INDEX idx_webhooks_agent ON public.webhooks USING btree (agent_id)
+index|webhooks|webhooks_agent_id_url_key|CREATE UNIQUE INDEX webhooks_agent_id_url_key ON public.webhooks USING btree (agent_id, url)
+index|webhooks|webhooks_pkey|CREATE UNIQUE INDEX webhooks_pkey ON public.webhooks USING btree (id)
+owner|agents|a2a_app
+owner|app_password_resets|a2a_app
+owner|app_sessions|a2a_app
+owner|app_users|a2a_app
+owner|audit_log|a2a_app
+owner|contract_links|a2a_app
+owner|contract_note_acks|a2a_app
+owner|contract_notes|a2a_app
+owner|contract_participants|a2a_app
+owner|contract_questions|a2a_app
+owner|contracts|a2a_app
+owner|idempotency_keys|a2a_app
+owner|messages|a2a_app
+owner|nonce_cache|a2a_app
+owner|notification_preferences|a2a_app
+owner|pending_approvals|a2a_app
+owner|project_member_invitations|a2a_app
+owner|project_members|a2a_app
+owner|project_observers|a2a_app
+owner|projects|a2a_app
+owner|rate_limit_buckets|a2a_app
+owner|reputation_ledger_events|a2a_app
+owner|service_keys|a2a_app
+owner|sprints|a2a_app
+owner|system_config|a2a_app
+owner|task_activity_events|a2a_app
+owner|task_attachments|a2a_app
+owner|task_comments|a2a_app
+owner|task_contracts|a2a_app
+owner|task_dependencies|a2a_app
+owner|task_execution_checkpoints|a2a_app
+owner|task_execution_runs|a2a_app
+owner|tasks|a2a_app
+owner|user_profiles|a2a_app
+owner|webhook_deliveries|a2a_app
+owner|webhooks|a2a_app

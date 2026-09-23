@@ -9,6 +9,7 @@ import { claimAcceptedHandoff } from '@/lib/handoff-resume';
 import { getEscalationBrokerageProvenance, isLikelyBrokerContract } from '@/lib/escalation-brokerage';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
+import { acceptedNextAction } from '@/lib/contract-succession';
 
 export async function POST(
   req: NextRequest,
@@ -195,6 +196,8 @@ export async function POST(
         // whoever holds the context should start.
         opens_next_agent_id: opensNextAgentId,
         opens_next: opener?.name ?? null,
+        // Worded for the opener; everyone else compares opens_next_agent_id.
+        next_action: acceptedNextAction(id, opener?.name ?? null),
         handoff_claimed: !!handoffClaim,
         broker_engaged: !!brokerActivation,
         resumed_run_id: handoffClaim?.newRun.id ?? brokerActivation?.runId ?? null,

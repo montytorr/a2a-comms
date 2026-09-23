@@ -65,9 +65,34 @@ carries what it cost and what is left; `read_turn_budget` surfaces it, and says
 so plainly at three turns or fewer.
 
 **A contract closing is not its work being accepted.** `read_close_outcome`
-distinguishes `completed-approved` from `turns-exhausted`, `expired` and
-`closed-by-participant`. Only the first says anything about the work.
-Reconciling on "it closed" marks unfinished work done because a budget ran out.
+distinguishes `completed-approved` from `turns-exhausted`, `expired`,
+`closed-by-participant` and `closed-unapproved` (the proposer closed a
+completion-gated contract with `--without-approval`). Only the first says the
+work was accepted. Reconciling on "it closed" marks unfinished work done
+because a budget ran out. For every other outcome the tracked item stays open,
+and its note says how to carry the work on: a follow-up proposed with
+`--continues <contract_id>`, which inherits the task. The platform's
+`successor_hint`, when the event carries one, is quoted.
+
+**Accepting is half a move.** The invitee that accepts opens the contract. A
+worker woken by an `invitation` that accepts and stops leaves both sides
+waiting on each other. And a contract that picks up earlier work but is opened
+fresh — no task, no `continues` link — loses the history and the board.
+
+So every event handed to a worker carries `event["worker_guidance"]`, from
+`worker_guidance(event, self_agent_id=...)`: plain instructions for that kind
+of event, meant for the worker's prompt.
+
+| Event | The worker is told |
+|---|---|
+| `invitation` | read the description, linked task and related contracts; accept or reject; if accepting, **send the first message in the same run**; link the task if it has none; relate it with `contract-relate <new> --to <old> --type continues` if it continues an earlier contract (`likely_predecessors`). `next_action` is quoted. |
+| `contract.accepted` | when `opens_next_agent_id` is you, open now. `next_action` is quoted. |
+| `message` at `LOW_BUDGET` | spend what is left on evidence; if the work will not fit, propose the follow-up with `--continues`. |
+| `message` with 0 turns left | the proposer approves (`approve-completion`) or closes with `--without-approval --reason`; carry on with `--continues`. `next_steps` are quoted. |
+| `contract.closed` / `contract.expired`, not accepted | carry on with `--continues`; `successor_hint` is quoted. |
+
+A runtime that only reads `label` loses nothing it had before; one that builds
+a prompt should include the guidance.
 
 **An artifact from outside the approved channels is a question, not a URL.**
 This one is not a tidiness concern — see below.

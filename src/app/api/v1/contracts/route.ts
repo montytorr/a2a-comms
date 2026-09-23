@@ -8,6 +8,7 @@ import type {
   ProposeContractRequest,
   ContractResponse,
   PaginatedResponse,
+  ProposeContractResponse,
   ApiError,
 } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getLastMessages } from './_helpers';
@@ -15,8 +16,19 @@ import { deliverWebhooks } from '@/lib/webhooks';
 import { sendContractInvitationEmail } from '@/lib/email';
 import { getUserEmail } from '@/lib/email/helpers';
 import { createContractProposal, ContractProposalError } from '@/lib/contract-proposals';
-import { checkLinkPermission, linkContractToTask, validateLinkFields } from '@/lib/contract-task-link';
-import { getRelatedContractsForContracts } from '@/lib/contract-links';
+import { checkLinkPermission, getLinkedTask, linkContractToTask, validateLinkFields } from '@/lib/contract-task-link';
+import {
+  checkContractLinkPermission,
+  createContractLink,
+  getRelatedContractsForContracts,
+} from '@/lib/contract-links';
+import {
+  buildInvitationData,
+  findLikelyPredecessors,
+  resolveTaskLinkPlan,
+  successionHint,
+  validateProposalSuccession,
+} from '@/lib/contract-succession';
 import { getOperatorChannelForContracts } from '@/lib/contract-operator-channel-server';
 
 export async function GET(req: NextRequest) {
@@ -170,9 +182,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Optional: link the contract to a project task in the same call. Validated
-  // up front — if the agent cannot link, we refuse before creating anything
-  // rather than leaving an unlinked contract behind for them to clean up.
+  // Succession and the task link are both settled before anything is written,
+  // so a refusal never leaves a half-linked contract behind to clean up.
+  const succession = validateProposalSuccession(parsed);
+  if (!succession.ok) return NextResponse.json(succession.body, { status: succession.status });
+  const { predecessor } = succession.value;
+
+  // Optional: link the contract to a project task in the same call.
   const wantsLink = Boolean(parsed.project_id || parsed.task_id);
   const pairingError = validateLinkFields(parsed.project_id, parsed.task_id);
   if (pairingError) {
@@ -189,16 +205,35 @@ export async function POST(req: NextRequest) {
     if (refusal) return NextResponse.json(refusal.body, { status: refusal.status });
   }
 
+  // Same rule as the links route: asserting succession is a claim about the
+  // earlier contract too, so the proposer must be a (non-observer) participant
+  // in it. The new contract will have the proposer as its proposer.
+  if (predecessor) {
+    const refusal = await checkContractLinkPermission([predecessor.id], auth.agent.id);
+    if (refusal) return NextResponse.json(refusal.body, { status: refusal.status });
+  }
+
+  const taskPlan = resolveTaskLinkPlan({
+    hasTask: wantsLink,
+    unlinkedReason: succession.value.unlinkedReason,
+    predecessor,
+    predecessorTask: !wantsLink && predecessor ? await getLinkedTask(predecessor.id) : null,
+  });
+  if (!taskPlan.ok) return NextResponse.json(taskPlan.body, { status: taskPlan.status });
+  const plan = taskPlan.plan;
+  const linkTaskId =
+    plan.kind === 'task' ? parsed.task_id! : plan.kind === 'inherit' ? plan.task.task_id : null;
+
   try {
     const proposal = await createContractProposal({
       actor: auth.agent,
-      request: parsed,
+      request: { ...parsed, unlinked_reason: plan.kind === 'unlinked' ? plan.reason : undefined },
       ipAddress: getClientIp(req),
       auditActor: auth.agent.name,
     });
 
-    if (wantsLink) {
-      const linkFailure = await linkContractToTask(proposal.contractId, parsed.task_id!);
+    if (linkTaskId) {
+      const linkFailure = await linkContractToTask(proposal.contractId, linkTaskId);
       if (linkFailure) {
         return NextResponse.json(linkFailure.body, { status: linkFailure.status });
       }
@@ -206,11 +241,57 @@ export async function POST(req: NextRequest) {
         actor: auth.agent.name,
         action: 'task.contract_link',
         resourceType: 'task',
-        resourceId: parsed.task_id!,
-        details: { contract_id: proposal.contractId, via: 'contract-create' },
+        resourceId: linkTaskId,
+        details: {
+          contract_id: proposal.contractId,
+          via: plan.kind === 'inherit' ? 'contract-create-inherited' : 'contract-create',
+          ...(plan.kind === 'inherit' ? { inherited_from_contract_id: predecessor?.id } : {}),
+        },
         ipAddress: getClientIp(req),
       });
     }
+
+    if (predecessor) {
+      // Non-fatal, like the handoff path: undoing a created proposal over a
+      // metadata row would be worse. A missing link shows in the response's
+      // related_contracts, and `holloway contract-relate` can still record it.
+      const linkFailure = await createContractLink({
+        fromContractId: proposal.contractId,
+        toContractId: predecessor.id,
+        linkType: predecessor.linkType,
+        createdByAgentId: auth.agent.id,
+      }).catch(() => ({ status: 500, body: { error: 'Failed to link contracts', code: 'DB_ERROR' } }));
+      if (!linkFailure) {
+        await auditLog({
+          actor: auth.agent.name,
+          action: 'contract.linked',
+          resourceType: 'contract',
+          resourceId: proposal.contractId,
+          details: { to_contract_id: predecessor.id, link_type: predecessor.linkType, via: 'contract-create' },
+          ipAddress: getClientIp(req),
+        });
+      }
+    }
+
+    // Re-enrich when anything was linked so the response already carries
+    // linked_task and related_contracts; the proposal was built before either
+    // row existed.
+    const contractBody =
+      linkTaskId || predecessor
+        ? await enrichContract(proposal.contract, { viewerAgentId: auth.agent.id })
+        : proposal.contract;
+
+    // A nudge, never a gate: an explicit predecessor already answers the
+    // question this asks.
+    const likelyPredecessors = predecessor
+      ? []
+      : await findLikelyPredecessors({
+          newContractId: proposal.contractId,
+          proposerId: auth.agent.id,
+          participantIds: proposal.contract.participants
+            .filter((participant) => participant.role !== 'observer')
+            .map((participant) => participant.agent.id),
+        });
 
     const expiresAt = proposal.contract.expires_at;
     const inviteeIds = proposal.contract.participants
@@ -220,7 +301,19 @@ export async function POST(req: NextRequest) {
     deliverWebhooks(inviteeIds, {
       event: 'invitation',
       contract_id: proposal.contractId,
-      data: { title: parsed.title, proposer: auth.agent.name, expires_at: expiresAt },
+      data: buildInvitationData({
+        contractId: proposal.contractId,
+        title: parsed.title,
+        proposer: auth.agent.name,
+        expiresAt,
+        description: contractBody.description,
+        maxTurns: contractBody.max_turns,
+        completionRequiresApproval: contractBody.completion_requires_approval,
+        linkedTask: contractBody.linked_task ?? null,
+        unlinkedReason: contractBody.unlinked_reason ?? null,
+        relatedContracts: contractBody.related_contracts ?? [],
+        likelyPredecessors,
+      }),
       timestamp: new Date().toISOString(),
     }).catch(() => {});
 
@@ -240,11 +333,11 @@ export async function POST(req: NextRequest) {
       })
     ).catch(() => {});
 
-    // Re-enrich when linked so the response already carries linked_task; the
-    // proposal was built before the link row existed.
-    const responseBody = wantsLink
-      ? await enrichContract(proposal.contract, { viewerAgentId: auth.agent.id })
-      : proposal.contract;
+    const responseBody: ProposeContractResponse = {
+      ...contractBody,
+      likely_predecessors: likelyPredecessors,
+      succession_hint: successionHint(proposal.contractId, likelyPredecessors),
+    };
 
     await storeIdempotencyResponse(idempotency.key, auth, 'POST /v1/contracts', 201, responseBody);
     return NextResponse.json(responseBody, { status: 201 });

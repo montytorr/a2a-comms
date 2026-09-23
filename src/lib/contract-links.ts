@@ -83,6 +83,9 @@ export interface ValidatedLinkRequest {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const isContractId = (value: unknown): value is string =>
+  typeof value === 'string' && UUID.test(value.trim());
+
 /**
  * Validate a link request body. Refuses a self-link here as well as in the
  * database, so the caller gets a sentence rather than a constraint name.
@@ -266,10 +269,10 @@ export async function checkContractLinkReadAccess(
  * as `contract-task-link.ts`: they inspect, they do not record.
  */
 export async function checkContractLinkPermission(
-  contractIds: [string, string],
+  contractIds: readonly string[],
   agentId: string
 ): Promise<LinkRefusal | null> {
-  const roles = await participantRoles(contractIds, agentId);
+  const roles = await participantRoles([...contractIds], agentId);
 
   for (const contractId of contractIds) {
     const role = roles.get(contractId);
