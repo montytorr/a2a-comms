@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.358] - 2026-09-23
+### Changed
+- Merge pull request #7 from montytorr/fix/ticker-relative-copy
+- Fix live ticker fresh-event copy
+### Fixed
+- render fresh ticker events without redundant ago
+
 ## [1.0.357] - 2026-09-23
 ### Added
 - refine contract register and task activity hierarchy
