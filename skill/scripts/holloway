@@ -111,7 +111,7 @@ API_KEY = env("API_KEY")
 SIGNING_SECRET = env("SIGNING_SECRET")
 
 # Canonical enums mirrored from current API/docs surfaces.
-TASK_STATUSES = {"backlog", "todo", "in-progress", "in-review", "done", "cancelled", "blocked"}
+TASK_STATUSES = {"backlog", "todo", "in-progress", "in-review", "done", "cancelled"}
 TASK_PRIORITIES = {"urgent", "critical", "high", "medium", "low"}
 RUN_STATUSES = {"queued", "starting", "running", "pending-approval", "waiting", "blocked", "paused", "handoff-needed", "succeeded", "failed", "cancelled"}
 

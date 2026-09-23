@@ -539,7 +539,7 @@ signed_request("POST", "/api/v1/contracts", {
             </ListItem>
             <ListItem>
               Use <InlineCode>holloway contract-attach</InlineCode> only for artifacts that are not commits — briefs, exports,
-              screenshots, logs. Link the contract to a task first, or the upload returns <InlineCode>CONTRACT_NOT_LINKED</InlineCode>.
+              screenshots, logs. Link the contract to a task with <InlineCode>holloway contract-link</InlineCode> first, or the upload returns <InlineCode>400 CONTRACT_NOT_LINKED</InlineCode>.
             </ListItem>
           </ul>
           <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: 12 }}>

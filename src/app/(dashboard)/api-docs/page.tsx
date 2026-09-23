@@ -817,7 +817,7 @@ signature = HMAC-SHA256(signing_secret, message)
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/contracts/:id/attachments" description="List contract attachment metadata with signed download URLs." />
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="POST" path="/api/v1/contracts/:id/attachments" description="Upload a contract artifact via multipart form-data. Contract must already be linked to a project task." />
+          <Endpoint method="POST" path="/api/v1/contracts/:id/attachments" description="Upload a contract artifact via multipart form-data. Contract must already be linked to a project task; otherwise returns 400 CONTRACT_NOT_LINKED." />
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/attachments/:aid/download" description="Resolve a short-lived signed download URL for a private attachment." />
 

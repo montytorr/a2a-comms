@@ -36,17 +36,15 @@ export default async function AnalyticsPage({
   let scopedProjectIds: string[] | null = null;
   if (!user.isSuperAdmin) {
     const safeAgentIds = auth.agentScope;
-    const { data: participantContracts } = await db
+    const [participantResult, projectResult] = await Promise.all([db
       .from('contract_participants')
       .select('contract_id')
-      .in('agent_id', safeAgentIds);
-    scopedContractIds = (participantContracts || []).map(p => p.contract_id);
-
-    const { data: memberProjects } = await db
+      .in('agent_id', safeAgentIds), db
       .from('project_members')
       .select('project_id')
-      .in('agent_id', safeAgentIds);
-    scopedProjectIds = (memberProjects || []).map(p => p.project_id);
+      .in('agent_id', safeAgentIds)]);
+    scopedContractIds = (participantResult.data || []).map(p => p.contract_id);
+    scopedProjectIds = (projectResult.data || []).map(p => p.project_id);
   }
 
   // Helper to apply scope to a query
@@ -65,11 +63,8 @@ export default async function AnalyticsPage({
       ? contractsQuery.in('id', scopedContractIds)
       : contractsQuery.eq('id', noResultId);
   }
-  const { data: allContracts } = await contractsQuery;
-
-  const contractStats = deriveContractStats(allContracts || []);
-  const contractsByStatus = contractStats.byStatus;
-  const avgTurns = contractStats.avgTurns;
+  // Start independent database reads together.
+  const contractsPromise = Promise.resolve(contractsQuery);
 
   // 2. Messages per day (last N days) — also used for hourly heatmap + avg response time
   let messagesQuery = db
@@ -83,7 +78,44 @@ export default async function AnalyticsPage({
       ? messagesQuery.in('contract_id', scopedContractIds)
       : messagesQuery.eq('contract_id', noResultId);
   }
-  const { data: recentMessages } = await messagesQuery;
+  const messagesPromise = Promise.resolve(messagesQuery);
+
+  let activeProjectsQuery = db.from('projects').select('id').eq('status', 'active');
+  if (scopedProjectIds !== null) {
+    activeProjectsQuery = scopedProjectIds.length > 0
+      ? activeProjectsQuery.in('id', scopedProjectIds)
+      : activeProjectsQuery.eq('id', noResultId);
+  }
+  let taskStatusQuery = db.from('tasks').select('id, status, project_id').gte('updated_at', cutoffISO);
+  if (scopedProjectIds !== null) {
+    taskStatusQuery = scopedProjectIds.length > 0
+      ? taskStatusQuery.in('project_id', scopedProjectIds)
+      : taskStatusQuery.eq('project_id', noResultId);
+  }
+  let allTimeTasksQuery = db.from('tasks').select('id', { count: 'exact', head: true });
+  if (scopedProjectIds !== null) {
+    allTimeTasksQuery = scopedProjectIds.length > 0
+      ? allTimeTasksQuery.in('project_id', scopedProjectIds)
+      : allTimeTasksQuery.eq('project_id', noResultId);
+  }
+  let allTimeContractsQuery = db.from('contracts').select('id', { count: 'exact', head: true });
+  if (scopedContractIds !== null) {
+    allTimeContractsQuery = scopedContractIds.length > 0
+      ? allTimeContractsQuery.in('id', scopedContractIds)
+      : allTimeContractsQuery.eq('id', noResultId);
+  }
+  const [contractResult, messageResult, projectResult, taskResult, allTimeTaskResult, allTimeContractResult] = await Promise.all([
+    contractsPromise, messagesPromise, activeProjectsQuery, taskStatusQuery, allTimeTasksQuery, allTimeContractsQuery,
+  ]);
+  const allContracts = contractResult.data;
+  const recentMessages = messageResult.data;
+  const activeProjectRows = projectResult.data;
+  const allTasks = taskResult.data;
+  const allTimeTaskCount = allTimeTaskResult.count;
+  const allTimeContractCount = allTimeContractResult.count;
+  const contractStats = deriveContractStats(allContracts || []);
+  const contractsByStatus = contractStats.byStatus;
+  const avgTurns = contractStats.avgTurns;
 
   const messagesPerDay: Record<string, number> = {};
   const agentMessageCount: Record<string, number> = {};
@@ -139,16 +171,6 @@ export default async function AnalyticsPage({
   // they can be intersected with the projects that actually saw task activity in
   // the window — `projects.updated_at` only moves when the project row itself is
   // edited, so it is useless as an activity signal.
-  let activeProjectsQuery = db
-    .from('projects')
-    .select('id')
-    .eq('status', 'active');
-  if (scopedProjectIds !== null) {
-    activeProjectsQuery = scopedProjectIds.length > 0
-      ? activeProjectsQuery.in('id', scopedProjectIds)
-      : activeProjectsQuery.eq('id', noResultId);
-  }
-  const { data: activeProjectRows } = await activeProjectsQuery;
   const activeProjectIds = new Set((activeProjectRows || []).map((p) => p.id));
 
   // 7. Avg Response Time — compute from messages
@@ -196,16 +218,6 @@ export default async function AnalyticsPage({
   // 10. Tasks touched in the window. Windowed on updated_at rather than created_at
   // so the donut's "done" slice is exactly the Tasks Done card above it — there is
   // no NOT NULL completion timestamp on tasks to key off instead.
-  let taskStatusQuery = db
-    .from('tasks')
-    .select('id, status, project_id')
-    .gte('updated_at', cutoffISO);
-  if (scopedProjectIds !== null) {
-    taskStatusQuery = scopedProjectIds.length > 0
-      ? taskStatusQuery.in('project_id', scopedProjectIds)
-      : taskStatusQuery.eq('project_id', noResultId);
-  }
-  const { data: allTasks } = await taskStatusQuery;
 
   const taskStats = deriveTaskStats(allTasks || []);
   const tasksByStatus = taskStats.byStatus;
@@ -215,25 +227,6 @@ export default async function AnalyticsPage({
 
   // 11. All-time totals. Shown only in the empty states, so that a window with no
   // activity says "nothing happened lately" rather than implying nothing exists.
-  let allTimeTasksQuery = db
-    .from('tasks')
-    .select('id', { count: 'exact', head: true });
-  if (scopedProjectIds !== null) {
-    allTimeTasksQuery = scopedProjectIds.length > 0
-      ? allTimeTasksQuery.in('project_id', scopedProjectIds)
-      : allTimeTasksQuery.eq('project_id', noResultId);
-  }
-  const { count: allTimeTaskCount } = await allTimeTasksQuery;
-
-  let allTimeContractsQuery = db
-    .from('contracts')
-    .select('id', { count: 'exact', head: true });
-  if (scopedContractIds !== null) {
-    allTimeContractsQuery = scopedContractIds.length > 0
-      ? allTimeContractsQuery.in('id', scopedContractIds)
-      : allTimeContractsQuery.eq('id', noResultId);
-  }
-  const { count: allTimeContractCount } = await allTimeContractsQuery;
 
   // 12. Top Contracts by Messages — top 5
   const contractMessageCounts = Object.entries(messagesByContract)

@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { formatDate } from '@/lib/format-date';
 import { FileText } from 'lucide-react';
+import Link from 'next/link';
 import { PageFrame, EmptyState } from '@/components/atoms';
 
 export const dynamic = 'force-dynamic';
@@ -99,8 +100,15 @@ function getSectionTone(type: string): { pill: string; dotColor: string; bg: str
   }
 }
 
-export default function ChangelogPage() {
+const PAGE_SIZE = 20;
+
+export default async function ChangelogPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const entries = parseChangelog();
+  const params = await searchParams;
+  const parsedPage = Number(params.page);
+  const pageCount = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
+  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? Math.min(parsedPage, pageCount) : 1;
+  const visibleEntries = entries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <PageFrame width="prose">
@@ -160,11 +168,10 @@ export default function ChangelogPage() {
               />
             </div>
           )}
-          {entries.map((entry, idx) => (
+          {visibleEntries.map((entry, idx) => (
             <div
               key={entry.version}
-              className="animate-fade-in"
-              style={{ position: 'relative', animationDelay: `${idx * 0.03}s` }}
+              style={{ position: 'relative' }}
             >
               {/* Timeline dot */}
               <div style={{
@@ -200,7 +207,7 @@ export default function ChangelogPage() {
                   <span className="dim num text-xs">
                     {formatDate(entry.date)}
                   </span>
-                  {idx === 0 && (
+                  {page === 1 && idx === 0 && (
                     <span className="pill pill--mint">Latest</span>
                   )}
                 </div>
@@ -246,8 +253,12 @@ export default function ChangelogPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="animate-fade-in" style={{ marginTop: 32, textAlign: 'center', animationDelay: '0.5s' }}>
+      <nav aria-label="Changelog pages" className="row gap-3" style={{ justifyContent: 'center', marginTop: 24 }}>
+        {page > 1 && <Link className="btn" href={page === 2 ? '/changelog' : `/changelog?page=${page - 1}`}>Newer releases</Link>}
+        <span className="dim text-xs">Page {page} of {pageCount}</span>
+        {page < pageCount && <Link className="btn" href={`/changelog?page=${page + 1}`}>Older releases</Link>}
+      </nav>
+      <div style={{ marginTop: 32, textAlign: 'center' }}>
         <p className="dim text-2xs">
           {entries.length} versions tracked · Started {entries.length > 0 ? formatDate(entries[entries.length - 1].date) : 'N/A'}
         </p>

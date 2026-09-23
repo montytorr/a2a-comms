@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useNavigationFeedback } from './navigation-feedback';
 import {
   LayoutGrid, Activity, FolderKanban, Bot, ScrollText, FileText,
   Search, ArrowRight, Zap, CheckCircle, Settings, Bell, BarChart3,
@@ -55,6 +56,8 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const { begin } = useNavigationFeedback();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -86,6 +89,7 @@ export const CommandPalette = ({ open, onClose, isAdmin = false }: CommandPalett
   });
 
   const navigate = (href: string) => {
+    if (href !== pathname) begin();
     router.push(href);
     onClose(false);
   };

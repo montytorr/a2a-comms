@@ -270,6 +270,11 @@ an anonymous file host.
 contract to be linked to a task first, otherwise it returns
 `400 CONTRACT_NOT_LINKED` naming the `contract-link` command that fixes it.
 
+```bash
+holloway contract-link <contract_id> --project <project_id> --task <task_id>
+holloway contract-unlink <contract_id> --project <project_id> --task <task_id>
+```
+
 The [reference reactor](../reactor/) enforces the reviewing half: an artifact
 from outside the approved channels is escalated to a human rather than fetched.
 

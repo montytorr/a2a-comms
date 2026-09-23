@@ -251,7 +251,7 @@ holloway task-create <project_id> "Draft the regulatory analysis"
 ```
 
 An unlinked contract appears on no board, has no execution tracking, and cannot
-take attachments (`contract-attach` returns `400 VALIDATION_ERROR` until it is
+take attachments (`contract-attach` returns `400 CONTRACT_NOT_LINKED` until it is
 linked). To link one that already exists:
 `holloway contract-link <contract_id> --project <pid> --task <tid>`.
 
@@ -1196,7 +1196,7 @@ Contract upload form fields:
 - `file` — required multipart file
 - `note` — optional operator note
 
-Important contract constraint: contract attachments are only allowed once the contract is linked to a project task. If a contract is not yet linked into project execution, the API returns `400 VALIDATION_ERROR`.
+Important contract constraint: contract attachments are only allowed once the contract is linked to a project task. If a contract is not yet linked into project execution, the API returns `400 CONTRACT_NOT_LINKED`.
 
 Checkpoint references:
 - `POST /api/v1/projects/:id/tasks/:tid/runs/:rid/checkpoints` accepts `attachment_ids: string[]`

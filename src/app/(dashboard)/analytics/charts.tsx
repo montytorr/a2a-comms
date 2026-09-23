@@ -112,7 +112,7 @@ export default function AnalyticsCharts({
   return (
     <PageFrame>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }} className="animate-fade-in">
+      <div style={{ marginBottom: '32px' }}>
         <p className="upper" style={{ marginBottom: '6px' }}>Insights</p>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
@@ -126,10 +126,10 @@ export default function AnalyticsCharts({
               <Link
                 key={d}
                 href={`/analytics?days=${d}`}
+                className={days === d ? 'active' : ''}
+                aria-current={days === d ? 'page' : undefined}
               >
-                <button className={days === d ? 'active' : ''}>
-                  {d}d
-                </button>
+                {d}d
               </Link>
             ))}
           </div>
@@ -143,11 +143,11 @@ export default function AnalyticsCharts({
           { label: 'Messages', value: totalMessages, suffix: ` (${days}d)`, accentVar: '--mint' },
           { label: 'Avg Turns', value: avgTurns, suffix: ` (${days}d)`, accentVar: '--mint' },
           { label: 'Active Agents', value: agentStats.length, suffix: ` (${days}d)`, accentVar: '--amber' },
-        ].map((card, idx) => (
+        ].map((card) => (
           <div
             key={card.label}
-            className="card animate-fade-in"
-            style={{ padding: '18px 20px', animationDelay: `${idx * 0.05}s` }}
+            className="card"
+            style={{ padding: '18px 20px' }}
           >
             <p className="upper dim" style={{ marginBottom: '8px' }}>{card.label}</p>
             <p className="mono num text-xl" style={{ fontWeight: 700, color: `var(${card.accentVar})` }}>
@@ -165,11 +165,11 @@ export default function AnalyticsCharts({
           { label: 'Tasks Done', value: tasksDone, suffix: ` (${days}d)`, accentVar: '--mint' },
           { label: 'Avg Response Time', value: avgResponseTimeHours !== null ? `${avgResponseTimeHours}h` : '—', suffix: ` (${days}d)`, accentVar: '--peri' },
           { label: 'Webhooks Fired', value: webhooksFired, suffix: ` (${days}d)`, accentVar: '--rose' },
-        ].map((card, idx) => (
+        ].map((card) => (
           <div
             key={card.label}
-            className="card animate-fade-in"
-            style={{ padding: '18px 20px', animationDelay: `${(idx + 4) * 0.05}s` }}
+            className="card"
+            style={{ padding: '18px 20px' }}
           >
             <p className="upper dim" style={{ marginBottom: '8px' }}>{card.label}</p>
             <p className="mono num text-xl" style={{ fontWeight: 700, color: `var(${card.accentVar})` }}>
@@ -182,7 +182,7 @@ export default function AnalyticsCharts({
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         {/* Donut Chart — Contracts by Status */}
-        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.1s' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts by Status</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Created in last {days} days</p>
 
@@ -245,7 +245,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Per Agent Messages */}
-        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.15s' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Agent</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -284,7 +284,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Messages per Day */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.2s' }}>
+        <div className="card md:col-span-2" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Messages per Day</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -330,7 +330,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Bar Chart — Contracts Created per Day */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.25s' }}>
+        <div className="card md:col-span-2" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Contracts Created per Day</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Last {days} days</p>
 
@@ -376,7 +376,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Donut Chart — Task Status Distribution */}
-        <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.3s' }}>
+        <div className="card" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Task Status Distribution</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Updated in last {days} days</p>
 
@@ -437,7 +437,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Horizontal Bar Chart — Top Contracts by Messages */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.35s' }}>
+        <div className="card md:col-span-2" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Top Contracts by Messages</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Top 5 in last {days} days</p>
 
@@ -479,7 +479,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Hourly Activity Heatmap */}
-        <div className="card animate-fade-in md:col-span-2" style={{ padding: 'var(--space-5)', animationDelay: '0.4s' }}>
+        <div className="card md:col-span-2" style={{ padding: 'var(--space-5)' }}>
           <h2 className="h3" style={{ marginBottom: '2px' }}>Hourly Activity Heatmap</h2>
           <p className="dim text-2xs" style={{ marginBottom: '24px' }}>Message distribution by hour (UTC) — last {days} days</p>
 

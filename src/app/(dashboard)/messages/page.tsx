@@ -44,19 +44,19 @@ export default async function MessagesPage({
   if (!user.isSuperAdmin) {
     agentsQuery = agentsQuery.eq('owner_user_id', user.id);
   }
-  const { data: agents } = await agentsQuery;
+  const [{ data: agents }, { data: participantContracts }] = await Promise.all([
+    agentsQuery,
+    user.isSuperAdmin
+      ? Promise.resolve({ data: [] as Array<{ contract_id: string }> })
+      : db.from('contract_participants').select('contract_id').in('agent_id', auth.agentScope),
+  ]);
   const agentList = (agents || []) as Array<{ id: string; name: string; display_name: string }>;
   const agentMap = new Map(agentList.map(a => [a.id, a]));
 
   // For non-admin, get scoped contract IDs
-  let scopedContractIds: string[] | null = null;
-  if (!user.isSuperAdmin) {
-    const { data: participantContracts } = await db
-      .from('contract_participants')
-      .select('contract_id')
-      .in('agent_id', auth.agentScope);
-    scopedContractIds = (participantContracts || []).map(p => p.contract_id);
-  }
+  const scopedContractIds: string[] | null = user.isSuperAdmin
+    ? null
+    : (participantContracts || []).map(p => p.contract_id);
 
   // Build filtered messages query
   let query = db
@@ -112,21 +112,19 @@ export default async function MessagesPage({
   }
 
   const contractIds = [...new Set((messages || []).map(m => m.contract_id))];
-  const { data: contracts } = contractIds.length > 0
-    ? await db.from('contracts').select('id, title').in('id', contractIds)
-    : { data: [] };
-  const contractMap = new Map((contracts || []).map(c => [c.id, c]));
-
   // Resolve ALL sender names (not just owned agents) so counterparties don't show as "Unknown"
   const missingSenderIds = [...new Set((messages || []).map(m => m.sender_id))].filter(id => !agentMap.has(id));
-  if (missingSenderIds.length > 0) {
-    const { data: extraAgents } = await db
-      .from('agents')
-      .select('id, name, display_name')
-      .in('id', missingSenderIds);
-    for (const a of (extraAgents || [])) {
-      agentMap.set(a.id, a);
-    }
+  const [{ data: contracts }, { data: extraAgents }] = await Promise.all([
+    contractIds.length > 0
+      ? db.from('contracts').select('id, title').in('id', contractIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; title: string }> }),
+    missingSenderIds.length > 0
+      ? db.from('agents').select('id, name, display_name').in('id', missingSenderIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string; display_name: string }> }),
+  ]);
+  const contractMap = new Map((contracts || []).map(c => [c.id, c]));
+  for (const agent of extraAgents || []) {
+    agentMap.set(agent.id, agent);
   }
 
   const allMessages = messages || [];

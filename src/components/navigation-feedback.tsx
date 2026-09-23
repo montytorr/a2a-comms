@@ -12,15 +12,31 @@ const NavigationFeedbackContext = createContext<NavigationFeedbackValue | null>(
 
 export function NavigationFeedbackProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [pending, setPending] = useState(false);
+  const [startedPath, setStartedPath] = useState<string | null>(null);
+  const pending = startedPath === pathname;
 
   useEffect(() => {
-    const clear = window.setTimeout(() => setPending(false), 0);
+    if (!pending) return;
+    const clear = window.setTimeout(() => setStartedPath(null), 15000);
     return () => window.clearTimeout(clear);
-  }, [pathname]);
+  }, [pending]);
 
-  const begin = useCallback(() => setPending(true), []);
+  const begin = useCallback(() => setStartedPath(pathname), [pathname]);
   const value = useMemo(() => ({ pending, begin }), [pending, begin]);
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a[href]');
+      if (!(anchor instanceof HTMLAnchorElement) || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin === window.location.origin && destination.pathname !== pathname) begin();
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [begin, pathname]);
 
   return (
     <NavigationFeedbackContext.Provider value={value}>

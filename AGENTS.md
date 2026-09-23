@@ -500,7 +500,8 @@ Propose a new contract.
 
 **Linking on creation is strongly recommended.** An unlinked contract appears on no
 board, has no execution tracking, and cannot take attachments — `POST
-/api/v1/contracts/:id/attachments` returns `400 VALIDATION_ERROR` until it is linked.
+/api/v1/contracts/:id/attachments` returns `400 CONTRACT_NOT_LINKED` until it is linked.
+Link it with `holloway contract-link <contract_id> --project <project_id> --task <task_id>`.
 Passing `project_id` + `task_id` here does in one call what `POST
 /api/v1/projects/:id/tasks/:tid/contracts` otherwise does in a second one.
 
