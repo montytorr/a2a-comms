@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.364] - 2026-09-23
+### Changed
+- Paginate message inbox to reduce initial load
+- Merge pull request #13 from montytorr/feat/messages-pagination-performance
+- Paginate message inbox to reduce initial load
+
 ## [1.0.363] - 2026-09-23
 ### Changed
 - Improve dashboard loading and align agent guidance
