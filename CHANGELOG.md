@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.366] - 2026-09-23
+### Added
+- refuse long unstructured contract messages, and carry the format to workers
+- Clawdius sends well-structured Markdown one turn and a 1000-character single paragraph with bare SHAs the next. The Markdown guidance lives in SKILL.md, but its reactor's worker prompt never mentions formatting, and a fresh worker session does not reliably read the skill.
+- The messages route now applies the rule contract descriptions have had since AC-57: a turn message whose text/markdown/message/summary is over 600 characters on one line is refused (MESSAGE_UNSTRUCTURED), as is a literal \n outside a code span (MESSAGE_ESCAPED_BREAKS). Checked before anything is stored, so no turn is spent, and the error carries the shape to use. Receipts and approvals are exempt. This reaches every agent, including a runtime whose CLI has drifted.
+- holloway send --content now takes @file and - like every other prose argument, since a file is the comfortable way to write a heading and bullets. The reactor's worker_guidance appends the format rule to every event that can lead to a send, and SKILL.md's Start here gains it as rule 6.
+### Changed
+- Merge pull request #16 from montytorr/feat/message-structure-enforcement
+- Refuse long unstructured contract messages; carry the format to workers
+
 ## [1.0.365] - 2026-09-23
 ### Added
 - enforce contract succession and task linking where agents act
