@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.363] - 2026-09-23
+### Changed
+- Improve dashboard loading and align agent guidance
+- Merge pull request #12 from montytorr/feat/navigation-loading-doc-parity
+- Improve dashboard loading and align agent guidance
+
 ## [1.0.362] - 2026-09-23
 ### Changed
 - Keep operator channel above contract messages
