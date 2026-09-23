@@ -6,6 +6,8 @@ import { Avatar, EmptyState } from '@/components/atoms';
 import { addComment } from './actions';
 import { formatRelative } from '@/lib/format-date';
 import { participantDescriptor } from '@/lib/observer-mode';
+import { Eye, MessageSquare, RefreshCw, Settings2, UserRound, type LucideIcon } from 'lucide-react';
+import styles from './task-comments.module.css';
 
 interface Comment {
   id: string;
@@ -18,12 +20,12 @@ interface Comment {
   created_at: string;
 }
 
-const typeConfig: Record<string, { icon: string; label: string }> = {
-  comment: { icon: '💬', label: 'Comment' },
-  analysis: { icon: '👁️', label: 'Observer note' },
-  status_change: { icon: '🔄', label: 'Status' },
-  assignment: { icon: '👤', label: 'Assignment' },
-  system: { icon: '⚙️', label: 'System' },
+const typeConfig: Record<string, { icon: LucideIcon; label: string }> = {
+  comment: { icon: MessageSquare, label: 'Comment' },
+  analysis: { icon: Eye, label: 'Observer note' },
+  status_change: { icon: RefreshCw, label: 'Status' },
+  assignment: { icon: UserRound, label: 'Assignment' },
+  system: { icon: Settings2, label: 'System' },
 };
 
 function summarizeMetadata(metadata: Record<string, unknown>) {
@@ -60,52 +62,27 @@ function CommentItem({ comment }: { comment: Comment }) {
   const authorName = comment.author?.display_name || comment.author?.name || comment.author_name || 'Unknown';
   const isSystem = comment.comment_type !== 'comment' && comment.comment_type !== 'analysis';
   const config = typeConfig[comment.comment_type] || typeConfig.comment;
+  const Icon = config.icon;
   const metadataSummary = summarizeMetadata(comment.metadata || {});
 
   if (isSystem) {
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' }}>
-        <div className="text-2xs" style={{
-          width: 24,
-          height: 24,
-          borderRadius: '50%',
-          background: 'var(--bg-3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          
-          marginTop: 2,
-          flexShrink: 0,
-        }}>
-          {config.icon}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div className={`${styles.entry} ${styles.system}`}>
+        <span className={styles.icon}><Icon size={14} aria-hidden="true" /></span>
+        <div className={styles.body}>
           <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>
             <span style={{ fontWeight: 500, color: 'var(--fg-2)' }}>{authorName}</span>
             {' · '}
             <span>{comment.content}</span>
           </p>
-          <p className="mono num text-2xs" style={{ color: 'var(--fg-4)', marginTop: 2 }}>
+          <p className={styles.entryMeta}>
             {formatRelative(comment.created_at)}
           </p>
           {metadataSummary && (
-            <p className="text-2xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
+            <p className={styles.entryMeta}>{metadataSummary}</p>
           )}
         </div>
-        <span className="text-2xs" style={{
-          flexShrink: 0,
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: '2px 6px',
-          borderRadius: 'var(--radius-1)',
-          
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          color: 'var(--fg-3)',
-          background: 'var(--bg-2)',
-          border: '1px solid var(--line-1)',
-        }}>
+        <span className="pill pill--ghost">
           {config.label}
         </span>
       </div>
@@ -113,11 +90,11 @@ function CommentItem({ comment }: { comment: Comment }) {
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0' }}>
-      <div style={{ marginTop: 2 }}>
+    <div className={`${styles.entry} ${comment.comment_type === 'analysis' ? styles.observer : ''}`}>
+      <div>
         <Avatar name={authorName} size={28} />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className={styles.body}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <span className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>{authorName}</span>
           <span className="mono num text-2xs" style={{ color: 'var(--fg-4)' }}>
@@ -128,7 +105,7 @@ function CommentItem({ comment }: { comment: Comment }) {
           <MarkdownPreview content={comment.content} />
         </div>
         {metadataSummary && (
-          <p className="text-2xs" style={{ color: 'var(--fg-4)', marginTop: 4 }}>{metadataSummary}</p>
+          <p className={styles.entryMeta}>{metadataSummary}</p>
         )}
       </div>
     </div>
@@ -168,24 +145,20 @@ export default function TaskComments({
   return (
     <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.25s' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <p className="upper" style={{ color: 'var(--fg-4)' }}>
-          Activity & Comments
+        <h2 className={styles.feedTitle}>
+          Activity & comments
           {comments.length > 0 && (
             <span style={{ marginLeft: 8, color: 'var(--fg-3)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
               ({comments.length})
             </span>
           )}
-        </p>
-        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Chronological feed</span>
+        </h2>
+        <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Oldest first</span>
       </div>
 
       {visibleComments.length > 0 ? (
-        <div style={{ marginBottom: 16 }}>
-          {visibleComments.map((c, i) => (
-            <div key={c.id} style={{ borderTop: i > 0 ? '1px solid var(--line-1)' : 'none' }}>
-              <CommentItem comment={c} />
-            </div>
-          ))}
+        <div className={styles.feed}>
+          {visibleComments.map((c) => <CommentItem key={c.id} comment={c} />)}
         </div>
       ) : (
         <EmptyState

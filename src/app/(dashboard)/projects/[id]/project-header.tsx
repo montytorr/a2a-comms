@@ -9,6 +9,7 @@ import { formatDateTime, formatRelative } from '@/lib/format-date';
 import ProjectStatusDropdown from './project-status-dropdown';
 import { inviteProjectMember, removeProjectMember, respondToProjectInvitation, updateProject } from './actions';
 import { getInvitationStatusLabel, getInvitationStatusTone, type InvitationLike } from '../invitation-utils';
+import styles from './project-detail.module.css';
 
 interface ProjectHeaderProps {
   project: {
@@ -73,8 +74,8 @@ function EditableProjectTitle({
 
   if (!editing) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <h1 className="h1">{value}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+        <h1 className="h1" style={{ flex: 1, minWidth: 0 }}>{value}</h1>
         {isOwner && (
           <button
             onClick={() => setEditing(true)}
@@ -89,7 +90,7 @@ function EditableProjectTitle({
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
       <input
         ref={inputRef}
         value={text}
@@ -295,16 +296,9 @@ export default function ProjectHeader({
         <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{project.title}</span>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gap: 20,
-          gridTemplateColumns: 'minmax(0,1fr) minmax(300px,360px)',
-          alignItems: 'flex-start',
-        }}
-      >
+      <div className={styles.headerGrid}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div className={styles.headerMain}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
                 <EditableProjectTitle value={project.title} projectId={project.id} isOwner={isOwner} />
@@ -610,9 +604,11 @@ export default function ProjectHeader({
           )}
 
           {isOwner && invitations.length > 0 && (
-            <div className="card" style={{ padding: 'var(--space-4)' }}>
-              <p className="upper text-2xs" style={{ marginBottom: 12 }}>Invitation Timeline</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <details className="card" open={invitations.some((invitation) => invitation.status === 'pending') || undefined}>
+              <summary className={styles.invitationsSummary}>
+                Invitation timeline <span className="pill">{invitations.length}</span>
+              </summary>
+              <div className={styles.invitationsBody}>
                 {invitations.map((invitation) => {
                   const agentName =
                     invitation.agent?.display_name || invitation.agent?.name || 'Unknown';
@@ -649,8 +645,7 @@ export default function ProjectHeader({
                           >
                             {agentName}
                           </p>
-                          {/* tone is a raw Tailwind class from the utility fn — map to pill */}
-                          <span className="pill pill--ghost text-2xs">
+                          <span className={tone}>
                             {label}
                           </span>
                         </div>
@@ -679,7 +674,7 @@ export default function ProjectHeader({
                   );
                 })}
               </div>
-            </div>
+            </details>
           )}
         </div>
       )}

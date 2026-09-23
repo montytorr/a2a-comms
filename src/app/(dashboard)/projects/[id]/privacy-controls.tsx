@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ProjectPrivacyMetadata } from '@/lib/types';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import { updateProjectPrivacy } from './actions';
+import styles from './project-detail.module.css';
 
 interface ProjectPrivacyControlsProps {
   projectId: string;
@@ -78,34 +79,12 @@ export default function ProjectPrivacyControls({
   }
 
   return (
-    <div
-      className="card"
-      style={{
-        borderColor: 'var(--peri-bg)',
-        padding: 'var(--space-4)',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-          marginBottom: 12,
-        }}
-      >
-        <div>
-          <p className="upper" style={{ color: 'var(--peri)', marginBottom: 4 }}>
-            Privacy policy
-          </p>
-          <h3 className="h3">Project retention and visibility</h3>
-          <p className="muted text-2xs" style={{ marginTop: 4, maxWidth: '56ch' }}>
-            Operator-facing defaults for how long this project should persist, how tightly
-            collaboration is scoped, and whether read-only observer participation is allowed at all.
-          </p>
-        </div>
-      </div>
+    <details className="card">
+      <summary className={styles.policySummary}>
+        <strong>Privacy policy</strong>
+        <span>{privacyMetadata.visibility} visibility · {privacyMetadata.retention_days}d retention · {privacyMetadata.redaction_level} redaction</span>
+      </summary>
+      <div className={styles.policyBody}>
 
       <div
         style={{
@@ -253,6 +232,7 @@ export default function ProjectPrivacyControls({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </details>
   );
 }

@@ -20,6 +20,7 @@ import {
   Webhook,
 } from 'lucide-react';
 import { HashChip, Avatar, SectionHeader, PageFrame, EmptyState } from '@/components/atoms';
+import styles from './dashboard.module.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -100,143 +101,39 @@ interface StatTileProps {
 }
 
 const StatTile = ({ label, value, hint, icon: Icon, iconColor, href }: StatTileProps) => (
-  <Link href={href} style={{ textDecoration: 'none' }}>
-    <div
-      className="card"
-      style={{
-        padding: 'var(--space-4)',
-        position: 'relative',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-      }}
-    >
-      {/* Label + icon row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span
-          className="upper text-2xs"
-          style={{ letterSpacing: '0.12em' }}
-        >
-          {label}
-        </span>
-        <span
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 'var(--radius-2)',
-            background: `${iconColor}22`,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: iconColor,
-            flexShrink: 0,
-          }}
-        >
-          <Icon size={13} strokeWidth={1.8} />
-        </span>
+  <Link href={href} className={styles.statLink}>
+    <div className={`card ${styles.statCard}`}>
+      <div className={styles.statBar}>
+        <span>{label}</span>
+        <Icon size={16} strokeWidth={1.8} style={{ color: iconColor }} aria-hidden="true" />
       </div>
-
-      {/* Value */}
-      <div
-        className="num text-2xl"
-        style={{
-          
-          fontFamily: 'var(--sans)',
-          fontWeight: 700,
-          color: 'var(--fg-0)',
-          lineHeight: 1,
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        {value}
+      <div className={styles.statBody}>
+        <div className={styles.statValue}>{value}</div>
+        <div className={styles.statHint}>{hint}</div>
       </div>
-
-      {/* Hint */}
-      <div className="dim text-2xs">{hint}</div>
-
     </div>
   </Link>
 );
 
-// ── System status tile (no sparkline, pulse dot instead) ─────────────────────
-
 const SystemStatusTile = ({ isKillSwitchActive }: { isKillSwitchActive: boolean }) => {
   const color = isKillSwitchActive ? 'var(--rose)' : 'var(--mint)';
-  const label = isKillSwitchActive ? 'Kill Switch Active' : 'Operational';
-  const hint  = isKillSwitchActive ? 'All operations frozen' : 'All systems nominal';
+  const label = isKillSwitchActive ? 'Kill switch active' : 'Operational';
+  const hint = isKillSwitchActive ? 'All operations frozen' : 'All systems nominal';
 
   return (
-    <Link href="/kill-switch" style={{ textDecoration: 'none' }}>
-      <div
-        className="card"
-        style={{
-          padding: 'var(--space-4)',
-          cursor: 'pointer',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          borderColor: isKillSwitchActive ? 'var(--rose-line)' : undefined,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="upper text-2xs" style={{ letterSpacing: '0.12em' }}>System Status</span>
-          <span
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 'var(--radius-2)',
-              background: `${color}22`,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color,
-              flexShrink: 0,
-            }}
-          >
-            <Activity size={13} strokeWidth={1.8} />
-          </span>
+    <Link href="/kill-switch" className={styles.statLink}>
+      <div className={`card ${styles.statCard}`} style={isKillSwitchActive ? { borderColor: 'var(--rose-line)' } : undefined}>
+        <div className={styles.statBar}>
+          <span>System status</span>
+          <Activity size={16} strokeWidth={1.8} style={{ color }} aria-hidden="true" />
         </div>
-
-        {/* Pulse dot + label */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-          <span style={{ position: 'relative', width: 10, height: 10, flexShrink: 0 }}>
-            <span
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: '50%',
-                background: color,
-                opacity: 0.35,
-                animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite',
-              }}
-            />
-            <span
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: '50%',
-                background: color,
-              }}
-            />
-          </span>
-          <span
-            className="text-lg" style={{
-              
-              fontWeight: 700,
-              color,
-              fontFamily: 'var(--sans)',
-              lineHeight: 1,
-            }}
-          >
+        <div className={styles.statBody}>
+          <div className={styles.statStatus} style={{ color }}>
+            <span className={`dot ${isKillSwitchActive ? 'dot--rose' : 'dot--mint'}`} aria-hidden="true" />
             {label}
-          </span>
+          </div>
+          <div className={styles.statHint}>{hint}</div>
         </div>
-
-        <div className="dim text-2xs">{hint}</div>
       </div>
     </Link>
   );
@@ -398,15 +295,7 @@ export const DashboardClient = ({
         sub="System overview and recent activity"
       />
 
-      {/* 4×2 stat grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-          gap: 12,
-          marginBottom: 20,
-        }}
-      >
+      <div className={styles.statsGrid}>
         {/* Row 1: contracts, messages, system status, pending */}
         <StatTile {...STATS[0]} />
         <StatTile {...STATS[1]} />
@@ -421,14 +310,7 @@ export const DashboardClient = ({
       </div>
 
       {/* Bottom 2-col layout */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
-          gap: 12,
-          alignItems: 'start',
-        }}
-      >
+      <div className={styles.lowerGrid}>
         {/* ── Recent Activity ── */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {/* Header */}
@@ -463,17 +345,7 @@ export const DashboardClient = ({
           </div>
         </div>
 
-        {/* ── Right column ── */}
-        <div className="col gap-3">
-          <div className="card" style={{ padding: 'var(--space-4)' }}>
-            <div className="col gap-2">
-              <span className="h3">Live Data Only</span>
-              <span className="dim text-xs">
-                This dashboard now shows only persisted contracts, messages, audit rows, projects, tasks, agents, and webhook delivery timestamps.
-              </span>
-            </div>
-          </div>
-
+        <div>
           <div className="card" style={{ padding: 'var(--space-4)' }}>
             <div className="col gap-1">
               <span className="upper text-2xs">Latest Webhook Delivery</span>
@@ -497,14 +369,6 @@ export const DashboardClient = ({
         </div>
       </div>
 
-      {/* Pulse dot keyframe (injected once) */}
-      <style>{`
-        @keyframes ping {
-          0%   { transform: scale(1);   opacity: 0.35; }
-          75%  { transform: scale(2.2); opacity: 0; }
-          100% { transform: scale(2.2); opacity: 0; }
-        }
-      `}</style>
     </PageFrame>
   );
 };

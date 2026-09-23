@@ -8,11 +8,11 @@ import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
 import { dotClassForTone, statusTone } from '@/lib/status-tone';
 
-const priorityOptions: { id: TaskPriority; label: string; icon: string; varColor: string }[] = [
-  { id: 'urgent', label: 'Urgent', icon: '🔴', varColor: 'var(--rose)' },
-  { id: 'high',   label: 'High',   icon: '🟠', varColor: 'var(--amber)' },
-  { id: 'medium', label: 'Medium', icon: '🔵', varColor: 'var(--peri)' },
-  { id: 'low',    label: 'Low',    icon: '⚪', varColor: 'var(--fg-3)' },
+const priorityOptions: { id: TaskPriority; label: string; varColor: string }[] = [
+  { id: 'urgent', label: 'Urgent', varColor: 'var(--rose)' },
+  { id: 'high',   label: 'High',   varColor: 'var(--amber)' },
+  { id: 'medium', label: 'Medium', varColor: 'var(--peri)' },
+  { id: 'low',    label: 'Low',    varColor: 'var(--fg-3)' },
 ];
 
 // ----- Inline Editable Title -----
@@ -54,7 +54,7 @@ function EditableTitle({
         className="h1"
         style={{
           cursor: 'pointer',
-          marginBottom: 12,
+          marginBottom: 0,
           padding: '4px 6px',
           marginLeft: -6,
           borderRadius: 'var(--radius-2)',
@@ -85,7 +85,7 @@ function EditableTitle({
         fontWeight: 600,
         color: 'var(--fg-0)',
         letterSpacing: '-0.02em',
-        marginBottom: 12,
+        marginBottom: 0,
         background: 'var(--bg-2)',
         borderRadius: 'var(--radius-2)',
         padding: '4px 6px',
@@ -563,24 +563,14 @@ function PriorityPicker({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
+        className="pill"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'transparent',
-          border: 'none',
-          padding: '4px 8px',
-          marginLeft: -8,
-          borderRadius: 'var(--radius-2)',
           cursor: 'pointer',
           color: current.varColor,
-          transition: 'background 0.1s',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
-        <span>{current.icon}</span>
-        <span className="text-xs" style={{ fontWeight: 500 }}>{current.label}</span>
+        <span className="dot" style={{ background: current.varColor }} />
+        <span>{current.label} priority</span>
       </button>
 
       {open && (
@@ -629,7 +619,7 @@ function PriorityPicker({
               onMouseEnter={e => { if (p.id !== value) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
               onMouseLeave={e => { if (p.id !== value) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
             >
-              <span>{p.icon}</span>
+              <span className="dot" style={{ background: p.varColor }} />
               <span style={{ fontWeight: 500 }}>{p.label}</span>
               {p.id === value && (
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
