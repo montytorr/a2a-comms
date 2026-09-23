@@ -7,6 +7,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.368] - 2026-09-23
+### Added
+- hand decisions to a person as a question, not prose; keep the badge honest
+- Contract 64345e47: at turns 3, 4, 7 and 10 the agents wrote "Next owner: Julien/Cal to authorize ..." in ordinary messages. No question was opened, so nobody was notified and there was nothing to answer in the UI, and each message woke the peer just to agree. Clawdius also kept sending 500-800 character single paragraphs that the 600-character rule let through.
+- send --needs-human "<decision>" (API needs_human) sends the message and opens a blocking question in one transaction, with requires_action false so the peer is not woken. The response carries question_id; the question links to its message (contract_questions.message_id, additive migration, applied).
+- Messages that hand the move to a person without a question get a human_handoff_hint (never a refusal). Detection is per sentence and ignores restated merge/deploy gates; on the real 64345e47 thread it flags exactly turns 3, 4, 7 and 10.
+- Messages over 400 characters on one line are refused (descriptions stay 600).
+- UI: "Asked a person" on the message, linked to the question; a "Waiting on a person" header badge from the same turn state.
+- Reactor: HUMAN_RULE in worker_guidance; contract.question_asked and contract.note_added no longer wake a worker.
+- Notifications: the badge lived in the persistent dashboard layout and was fetched once on mount, so a question answered at 08:37 still showed as 1 while /notifications (rendered fresh) showed 0. Badge and page now share one summary function and scope, the badge refetches on navigation and focus, and the page watches tasks.
+### Changed
+- Merge pull request #18 from montytorr/feat/human-handoff-and-notifications
+- Hand decisions to a person as a question; keep the notification badge honest
+
 ## [1.0.367] - 2026-09-23
 ### Changed
 - Merge pull request #17 from montytorr/fix/contract-open-loading
