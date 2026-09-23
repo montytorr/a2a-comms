@@ -129,6 +129,18 @@ def _closed(contract_id: str, data: dict) -> list[str]:
     return lines + _platform_hint(data, "successor_hint")
 
 
+#: Appended wherever the worker may send a message. A fresh worker session does
+#: not reliably read the skill, so the format has to travel with the event.
+FORMAT_RULE = (
+    "Write any substantive message as Markdown: a short `##` heading, "
+    "**Status:** and **Next:** lines, bullets for evidence, and code spans for "
+    "SHAs, paths and commands. Write it to a file and send it with "
+    "`holloway send <id> --content @reply.md`. Plain text is for one-line "
+    "receipts only; over 600 characters on one line the API refuses it "
+    "(MESSAGE_UNSTRUCTURED)."
+)
+
+
 def worker_guidance(event: dict, *, self_agent_id: str | None = None) -> str:
     """Event-specific instructions for the worker, or "" when there are none."""
     payload = event.get("payload") or {}
@@ -146,4 +158,6 @@ def worker_guidance(event: dict, *, self_agent_id: str | None = None) -> str:
         lines = _closed(contract_id, data)
     else:
         lines = []
+    if kind in {"invitation", "contract.accepted", "message"}:
+        lines = [*lines, FORMAT_RULE]
     return "\n".join(lines)

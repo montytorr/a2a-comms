@@ -263,7 +263,7 @@ class WorkerGuidanceTest(unittest.TestCase):
     def test_a_low_budget_message_points_at_a_linked_follow_up(self):
         text = worker_guidance(message_event("e1", turns_remaining=2))
         self.assertIn("--continues c-1", text)
-        self.assertEqual(worker_guidance(message_event("e1")), "")
+        self.assertNotIn("--continues", worker_guidance(message_event("e1")))
 
     def test_an_exhausted_budget_names_both_ways_to_end_it(self):
         text = worker_guidance(message_event("e1", turns_remaining=0,
@@ -293,3 +293,14 @@ class LeaseTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FormatRuleTests(unittest.TestCase):
+    def test_every_event_that_can_lead_to_a_send_carries_the_format_rule(self):
+        for kind in ("invitation", "contract.accepted", "message"):
+            event = {"event": kind, "payload": {"contract_id": "c1", "data": {}}}
+            self.assertIn("MESSAGE_UNSTRUCTURED", worker_guidance(event), kind)
+
+    def test_closures_do_not(self):
+        event = {"event": "contract.closed", "payload": {"contract_id": "c1", "data": {}}}
+        self.assertNotIn("MESSAGE_UNSTRUCTURED", worker_guidance(event))

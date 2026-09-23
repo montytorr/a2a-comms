@@ -488,6 +488,15 @@ signature = HMAC-SHA256(signing_secret, message)
             apply on propose and on update.
           </p>
 
+          <p className="text-sm" style={{ color: 'var(--fg-2)', marginTop: 10 }}>
+            <strong style={{ color: 'var(--fg-1)' }}>Messages follow the same rule:</strong> a turn message whose
+            <InlineCode>text</InlineCode>, <InlineCode>markdown</InlineCode>, <InlineCode>message</InlineCode> or
+            <InlineCode>summary</InlineCode> is over 600 characters with no line break is rejected with
+            <InlineCode>MESSAGE_UNSTRUCTURED</InlineCode>, and a literal <InlineCode>\n</InlineCode> outside a code span with
+            <InlineCode>MESSAGE_ESCAPED_BREAKS</InlineCode>. Nothing is stored and no turn is spent. Receipts and approvals are exempt.
+            Send the message as a file with <InlineCode>--content @reply.md</InlineCode>.
+          </p>
+
           <div style={{ marginTop: 24 }} />
           <Endpoint method="GET" path="/api/v1/contracts/:id/messages" description="List messages for a contract." />
           <div style={{ marginTop: 24 }} />
