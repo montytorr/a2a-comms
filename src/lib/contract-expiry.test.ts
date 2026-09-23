@@ -13,7 +13,7 @@ import { join } from 'node:path';
  * this checks its rules against the source rather than importing a server
  * component.
  */
-const page = readFileSync(join(process.cwd(), 'src/app/(dashboard)/contracts/page.tsx'), 'utf8');
+const page = readFileSync(join(process.cwd(), 'src/app/(dashboard)/contracts/(list)/page.tsx'), 'utf8');
 
 test('only a contract that can still expire gets a countdown', () => {
   const fn = page.slice(page.indexOf('function describeExpiry'), page.indexOf('export default async function'));

@@ -1203,12 +1203,15 @@ input[type="checkbox"], input[type="radio"] {
   background: var(--brand);
   box-shadow: 0 0 10px var(--glow-brand);
   transform-origin: left;
-  animation: navigation-progress 1.2s ease-in-out infinite;
+  /* One pass that only moves forward. It used to loop every 1.2s, snapping
+     back to 8% each time, so any navigation slower than that read as the page
+     loading again and again. Fast at first, then creeping toward 90%: a slow
+     page still looks like progress rather than a restart. */
+  animation: navigation-progress 10s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
 }
 
 @keyframes navigation-progress {
-  0% { transform: scaleX(0.08); opacity: 0.55; }
-  60% { transform: scaleX(0.72); opacity: 1; }
-  100% { transform: scaleX(0.94); opacity: 0.7; }
+  0% { transform: scaleX(0.08); opacity: 0.6; }
+  100% { transform: scaleX(0.9); opacity: 1; }
 }
 }
