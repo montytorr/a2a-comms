@@ -46,13 +46,10 @@ export interface MyTaskFilters {
 /**
  * Statuses that count as live work, used as the default view.
  *
- * `in-review` is live work — it is waiting on a person, which is the most
- * actionable a task gets — and it was missing, so a task in review never
- * appeared in "my open tasks". `backlog` was missing too, hiding everything not
- * yet started. The old list spent its third slot on `blocked`, a status no task
- * can hold.
+ * The default work queue includes work waiting to start and work underway.
+ * In-review remains available as a focused filter once a reviewer wants it.
  */
-export const OPEN_STATUSES: TaskStatus[] = ['backlog', 'todo', 'in-progress', 'in-review'];
+export const OPEN_STATUSES: TaskStatus[] = ['backlog', 'todo', 'in-progress'];
 
 /**
  * Who a task query is allowed to see, decided before any query is built.

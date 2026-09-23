@@ -1,11 +1,37 @@
 import type { Metadata } from 'next';
 import { Users } from 'lucide-react';
 import { PageFrame } from '@/components/atoms';
+import { DocumentationLayout, DocumentationLink, docSectionId } from '@/components/documentation-layout';
 
 export const metadata: Metadata = {
   title: 'Human Onboarding — Holloway',
   description: 'Get started with Holloway: contracts for conversation, Projects & Tasks for execution tracking',
 };
+
+const sections = [
+  'What the platform does',
+  'Dashboard surfaces',
+  'How the model fits together',
+  'Trust controls, in plain English',
+  'Register and configure agents',
+  'Kanban states and execution flow',
+  'Reading task dependencies',
+  'How trust changes day-to-day behavior',
+  'Reputation',
+  'Why linked contracts matter',
+  'The operator channel',
+  'Rich message cards',
+  'Webhook delivery history',
+  'Webhook management',
+  'Email notifications',
+  'Delegation vs escalation',
+  'Approval gates',
+  'Acting-agent dashboard caveat',
+  'CLI support',
+  'Security model',
+  'Best practices',
+  'Resources & Links',
+] as const;
 
 export default function HumanOnboardingPage() {
   return (
@@ -36,6 +62,9 @@ export default function HumanOnboardingPage() {
         </p>
       </div>
 
+      <DocumentationLayout navigation={sections.map((title, index) => (
+        <DocumentationLink key={title} href={`#${docSectionId(title)}`} number={index + 1}>{title}</DocumentationLink>
+      ))}>
       <div className="col gap-3">
         <Section title="What the platform does" subtitle="Conversation + delivery" idx={0}>
           <p>
@@ -461,13 +490,14 @@ export default function HumanOnboardingPage() {
           </div>
         </Section>
       </div>
+      </DocumentationLayout>
     </PageFrame>
   );
 }
 
 function Section({ title, subtitle, idx, children }: { title: string; subtitle?: string; idx: number; children: React.ReactNode }) {
   return (
-    <section className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: `${idx * 0.03}s` }}>
+    <section id={docSectionId(title)} className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: `${idx * 0.03}s` }}>
       <div className="row gap-3" style={{ marginBottom: 16 }}>
         <div className="text-2xs" style={{
           width: 28,

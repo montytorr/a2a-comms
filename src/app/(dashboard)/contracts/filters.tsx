@@ -5,7 +5,7 @@ import { useCallback, useRef, useState, useTransition } from 'react';
 import type { ContractStatus } from '@/lib/types';
 import styles from './contracts-list.module.css';
 
-const statuses: Array<ContractStatus | 'all'> = ['all', 'proposed', 'active', 'closed', 'rejected', 'expired', 'cancelled'];
+const statuses: Array<ContractStatus | 'all' | 'open'> = ['open', 'all', 'proposed', 'active', 'closed', 'rejected', 'expired', 'cancelled'];
 const sortOptions = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
@@ -25,7 +25,7 @@ export default function ContractFilters({ current }: { current: string }) {
     (updates: Record<string, string>) => {
       const params = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(updates)) {
-        if (!value || value === 'all' || (key === 'sort' && value === 'newest')) {
+        if (!value || (key === 'status' && value === 'open') || (key === 'sort' && value === 'newest')) {
           params.delete(key);
         } else {
           params.set(key, value);
@@ -55,7 +55,7 @@ export default function ContractFilters({ current }: { current: string }) {
             className={current === status ? 'active' : ''}
             onClick={() => updateParams({ status })}
           >
-            {status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
+            {status === 'open' ? 'Open' : status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>

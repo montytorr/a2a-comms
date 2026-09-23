@@ -23,8 +23,8 @@ const statuses = [
 ];
 
 const scopes = [
-  { value: 'me', label: 'Assigned to me' },
   { value: 'all', label: 'Everyone' },
+  { value: 'me', label: 'Assigned to me' },
 ];
 
 interface TaskFiltersProps {
@@ -38,9 +38,9 @@ export default function TaskFilters({ projects }: TaskFiltersProps) {
   const update = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      // 'open' and 'me' are the defaults, so they stay out of the URL — a
+      // 'open' and 'all' are the defaults, so they stay out of the URL — a
       // shared link then carries only what was deliberately changed.
-      if (!value || value === 'open' || (key === 'assignee' && value === 'me') || value === 'any') {
+      if (!value || value === 'open' || (key === 'assignee' && value === 'all') || value === 'any') {
         params.delete(key);
       } else {
         params.set(key, value);
@@ -67,7 +67,7 @@ export default function TaskFilters({ projects }: TaskFiltersProps) {
         className="cp-select text-sm"
         style={{ width: 'auto', minWidth: '10rem' }}
         aria-label="Filter by assignee"
-        value={searchParams.get('assignee') || 'me'}
+        value={searchParams.get('assignee') || 'all'}
         onChange={(e) => update('assignee', e.target.value)}
       >
         {scopes.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
