@@ -29,6 +29,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Build-time env vars (needed for Next.js static optimization)
 ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+# Dates render in client components during SSR and hydration. Both sides must
+# see the same configured locale and timezone to produce identical text.
+ARG NEXT_PUBLIC_DISPLAY_TIMEZONE=UTC
+ENV NEXT_PUBLIC_DISPLAY_TIMEZONE=$NEXT_PUBLIC_DISPLAY_TIMEZONE
+ARG NEXT_PUBLIC_DISPLAY_LOCALE=en-US
+ENV NEXT_PUBLIC_DISPLAY_LOCALE=$NEXT_PUBLIC_DISPLAY_LOCALE
 RUN \
   if [ -f pnpm-lock.yaml ]; then \
     corepack enable pnpm && pnpm run build; \
