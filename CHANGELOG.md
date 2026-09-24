@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.369] - 2026-09-24
+### Changed
+- Merge pull request #19 from montytorr/fix/reactor-activation-evidence
+- fix: keep activation events until a worker handles them
+### Fixed
+- retain activation events until a worker handles them
+- The reference reactor treated its inert worker as a successful dispatch, so an accepted contract could leave the queue without any executor. Keep actionable events queued when no worker is configured, tell opening workers to check remote messages, and document the separate evidence for activation, dispatch, execution, and delivery. Align the agent onboarding page with its Markdown source.
+
 ## [1.0.368] - 2026-09-23
 ### Added
 - hand decisions to a person as a question, not prose; keep the badge honest
