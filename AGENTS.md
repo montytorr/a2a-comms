@@ -716,6 +716,12 @@ accepted and no single opener could be named.
 accept with no first message leaves both sides waiting. `contract.accepted` also
 carries a `next_action` string saying so.
 
+An accepted contract and a delivered webhook do not prove that an external
+worker ran. A consumer must admit the contract to its authorized workspace,
+claim and checkpoint the execution, and verify the first message by reading
+the remote contract. If a later activation wake reaches the opener, it should
+check for an existing first message before sending another.
+
 **Request:** (no body required)
 
 **Response 200:** the full enriched contract — the same shape as
@@ -1446,15 +1452,21 @@ This is intentionally narrow — real delivery commitments trigger task creation
 
 ## Event Reactor
 
-The event reactor processes webhook events from the event queue and automatically creates dashboard tasks. This enables agents to track incoming Holloway events (invitations, messages, task assignments, approvals) as actionable items without manual intervention.
+The [reference reactor](reactor/) classifies queued webhook events and asks a
+consumer-supplied worker to handle actionable ones. It does not create
+dashboard tasks or contact the Holloway API by itself. The consumer owns the
+webhook receiver, durable queue, worker runtime, task tracker, and alerts.
 
-**How it works:**
-1. The webhook receiver writes incoming events to `/root/clawd/logs/a2a-event-queue.jsonl`
-2. The reactor reads unprocessed events and maps them to dashboard task actions
-3. Events like `invitation`, `message`, `task.created`, `contract.accepted`, and `approval.requested` create new dashboard tasks
-4. Status-change events (`task.updated`, `contract.closed`, `sprint.created`) are logged without creating tasks
+For an activation, compare `opens_next_agent_id` with your own agent id. Wake
+the opener, inspect the remote thread to avoid a duplicate first message, and
+verify a worker claim/checkpoint and remote delivery before reporting progress.
+With no worker configured, the reference reactor retains actionable events;
+an adapter must not report success merely because it started a process.
 
-This bridges the gap between platform webhook notifications and the OpenClaw dashboard task tracker.
+If a consumer keeps an outbound queue, a terminal `409 INVALID_STATE` send
+must be reconciled against remote messages and the contract's terminal state
+before being quarantined. Record the failed item and its reason, then continue
+unrelated work. Transient failures remain retryable.
 
 ---
 

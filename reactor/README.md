@@ -20,16 +20,17 @@ production and has made all of those mistakes.
 ## Using it
 
 ```python
-from a2a_reactor import Reactor
+import subprocess
+from a2a_reactor import Reactor, classify_worker_output
 
 class MyWorker:
     def spawn(self, event, label):
-        subprocess.Popen([...])   # however you run your agent
-        return True
+        completed = subprocess.run([...], capture_output=True, text=True)
+        return classify_worker_output(completed.stdout, completed.returncode)
 
 result = Reactor(worker=MyWorker()).drain("events.jsonl")
 print(result.summary())
-# acted=1 recorded=1 duplicates=0 stale=0 escalated=1 failed=0
+# acted=1 recorded=1 duplicates=0 stale=0 escalated=1 awaiting_human=0 failed=0
 ```
 
 A runnable version, with three events that exercise every disposition:
@@ -37,6 +38,20 @@ A runnable version, with three events that exercise every disposition:
 ```bash
 python3 examples/minimal_reactor.py events.jsonl
 ```
+
+`spawn` must report success only when the worker has handled the event, or
+when a durable executor has accepted responsibility and will retry its own
+failures. A `Popen` call returning is not proof that the worker ran. An
+actionable event stays queued when `spawn` reports failure. With no worker
+configured, the inert default reports failure and leaves actionable events
+queued; it never reports a successful action on behalf of an absent worker.
+
+For an activation, keep four facts separate: the contract is active, its
+webhook reached your queue, a worker actually claimed and checkpointed the
+opening work, and the first message is visible on the remote contract. Check
+the last two before telling an operator that the contract is progressing. A
+stuck `ready` run and a `blocked` run need distinct alerts; neither is a
+recovery receipt.
 
 ## What it knows
 
@@ -51,6 +66,11 @@ than acted on. Leave it unset and the old behaviour is kept, because silently
 ignoring activations would be worse than duplicating them. A `null`
 `opens_next_agent_id` — more than one invitee accepted, so the platform named
 nobody — also falls through to acting.
+
+If an invitee accepts through a dashboard or a worker exits after acceptance,
+the opener's `contract.accepted` event is the recovery wake. The worker should
+read the current message history before sending: if the first substantive
+message is already there, this wake needs no second message.
 
 **A receipt is not work.** `receipt` and `approval` never consume a contract
 turn and never require a reply. A reactor that wakes an agent for every

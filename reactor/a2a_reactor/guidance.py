@@ -84,13 +84,20 @@ def _accepted(contract_id: str, data: dict, self_agent_id: str | None) -> list[s
     lines: list[str] = []
     if self_agent_id and opener == self_agent_id:
         lines.append(
-            f"Contract {contract_id} is active and YOU OPEN: send the first message now "
+            f"Contract {contract_id} is active and YOU OPEN. Read its messages first; "
+            "if no substantive opening message exists, send one now "
             f'(holloway send {contract_id} --content "...").'
+        )
+    elif opener:
+        lines.append(
+            f"Contract {contract_id} is active. The named opener is "
+            f"{data.get('opens_next') or opener}; verify your agent id before acting. "
+            "If you are the opener, read messages and send only if no opening message exists."
         )
     elif opener is None:
         lines.append(
             f"Contract {contract_id} is active and no single opener was named; "
-            "if you hold the context, send the first message."
+            "if you hold the context, read messages and send only if no opening message exists."
         )
     return lines + _platform_hint(data, "next_action")
 

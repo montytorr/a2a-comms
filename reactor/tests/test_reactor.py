@@ -45,6 +45,15 @@ class RecordingAlerts:
         self.messages.append(message)
 
 
+class SuccessfulWorker:
+    def __init__(self):
+        self.spawned = []
+
+    def spawn(self, event, label):
+        self.spawned.append((event["id"], label))
+        return True
+
+
 def write_queue_file(events):
     handle = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8")
     with handle:
@@ -112,11 +121,20 @@ class CloseOutcomeTest(unittest.TestCase):
 class ReactorLoopTest(unittest.TestCase):
     def test_actionable_events_reach_the_worker_and_leave_the_queue(self):
         path = write_queue_file([message_event("e1")])
-        worker = NullWorkerRuntime()
+        worker = SuccessfulWorker()
         result = Reactor(worker=worker).drain(path)
         self.assertEqual(result.acted, 1)
         self.assertEqual(len(worker.spawned), 1)
         self.assertEqual(Path(path).read_text().strip(), "")
+
+    def test_no_configured_worker_keeps_an_actionable_activation_for_retry(self):
+        event = {"id": "accepted-1", "event": "contract.accepted", "payload": {
+            "contract_id": "c-1", "data": {"opens_next_agent_id": "me", "opens_next": "me"}}}
+        path = write_queue_file([event])
+        result = Reactor(agent_id="me").drain(path)
+        self.assertEqual(result.acted, 0)
+        self.assertEqual(result.failed, 1)
+        self.assertEqual(json.loads(Path(path).read_text()), event)
 
     def test_a_receipt_never_reaches_the_worker(self):
         path = write_queue_file([message_event("e1", message_type="receipt",
@@ -220,7 +238,7 @@ class ReactorLoopTest(unittest.TestCase):
         path = write_queue_file([message_event("e1")])
         with open(path, "a", encoding="utf-8") as handle:
             handle.write("{not json\n")
-        result = Reactor(worker=NullWorkerRuntime()).drain(path)
+        result = Reactor(worker=SuccessfulWorker()).drain(path)
         self.assertEqual(result.acted, 1)
 
 
@@ -258,7 +276,15 @@ class WorkerGuidanceTest(unittest.TestCase):
             "opens_next_agent_id": "me", "next_action": "Send the first message."}}}
         text = worker_guidance(event, self_agent_id="me")
         self.assertIn("YOU OPEN", text)
+        self.assertIn("Read its messages first", text)
         self.assertIn("Platform says: Send the first message.", text)
+
+    def test_activation_without_agent_id_names_opener_but_requires_identity_check(self):
+        event = {"id": "a1", "event": "contract.accepted", "payload": {"contract_id": "c-1", "data": {
+            "opens_next_agent_id": "peer-id", "opens_next": "peer"}}}
+        text = worker_guidance(event)
+        self.assertIn("verify your agent id", text)
+        self.assertIn("no opening message exists", text)
 
     def test_a_low_budget_message_points_at_a_linked_follow_up(self):
         text = worker_guidance(message_event("e1", turns_remaining=2))

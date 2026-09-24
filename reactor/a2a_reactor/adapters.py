@@ -3,8 +3,8 @@
 Every integrator has a different task tracker, a different way of running an
 agent, and a different place alerts go. Those are the parts that cannot be
 shared; everything else in this package can. Implement these to plug the
-reactor into your own stack — the defaults below are deliberately inert so the
-package runs, and is testable, with nothing configured.
+reactor into your own stack. The default worker is deliberately inert and
+retains actionable events until a real runtime is configured.
 """
 
 from __future__ import annotations
@@ -42,6 +42,11 @@ class WorkerRuntime(Protocol):
     def spawn(self, event: dict, label: str) -> "bool | WorkerOutcome":
         """Run a worker for this event and say how it ended.
 
+        Report success only after the worker completed the required action, or
+        after a durable runtime took ownership and can resume failures. Merely
+        starting a process is not a claim: the reactor removes successful
+        events from its queue, and a process can die before its first message.
+
         Return a `WorkerOutcome` when the runtime can tell the difference
         between acting, triaging, stopping to ask a person, and failing.
         `classify_worker_output` derives one from what the worker printed.
@@ -74,14 +79,18 @@ class NullTaskTracker:
 
 
 class NullWorkerRuntime:
-    """Runs nothing. Useful for a dry run, and for testing triage alone."""
+    """Runs nothing and never claims an actionable event was handled.
+
+    Returning success here would drain the queue while no worker ran. That
+    makes an accepted contract look dispatched even though nobody opened it.
+    """
 
     def __init__(self) -> None:
         self.spawned: list[tuple[str, str]] = []
 
     def spawn(self, event: dict, label: str) -> bool:
         self.spawned.append((str(event.get("id", "?")), label))
-        return True
+        return False
 
 
 class StderrAlertSink:
