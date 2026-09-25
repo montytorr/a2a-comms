@@ -7,6 +7,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.374] - 2026-09-25
+### Changed
+- replace the board with grouped lists, and delete the privacy fields nothing read
+- ## The board is gone
+- Six columns needed 1,880px against 1,144px of content width, so a third of the board was always off-screen with no cue that it scrolled. Every column grew to its own content, so 62 done tasks stood beside four empty ones. And a card 300px wide and up to 380px tall showed one sentence.
+- A list gives every task the page's full width, keeps the workflow order the columns encoded, and scans vertically like everything else in the app. One component now serves both the project page and /tasks, which was a flat ungrouped list of its own.
+- Groups with nothing in them are hidden — six headers over nothing is the board's problem wearing a different hat — so creating work lives in a "New task" button that does not depend on an empty group existing to host it.
+- This was the only board in the product. The prose that advertised one is updated across the API docs, security and onboarding pages, SKILL.md, README.md, ONBOARDING-*.md, docs/cli.md, concepts.md and glossary.md.
+- ## The project page
+- The description sat in a ~530px column on a 2,000px page with the entire right half empty, and the board pushed everything else below the fold. Work now takes the left with the page's width; the description and access control sit in a context rail on the right.
+- ## Ten of eleven privacy fields are gone
+- Cal: "if some things are not enforced or used, then remove them from the UI and all code". Traced in HOL-143: of eleven privacy fields across agents and projects, exactly one changes behaviour. `allow_observer_access` redirects an observer off the project page and answers 403 PRIVACY_POLICY_BLOCKED. The other ten were normalized, stored, displayed and echoed while nothing anywhere branched on any of them — no purge job, no export gate, no redaction pass, in the app or the reactor — and their editors were never once submitted in six months of audit log.
+- Removed: all five agent privacy fields, and visibility, retention_days, redaction_level and allow_exports on projects. With them go the agent privacy editor, updateAgentPrivacy and its audit action, normalizeAgentPrivacyMetadata, DEFAULT_AGENT_PRIVACY_METADATA, AgentPrivacyMetadata, the lifecycle create and update paths, the API select columns and the PATCH field, and the CSS that dressed them.
+- HOLC-11 says this vocabulary is deliberate groundwork for the hosted product, so this is a trade made with eyes open: the database columns are untouched and keep every value they held, so a field returns by being read again once something enforces it.
+- Kept: trust_tier and trust_notes — advisory but human-curated, and three of four agents carry real hand-written notes; being read by a person is a use. And the six enforced trust-policy gates.
+- ## Two asymmetries fixed on the way
+- GET /api/v1/projects returned the raw column while the detail route returned the normalized one, so the list and the detail of the same project would have disagreed the moment a field stopped being honoured. Both normalize now.
+- retention_mode was in the migration default and the backfill and in no code at all — never read, never written, silently dropped by the normalizer on every save. It is gone from the type as well.
+- Verified: eslint 0 problems, 455/455 tests, build compiles, geometry ratchet passes, and all five affected routes rendered 200 with zero console errors against production data before this was merged.
+- Cairn: HOL-145
+- Merge pull request #24 from montytorr/feat/task-lists-and-privacy-removal
+- refactor: replace the board with grouped lists, and delete the privacy fields nothing read
+
 ## [1.0.373] - 2026-09-25
 ### Changed
 - separate enforcement from intent, and delete what nothing reads
