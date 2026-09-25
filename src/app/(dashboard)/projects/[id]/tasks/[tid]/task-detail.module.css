@@ -78,8 +78,12 @@
    ────────────────────────────────────────────── */
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-  grid-template-areas: 'work context';
+  /* Context left, work right — the same order as the contract detail page.
+     Reading order is unaffected: the title and its state badges are in a
+     full-width header above this grid, and <main> still precedes <aside> in
+     the markup. */
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  grid-template-areas: 'context work';
   align-items: start;
   gap: var(--space-6);
 }

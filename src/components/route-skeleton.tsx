@@ -2,13 +2,10 @@ import styles from './route-skeleton.module.css';
 
 type Shape = 'overview' | 'analytics' | 'list' | 'detail' | 'document';
 
-export default function RouteSkeleton({ label = 'page', shape = 'list', rail = 'left' }: {
+export default function RouteSkeleton({ label = 'page', shape = 'list' }: {
   label?: string;
   shape?: Shape;
-  /** Which side the context rail sits on in the route being stood in for. */
-  rail?: 'left' | 'right';
 }) {
-  const detailClass = rail === 'right' ? `${styles.detail} ${styles.detailRailRight}` : styles.detail;
   return (
     <div className={styles.shell} aria-busy="true" aria-label={`Loading ${label}`} role="status">
       <div className={styles.eyebrow} />
@@ -25,7 +22,7 @@ export default function RouteSkeleton({ label = 'page', shape = 'list', rail = '
           </div>
         </>
       ) : shape === 'detail' ? (
-        <div className={detailClass}>
+        <div className={styles.detail}>
           <div className={styles.rail} />
           <div className={styles.detailBody}>
             <div className={styles.panel} />
@@ -33,7 +30,7 @@ export default function RouteSkeleton({ label = 'page', shape = 'list', rail = '
           </div>
         </div>
       ) : shape === 'document' ? (
-        <div className={detailClass}>
+        <div className={styles.detail}>
           <div className={styles.rail} />
           <div className={styles.document} />
         </div>
