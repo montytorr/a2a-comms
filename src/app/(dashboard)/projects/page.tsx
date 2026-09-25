@@ -5,8 +5,7 @@ import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { ProjectInvitationStatus, ProjectStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
-import { formatDate, formatRelative } from '@/lib/format-date';
-import MarkdownPreview from '@/components/markdown-preview';
+import { formatRelative } from '@/lib/format-date';
 import ProjectFilters from './filters';
 import InvitationInbox from './invitation-inbox';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
@@ -17,10 +16,22 @@ import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import { ProgressBar, PageFrame, EmptyState } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
 import { colorVarForTone, pillClassForTone } from '@/lib/status-tone';
-import { Users, Layers, Eye, Plus, FolderKanban } from 'lucide-react';
+import { Users, Layers, Plus, FolderKanban } from 'lucide-react';
 import styles from './projects-list.module.css';
 
 export const dynamic = 'force-dynamic';
+
+/* A row shows one line of the description, so the markdown has to become
+   text first — otherwise a heading rendered at h2 size inside a 40px row,
+   which is what the card grid was doing. */
+function plainSummary(markdown: string) {
+  return markdown
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/[#>*_`~\[\]()]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160);
+}
 
 export default async function ProjectsPage({
   searchParams,
@@ -268,7 +279,7 @@ async function renderProjectsPage({
         <ProjectFilters current={statusFilter} />
 
         {/* Project cards */}
-        <div className={styles.grid}>
+        <div className={`card ${styles.list}`}>
           {rows.length === 0 ? (
             <div className="card" style={{ gridColumn: '1 / -1' }}>
               <EmptyState
@@ -291,93 +302,46 @@ async function renderProjectsPage({
               const isComplete = project.status === 'completed';
 
               return (
-                <Link
-                  key={project.id}
-                  href={`/projects/${project.id}`}
-                  className={`card ${styles.projectCard}`}
-                >
-                  <div className={styles.cardBar}>
-                    <span>Updated {formatRelative(project.updated_at || project.created_at)}</span>
-                    <StatusBadge domain="project" status={project.status} size="lg" />
-                  </div>
-                  <div className={styles.cardBody}>
-
-                  {/* Title */}
-                  <h2 className={styles.cardTitle}>{project.title}</h2>
-                  {project.description && (
-                    <div className="dim text-xs" style={{
-                      
-                      marginBottom: 14,
-                      lineHeight: 1.5,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}>
-                      <MarkdownPreview content={project.description} className="" />
-                    </div>
-                  )}
-
-                  {/* Tags */}
-                  <div className="row gap-1" style={{ flexWrap: 'wrap', marginBottom: 14 }}>
-                    {activeSprint && (
-                      <span className={`${pillClassForTone('neutral')} text-2xs`}>{activeSprint}</span>
+                <Link key={project.id} href={`/projects/${project.id}`} className={styles.row}>
+                  <span className={styles.rowMain}>
+                    <span className={styles.rowTitleLine}>
+                      <StatusBadge domain="project" status={project.status} dot="static" size="sm" />
+                      <span className={styles.rowTitle}>{project.title}</span>
+                    </span>
+                    {project.description && (
+                      <span className={styles.rowDesc}>{plainSummary(project.description)}</span>
                     )}
+                  </span>
+
+                  <span className={styles.rowProgress} title={`${stats.done} of ${stats.total} tasks done`}>
+                    <ProgressBar
+                      value={stats.done}
+                      max={Math.max(stats.total, 1)}
+                      color={colorVarForTone(isComplete ? 'mint' : 'amber')}
+                      height={3}
+                    />
+                    <span className={styles.rowProgressText}>{stats.done}/{stats.total}</span>
+                  </span>
+
+                  <span className={styles.rowMeta}>
+                    {activeSprint && <span className={`${pillClassForTone('neutral')} text-2xs`}>{activeSprint}</span>}
                     {privacyMetadata.allow_observer_access === false && (
                       <span className={`${pillClassForTone('amber')} text-2xs`}>observers restricted</span>
                     )}
-                  </div>
-
-                  {/* Progress */}
-                  {stats.total > 0 && (
-                    <div className="col gap-2" style={{ marginBottom: 14 }}>
-                      <div className="row" style={{ justifyContent: 'space-between' }}>
-                        <span className="upper text-2xs">Progress</span>
-                        <span className="mono num text-2xs" style={{ color: 'var(--fg-1)' }}>
-                          {stats.done}/{stats.total}
-                        </span>
-                      </div>
-                      <ProgressBar
-                        value={stats.done}
-                        max={stats.total}
-                        color={colorVarForTone(isComplete ? 'mint' : 'amber')}
-                        height={3}
-                      />
-                    </div>
-                  )}
-
-                  {/* Hidden invitations summary */}
-                  {canSeeInvitationSummary && hiddenPendingInvitations > 0 && (
-                    <div className="card card--inset" style={{ padding: '8px 12px', marginBottom: 14 }}>
-                      <div className="upper text-2xs">Restricted invitation summary</div>
-                      <div className="dim text-2xs" style={{ marginTop: 2 }}>
-                        {hiddenPendingInvitations} pending invitation{hiddenPendingInvitations !== 1 ? 's' : ''} hidden by trust policy
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Footer */}
-                  <div className={`row ${styles.cardFooter}`} style={{ justifyContent: 'space-between' }}>
-                    <div className="row gap-3">
-                      {access?.canSeeParticipantCounts !== false && (
-                        <>
-                          <span className="mono dim text-2xs" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <Users size={11} /> {members}
-                          </span>
-                          {observers > 0 && (
-                            <span className="mono dim text-2xs" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Eye size={11} /> {observers}
-                            </span>
-                          )}
-                        </>
-                      )}
-                      <span className="mono dim text-2xs" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Layers size={11} /> {stats.total} tasks
+                    {canSeeInvitationSummary && hiddenPendingInvitations > 0 && (
+                      <span
+                        className={`${pillClassForTone('peri')} text-2xs`}
+                        title="Restricted invitation summary: pending invitations hidden by trust policy"
+                      >
+                        {hiddenPendingInvitations} invitation{hiddenPendingInvitations === 1 ? '' : 's'} hidden
                       </span>
-                    </div>
-                    <span className="mono dim text-2xs">{formatDate(project.created_at)}</span>
-                  </div>
-                  </div>
+                    )}
+                    {access?.canSeeParticipantCounts !== false && (
+                      <span className={styles.rowStat}><Users size={11} /> {members}{observers > 0 ? ` +${observers}` : ''}</span>
+                    )}
+                    <span className={styles.rowStat}><Layers size={11} /> {stats.total}</span>
+                    <span className={styles.rowUpdated}>{formatRelative(project.updated_at || project.created_at)}</span>
+                  </span>
                 </Link>
               );
             })
