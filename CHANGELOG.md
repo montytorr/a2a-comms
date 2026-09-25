@@ -7,6 +7,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.376] - 2026-09-25
+### Changed
+- Merge pull request #26 from montytorr/fix/audit-regressions-and-backlog
+- fix: three regressions I shipped today, and the worst of what the audit found
+### Fixed
+- three regressions I shipped today, and the worst of what the audit found
+- An app-wide audit subagent reported after HOL-146 shipped. Three of its top findings were mine, from today.
+- ## My regressions
+- **"Show less" destroyed itself.** The overflow probe measured the element carrying the clamp, but the clamp class is removed when expanded — so expanding re-ran the effect against an unclamped element where scrollHeight equals clientHeight, `overflows` flipped false, and the toggle unmounted. A long project description could not be re-collapsed without a reload. It only measures while the clamp is on.
+- **Creating a task took two clicks, and the first did nothing.** ProjectTaskList's "+ New task" mounted QuickTaskForm, which starts closed and renders its own "Add task" button — so the first click swapped one button for a differently styled one. QuickTaskForm takes `defaultOpen` now, and an `onClose` so a caller owning its own trigger can reset it; the group composer gets the same through a `close` argument on renderComposer. `resetAndClose` is memoised because the click-outside effect depends on it and it now closes over `onClose`.
+- **Sticky group headers never stuck.** `.groupHead` is sticky inside `.list`, which carries `.card` and therefore `overflow: hidden` — that establishes a scroll container whose scroll offset is always 0, so the header resolved against it and never moved. `overflow: clip` keeps the corner clipping without creating a scrollport. Measured: the header now pins at 48px under the topbar instead of scrolling away at 330px.
+- ## From the audit
+- **A nested scroller on contracts/[id]** — sticky + max-height + overflow-y inside the shell's own scroller. The identical rule HOL-140 removed from the task page, and wrote a post-mortem about, left in place one page over. That rail is eight cards, so it routinely outran its cap. Released.
+- **A destructive button reachable only by mouse.** The remove-member × was `opacity: 0` flipped by onMouseEnter/onMouseLeave. opacity:0 keeps an element in the tab order, so a keyboard user landed on a focused but invisible button whose next Enter fired a member removal behind a confirm(); on touch it could not be reached at all. CSS hover on the chip, plus :focus-visible, plus always visible where there is no hover.
+- **The task composer's title input had no focus indicator** — border:none, outline:none and no cp-input class, so it missed the design system's focus replacement too. Its sibling textarea had kept its ring.
+- **`.dot--ghost` has never existed.** globals.css defines mint/amber/rose/peri only, and status-tone.ts maps neutral to a bare `dot` for exactly this reason — its comment warns against the `--${tone}` template these two sites hand-rolled. They use dotClassForTone now.
+- **`text-overflow` on two inline-flex pills**, which never applies to a flex container's anonymous text item, so agent capabilities and audit event types clipped mid-glyph with no ellipsis. The audit row also had no title, so a clipped action name was unrecoverable.
+- **Two `<main>` landmarks per document** on contracts/[id] and projects/[id] — the shell already owns that role.
+- **Stale copy** the earlier sweeps missed: "board tracking" on every unlinked contract, two onboarding references to a board, and an onboarding paragraph still advertising all eight deleted privacy fields while api-docs correctly said they were removed. The two pages contradicted each other.
+- Verified: eslint 0, 459/459 tests, build compiles, CSS modules clean in both directions, and the three regressions retested in a browser against production data — Show less survives expansion, one click reaches the title input with no stray button, and the group header sticks.
+- Cairn: HOL-147
+
 ## [1.0.375] - 2026-09-25
 ### Changed
 - Merge pull request #25 from montytorr/fix/app-wide-polish-and-inverted-null-filter
