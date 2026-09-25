@@ -1,0 +1,138 @@
+/* Hover and focus for the inline editors and their menus.
+
+   These were ten pairs of onMouseEnter/onMouseLeave handlers writing
+   element.style directly. A mouse handler cannot fire for a keyboard, so no
+   item in the status, priority, assignee or label menus had any focus
+   treatment at all: tabbing through an open menu moved an invisible cursor.
+   CSS gets :hover and :focus-visible for the same cost. */
+
+.editable {
+  cursor: text;
+  border-radius: var(--radius-2);
+  padding: var(--space-1) var(--space-2);
+  margin-inline: calc(var(--space-2) * -1);
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.editable:hover { background: var(--bg-2); }
+.editable:focus-visible {
+  outline: none;
+  background: var(--bg-2);
+  box-shadow: 0 0 0 2px var(--brand);
+}
+
+/* The title is the page's h1 and needs the same affordance without the
+   padded block's vertical drift. */
+.editableTitle { display: block; margin-bottom: 0; }
+
+.editableBody { display: block; min-height: 40px; }
+
+/* "Click to add description…" in --fg-4 italic is the exact treatment
+   EmptyState was written to replace. A description that is missing is an
+   invitation, so it reads as one. */
+.descriptionEmpty {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-3);
+  font-size: var(--text-sm);
+}
+.descriptionEmpty::before {
+  content: '+';
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius-1);
+  color: var(--fg-3);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+.editable:hover .descriptionEmpty,
+.editable:focus-visible .descriptionEmpty { color: var(--fg-1); }
+
+/* The row a rail fact's control sits on: full width, quiet until pointed at. */
+.fieldButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  margin-inline: calc(var(--space-2) * -1);
+  border: none;
+  border-radius: var(--radius-2);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.fieldButton:hover:not(:disabled) { background: var(--bg-3); }
+.fieldButton:focus-visible { outline: none; background: var(--bg-3); box-shadow: 0 0 0 2px var(--brand); }
+.fieldButton:disabled { cursor: not-allowed; }
+.fieldPlaceholder { color: var(--fg-3); font-size: var(--text-xs); }
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: var(--space-1);
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-3);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-menu, 0 8px 32px var(--scrim));
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-2);
+  background: transparent;
+  color: var(--fg-2);
+  font-size: var(--text-2xs);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.menuItem:hover { background: var(--bg-2); color: var(--fg-0); }
+.menuItem:focus-visible { outline: none; background: var(--bg-2); color: var(--fg-0); box-shadow: 0 0 0 2px var(--brand); }
+.menuItem[aria-checked='true'] { background: var(--bg-3); color: var(--brand); }
+.menuItemCheck { margin-left: auto; flex-shrink: 0; }
+
+.menuAvatarNone {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-3);
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+}
+
+/* The remove affordance on a label was opacity:0 until the 8px glyph itself
+   was hovered, so on a pill it was a target you had to already know about. */
+.labelPill { gap: var(--space-1); }
+.labelRemove {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: var(--text-2xs);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.labelPill:hover .labelRemove,
+.labelRemove:focus-visible { opacity: 1; }
+.labelRemove:focus-visible { outline: 1px solid currentColor; border-radius: var(--radius-1); }
+@media (hover: none) {
+  .labelRemove { opacity: 1; }
+}

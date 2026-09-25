@@ -7,6 +7,7 @@ import { Avatar, EmptyState } from '@/components/atoms';
 import { formatDate } from '@/lib/format-date';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import StatusBadge from '@/components/status-badge';
+import styles from './project-detail.module.css';
 import {
   BLOCKER_TONE,
   DEPENDENCY_KIND_TONE,
@@ -122,49 +123,17 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
   }, {} as Record<string, TaskRow[]>);
 
   return (
-    <div style={{ animationDelay: '0.1s' }}>
-      <div style={{
-        overflowX: 'auto',
-        overflowY: 'visible',
-        paddingBottom: 8,
-        scrollSnapType: 'x mandatory',
-        overscrollBehaviorX: 'contain',
-      }}>
-        <div style={{ display: 'flex', minWidth: 'max-content', alignItems: 'flex-start', gap: 16 }}>
+    <div>
+      <div className={styles.boardScroller}>
+        <div className={styles.boardRow}>
           {columns.map((col) => {
             const colTasks = tasksByStatus[col.id] || [];
             const colTone = statusTone('task', col.id);
 
             return (
-              <div
-                key={col.id}
-                style={{
-                  width: 'clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px)',
-                  minWidth: 'clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px)',
-                  scrollSnapAlign: 'start',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  maxHeight: 720,
-                  borderRadius: 'var(--radius-4)',
-                  border: '1px solid var(--line-1)',
-                  background: 'var(--bg-1)',
-                  padding: 'var(--space-3)',
-                }}
-              >
+              <div key={col.id} className={styles.column}>
                 {/* Column header */}
-                <div
-                  style={{
-                    marginBottom: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 8,
-                    borderRadius: 'var(--radius-3)',
-                    border: '1px solid var(--line-1)',
-                    background: 'var(--bg-2)',
-                    padding: '8px 12px',
-                  }}
-                >
+                <div className={styles.columnHead}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <span className={`${dotClassForTone(colTone)}${tonePulses(colTone) ? ' pulse' : ''}`} />
                     <span
@@ -179,8 +148,19 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                   </span>
                 </div>
 
+                {/* Creating a task is the column's primary action, so it sits
+                    at the top. It used to be the last child of an inner
+                    720px scroller, which put it under the fold of a box most
+                    people never realised could scroll. */}
+                <QuickTaskForm
+                  projectId={projectId}
+                  status={col.id}
+                  sprintId={sprintId}
+                  members={members}
+                />
+
                 {/* Task list */}
-                <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 4 }}>
+                <div className={styles.columnList}>
                   {colTasks.length === 0 && (
                     <div
                       style={{
@@ -231,23 +211,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                       <Link
                         key={task.id}
                         href={`/projects/${projectId}/tasks/${task.id}`}
-                        style={{
-                          display: 'block',
-                          borderRadius: 'var(--radius-3)',
-                          border: '1px solid var(--line-1)',
-                          background: 'var(--bg-2)',
-                          padding: 'var(--space-4)',
-                          textDecoration: 'none',
-                          transition: 'transform 0.15s, border-color 0.15s',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-2px)';
-                          (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line-strong)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
-                          (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--line-1)';
-                        }}
+                        className={styles.taskCard}
                       >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
                           {/* Top row: priority + labels + due */}
@@ -322,7 +286,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                               {blockerState && (
                                 <div
                                   style={{
-                                    borderRadius: 10,
+                                    borderRadius: 'var(--radius-2)',
                                     border: `1px solid ${lineVarForTone(BLOCKER_TONE[blockerState.tone])}`,
                                     background: surfaceVarForTone(BLOCKER_TONE[blockerState.tone]),
                                     padding: 10,
@@ -416,7 +380,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                                     <div
                                       key={group.key}
                                       style={{
-                                        borderRadius: 10,
+                                        borderRadius: 'var(--radius-2)',
                                         border: '1px solid var(--line-1)',
                                         background: 'var(--bg-0)',
                                         padding: '8px 10px',
@@ -510,12 +474,6 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                       </Link>
                     );
                   })}
-                  <QuickTaskForm
-                    projectId={projectId}
-                    status={col.id}
-                    sprintId={sprintId}
-                    members={members}
-                  />
                 </div>
               </div>
             );

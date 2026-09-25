@@ -131,10 +131,14 @@ export default function TaskComments({
   comments,
   projectId,
   taskId,
+  truncated = false,
 }: {
   comments: Comment[];
   projectId: string;
   taskId: string;
+  /** The page fetched the newest N and we render them oldest-first, so when
+   *  the cap is hit the feed opens mid-conversation. Say so. */
+  truncated?: boolean;
 }) {
   const [content, setContent] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -157,12 +161,17 @@ export default function TaskComments({
     <section className={`card animate-fade-in ${styles.shell}`} aria-labelledby="task-comments-title">
       <div className={styles.feedHeader}>
         <div>
-          <h2 id="task-comments-title" className={styles.feedTitle}>Activity & comments <span className={styles.count}>{comments.length}</span></h2>
+          <h2 id="task-comments-title" className={styles.feedTitle}>Activity &amp; comments <span className={styles.count}>{comments.length}{truncated ? '+' : ''}</span></h2>
           <p className={styles.feedSubtitle}>The decisions, handoffs, and conversation behind this task.</p>
         </div>
         <span className={styles.order}>Oldest first</span>
       </div>
       <div className={styles.feedBody}>
+        {truncated && (
+          <p className={styles.truncationNote}>
+            Showing the most recent {comments.length}. Earlier entries are in the task&rsquo;s API history.
+          </p>
+        )}
         {visibleComments.length > 0 ? (
           <div className={styles.feed}>
             {visibleComments.map((comment) => <CommentItem key={comment.id} comment={comment} />)}

@@ -12,7 +12,7 @@ import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notification
 import { applyProjectInvitationVisibility } from '@/lib/project-invitation-visibility';
 import { normalizeProjectPrivacyMetadata } from '@/lib/privacy-policy';
 import ProjectPrivacyControls from './privacy-controls';
-import { BLOCKER_TONE, DUE_STATE_TONE, pillClassForTone } from '@/lib/status-tone';
+import { BLOCKER_TONE, pillClassForTone } from '@/lib/status-tone';
 import { PageFrame } from '@/components/atoms';
 import styles from './project-detail.module.css';
 export const dynamic = 'force-dynamic';
@@ -318,27 +318,15 @@ export default async function ProjectDetailPage({
         />
 
         {blockedTaskCards.length > 0 && (
-          <div
-            className="mb-6 animate-fade-in"
-            style={{
-              borderRadius: '1rem',
-              border: '1px solid var(--rose)',
-              background: 'var(--rose-bg)',
-              padding: '1.25rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div>
-                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--rose)' }}>Blocker radar</p>
-                <h2 className="text-lg" style={{ fontWeight: 600, color: 'var(--fg-0)', marginTop: '0.25rem' }}>Blocked tasks with concrete unblock plans</h2>
-                <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.25rem' }}>Pulled from task dependencies so blocker owner, next action, and timing stay visible at project level before work fossilizes.</p>
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <p className="text-xl" style={{ fontWeight: 700, color: 'var(--fg-0)' }}>{blockedTaskCards.length}</p>
-                <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>active blockers</p>
-              </div>
+          <section className={`animate-fade-in ${styles.radar}`} aria-labelledby="blocker-radar-heading">
+            <div className={styles.radarHead}>
+              <h2 id="blocker-radar-heading" className={styles.radarTitle}>Blocker radar</h2>
+              <p className={styles.radarSub}>Tasks waiting on other work, oldest first.</p>
+              <span className={styles.radarCount}>
+                {blockedTaskCards.length} blocked
+              </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className={styles.radarList}>
               {blockedTaskCards.slice(0, 6).map((task) => {
                 const state = getBlockedTaskNotificationState({
                   updatedAt: task.updated_at,
@@ -353,76 +341,38 @@ export default async function ProjectDetailPage({
                   blockedByCount: task.blockers.length,
                   blockingTaskTitles: task.blockers.map((blocker) => blocker.title),
                 });
-                const cardBorder = state.tone === 'stale'
-                  ? 'var(--rose)'
-                  : state.tone === 'follow-through'
-                    ? 'var(--amber)'
-                    : 'var(--line-2)';
-                const cardBg = state.tone === 'stale'
-                  ? 'var(--rose-bg)'
-                  : state.tone === 'follow-through'
-                    ? 'var(--amber-bg)'
-                    : 'var(--bg-2)';
                 return (
-                  <Link
-                    key={task.id}
-                    href={`/projects/${id}/tasks/${task.id}`}
-                    style={{
-                      display: 'block',
-                      borderRadius: 'var(--radius-4)',
-                      border: `1px solid ${cardBorder}`,
-                      background: cardBg,
-                      padding: '0.75rem 1rem',
-                      textDecoration: 'none',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.375rem' }}>
-                          <span
-                            className={`${pillClassForTone(BLOCKER_TONE[state.tone])} text-2xs`}
-                            style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}
-                          >
-                            {state.tone === 'stale' ? 'stale blocker' : state.tone === 'follow-through' ? 'follow-through due' : 'blocked'}
-                          </span>
-                          <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>{state.meta}</span>
-                        </div>
-                        <p className="text-sm" style={{ fontWeight: 600, color: 'var(--fg-0)' }}>{task.title}</p>
-                        <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.25rem' }}>Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}</p>
-                        <div style={{ marginTop: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.5rem' }}>
-                          <div className="card--inset" style={{ padding: '0.5rem 0.625rem' }}>
-                            <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Owner</p>
-                            <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--fg-1)' }}>{state.blockerResolutionOwner || 'Unassigned'}</p>
-                          </div>
-                          <div className="card--inset" style={{ padding: '0.5rem 0.625rem' }}>
-                            <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Expected follow-up</p>
-                            <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--fg-1)' }}>{state.blockerResolutionDueAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(state.blockerResolutionDueAt)) + ' UTC' : 'Not scheduled'}</p>
-                          </div>
-                        </div>
-                        <p className="text-xs" style={{ marginTop: '0.5rem', color: 'var(--fg-1)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>{state.blockerResolutionAction || 'No unblock plan logged yet'}</p>
-                        <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className={`${pillClassForTone('neutral')} text-2xs`} style={{ fontWeight: 500 }}>{state.statusLabel}</span>
-                          {state.dueStateLabel && (
-                            <span
-                              className={`${pillClassForTone(DUE_STATE_TONE[state.dueState])} text-2xs`}
-                              style={{ fontWeight: 500 }}
-                            >
-                              {state.dueStateLabel}
-                            </span>
-                          )}
-                          {state.escalationLabel && (
-                            <span className={`${pillClassForTone('rose')} text-2xs`} style={{ fontWeight: 500 }}>{state.escalationLabel}</span>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-2xs" style={{ color: 'var(--peri)', flexShrink: 0 }}>Open →</span>
-                    </div>
+                  <Link key={task.id} href={`/projects/${id}/tasks/${task.id}`} className={styles.radarRow}>
+                    <span className={styles.radarRowMain}>
+                      <span className={styles.radarRowTop}>
+                        <span className={`${pillClassForTone(BLOCKER_TONE[state.tone])} text-2xs`} style={{ fontWeight: 600 }}>
+                          {state.tone === 'stale' ? 'stale blocker' : state.tone === 'follow-through' ? 'follow-through due' : 'blocked'}
+                        </span>
+                        <span className={styles.radarTask}>{task.title}</span>
+                      </span>
+                      <span className={styles.radarMeta}>
+                        Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}
+                      </span>
+                      {/* One line of plan, not two inset tiles repeating what
+                          the task page and the kanban card both already say. */}
+                      <span className={styles.radarMeta}>
+                        <b>{state.blockerResolutionOwner || 'No owner'}</b>
+                        {' · '}
+                        {state.blockerResolutionAction || 'no unblock plan logged'}
+                        {state.dueStateLabel ? ` · ${state.dueStateLabel}` : ''}
+                      </span>
+                    </span>
+                    <span className={styles.radarOpen}>Open →</span>
                   </Link>
                 );
               })}
             </div>
-          </div>
+            {blockedTaskCards.length > 6 && (
+              <p className={styles.radarMore}>
+                {blockedTaskCards.length - 6} more blocked task{blockedTaskCards.length - 6 === 1 ? '' : 's'} on the board below.
+              </p>
+            )}
+          </section>
         )}
 
         <div className={styles.sectionIntro}>

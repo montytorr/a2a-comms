@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react';
 import type { TaskStatus } from '@/lib/types';
 import { updateTaskStatus } from '../../actions';
+import menu from './task-editor.module.css';
 import {
   colorVarForTone,
   dotClassForTone,
@@ -62,6 +63,8 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
         disabled={isPending}
         className={pillClassForTone(tone)}
         style={{ cursor: 'pointer', opacity: isPending ? 0.5 : 1 }}
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
         <span className={`${dotClassForTone(tone)} ${isPending ? 'pulse' : ''}`} />
         {isPending ? 'Updating…' : statusLabel(currentStatus)}
@@ -73,28 +76,14 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
           stroke="currentColor"
           strokeWidth="2.5"
           style={{ transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          aria-hidden="true"
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
 
       {open && (
-        <div
-          className="animate-fade-in"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            zIndex: 50,
-            minWidth: 160,
-            borderRadius: 'var(--radius-3)',
-            border: '1px solid var(--line-1)',
-            background: 'var(--bg-1)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px var(--scrim)',
-            overflow: 'hidden',
-          }}
-        >
+        <div className={`animate-fade-in ${menu.menu}`} role="menu" style={{ minWidth: 176 }}>
           {allStatuses.map((status) => {
             const optTone = statusTone('task', status);
             const isSelected = status === currentStatus;
@@ -102,30 +91,21 @@ export default function TaskStatusDropdown({ projectId, taskId, currentStatus }:
               <button
                 key={status}
                 onClick={() => handleSelect(status)}
-                className="text-2xs" style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 12px',
-                  textAlign: 'left',
-                  
+                type="button"
+                role="menuitemradio"
+                aria-checked={isSelected}
+                className={menu.menuItem}
+                style={{
                   fontWeight: 600,
-                  background: isSelected ? 'var(--bg-3)' : 'transparent',
-                  color: isSelected ? colorVarForTone(optTone) : 'var(--fg-2)',
-                  border: 'none',
-                  cursor: 'pointer',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
-                  transition: 'background 0.1s, color 0.1s',
+                  ...(isSelected ? { color: colorVarForTone(optTone) } : null),
                 }}
-                onMouseEnter={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
-                onMouseLeave={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
               >
                 <span className={dotClassForTone(optTone)} />
                 <span>{statusLabel(status)}</span>
                 {isSelected && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={menu.menuItemCheck} aria-hidden="true">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 )}

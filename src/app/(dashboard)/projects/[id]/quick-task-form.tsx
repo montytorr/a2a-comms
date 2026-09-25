@@ -5,6 +5,7 @@ import { Plus, MoreHorizontal } from 'lucide-react';
 import type { TaskPriority } from '@/lib/types';
 import { createTask } from './actions';
 import { pillClassForTone, taskPriorityTone } from '@/lib/status-tone';
+import styles from './project-detail.module.css';
 
 /* Third copy of the priority→colour map in the tree; the tone now comes from
    status-tone.ts, so only the label lives here. */
@@ -109,37 +110,8 @@ export default function QuickTaskForm({
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="text-2xs" style={{
-          marginTop: 6,
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 6,
-          padding: '10px 0',
-          borderRadius: 16,
-          border: '1px dashed var(--line-1)',
-          background: 'transparent',
-          color: 'var(--fg-4)',
-          
-          fontWeight: 500,
-          cursor: 'pointer',
-          transition: 'border-color 0.15s, color 0.15s, background 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--peri)';
-          (e.currentTarget as HTMLButtonElement).style.color = 'var(--peri)';
-          (e.currentTarget as HTMLButtonElement).style.background = 'var(--peri-bg)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line-1)';
-          (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-4)';
-          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-        }}
-      >
-        <Plus size={12} />
+      <button type="button" onClick={() => setIsOpen(true)} className={styles.addTask}>
+        <Plus size={12} aria-hidden />
         Add task
       </button>
     );
@@ -148,12 +120,7 @@ export default function QuickTaskForm({
   return (
     <div
       ref={formRef}
-      className="card"
-      style={{
-        marginTop: 6,
-        padding: 10,
-        borderColor: 'var(--peri-bg)',
-      }}
+      className={`card ${styles.addTaskForm}`}
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <input
@@ -187,10 +154,10 @@ export default function QuickTaskForm({
             className="cp-textarea text-2xs" style={{
               width: '100%',
               resize: 'none',
-              borderRadius: 10,
+              borderRadius: 'var(--radius-2)',
               border: '1px solid var(--line-1)',
               background: 'var(--bg-0)',
-              padding: '8px 10px',
+              padding: 'var(--space-2) var(--space-3)',
               
               color: 'var(--fg-2)',
               outline: 'none',
