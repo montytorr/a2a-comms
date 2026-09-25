@@ -7,6 +7,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.377] - 2026-09-25
+### Changed
+- Merge pull request #27 from montytorr/fix/members-alignment-and-audit-backlog
+- fix: members stranded mid-page, and the rest of the audit backlog
+### Fixed
+- members stranded mid-page, and the rest of the audit backlog
+- ## Members floating in the middle
+- .headerMain carried max-width: 1180px, which I added in HOL-145 to stop the member stack flying away from a description that was still in that row. The description moved to the context rail in the same change, so the cap only stranded the avatars mid-page on a wide window. Removing it also resolves the split .headerMain declaration the audit flagged. Measured at 1900px: the member count now ends 32px from the right edge, which is the page gutter.
+- ## The ticker was the expensive one
+- It called setOffset every animation frame, re-rendering the topbar subtree at 60fps for the life of the session, and read scrollWidth inside the state updater — a forced reflow every frame. It ran while the tab was hidden and ignored prefers-reduced-motion, which globals.css honours for every other animation in the app. Its `paused` prop existed and nothing was wired to it.
+- It writes the transform to the node now, measures the track on resize rather than per frame, stops on visibilitychange, and returns early under prefers-reduced-motion. The step is time-based, so it no longer runs at double speed on a 120Hz display. maskImage gained its -webkit- pair, without which the edge fade was simply absent in Safari.
+- ## The LIVE indicator could not report a bad status
+- Hardcoded mint and always pulsing, wired to nothing, beside a ticker whose poll already knew whether it was reaching the server. It follows that poll now and goes rose/"Stale" when the feed is unreachable.
+- ## hash-chip
+- A <span> with onClick — no role, tabIndex or key handler — whose copy glyph was opacity:0 until hover, so on touch the affordance was invisible as well as unreachable. Copyable now renders a real button with a focus ring and a glyph visible at rest; non-copyable renders inert text instead of claiming to be a control with cursor:pointer and a hover treatment, which is what the two of three call sites passing copyable={false} were doing.
+- ## Reading measure
+- PageFrame's width prop was inert — all four variants mapped to max-w-none — on the reasoning that individual surfaces set their own measure. The data pages do; the reading pages never did, so api-docs and security rendered body text at ~1300px lines on a 1600px window. `prose` and `narrow` do what they say again and `default`/`wide` still fill the canvas. Measured: api-docs body paragraphs are 704px.
+- ## Also
+- Nine whole-row link patterns had :hover with no :focus-visible while five other modules already paired them. Onboarding resource cards and notification rows declared a transition for a state that had no rule at all — they share a .link-surface class now.
+- The feed capped its stream at 600px with overflow-y inside the shell's own scroller, with the card header outside that inner scroller; and its auto-fit grid resolved to two equal tracks, giving a five-bar legend the same width as the event stream. Both fixed.
+- Three duplicated-information pairs removed: "Failed to load messages" printed as both subtitle and empty-state title, message_type rendered in the protocol-inspector meta line and again as a pill beside it, and observers-restricted stated in the project header while the Access card in the rail says it more fully on the same screen.
+- Deliberately kept: documentation-layout's inner scroller. A table of contents is a navigation widget and scrolling inside itself is the idiom — the task and contract rails were document content, which is why trapping a scroll in those was wrong. Commented as such.
+- Verified: eslint 0, 459/459 tests, build compiles, CSS modules clean both directions, sixteen routes 200 with zero console errors, and the three behaviours asserted rather than eyeballed — members 32px from the right edge, api-docs prose at 704px, ticker advancing by node transform.
+- Cairn: HOL-148
+
 ## [1.0.376] - 2026-09-25
 ### Changed
 - Merge pull request #26 from montytorr/fix/audit-regressions-and-backlog
