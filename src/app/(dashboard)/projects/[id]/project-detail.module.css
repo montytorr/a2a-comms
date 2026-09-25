@@ -241,3 +241,175 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
   .taskCard { transition: border-color 0.15s; }
   .taskCard:hover { transform: none; }
 }
+
+/* ──────────────────────────────────────────────
+   TASK CARD
+
+   The card used to open with a priority chip on its own row, then a row of
+   label pills that wrapped to two lines, and only then the title — at 14px
+   in --fg-1, the third thing down and the quietest of the three. Below that
+   sat a card-within-a-card carrying a blocker panel, a row of dependency
+   count pills and a two-column grid of preview boxes with clamped titles:
+   four nested surfaces on a 300px column, which is why cards ran from 120px
+   to 380px and the board read as rubble.
+
+   The title is the only thing anyone scans a board for, so it goes first and
+   carries the weight. Everything else is a single quiet line underneath.
+   ────────────────────────────────────────────── */
+.taskTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+/* Priority is one bit of information and does not need a labelled chip above
+   the title to carry it. The dot is the same ramp as everywhere else and the
+   title attribute keeps it readable for a screen reader and on hover. */
+.taskPriority {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: var(--radius-pill);
+}
+
+.taskTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--fg-0);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* One row, no wrap: label pills wrapping to a second and third line was what
+   pushed the title down the card in the first place. */
+.taskLabels {
+  display: flex;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow: hidden;
+}
+.taskLabels > span {
+  flex-shrink: 0;
+  max-width: 13ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* .pill is inline-flex, and text-overflow never applies to a flex
+     container's anonymous text item — the label was cut mid-word with no
+     ellipsis. A label pill carries no dot, so inline-block costs nothing. */
+  display: inline-block;
+}
+
+/* The blocker panel, the count pills and the preview grid collapse to this:
+   one line that says what is true, linking to the task page for the detail
+   that used to be crammed into a 280px box. */
+.taskMetaLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+}
+.taskMetaLine b { color: var(--fg-2); font-weight: 500; }
+
+.taskBlocked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+}
+.taskBlockedNote {
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-1);
+}
+.taskAssignee { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.taskAssignee span { color: var(--fg-3); font-size: var(--text-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.taskUnassigned { color: var(--fg-3); font-size: var(--text-2xs); }
+.taskId { flex-shrink: 0; color: var(--fg-4); font-size: var(--text-2xs); letter-spacing: 0.08em; }
+
+.taskBody { display: flex; flex-direction: column; gap: var(--space-2); height: 100%; }
+
+/* An empty column spent 215px on a boxed EmptyState, so a project whose work
+   is finished showed four large empty panels and nothing else above the
+   fold. Absence should read as a quiet line. */
+.columnEmpty {
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--line-1);
+  border-radius: var(--radius-3);
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+  text-align: center;
+}
+
+/* ──────────────────────────────────────────────
+   PROJECT DESCRIPTION
+
+   A project description is a whole markdown document — headings, bullet
+   lists, tables. Rendered in full it ran ~1400px, so the board, which is
+   what the page is for, started below two screens of prose, and the header
+   sat in a ~600px column with the member stack stranded at the far right
+   edge of a 1400px row. It is collapsed to a readable first glance with the
+   rest one click away.
+   ────────────────────────────────────────────── */
+.description { position: relative; max-width: 74ch; }
+
+.descriptionClamped {
+  max-height: 168px;
+  overflow: hidden;
+}
+/* Fades into the page ground rather than a flat cut, so it reads as "more
+   below" instead of as a rendering bug. */
+.descriptionClamped::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 64px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--bg-0));
+}
+
+.descriptionToggle {
+  margin-top: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--peri);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+}
+.descriptionToggle:hover { text-decoration: underline; }
+.descriptionToggle:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-1); }
+
+/* Header row: the title block and the member stack are the two ends of a
+   space-between row. Left to span the full page it opened ~500px of nothing
+   between them, since the description beside it is capped at a reading
+   measure. */
+.headerMain { max-width: 1180px; }

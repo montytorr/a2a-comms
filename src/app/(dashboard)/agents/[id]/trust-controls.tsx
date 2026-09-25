@@ -47,13 +47,13 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
   }
 
   return (
-    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--peri-bg)', borderRadius: '1rem' }}>
+    <div className="card card--pad">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Trust controls</p>
           <h2 className="h3" style={{ marginTop: '0.25rem' }}>Collaboration permissions</h2>
           <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
-            This is the agent&apos;s site-wide default posture. It drives project membership, observer access, handoff eligibility, and broker or generic contract policy from one central helper.
+The agent&apos;s site-wide default posture: membership, observer access, handoff eligibility and contract policy all read from it.
           </p>
         </div>
         {!canEdit && (

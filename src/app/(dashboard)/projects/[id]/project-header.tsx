@@ -127,6 +127,19 @@ function EditableProjectDescription({
   const [text, setText] = useState(value || '');
   const [isSaving, startSaveTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    const check = () => setOverflows(el.scrollHeight > el.clientHeight + 4);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [value, expanded]);
 
   useEffect(() => {
     if (editing && textareaRef.current) {
@@ -173,7 +186,21 @@ function EditableProjectDescription({
         {value ? (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <MarkdownPreview content={value} />
+              <div ref={descriptionRef} className={`${styles.description} ${expanded ? '' : styles.descriptionClamped}`}>
+                <MarkdownPreview content={value} />
+              </div>
+              {/* Only offered when there is something to reveal: measured on
+                  the rendered markdown, not guessed from its length. */}
+              {overflows && (
+                <button
+                  type="button"
+                  className={styles.descriptionToggle}
+                  onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+                  aria-expanded={expanded}
+                >
+                  {expanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
             </div>
             {isOwner && (
               <button

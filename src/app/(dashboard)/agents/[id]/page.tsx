@@ -13,7 +13,7 @@ import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
 import PrivacyControls from './privacy-controls';
 import { formatDate, formatDateTime } from '@/lib/format-date';
-import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, TRUST_TIER_STYLES } from '@/lib/trust-tiers';
+import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { KeyRound } from 'lucide-react';
@@ -83,10 +83,12 @@ export default async function AgentDetailPage({
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', marginBottom: '1.5rem' }}>
             <Avatar name={name} size={64} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 className="h2" style={{ marginBottom: '0.25rem' }}>{agentData.display_name}</h1>
+              <h1 className="h2" style={{ marginBottom: '0.25rem' }}>{name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <code className="mono text-2xs" style={{ color: 'var(--fg-3)', background: 'var(--bg-1)', padding: '0.125rem 0.5rem', borderRadius: '0.375rem', border: '1px solid var(--line-1)' }}>{agentData.name}</code>
-                <span className="dim text-xs">{agentData.owner}</span>
+                {agentData.owner && agentData.owner !== agentData.name && (
+                  <span className="dim text-xs">owned by {agentData.owner}</span>
+                )}
                 <span className={`pill pill--${trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'ghost'}`}>
                   <span className={`dot dot--${trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'ghost'}`} />
                   {TRUST_TIER_LABELS[trustTier]}
@@ -160,29 +162,11 @@ export default async function AgentDetailPage({
       </div>
 
       <div style={{ marginBottom: '2rem', display: 'grid', gap: '1.5rem' }}>
-        <div className="card--inset" style={{ padding: '1.25rem', borderRadius: '1rem' }}>
-          <p className="upper muted text-2xs">How this page works</p>
-          <div className="text-xs" style={{ marginTop: '0.75rem', display: 'grid', gap: '0.75rem', color: 'var(--fg-2)' }}>
-            <div>
-              <p style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Trust tier is site-wide for this agent</p>
-              <p style={{ marginTop: '0.25rem' }}>It sets the default collaboration posture for memberships, observers, handoffs, invitations, and similar platform decisions.</p>
-            </div>
-            <div>
-              <p style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Trust policy narrows specific sensitive surfaces</p>
-              <p style={{ marginTop: '0.25rem' }}>These controls can tighten observer reads, attachment downloads, webhook management, participant visibility, and pending invitation visibility. They do not elevate the agent above its base tier.</p>
-            </div>
-            <div>
-              <p style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Privacy defaults guide data handling</p>
-              <p style={{ marginTop: '0.25rem' }}>These settings expose how this agent&apos;s data should be retained, redacted, exported, and reused. They inform operators and downstream automation, but most of them are not automatic purge jobs by themselves.</p>
-            </div>
-          </div>
-        </div>
-        <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--peri-bg)', borderRadius: '1rem' }}>
+        <div className="card card--pad">
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div>
-              <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Exposed privacy defaults</p>
-              <h2 className="h3" style={{ marginTop: '0.25rem' }}>Current operator-facing privacy posture</h2>
-              <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '48rem' }}>This summary makes the active privacy metadata visible before anyone edits it, so operators can quickly see handling, retention, reuse, and export expectations from the main agent detail flow.</p>
+              <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Privacy posture</p>
+              <h2 className="h3" style={{ marginTop: '0.25rem' }}>What operators should assume today</h2>
             </div>
             {!canEditTrust && <span className="pill pill--ghost">View only</span>}
           </div>
