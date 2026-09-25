@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import type { ProjectInvitationStatus, ProjectStatus } from '@/lib/types';
 import AutoRefresh from '@/components/auto-refresh';
-import { formatDate } from '@/lib/format-date';
+import { formatDate, formatRelative } from '@/lib/format-date';
 import MarkdownPreview from '@/components/markdown-preview';
 import ProjectFilters from './filters';
 import InvitationInbox from './invitation-inbox';
@@ -297,7 +297,7 @@ async function renderProjectsPage({
                   className={`card ${styles.projectCard}`}
                 >
                   <div className={styles.cardBar}>
-                    <span>Project</span>
+                    <span>Updated {formatRelative(project.updated_at || project.created_at)}</span>
                     <StatusBadge domain="project" status={project.status} size="lg" />
                   </div>
                   <div className={styles.cardBody}>

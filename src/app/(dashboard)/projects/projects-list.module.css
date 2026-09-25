@@ -14,6 +14,17 @@
   transition: border-color .15s ease, transform .15s ease;
 }
 .projectCard:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+/* The card is a link, and a link with a hover state and no focus state is
+   invisible to the keyboard. The contracts register already does this. */
+.projectCard:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-color: var(--line-strong);
+}
+@media (prefers-reduced-motion: reduce) {
+  .projectCard { transition: border-color .15s ease; }
+  .projectCard:hover { transform: none; }
+}
 
 .cardBar {
   display: flex;
@@ -24,9 +35,12 @@
   border-bottom: 1px solid var(--line-1);
   background: var(--bg-2);
 }
+/* This bar used to open with the literal word "Project" on every card of a
+   page titled Projects. It carries the last-touched date instead — the one
+   fact the card did not already show. */
 .cardBar > span:first-child {
   color: var(--fg-3);
-  font: 500 11px/1.4 var(--mono);
+  font: 500 var(--text-2xs)/1.4 var(--mono);
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -35,5 +49,5 @@
 .cardTitle { margin-bottom: var(--space-2); color: var(--fg-0); font-size: var(--text-lg); font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
 .cardFooter { margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--line-1); }
 
-@media (max-width: 1050px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 680px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1280px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }

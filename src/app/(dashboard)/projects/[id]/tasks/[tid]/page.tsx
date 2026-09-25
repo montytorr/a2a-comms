@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/db/server';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
 import { redirect, notFound } from 'next/navigation';
 import AutoRefresh from '@/components/auto-refresh';
-import { formatDate, formatDateTime } from '@/lib/format-date';
+import { formatDate, formatDateTime, formatRelative } from '@/lib/format-date';
 import TaskStatusDropdown from './task-status-dropdown';
 import {
   EditableTitle,
@@ -16,18 +16,17 @@ import {
 } from './task-editor';
 import TaskComments from './task-comments';
 import AttachmentList from '@/components/attachment-list';
+import MarkdownPreview from '@/components/markdown-preview';
 import AttachmentUpload from './attachment-upload';
-import type { TaskPriority, TaskAttachment, TaskActivityEvent } from '@/lib/types';
+import type { TaskPriority, TaskAttachment } from '@/lib/types';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
 import { listAttachmentsForScope } from '@/lib/attachment-access';
-import { listTaskActivityEvents } from '@/lib/task-activity';
 import {
-  BLOCKER_TONE,
   DEPENDENCY_KIND_TONE,
   colorVarForTone,
-  pillClassForTone,
   statusTone,
   surfaceVarForTone,
+  taskPriorityTone,
   type DependencyKind,
   type Tone,
 } from '@/lib/status-tone';
@@ -35,6 +34,10 @@ import { PageFrame } from '@/components/atoms';
 import StatusBadge from '@/components/status-badge';
 import styles from './task-detail.module.css';
 export const dynamic = 'force-dynamic';
+
+/* The feed loads the newest 100 and renders them oldest-first, so on a busy
+   task it starts mid-conversation. TaskComments says so when the cap is hit. */
+const COMMENT_PAGE_SIZE = 100;
 
 /* Labels here, colours from DEPENDENCY_KIND_TONE — kanban-board.tsx renders the
    same five kinds and the two copies used to disagree about `related`. */
@@ -123,7 +126,7 @@ export default async function TaskDetailPage({
     projectRes, assigneeRes, reporterRes, sprintRes,
     blockedByRes, blocksRes, contractsRes,
     membersRes, commentsRes,
-    attachmentsRes, activityRes,
+    attachmentsRes,
   ] = await Promise.all([
     db.from('projects').select('id, title').eq('id', projectId).single(),
     task.assignee_agent_id
@@ -157,13 +160,12 @@ export default async function TaskDetailPage({
       .eq('task_id', tid)
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
-      .limit(100),
+      .limit(COMMENT_PAGE_SIZE),
     listAttachmentsForScope({
       projectId,
       taskId: tid,
       includeSignedUrl: true,
     }),
-    listTaskActivityEvents(tid).catch(() => []),
   ]);
 
   const project = projectRes.data;
@@ -238,7 +240,6 @@ export default async function TaskDetailPage({
     created_at: string;
   }>;
   const attachments = (attachmentsRes || []) as TaskAttachment[];
-  const taskActivity = (activityRes || []) as TaskActivityEvent[];
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
   const blockerState = blockedBy.length > 0
@@ -257,11 +258,11 @@ export default async function TaskDetailPage({
       })
     : null;
 
-  const detailItems = [
+  const glanceFacts: Array<{ label: string; value: React.ReactNode }> = [
     {
       label: 'Assignee',
       value: hasReadOnlyObserverAccess ? (
-        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
+        <span className={styles.railValue}>{_assignee ? (_assignee.display_name || _assignee.name) : 'Unassigned'}</span>
       ) : (
         <AssigneePicker
           currentId={task.assignee_agent_id}
@@ -271,6 +272,14 @@ export default async function TaskDetailPage({
         />
       ),
     },
+    {
+      label: 'Reporter',
+      value: reporter ? (
+        <span className={styles.railValue}>{reporter.display_name || reporter.name}</span>
+      ) : (
+        <span className={styles.railMuted}>Unknown</span>
+      ),
+    },
     // Sprint and due date are shown when they have a value and are not
     // editable here. Sprints were last touched in April and `due_date` is set
     // on 0 of 94 tasks, so the pickers were controls for fields nobody uses —
@@ -278,211 +287,197 @@ export default async function TaskDetailPage({
     // product. Both are still writable through the API and the CLI
     // (`holloway task-update --sprint`, `--due-date`); only the editors went.
     ...(_sprint
-      ? [{
-          label: 'Sprint',
-          value: <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{_sprint.title}</span>,
-        }]
+      ? [{ label: 'Sprint', value: <span className={styles.railValue}>{_sprint.title}</span> }]
       : []),
     ...(task.due_date
       ? [{
           label: 'Due date',
           value: (
-            <span
-              className="text-sm"
-              style={{ color: isOverdue ? 'var(--rose)' : 'var(--fg-1)', fontWeight: 500 }}
-            >
+            <span className={styles.railValue} style={isOverdue ? { color: 'var(--rose)' } : undefined}>
               {formatDate(task.due_date)}
             </span>
           ),
         }]
       : []),
-  ];
-
-  const secondaryDetailItems = [
-    {
-      label: 'Reporter',
-      value: reporter ? (
-        <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{reporter.display_name || reporter.name}</span>
-      ) : (
-        <span className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Unknown</span>
-      ),
-    },
     {
       label: 'Created',
-      value: <span className="mono text-2xs" style={{ color: 'var(--fg-2)' }}>{formatDate(task.created_at)}</span>,
+      value: <span className={styles.railMeta} title={formatDateTime(task.created_at)}>{formatDate(task.created_at)}</span>,
     },
     {
       label: 'Last updated',
-      value: <span className="mono text-2xs" style={{ color: 'var(--fg-2)' }}>{formatDateTime(task.updated_at)}</span>,
+      value: (
+        <span className={styles.railMeta} title={formatDateTime(task.updated_at)}>
+          {formatRelative(task.updated_at)}
+        </span>
+      ),
+    },
+    // Labels were a card of their own beside "At a glance", which gave a
+    // two-chip list the same weight as the task's attachments. They are a
+    // fact about the task, so they sit with the other facts.
+    {
+      label: 'Labels',
+      value: hasReadOnlyObserverAccess ? (
+        <div className={styles.railPills}>
+          {(task.labels || []).length
+            ? (task.labels || []).map((label: string) => (
+                <span key={label} className="pill text-2xs">{label}</span>
+              ))
+            : <span className={styles.railMuted}>No labels</span>}
+        </div>
+      ) : (
+        <LabelsEditor labels={task.labels || []} projectId={projectId} taskId={tid} />
+      ),
     },
   ];
+
+  const stateBadges = (
+    <>
+      {hasReadOnlyObserverAccess ? (
+        <StatusBadge status={task.status} domain="task" dot="static" size="lg" />
+      ) : (
+        <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
+      )}
+      {hasReadOnlyObserverAccess ? (
+        <StatusBadge
+          status={null}
+          label={`${task.priority} priority`}
+          tone={taskPriorityTone(task.priority)}
+          dot="static"
+          size="lg"
+          style={{ textTransform: 'capitalize' }}
+        />
+      ) : (
+        <PriorityPicker value={task.priority as TaskPriority} projectId={projectId} taskId={tid} />
+      )}
+      {isOverdue && <StatusBadge status={null} label="Overdue" tone="rose" dot="none" size="lg" />}
+      {blockerState && (
+        <StatusBadge
+          status={null}
+          label={blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
+          tone={blockerState.tone === 'follow-through' ? 'amber' : 'rose'}
+          dot="none"
+          size="lg"
+        />
+      )}
+    </>
+  );
 
   return (
     <AutoRefresh intervalMs={15000} watch={['tasks', 'projects', 'contracts', 'participants']}>
       <PageFrame width="wide">
-        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-          <Link href="/projects">Projects</Link>
-          <span aria-hidden="true">›</span>
-          <Link href={`/projects/${projectId}`}>{project?.title || 'Project'}</Link>
-          <span aria-hidden="true">›</span>
-          <span>Task</span>
-        </nav>
+        {/* The title identifies the task, so it spans the page above the
+            two columns rather than sitting in one of them. */}
+        <header className={styles.header}>
+          <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+            <Link href="/projects">Projects</Link>
+            <span aria-hidden="true">›</span>
+            <Link href={`/projects/${projectId}`}>{project?.title || 'Project'}</Link>
+            <span aria-hidden="true">›</span>
+            <span className={styles.current} aria-current="page">{task.title}</span>
+          </nav>
+          <div className={styles.heading}>
+            <p className={styles.eyebrow}>Task</p>
+            {hasReadOnlyObserverAccess ? (
+              <h1 className="h1">{task.title}</h1>
+            ) : (
+              <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
+            )}
+          </div>
+          {/* Status and priority describe the title, so they sit under it on
+              the same left edge. The old hero bar pushed them to the far
+              right of the card, as far from the title as the row allowed. */}
+          <div className={styles.headerControls}>{stateBadges}</div>
+        </header>
 
         <div className={styles.layout}>
-          <main className={styles.main}>
-            <section className="card" aria-label="Task overview">
-              <div className={styles.heroBar}>
-                <span className={styles.heroBarLabel}>Task</span>
-                {hasReadOnlyObserverAccess ? (
-                  <StatusBadge status={task.status} domain="task" dot="static" size="lg" />
-                ) : (
-                  <TaskStatusDropdown projectId={projectId} taskId={tid} currentStatus={task.status} />
-                )}
-                {hasReadOnlyObserverAccess ? (
-                  <span className="pill">{task.priority} priority</span>
-                ) : (
-                  <PriorityPicker value={task.priority as TaskPriority} projectId={projectId} taskId={tid} />
-                )}
-                {isOverdue && <StatusBadge status={null} label="Overdue" tone="rose" dot="none" size="lg" />}
-                {blockerState && (
-                  <StatusBadge
-                    status={null}
-                    label={blockerState.tone === 'stale' ? 'Blocked · stale escalation' : blockerState.tone === 'follow-through' ? 'Blocked · follow-through due' : 'Blocked'}
-                    tone={blockerState.tone === 'follow-through' ? 'amber' : 'rose'}
-                    dot="none"
-                    size="lg"
-                  />
-                )}
-              </div>
-              <div className={styles.heroBody}>
-                {hasReadOnlyObserverAccess ? (
-                  <h1 className="h1">{task.title}</h1>
-                ) : (
-                  <EditableTitle value={task.title} projectId={projectId} taskId={tid} />
-                )}
-                <div className={styles.description}>
-                  <p className={styles.sectionLabel}>Description</p>
-                  {hasReadOnlyObserverAccess ? (
-                    <div className="text-sm" style={{ color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{task.description || 'No description yet.'}</div>
-                  ) : (
-                    <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Observer mode banner */}
+          <div className={styles.main}>
             {hasReadOnlyObserverAccess && (
-              <div
-                className="animate-fade-in"
-                style={{
-                  borderRadius: '1rem',
-                  border: '1px solid var(--peri)',
-                  background: 'var(--peri-bg)',
-                  padding: '0.75rem 1rem',
-                  animationDelay: '0.04s',
-                }}
-              >
-                <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--peri)' }}>Observer mode</p>
-                <p className="text-xs" style={{ color: 'var(--fg-1)', marginTop: '0.5rem' }}>
+              <div className={`animate-fade-in ${styles.observerNote}`}>
+                <p className={styles.sectionLabel} style={{ margin: 0, color: 'var(--peri)' }}>Observer mode</p>
+                <p>
                   You can inspect this task, its dependencies and attachments, and leave analysis notes here, but you cannot change assignees, execution ownership, or task state. Execution runs and checkpoints are in the protocol inspector.
                 </p>
               </div>
             )}
 
-            <div className="space-y-6">
-              {/* Dependencies */}
-              {dependencySections.length > 0 && (
-                <div className="card animate-fade-in" style={{ padding: 'var(--space-5)', animationDelay: '0.12s' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    <div>
-                      <p className="upper text-2xs" style={{ fontWeight: 600, color: 'var(--fg-3)' }}>Task links and dependency graph</p>
-                      <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: '0.5rem' }}>
-                        Full visibility into blocker, downstream, sequencing, and related-task context for this task.
-                      </p>
-                      {blockerState && <p className="text-xs" style={{ color: 'var(--fg-3)', marginTop: '0.5rem' }}>{blockerState.meta}</p>}
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {dependencySections.map((section) => (
-                        <span
-                          key={section.key}
-                          className={`pill pill--${section.config.pillTone} text-2xs`}
-                          style={{ fontWeight: 600 }}
-                        >
-                          {section.config.label} · {section.items.length}
-                        </span>
-                      ))}
-                      {blockerState && (
-                        <span
-                          className={`${pillClassForTone(BLOCKER_TONE[blockerState.tone])} text-2xs`}
-                          style={{ fontWeight: 600 }}
-                        >
-                          {blockerState.tone === 'stale' ? 'Escalate now' : blockerState.tone === 'follow-through' ? 'Follow through now' : 'Tracked blocker'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            <section className={`card ${styles.panel}`} aria-labelledby="task-description-heading">
+              <h2 id="task-description-heading" className={styles.sectionLabel}>Description</h2>
+              <div className={styles.description}>
+                {hasReadOnlyObserverAccess ? (
+                  task.description
+                    ? <MarkdownPreview content={task.description} />
+                    : <p className={styles.railMuted}>No description yet.</p>
+                ) : (
+                  <EditableDescription value={task.description} projectId={projectId} taskId={tid} />
+                )}
+              </div>
+            </section>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                    {dependencySections.map((section) => (
-                      <div
-                        key={section.key}
-                        style={{
-                          borderRadius: 'var(--radius-4)',
-                          border: `1px solid ${section.config.cardBorder}`,
-                          background: section.config.cardBg,
-                          padding: 'var(--space-4)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                          <p className="text-2xs" style={{ fontWeight: 500, color: section.config.accentColor }}>{section.config.label}</p>
-                          <span className={`pill pill--${section.config.pillTone} text-2xs`} style={{ fontWeight: 600 }}>
-                            {section.items.length}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {section.items.map((dep) => {
-                            const t = dep.tasks;
-                            if (!t) return null;
-                            const dotColor = taskStatusColor(t.status);
-                            return (
-                              <Link
-                                key={`${section.key}-${dep.id}-${t.id}`}
-                                href={`/projects/${t.project_id}/tasks/${t.id}`}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.5rem',
-                                  padding: '0.5rem 0.75rem',
-                                  borderRadius: '0.5rem',
-                                  background: 'var(--bg-0)',
-                                  textDecoration: 'none',
-                                  transition: 'background 0.1s',
-                                }}
-                              >
-                                <span style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-                                <span className="text-xs" style={{ color: 'var(--fg-1)', flex: 1 }}>{t.title}</span>
-                                <span className="upper text-2xs" style={{ fontWeight: 600, color: dotColor }}>{t.status}</span>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+            {dependencySections.length > 0 && (
+              <section className={`card animate-fade-in ${styles.panel}`} aria-labelledby="task-links-heading" style={{ animationDelay: '0.06s' }}>
+                <div className={styles.panelHead}>
+                  <div className={styles.panelHeadText}>
+                    <h2 id="task-links-heading" className={styles.panelTitle}>Links and dependencies</h2>
+                    <p className={styles.panelSub}>
+                      {blockerState
+                        ? blockerState.meta
+                        : 'What this task waits on, what waits on it, and the work it sits beside.'}
+                    </p>
                   </div>
                 </div>
-              )}
 
-              <TaskComments comments={comments} projectId={projectId} taskId={tid} />
-            </div>
-          </main>
+                <div className={styles.depGrid}>
+                  {dependencySections.map((section) => (
+                    <div
+                      key={section.key}
+                      className={styles.depGroup}
+                      style={{ borderColor: section.config.cardBorder, background: section.config.cardBg }}
+                    >
+                      <div className={styles.depGroupHead}>
+                        <p className={styles.depGroupLabel} style={{ color: section.config.accentColor }}>{section.config.label}</p>
+                        <span className={`pill pill--${section.config.pillTone} text-2xs`} style={{ fontWeight: 600 }}>
+                          {section.items.length}
+                        </span>
+                      </div>
+                      <div className={styles.depList}>
+                        {section.items.map((dep) => {
+                          const t = dep.tasks;
+                          if (!t) return null;
+                          const dotColor = taskStatusColor(t.status);
+                          return (
+                            <Link
+                              key={`${section.key}-${dep.id}-${t.id}`}
+                              href={`/projects/${t.project_id}/tasks/${t.id}`}
+                              className={styles.depLink}
+                            >
+                              <span className={styles.depDot} style={{ background: dotColor }} />
+                              <span className={styles.depTitle}>{t.title}</span>
+                              <span className={styles.depStatus} style={{ color: dotColor }}>{t.status}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {/* Context rail */}
-          <aside className={styles.sidebar}>
+            <TaskComments
+              comments={comments}
+              projectId={projectId}
+              taskId={tid}
+              truncated={comments.length >= COMMENT_PAGE_SIZE}
+            />
+          </div>
+
+          {/* Context rail. Deliberately free of its own scroll container:
+              see task-detail.module.css. */}
+          <aside className={styles.sidebar} aria-label="Task context">
             <section className={`card ${styles.railCard}`} aria-labelledby="task-glance-heading">
               <h2 id="task-glance-heading" className={styles.sectionLabel}>At a glance</h2>
               <div className={styles.railFacts}>
-                {[...detailItems, ...secondaryDetailItems].map((item) => (
+                {glanceFacts.map((item) => (
                   <div key={item.label} className={styles.railFact}>
                     <p className="upper">{item.label}</p>
                     <div>{item.value}</div>
@@ -491,37 +486,6 @@ export default async function TaskDetailPage({
               </div>
             </section>
 
-            {/* Labels */}
-            <section className={`card ${styles.railCard}`} aria-labelledby="task-labels-heading">
-              <h2 id="task-labels-heading" className={styles.sectionLabel}>Labels</h2>
-              {hasReadOnlyObserverAccess ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                  {(task.labels || []).length
-                    ? (task.labels || []).map((label: string) => (
-                        <span key={label} className="pill text-2xs">
-                          {label}
-                        </span>
-                      ))
-                    : <span className="text-xs" style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>No labels</span>}
-                </div>
-              ) : (
-                <LabelsEditor labels={task.labels || []} projectId={projectId} taskId={tid} />
-              )}
-            </section>
-
-            {/* Attachments */}
-            <section className={`card ${styles.railCard}`} aria-labelledby="task-attachments-heading">
-              <h2 id="task-attachments-heading" className={styles.sectionLabel}>Attachments</h2>
-              {!hasReadOnlyObserverAccess && <AttachmentUpload projectId={projectId} taskId={tid} />}
-              {hasReadOnlyObserverAccess && (
-                <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>Observers can inspect attachments but cannot upload new artifacts.</p>
-              )}
-              <div style={{ marginTop: '1rem' }}>
-                <AttachmentList attachments={attachments} />
-              </div>
-            </section>
-
-            {/* Linked Contracts */}
             {visibleContracts.length > 0 && (
               <section className={`card ${styles.railCard}`} aria-labelledby="task-contracts-heading">
                 <h2 id="task-contracts-heading" className={styles.sectionLabel}>Linked contracts</h2>
@@ -530,12 +494,8 @@ export default async function TaskDetailPage({
                     const c = lc.contract;
                     if (!c) return null;
                     return (
-                      <Link
-                        key={lc.id}
-                        href={`/contracts/${c.id}`}
-                        className={styles.railLink}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--peri)', flexShrink: 0 }}>
+                      <Link key={lc.id} href={`/contracts/${c.id}`} className={styles.railLink}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--peri)', flexShrink: 0 }} aria-hidden="true">
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                           <path d="M14 2v6h6" />
                         </svg>
@@ -548,28 +508,28 @@ export default async function TaskDetailPage({
               </section>
             )}
 
-            {taskActivity.length > 0 && (
-              <section className={`card ${styles.railCard}`} aria-labelledby="task-activity-heading">
-                <h2 id="task-activity-heading" className={styles.sectionLabel}>Activity</h2>
-                <div className={styles.activity}>
-                  {taskActivity.map((event) => (
-                    <div key={event.id} className={styles.activityItem}>
-                      <p className="text-xs" style={{ color: 'var(--fg-1)' }}>{event.summary}</p>
-                      <p className="text-2xs" style={{ color: 'var(--fg-3)' }}>
-                        {event.actor_agent?.display_name || event.actor_agent?.name || event.actor_user?.display_name || 'System'} · {formatDateTime(event.created_at)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            <section className={`card ${styles.railCard}`} aria-labelledby="task-attachments-heading">
+              <h2 id="task-attachments-heading" className={styles.sectionLabel}>Attachments</h2>
+              {hasReadOnlyObserverAccess ? (
+                <p className={styles.railIntro}>Observers can inspect attachments but cannot upload new artifacts.</p>
+              ) : (
+                <AttachmentUpload projectId={projectId} taskId={tid} />
+              )}
+              <div style={{ marginTop: 'var(--space-4)' }}>
+                <AttachmentList attachments={attachments} />
+              </div>
+            </section>
 
-            {/* Task controls */}
+            {/* The rail used to carry an "Activity" card listing the same
+                status changes and comments the main feed already renders, one
+                fidelity lower and with no author avatars — the page told its
+                own history twice. The feed is the single narrative; the
+                audit trail lives in the protocol inspector. */}
+
             {!hasReadOnlyObserverAccess && (
-              <section className={`card ${styles.railCard}`} aria-labelledby="task-controls-heading">
-                <h2 id="task-controls-heading" className={styles.sectionLabel}>Task controls</h2>
+              <div className={styles.railFooter}>
                 <DeleteTaskButton projectId={projectId} taskId={tid} />
-              </section>
+              </div>
             )}
           </aside>
         </div>

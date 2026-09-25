@@ -11,12 +11,18 @@
 .rows { overflow: hidden; background: var(--bg-1) !important; }
 .row { height: 72px; border-bottom: 1px solid var(--line-1); }
 .row:last-child { border-bottom: 0; }
-.detail { display: grid; grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); gap: var(--space-5); background: none !important; border: 0 !important; }
+/* Geometry copied from the pages this stands in for, so a route does not
+   visibly jump the moment it paints: same track sizes, same --space-6 gutter,
+   same collapse point. */
+.detail { display: grid; grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); gap: var(--space-6); background: none !important; border: 0 !important; }
+/* Task detail puts its context rail on the right of the reading column. */
+.detailRailRight { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
+.detailRailRight .rail { order: 2; }
 .rail { height: 460px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
 .detailBody { display: grid; gap: var(--space-4); background: none !important; }
 .panel { height: 220px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
 .document { height: 580px; background: var(--bg-2); border: 1px solid var(--line-1); border-radius: var(--radius-3); }
 @media (min-width: 640px) { .shell { padding-inline: var(--space-6); } }
 @media (min-width: 1024px) { .shell { padding-inline: var(--space-6); } }
-@media (max-width: 800px) { .detail { grid-template-columns: 1fr; } .rail { height: 150px; } }
+@media (max-width: 1000px) { .detail { grid-template-columns: 1fr; } .detailRailRight .rail { order: 2; } .rail { height: 150px; } }
 @media (max-width: 600px) { .metrics, .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chart { height: 220px; } }

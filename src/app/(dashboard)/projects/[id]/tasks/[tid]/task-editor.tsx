@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react';
 import type { TaskPriority } from '@/lib/types';
 import MarkdownPreview from '@/components/markdown-preview';
+import styles from './task-editor.module.css';
 import { Avatar } from '@/components/atoms';
 import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
@@ -50,18 +51,14 @@ function EditableTitle({
   if (!editing) {
     return (
       <h1
+        className={`h1 ${styles.editable} ${styles.editableTitle}`}
+        role="button"
+        tabIndex={0}
         onClick={() => setEditing(true)}
-        className="h1"
-        style={{
-          cursor: 'pointer',
-          marginBottom: 0,
-          padding: '4px 6px',
-          marginLeft: -6,
-          borderRadius: 'var(--radius-2)',
-          transition: 'background 0.1s',
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(true); }
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+        aria-label={`Edit task title: ${value}`}
         title="Click to edit"
       >
         {value}
@@ -138,23 +135,20 @@ function EditableDescription({
   if (!editing) {
     return (
       <div
+        className={`${styles.editable} ${styles.editableBody}`}
+        role="button"
+        tabIndex={0}
         onClick={() => setEditing(true)}
-        style={{
-          cursor: 'pointer',
-          borderRadius: 'var(--radius-2)',
-          padding: 'var(--space-2)',
-          margin: -8,
-          minHeight: 40,
-          transition: 'background 0.1s',
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(true); }
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+        aria-label={value ? 'Edit description' : 'Add a description'}
         title="Click to edit description"
       >
         {value ? (
           <MarkdownPreview content={value} />
         ) : (
-          <p className="text-sm" style={{ color: 'var(--fg-4)', fontStyle: 'italic' }}>Click to add description…</p>
+          <p className={styles.descriptionEmpty}>Add a description</p>
         )}
       </div>
     );
@@ -253,22 +247,9 @@ function AssigneePicker({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          background: 'transparent',
-          border: 'none',
-          padding: '4px 8px',
-          marginLeft: -8,
-          borderRadius: 'var(--radius-2)',
-          cursor: 'pointer',
-          width: '100%',
-          textAlign: 'left',
-          transition: 'background 0.1s',
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+        className={styles.fieldButton}
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
         {current ? (
           <>
@@ -276,52 +257,21 @@ function AssigneePicker({
             <span className="text-sm" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{current.display_name || current.name}</span>
           </>
         ) : (
-          <span className="text-xs" style={{ color: 'var(--fg-4)', fontStyle: 'italic' }}>Unassigned — click to assign</span>
+          <span className={styles.fieldPlaceholder}>Unassigned — click to assign</span>
         )}
         {isPending && <span className="text-2xs" style={{ color: 'var(--fg-3)', marginLeft: 'auto' }}>…</span>}
       </button>
 
       {open && (
-        <div
-          className="animate-fade-in"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            zIndex: 50,
-            minWidth: 200,
-            maxHeight: 220,
-            overflowY: 'auto',
-            borderRadius: 'var(--radius-3)',
-            border: '1px solid var(--line-1)',
-            background: 'var(--bg-1)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px var(--scrim)',
-          }}
-        >
+        <div className={`animate-fade-in ${styles.menu}`} role="menu">
           <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={currentId == null}
             onClick={() => handleSelect(null)}
-            className="text-2xs" style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 12px',
-              textAlign: 'left',
-              
-              color: 'var(--fg-3)',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.1s, color 0.1s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; }}
+            className={styles.menuItem}
           >
-            <span className="text-2xs" style={{
-              width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)',
-            }}>—</span>
+            <span className={styles.menuAvatarNone} aria-hidden="true">—</span>
             Unassigned
           </button>
           {members.map((m) => {
@@ -331,28 +281,16 @@ function AssigneePicker({
             return (
               <button
                 key={m.agent.id}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isSelected}
                 onClick={() => handleSelect(m.agent!.id)}
-                className="text-2xs" style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 12px',
-                  textAlign: 'left',
-                  
-                  color: isSelected ? 'var(--brand)' : 'var(--fg-2)',
-                  background: isSelected ? 'var(--bg-3)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'background 0.1s, color 0.1s',
-                }}
-                onMouseEnter={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
-                onMouseLeave={e => { if (!isSelected) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
+                className={styles.menuItem}
               >
                 <Avatar name={name} size={24} />
                 {name}
                 {isSelected && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={styles.menuItemCheck} aria-hidden="true">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 )}
@@ -401,44 +339,26 @@ function LabelsEditor({
 
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-        {labels.map((label) => (
-          <span
-            key={label}
-            className="pill pill--peri"
-            style={{ gap: 4 }}
-          >
-            {label}
-            <button
-              onClick={() => removeLabel(label)}
-              disabled={isPending}
-              className="text-2xs" style={{
-                color: 'var(--peri)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                
-                lineHeight: 1,
-                padding: 0,
-                opacity: 0,
-                transition: 'opacity 0.15s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.opacity = '1';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--rose)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.opacity = '0';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--peri)';
-              }}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
+      {labels.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)', marginBottom: 'var(--space-2)' }}>
+          {labels.map((label) => (
+            <span key={label} className={`pill pill--peri ${styles.labelPill}`}>
+              {label}
+              <button
+                type="button"
+                onClick={() => removeLabel(label)}
+                disabled={isPending}
+                className={styles.labelRemove}
+                aria-label={`Remove label ${label}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       {editing ? (
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <input
             ref={inputRef}
             value={input}
@@ -462,20 +382,7 @@ function LabelsEditor({
           </button>
         </div>
       ) : (
-        <button
-          onClick={() => setEditing(true)}
-          className="text-2xs" style={{
-            
-            color: 'var(--fg-3)',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
-            transition: 'color 0.1s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--brand)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; }}
-        >
+        <button type="button" onClick={() => setEditing(true)} className="btn btn--ghost btn--sm">
           + Add label
         </button>
       )}
@@ -574,21 +481,7 @@ function PriorityPicker({
       </button>
 
       {open && (
-        <div
-          className="animate-fade-in"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            zIndex: 50,
-            minWidth: 140,
-            borderRadius: 'var(--radius-3)',
-            border: '1px solid var(--line-1)',
-            background: 'var(--bg-1)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px var(--scrim)',
-          }}
-        >
+        <div className={`animate-fade-in ${styles.menu}`} role="menu" style={{ minWidth: 160 }}>
           {priorityOptions.map((p) => (
             <button
               key={p.id}
@@ -602,27 +495,16 @@ function PriorityPicker({
                   setOpen(false);
                 }
               }}
-              className="text-2xs" style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 12px',
-                textAlign: 'left',
-                
-                color: p.id === value ? p.varColor : 'var(--fg-2)',
-                background: p.id === value ? 'var(--bg-3)' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background 0.1s, color 0.1s',
-              }}
-              onMouseEnter={e => { if (p.id !== value) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
-              onMouseLeave={e => { if (p.id !== value) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
+              type="button"
+              role="menuitemradio"
+              aria-checked={p.id === value}
+              className={styles.menuItem}
+              style={p.id === value ? { color: p.varColor } : undefined}
             >
               <span className="dot" style={{ background: p.varColor }} />
               <span style={{ fontWeight: 500 }}>{p.label}</span>
               {p.id === value && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={styles.menuItemCheck} aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
               )}
@@ -806,15 +688,10 @@ function DeleteTaskButton({ projectId, taskId }: { projectId: string; taskId: st
     <button
       onClick={handleDelete}
       disabled={isPending}
-      className="btn btn--danger"
-      style={{
-        width: '100%',
-        marginTop: 8,
-        justifyContent: 'center',
-        opacity: isPending ? 0.35 : 1,
-      }}
+      className="btn btn--ghost btn--sm"
+      style={{ color: 'var(--rose)', opacity: isPending ? 0.35 : 1 }}
     >
-      {isPending ? 'Deleting…' : 'Delete Task'}
+      {isPending ? 'Deleting…' : 'Delete task'}
     </button>
   );
 }

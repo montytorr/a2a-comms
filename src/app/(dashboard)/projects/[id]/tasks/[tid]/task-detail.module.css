@@ -1,79 +1,210 @@
+/* ──────────────────────────────────────────────
+   PAGE HEADER
+
+   The title used to live inside the right-hand column of the two-column
+   grid, so the first thing the eye reached on a task was ASSIGNEE /
+   REPORTER / CREATED in the rail, and the one line that identifies the task
+   was second — wrapped to three lines at 28ch while half the row sat empty.
+   The header is now full width and above the grid, which is also how the
+   contract detail page is built.
+   ────────────────────────────────────────────── */
+.header {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line-1);
+}
+
 .breadcrumb {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-5);
   color: var(--fg-3);
   font-size: var(--text-xs);
 }
 
 .breadcrumb a { color: inherit; text-decoration: none; }
 .breadcrumb a:hover { color: var(--fg-0); }
-
-.layout {
-  display: grid;
-  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
-  grid-template-areas: 'context work';
-  align-items: start;
-  gap: var(--space-6);
+.breadcrumb span[aria-hidden] { color: var(--fg-4, var(--fg-3)); }
+.breadcrumb .current {
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-2);
 }
 
-.main { grid-area: work; min-width: 0; display: grid; gap: var(--space-4); }
-.sidebar {
-  grid-area: context;
-  position: sticky;
-  top: var(--space-4);
-  max-height: calc(100dvh - var(--topbar-h) - var(--space-6));
+.heading { min-width: 0; display: grid; gap: var(--space-2); }
+.heading h1,
+.heading input {
   min-width: 0;
-  overflow-y: auto;
-  display: grid;
-  gap: var(--space-4);
-  scrollbar-width: thin;
+  /* No ch cap: the header owns the full page width, and a task title that
+     needs two lines should use them rather than wrap into a column. */
+  overflow-wrap: anywhere;
 }
 
-.heroBar {
+/* Status, priority and any alarm state, on the title's own left edge. */
+.headerControls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--line-1);
-  background: var(--bg-2);
 }
 
-.heroBarLabel {
-  margin-right: auto;
+.eyebrow {
+  margin: 0;
   color: var(--fg-3);
-  font: 500 11px/1.4 var(--mono);
+  font: 500 var(--text-2xs) / 1.4 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.heroBody { padding: var(--space-5); }
-.heroBody h1 { max-width: 28ch; overflow-wrap: anywhere; }
+/* ──────────────────────────────────────────────
+   LAYOUT
 
-.description {
-  max-width: 90ch;
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line-1);
+   One scroll container, and it is the shell's. The rail used to be
+   `position: sticky` with `max-height: calc(100dvh - …)` and
+   `overflow-y: auto`, nested inside the dashboard shell's own scroller: two
+   scroll regions stacked on one page. A wheel over the rail scrolled the
+   rail, silently taking its own heading out of view, and whenever the rail
+   ran longer than the main column — which is the normal case on a task with
+   attachments and links — its tail was reachable only through a scrollbar
+   that `scrollbar-width: thin` over a transparent track made invisible.
+
+   The rail now flows with the page. `align-content: start` keeps its cards
+   at their natural height instead of stretching them down the column.
+   ────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  grid-template-areas: 'work context';
+  align-items: start;
+  gap: var(--space-6);
 }
+
+.main {
+  grid-area: work;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.sidebar {
+  grid-area: context;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+/* ──────────────────────────────────────────────
+   MAIN COLUMN
+   ────────────────────────────────────────────── */
+.panel { padding: var(--space-5); }
 
 .sectionLabel {
   margin: 0 0 var(--space-3);
   color: var(--fg-3);
-  font: 500 11px/1.4 var(--mono);
+  font: 500 var(--text-2xs) / 1.4 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.railCard { padding: var(--space-4); }
+.description { max-width: 90ch; }
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.panelHeadText { min-width: 0; display: grid; gap: var(--space-1); }
+.panelTitle {
+  margin: 0;
+  color: var(--fg-0);
+  font-size: var(--text-base);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+.panelSub { margin: 0; color: var(--fg-3); font-size: var(--text-xs); }
+
+.observerNote {
+  padding: var(--space-4);
+  border: 1px solid var(--peri);
+  border-radius: var(--radius-4);
+  background: var(--peri-bg);
+}
+.observerNote p:last-child { margin: var(--space-2) 0 0; color: var(--fg-1); font-size: var(--text-xs); line-height: 1.55; }
+
+/* ──────────────────────────────────────────────
+   DEPENDENCIES
+   ────────────────────────────────────────────── */
+.depGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+.depGroup {
+  padding: var(--space-4);
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-3);
+  background: var(--bg-2);
+}
+
+.depGroupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.depGroupLabel { margin: 0; font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.depList { display: grid; gap: var(--space-2); }
+
+.depLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-2);
+  background: var(--bg-0);
+  text-decoration: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+.depLink:hover { border-color: var(--line-strong); background: var(--bg-1); }
+.depLink .depTitle { flex: 1; min-width: 0; color: var(--fg-1); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.depDot { width: 6px; height: 6px; border-radius: var(--radius-pill); flex-shrink: 0; }
+.depStatus { font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+
+/* ──────────────────────────────────────────────
+   CONTEXT RAIL
+   ────────────────────────────────────────────── */
+/* Same padding as the main column's panels: the rail used to sit at 16px
+   against their 24px, so no two cards across the page shared an inner edge.
+   `overflow: visible` overrides .card's clip — the assignee menu opens out of
+   the first fact of this card and was being cut off by it. */
+.railCard { padding: var(--space-5); overflow: visible; }
+
 .railFacts { display: grid; gap: var(--space-3); }
-.railFact { min-width: 0; }
+.railFact { min-width: 0; display: grid; gap: var(--space-1); }
 .railFact + .railFact { padding-top: var(--space-3); border-top: 1px solid var(--line-1); }
-.railFact p { margin-bottom: var(--space-1); }
+/* AssigneePicker and friends render controls that set their own min-height;
+   in a 12px-gap fact list that reads as a stray band of empty space. */
 .railFact > div { min-height: 0 !important; overflow-wrap: anywhere; }
+.railValue { color: var(--fg-1); font-size: var(--text-sm); font-weight: 500; }
+.railMeta { color: var(--fg-2); font-size: var(--text-xs); }
+.railMuted { color: var(--fg-3); font-size: var(--text-xs); font-style: italic; }
 
 .railIntro { margin: 0 0 var(--space-3); color: var(--fg-2); font-size: var(--text-xs); line-height: 1.5; }
 .railList { display: grid; gap: var(--space-2); }
@@ -87,21 +218,28 @@
   border-radius: var(--radius-2);
   background: var(--bg-2);
   text-decoration: none;
+  transition: border-color 0.12s;
 }
 .railLink:hover { border-color: var(--line-strong); }
 .railLink > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.activity { display: grid; gap: var(--space-3); }
-.activityItem { padding-left: var(--space-3); border-left: 2px solid var(--line-2); }
-.activityItem p + p { margin-top: var(--space-1); }
+.railPills { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 
-@media (max-width: 850px) {
-  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'work' 'context'; }
-  .sidebar { position: static; max-height: none; overflow: visible; }
-  .heroBody h1 { max-width: none; }
+/* A destructive action does not earn a titled card of its own — that gave
+   "Task controls" the same weight as the task's attachments and links. */
+.railFooter { display: flex; justify-content: flex-start; padding-top: var(--space-1); }
+
+/* ──────────────────────────────────────────────
+   RESPONSIVE
+   ────────────────────────────────────────────── */
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'work' 'context';
+  }
 }
 
-@media (max-width: 520px) {
-  .heroBar, .heroBody { padding-inline: var(--space-4); }
-  .heroBody h1 { font-size: var(--text-xl); line-height: 1.2; }
+@media (max-width: 640px) {
+  .heading h1 { font-size: var(--text-xl); line-height: 1.2; }
+  .panel { padding: var(--space-4); }
 }

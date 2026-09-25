@@ -11,7 +11,7 @@
 .policySummary::after { content: '⌄'; margin-left: auto; color: var(--fg-3); }
 details[open] > .policySummary::after { transform: rotate(180deg); }
 .policySummary strong { color: var(--fg-0); font-size: var(--text-sm); font-weight: 600; }
-.policySummary span { color: var(--fg-3); font: 11px/1.4 var(--mono); }
+.policySummary span { color: var(--fg-3); font: var(--text-2xs)/1.4 var(--mono); }
 .policyBody { padding: var(--space-5); border-top: 1px solid var(--line-1); }
 
 .invitationsSummary {
@@ -22,7 +22,7 @@ details[open] > .policySummary::after { transform: rotate(180deg); }
   cursor: pointer;
   list-style: none;
   color: var(--fg-2);
-  font: 11px/1.4 var(--mono);
+  font: var(--text-2xs)/1.4 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -37,7 +37,10 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 
 .headerGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  /* This reserved a 300–360px second track that ProjectHeader never filled:
+     from 900px to ~1400px the title, description and privacy pills were
+     squeezed into the narrowed 1fr with a third of the row left empty. */
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--space-5);
 }
@@ -45,7 +48,183 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 .headerMain { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
 
 @media (max-width: 900px) {
-  .headerGrid { grid-template-columns: minmax(0, 1fr); }
   .headerMain { flex-direction: column; }
   .headerMain > div:first-child { width: 100%; }
+}
+
+/* ──────────────────────────────────────────────
+   BLOCKER RADAR
+
+   Was a full-bleed rose panel carrying a text-xl count, three lines of
+   explanatory copy, and up to six mini-cards that restated — owner, expected
+   follow-up, unblock action, status pills — exactly what the kanban card for
+   the same task already shows a screen below. It outranked the board it sits
+   above, and it said everything twice.
+
+   It is now a list of rows: the state, the task, what it waits on, and who
+   owes the next step. The detail stays on the task page, one click away.
+   ────────────────────────────────────────────── */
+.radar {
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--rose-line);
+  border-radius: var(--radius-4);
+  background: var(--rose-bg);
+  overflow: hidden;
+}
+
+.radarHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--rose-line);
+}
+
+.radarTitle {
+  margin: 0;
+  color: var(--fg-0);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.radarSub { margin: 0; color: var(--fg-2); font-size: var(--text-xs); }
+.radarCount { margin-left: auto; color: var(--rose); font: 600 var(--text-2xs) / 1.4 var(--mono); white-space: nowrap; }
+
+.radarList { display: grid; }
+
+.radarRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--rose-line);
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.radarList > .radarRow:first-child { border-top: 0; }
+.radarRow:hover { background: color-mix(in oklch, var(--rose) 8%, transparent); }
+.radarRow:focus-visible { outline: 2px solid var(--rose); outline-offset: -2px; }
+
+.radarRowMain { min-width: 0; display: grid; gap: var(--space-1); }
+.radarRowTop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.radarTask { color: var(--fg-0); font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
+.radarMeta { color: var(--fg-2); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.radarMeta b { color: var(--fg-1); font-weight: 600; }
+.radarOpen { color: var(--peri); font-size: var(--text-2xs); white-space: nowrap; }
+
+.radarMore {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--rose-line);
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+}
+
+@media (max-width: 560px) {
+  .radarRow { grid-template-columns: minmax(0, 1fr); }
+  .radarOpen { display: none; }
+}
+
+/* ──────────────────────────────────────────────
+   BOARD
+   ────────────────────────────────────────────── */
+.boardScroller {
+  /* Horizontal only. `overflow-y: visible` next to `overflow-x: auto`
+     computes to `auto` per spec, which quietly made this a second vertical
+     scroll container inside the shell's. */
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  /* `mandatory` forbids resting between columns and fought every scroll that
+     started inside a column. */
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+
+.boardRow { display: flex; min-width: max-content; align-items: flex-start; gap: var(--space-4); }
+
+.column {
+  /* Was clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px):
+     100vw counts the scrollbar, --sidebar-w stays 232px even where the
+     sidebar is not rendered, and 128px matched none of the page's gutters.
+     Six columns never fit a laptop at any of those widths, so the board
+     scrolls regardless — a plain width says so honestly. */
+  flex: 0 0 300px;
+  width: 300px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  /* No max-height and no inner scroller: the column grew a 720px box with
+     its own hidden scrollbar, which buried "Add task" under it. */
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-4);
+  background: var(--bg-1);
+  padding: var(--space-3);
+}
+
+.columnHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-3);
+  background: var(--bg-2);
+}
+
+.columnList { display: flex; flex-direction: column; gap: var(--space-2); }
+
+/* ──────────────────────────────────────────────
+   QUICK TASK FORM
+   ────────────────────────────────────────────── */
+.addTask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) 0;
+  border: 1px dashed var(--line-1);
+  /* 16px is not on the radius scale; --radius-3 is what a panel-sized
+     control uses everywhere else. */
+  border-radius: var(--radius-3);
+  background: transparent;
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+/* Was two onMouseEnter/onMouseLeave handlers, so it had no focus state. */
+.addTask:hover,
+.addTask:focus-visible {
+  border-color: var(--peri);
+  background: var(--peri-bg);
+  color: var(--peri);
+  outline: none;
+}
+
+.addTaskForm { margin-bottom: var(--space-3); padding: var(--space-3); border-color: var(--peri-line); }
+
+/* Was a pair of onMouseEnter/onMouseLeave handlers writing transform and
+   borderColor, so a card had a hover state and no focus state — and it is a
+   link, which is the one element a keyboard reaches. */
+.taskCard {
+  display: block;
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-3);
+  background: var(--bg-2);
+  padding: var(--space-4);
+  text-decoration: none;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.taskCard:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+.taskCard:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-color: var(--line-strong); }
+@media (prefers-reduced-motion: reduce) {
+  .taskCard { transition: border-color 0.15s; }
+  .taskCard:hover { transform: none; }
 }

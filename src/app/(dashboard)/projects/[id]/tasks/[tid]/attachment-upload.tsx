@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition, type DragEvent } from 'react';
 import { Upload } from 'lucide-react';
 import { uploadTaskAttachment } from './actions';
+import styles from './attachment-upload.module.css';
 
 export default function AttachmentUpload({ projectId, taskId }: { projectId: string; taskId: string }) {
   const [pending, startTransition] = useTransition();
@@ -26,15 +27,24 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
     dt.items.add(file);
     fileInputRef.current.files = dt.files;
     syncSelectedFile(file);
+    setError(null);
   };
 
   return (
     <form
       ref={formRef}
-      style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+      className={styles.form}
       onSubmit={(e) => {
         e.preventDefault();
         const formEl = e.currentTarget;
+        // The file input is visually hidden, so `required` on it cannot work:
+        // Chrome tries to focus an unfocusable invalid control, gives up, and
+        // the submit silently does nothing. Validate it here instead.
+        if (!fileInputRef.current?.files?.length) {
+          setError('Choose a file to upload.');
+          fileInputRef.current?.click();
+          return;
+        }
         const form = new FormData(formEl);
         setError(null);
         startTransition(async () => {
@@ -58,89 +68,54 @@ export default function AttachmentUpload({ projectId, taskId }: { projectId: str
           setDragActive(false);
         }}
         onDrop={handleDrop}
-        style={{
-          display: 'block',
-          cursor: 'pointer',
-          borderRadius: 'var(--radius-3)',
-          border: dragActive ? '1px solid var(--mint)' : '1px solid var(--line-1)',
-          padding: '12px 14px',
-          background: dragActive ? 'var(--mint-bg)' : 'var(--bg-2)',
-          transition: 'border-color 0.15s, background 0.15s',
-          boxShadow: dragActive ? '0 0 0 2px color-mix(in oklch, var(--mint-2) 18%, transparent)' : 'none',
-        }}
+        className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ''}`}
       >
         <input
           ref={fileInputRef}
           name="file"
           type="file"
-          required
-          onChange={(event) => syncSelectedFile(event.target.files?.[0] || null)}
-          style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}
+          className={styles.srOnly}
+          onChange={(event) => { syncSelectedFile(event.target.files?.[0] || null); setError(null); }}
         />
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <div style={{
-            marginTop: 2,
-            borderRadius: 'var(--radius-2)',
-            border: '1px solid var(--line-2)',
-            background: 'var(--bg-3)',
-            padding: 7,
-            color: 'var(--mint)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}>
+        <span className={styles.dropzoneRow}>
+          <span className={styles.dropzoneIcon}>
             <Upload size={15} strokeWidth={1.8} aria-hidden />
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px' }}>
-              <p className="text-xs" style={{ fontWeight: 500, color: 'var(--fg-1)' }}>Drop an attachment or click to browse</p>
+          </span>
+          <span className={styles.dropzoneText}>
+            <span className={styles.dropzoneTitleRow}>
+              <span className={styles.dropzoneTitle}>Drop an attachment or click to browse</span>
               {selectedFileName && (
-                <span className="text-2xs" style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  maxWidth: '100%',
-                  borderRadius: 'var(--radius-1)',
-                  border: '1px solid var(--line-2)',
-                  background: 'var(--bg-3)',
-                  padding: '2px 8px',
-                  
-                  color: 'var(--fg-2)',
-                }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedFileName}</span>
-                </span>
+                <span className={styles.fileChip}><span>{selectedFileName}</span></span>
               )}
-            </div>
-            <p className="text-2xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>Screenshots, markdown, notes, logs, and other small task artifacts.</p>
-          </div>
-        </div>
+            </span>
+            <span className={styles.dropzoneHint}>Screenshots, markdown, notes, logs, and other small task artifacts.</span>
+          </span>
+        </span>
       </label>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          <input
-            name="note"
-            type="text"
-            placeholder="Optional note"
-            className="cp-input"
-            style={{ minWidth: 0, flex: 1 }}
-          />
-          <button
-            type="submit"
-            disabled={pending}
-            className="btn btn--sm"
-            style={{ opacity: pending ? 0.5 : 1, whiteSpace: 'nowrap' }}
-          >
-            {pending ? 'Uploading…' : 'Upload'}
-          </button>
-        </div>
+      <div className={styles.controls}>
+        <label htmlFor="attachment-note" className={styles.srOnly}>Note</label>
+        <input
+          id="attachment-note"
+          name="note"
+          type="text"
+          placeholder="Optional note"
+          className="cp-input"
+          style={{ minWidth: 0, flex: 1 }}
+        />
+        <button
+          type="submit"
+          disabled={pending}
+          className="btn btn--primary btn--sm"
+          style={{ opacity: pending ? 0.5 : 1, whiteSpace: 'nowrap' }}
+        >
+          {pending ? 'Uploading…' : 'Upload'}
+        </button>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        {error
-          ? <p className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</p>
-          : <span className="text-2xs" style={{ color: 'var(--fg-3)' }}>Private, signed downloads only.</span>
-        }
+      <div className={styles.status} aria-live="polite">
+        <span className={styles.helper}>Private, signed downloads only.</span>
+        {error && <span className={styles.error}>{error}</span>}
       </div>
     </form>
   );
