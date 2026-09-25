@@ -11,7 +11,12 @@
    A list gives every task the full width of the page, keeps the workflow
    order the columns encoded, and scans vertically like the rest of the app.
    ────────────────────────────────────────────── */
-.list { overflow: hidden; }
+/* `clip`, not `hidden`: .card sets overflow:hidden, which establishes a
+   scroll container whose scroll offset is always 0, so the sticky group
+   headers below resolved against this box and never moved. `clip` keeps the
+   rounded corners clipping the rows without creating a scrollport, which
+   lets the headers stick to the shell's scroller as intended. */
+.list { overflow: clip; }
 
 .group + .group { border-top: 1px solid var(--line-1); }
 

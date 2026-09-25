@@ -13,6 +13,7 @@ import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS } from '@/lib/trust-tiers';
+import { dotClassForTone } from '@/lib/status-tone';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 import { KeyRound } from 'lucide-react';
 import styles from './agent-detail.module.css';
@@ -88,7 +89,7 @@ export default async function AgentDetailPage({
                   <span className="dim text-xs">owned by {agentData.owner}</span>
                 )}
                 <span className={`pill pill--${trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'ghost'}`}>
-                  <span className={`dot dot--${trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'ghost'}`} />
+                  <span className={dotClassForTone(trustTier === 'internal' ? 'mint' : trustTier === 'partner' ? 'peri' : 'neutral')} />
                   {TRUST_TIER_LABELS[trustTier]}
                 </span>
               </div>
@@ -210,7 +211,7 @@ export default async function AgentDetailPage({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <span
-                      className={`dot dot--${!key.is_active || isExpired ? 'ghost' : isExpiring ? 'amber' : 'mint'}`}
+                      className={dotClassForTone(!key.is_active || isExpired ? 'neutral' : isExpiring ? 'amber' : 'mint')}
                     />
                     <code className="mono text-sm" style={{ color: 'var(--fg-1)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{key.key_id}</code>
                     <span

@@ -127,7 +127,11 @@ function EditableProjectDescription({
 
   useEffect(() => {
     const el = descriptionRef.current;
-    if (!el) return;
+    /* Only measure while the clamp is on. Expanding removes the clamp class,
+       so re-measuring then compares an unclamped element against itself,
+       overflows flips to false, and the "Show less" button unmounts — the
+       description could not be collapsed again without a reload. */
+    if (!el || expanded) return;
     const check = () => setOverflows(el.scrollHeight > el.clientHeight + 4);
     check();
     const observer = new ResizeObserver(check);
@@ -349,36 +353,20 @@ export default function ProjectHeader({
                   return (
                     <div
                       key={m.id}
-                      style={{ position: 'relative', marginLeft: m.id === members[0]?.id ? 0 : -8 }}
+                      className={styles.memberChip}
+                      style={{ marginLeft: m.id === members[0]?.id ? 0 : -8 }}
                     >
                       <span title={`${name} (${m.role})`} style={{ display: 'inline-flex', border: '2px solid var(--bg-0)', borderRadius: 'var(--radius-3)' }}>
                         <Avatar name={name} size={32} />
                       </span>
                       {isOwner && m.role !== 'owner' && (
                         <button
+                          type="button"
                           onClick={() => handleRemoveMember(m.id)}
                           disabled={isPending}
                           title={`Remove ${name}`}
-                          className="text-2xs" style={{
-                            position: 'absolute',
-                            top: -4,
-                            right: -4,
-                            width: 16,
-                            height: 16,
-                            borderRadius: '50%',
-                            background: 'var(--rose)',
-                            border: 'none',
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            
-                            cursor: 'pointer',
-                            opacity: 0,
-                            transition: 'opacity 0.15s',
-                          }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0'; }}
+                          aria-label={`Remove ${name} from this project`}
+                          className={`text-2xs ${styles.memberRemove}`}
                         >
                           ×
                         </button>

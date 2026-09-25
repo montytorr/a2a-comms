@@ -218,17 +218,17 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 /* ──────────────────────────────────────────────
    PROJECT LAYOUT
 
-   Work on the left with the page's width, context on the right. The board
-   used to take the whole page and still hide a third of itself, while the
-   project's own description sat in a 530px column with the rest empty beside
-   it.
+   Context left, work right. The board used to take the whole page and still
+   hide a third of itself, while the project's own description sat in a 530px
+   column with the rest of the page empty beside it.
    ────────────────────────────────────────────── */
 .workLayout {
   display: grid;
   /* Context left, work right — the same order as contracts/[id] and
      projects/[id]/tasks/[tid]. This page was the only one of the four that
-     put its rail on the other side. <main> still precedes <aside> in the
-     markup, so tab and screen-reader order reach the work first. */
+     put its rail on the other side. The work column still precedes the rail
+     in the markup, so tab and reading order reach it first; the dashboard
+     shell owns the page's single <main>. */
   grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
   grid-template-areas: 'context work';
   align-items: start;
@@ -262,3 +262,57 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 .workHead p { margin-top: var(--space-1); color: var(--fg-2); font-size: var(--text-xs); }
 
 .newTask { display: flex; justify-content: flex-start; }
+
+/* Was opacity:0 flipped by onMouseEnter/onMouseLeave. opacity:0 keeps an
+   element in the tab order, so a keyboard user landed on a focused but
+   invisible destructive button and the next Enter fired a member removal
+   behind a confirm(). On touch there was no way to reach it at all.
+   Revealed by hovering the avatar, by focusing the button, and always on a
+   device without hover. */
+.memberChip { position: relative; }
+
+.memberRemove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--rose);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.memberChip:hover .memberRemove,
+.memberRemove:focus-visible { opacity: 1; }
+.memberRemove:focus-visible { outline: 2px solid var(--fg-0); outline-offset: 1px; }
+@media (hover: none) {
+  .memberRemove { opacity: 1; }
+}
+
+/* The composer's primary control had border:none, outline:none and no
+   cp-input class, so it missed the design system's focus replacement too and
+   was completely invisible when focused. The sibling textarea carries
+   cp-textarea and kept its ring; only this one was bare. */
+.titleInput {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-2);
+  background: transparent;
+  color: var(--fg-1);
+  font-family: var(--sans);
+  font-weight: 500;
+  padding: var(--space-1) var(--space-2);
+  margin-inline: calc(var(--space-2) * -1);
+}
+.titleInput:focus {
+  outline: none;
+  background: var(--bg-2);
+  box-shadow: 0 0 0 2px var(--brand);
+}
+.titleInput::placeholder { color: var(--fg-3); }

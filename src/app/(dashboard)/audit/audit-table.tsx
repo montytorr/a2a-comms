@@ -201,7 +201,14 @@ function TableRow({ entry, isAlt }: { entry: AuditLogEntry; isAlt: boolean }) {
 
       {/* event type */}
       <div style={{ width: COL_EVENT, flexShrink: 0, overflow: 'hidden' }}>
-        <span className={pillClass} style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {/* inline-block, because .pill is inline-flex and text-overflow never
+            applies to a flex container's anonymous text item — this clipped
+            mid-glyph with no ellipsis and no title to recover the value. */}
+        <span
+          className={pillClass}
+          title={entry.action}
+          style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
           {entry.action}
         </span>
       </div>

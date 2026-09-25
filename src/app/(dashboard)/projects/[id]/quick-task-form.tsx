@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useTransition } from 'react';
+import { useState, useRef, useEffect, useCallback, useTransition } from 'react';
 import { Plus, MoreHorizontal } from 'lucide-react';
 import type { TaskPriority } from '@/lib/types';
 import { createTask } from './actions';
@@ -20,6 +20,13 @@ interface QuickTaskFormProps {
   projectId: string;
   status: string;
   sprintId?: string;
+  /** Mount already open. Callers that render their own "+ New task" button
+   *  need this, or the first click swaps one button for another and the user
+   *  has to click twice to reach the title field. */
+  defaultOpen?: boolean;
+  /** Told when the form closes itself — click-outside, Escape, or a
+   *  successful create — so a caller owning its own trigger can reset it. */
+  onClose?: () => void;
   members?: Array<{
     id: string;
     role: string;
@@ -32,8 +39,10 @@ export default function QuickTaskForm({
   status,
   sprintId,
   members = [],
+  defaultOpen = false,
+  onClose,
 }: QuickTaskFormProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -45,7 +54,10 @@ export default function QuickTaskForm({
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  function resetAndClose() {
+  /* Memoised because the click-outside effect depends on it, and it now
+     closes over `onClose` — without this the listener would keep calling a
+     stale one. */
+  const resetAndClose = useCallback(() => {
     setTitle('');
     setDescription('');
     setPriority('medium');
@@ -54,7 +66,8 @@ export default function QuickTaskForm({
     setDueDate('');
     setExpanded(false);
     setIsOpen(false);
-  }
+    onClose?.();
+  }, [onClose]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -74,7 +87,7 @@ export default function QuickTaskForm({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen, title]);
+  }, [isOpen, title, resetAndClose]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -132,16 +145,7 @@ export default function QuickTaskForm({
           onFocus={() => setExpanded(true)}
           placeholder="Task title…"
           disabled={isPending}
-          className="text-2xs" style={{
-            width: '100%',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            
-            fontWeight: 500,
-            color: 'var(--fg-1)',
-            fontFamily: 'var(--sans)',
-          }}
+          className={`text-2xs ${styles.titleInput}`}
         />
 
         {expanded && (

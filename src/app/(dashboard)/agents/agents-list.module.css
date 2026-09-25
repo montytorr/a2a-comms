@@ -27,7 +27,11 @@
 .handle { overflow: hidden; color: var(--fg-3); font-family: var(--mono); font-size: var(--text-2xs); text-overflow: ellipsis; white-space: nowrap; }
 .description { display: -webkit-box; overflow: hidden; color: var(--fg-2); font-size: var(--text-sm); line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .capabilities { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
-.capabilities span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+/* .pill is inline-flex and text-overflow does not apply to a flex
+   container's anonymous text item, so these clipped mid-glyph with no
+   ellipsis. inline-block costs a label pill nothing. */
+.capabilities span {
+  display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .empty, .more { color: var(--fg-3); font-size: var(--text-xs); }
 .secondary { color: var(--fg-2); font-size: var(--text-xs); }
 .date { color: var(--fg-3); font-family: var(--mono); font-size: var(--text-2xs); }

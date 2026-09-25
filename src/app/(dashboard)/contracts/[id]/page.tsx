@@ -412,7 +412,7 @@ export default async function ContractDetailPage({
                   <LinkOff size={16} aria-hidden="true" />
                   <strong>Not linked to a project task</strong>
                 </div>
-                <p>Linking this contract adds board tracking and enables attachments.</p>
+                <p>Linking this contract puts it in the project&apos;s task list and enables attachments.</p>
                 <details className={styles.attentionDetails}>
                   <summary>How to link it</summary>
                   <code>{`holloway contract-link ${id} --project <project_id> --task <task_id>`}</code>
@@ -556,7 +556,7 @@ export default async function ContractDetailPage({
           </div>
             </aside>
           </div>
-          <main className={styles.main}>
+          <div className={styles.main}>
             <OperatorChannel
               contractId={id}
               notes={channel.notes}
@@ -665,7 +665,7 @@ export default async function ContractDetailPage({
               })}
             </div>
           )}
-          </main>
+          </div>
         </div>
       </PageFrame>
     </AutoRefresh>
