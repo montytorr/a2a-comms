@@ -7,6 +7,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.373] - 2026-09-25
+### Changed
+- separate enforcement from intent, and delete what nothing reads
+- Cal asked, looking at the agent page: "is all this data even in use in the system?" It half was. This separates the half that is.
+- ## What the data said
+- The three save actions on the agent page write audit rows — agent.trust_tier_change, agent.trust_policy_change, agent.privacy_change. audit_log holds 8,153 rows since March. Count for all three, and for agent.key_rotate: zero. Nobody has ever submitted any of those forms.
+- All four agents carry byte-identical privacy metadata, exactly DEFAULT_AGENT_PRIVACY_METADATA. Three of four carry the default trust policy. Only trust_tier and trust_notes are curated, and trust_tier is the most load-bearing field in the product: gateTier blocks invites, handoffs, escalations and observer adds across eight sites, and it is the callerTier of every policy decision.
+- Tracing every field to its readers: the tier and four policy gates are enforced; five agent privacy fields and trust_notes are advisory — nothing branches on them, and reactor/ reads none of them.
+- ## Why nothing is deleted
+- HOLC-11 is explicit that this vocabulary is deliberate: "The product already has the VOCABULARY... The cloud is where they stop being metadata and start being enforced." Advisory is the intended state today. The defect was never that the data is useless — it is that declared intent and enforced gates wore the same card, the same weight and the same Save button.
+- ## Agent page
+- Trust tier is promoted and says what it carries. The policy card becomes "Access gates", and gains the three gates that were enforced all along but editable only through PATCH /v1/agents/:id — member list, observer list and pending invitations, the last of which silently filters rows rather than refusing. That card was three near-identical 60-line JSX blocks, which is why adding a fourth had never happened; it is a table now and the seventh gate is one row.
+- Privacy becomes "Data posture", recessed, with the honesty structural rather than a footnote: "Recorded, not enforced." The read-only summary that used to be its own card higher up the page is folded in as its tiles, and the editor sits behind a toggle.
+- ## Project settings
+- Same shape, same treatment. allow_observer_access is the one field with teeth — it redirects an observer off the page and 403s PRIVACY_POLICY_BLOCKED — and it sat sixth in a six-up grid of identical selects, distinguishable only by a clause in a paragraph underneath. It has its own box now. retention_mode went entirely: nothing has ever read it, not the UI, not the API, not the reactor.
+- ## Dead code
+- Verified by import graph plus repo-wide grep over ts/tsx/py/sql/sh/md, including the API surface, the python CLI and the reactor:
+- whole files: components/auth-guard.tsx, atoms/sparkline.tsx, and all three of src/emails/ (superseded by src/lib/email/templates/)
+- task-editor's DueDatePicker and SprintPicker, exported but never rendered — that file drops from 710 lines to 506
+- 25 unused exports across task-execution-ui, reputation-ledger, delegated-execution, security-events, trust-tiers, api-helpers, webhook-helpers, escalation-brokerage, agent-trust-policy, attachments, format-date and dashboard-actor-helpers
+- 8 dead interfaces in types.ts, several of them shadowed duplicates of the live definition elsewhere
+- dead CSS: dashboard.module.css .statIcon, and pillClassForName
+- every remaining eslint warning in the repo: 14 down to 0
+- Two the audit flagged that are NOT deleted, because they are live: incrementFailure and markDeliveryFailed are used by scripts/webhook-retry-worker.ts, not by src/. Deleting "unused exports" naively would have broken webhook retries.
+- One seam did die honestly: _logWebhookDelivery's only reader was getDeliveryLogger. Delivery logging is unaffected — webhooks.ts calls logWebhookDelivery directly at :120, :142 and :153. _logWebhookDisabled stays; it is read at :98.
+- Geometry ratchet lowered 2400 -> 2300 for the inline styles this removes.
+- Verified: eslint 0 problems, 457/457 tests, build compiles, and all seven dashboard routes rendered 200 with zero console errors against production data before this was merged. Agent page 2238px -> 1999px.
+- Cairn: HOL-143, HOL-144
+- Merge pull request #23 from montytorr/fix/agent-project-settings-and-dead-code
+- refactor: separate enforcement from intent, and delete what nothing reads
+
 ## [1.0.372] - 2026-09-25
 ### Changed
 - Merge pull request #22 from montytorr/fix/task-cards-and-agent-page
