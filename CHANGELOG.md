@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.371] - 2026-09-25
+### Changed
+- Merge pull request #21 from montytorr/fix/task-rail-left-and-board-columns
+- fix(ui): task rail back on the left, board columns get their height back
+### Fixed
+- put the task rail back on the left, and give board columns their height back
+- Two corrections to v1.0.370.
+- The task detail rail is left again, as it is on the contract detail page. Flipping it was never part of the scroll fix — that lives entirely in `.sidebar`, which no longer carries sticky, max-height or overflow-y — and the hierarchy problem it claimed to solve was already solved by moving the title into a full-width header above the grid. All it actually bought was body copy aligning under the h1, at the cost of disagreeing with the page next door.
+- The board columns get their cap back. Removing it was a bad read of the audit: a kanban column is a list widget, and a list widget that scrolls inside itself is the idiom, not the defect. The task page's context rail is document content and had no business trapping a scroll; a column does. With no cap every column grew to its own content, so forty done tasks stood beside two todo ones and the board read as a broken bar chart.
+- The cap is derived rather than magic this time — `min(720px, calc(100dvh - var(--topbar-h) - var(--space-6) * 4))` — because 720px being taller than a 13" laptop's viewport is what made its scrollbar unreachable to begin with. The inner list gets `scrollbar-gutter: stable` so cards no longer jump sideways when a column crosses the cap.
+- "Add task" stays at the top of the column, where it is always reachable, but as a quiet row rather than a dashed box: six empty dashed boxes across the head of the board was the first thing the eye landed on.
+- The `rail="right"` RouteSkeleton variant goes with the flip that needed it.
+
 ## [1.0.370] - 2026-09-25
 ### Changed
 - Merge pull request #20 from montytorr/fix/task-page-scroll-and-hierarchy
