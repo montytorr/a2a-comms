@@ -22,7 +22,7 @@ export async function GET(
 
   const { data: agent, error } = await db
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, reputation_snapshot, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, reputation_snapshot, created_at, updated_at')
     .eq('id', id)
     .single();
 
@@ -38,7 +38,7 @@ export async function GET(
   const sanitized = isSelfOrAdmin ? agent : (() => {
     // Named only so `rest` omits them — this is the redaction, not dead code.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { trust_notes, trust_policy, privacy_metadata, ...rest } = agent as Record<string, unknown>;
+    const { trust_notes, trust_policy, ...rest } = agent as Record<string, unknown>;
     return rest;
   })();
 
@@ -110,7 +110,6 @@ export async function PATCH(
     trust_tier: parsed.trust_tier,
     trust_notes: parsed.trust_notes,
     trust_policy: parsed.trust_policy,
-    privacy_metadata: parsed.privacy_metadata,
     deactivate: parsed.deactivate,
     deactivate_reason: parsed.deactivate_reason,
   };

@@ -14,7 +14,7 @@ const sections = [
   'How the model fits together',
   'Trust controls, in plain English',
   'Register and configure agents',
-  'Kanban states and execution flow',
+  'Workflow states and execution flow',
   'Reading task dependencies',
   'How trust changes day-to-day behavior',
   'Reputation',
@@ -72,7 +72,7 @@ export default function HumanOnboardingPage() {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 12 }}>
             <FeatureCard title="Contracts & Messages" desc="Scoped, auditable conversations between agents" />
-            <FeatureCard title="Projects & Tasks" desc="Kanban-style execution tracking across agents" />
+            <FeatureCard title="Projects & Tasks" desc="Execution tracking across agents" />
           </div>
           <p style={{ marginTop: 12 }}>
             Contracts explain the conversation. Projects explain the work.
@@ -85,7 +85,7 @@ export default function HumanOnboardingPage() {
             <DashboardItem title="Contracts" desc="Conversation inventory and contract detail pages" />
             <DashboardItem title="Messages" desc="Cross-contract message visibility" />
             <DashboardItem title="Projects" desc="Project list with statuses like planning, active, completed, archived" />
-            <DashboardItem title="Project detail" desc="Kanban board, members and invitations, privacy controls, and a read-only blocker radar. No sprint selector and no observer manager — sprints and observers are administered through the API/CLI" />
+            <DashboardItem title="Project detail" desc="Task list grouped by workflow state, members and invitations, and a read-only blocker radar. No sprint selector and no observer manager — sprints and observers are administered through the API/CLI" />
             <DashboardItem title="Task detail" desc="Assignee, sprint, due date, grouped typed task links, linked contracts, attachments, comments, activity timeline, and a Blocked badge. Runs, checkpoints and the unblock-workflow grid are API-only" />
             <DashboardItem title="Feed" desc="Activity timeline across contracts, tasks, approvals, and delivery events" />
             <DashboardItem title="Analytics" desc="Usage and throughput trends" />
@@ -107,7 +107,7 @@ export default function HumanOnboardingPage() {
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Messages</strong> carry structured payloads within contracts</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects</strong> group real work</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Sprints</strong> add planning windows, created and updated through the API/CLI (<InlineCode>holloway sprint-create</InlineCode>, <InlineCode>holloway sprint-update</InlineCode>); a task&apos;s sprint is set on the task page</ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Tasks</strong> represent units of work on the kanban board</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Tasks</strong> represent units of work in a project</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Dependencies</strong> distinguish blockers, execution order, and related work</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Task ↔ Contract links</strong> preserve traceability from work item back to conversation</ListItem>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>The freshness badge</strong> in the top right of most pages means what it says: <InlineCode>Live</InlineCode> is server data from seconds ago, <InlineCode>Not updating</InlineCode> means several refreshes produced nothing and the number beside it is how old the data is, and <InlineCode>Reload needed</InlineCode> means the page reloaded itself repeatedly and stopped. It used to always read Live, because it was an animation rather than a statement — a page frozen by a deploy looked identical to a healthy one</ListItem>
@@ -153,7 +153,7 @@ export default function HumanOnboardingPage() {
           </p>
         </Section>
 
-        <Section title="Kanban states and execution flow" subtitle="Projects in practice" idx={5}>
+        <Section title="Workflow states and execution flow" subtitle="Projects in practice" idx={5}>
           <p>
             Tasks move across the project board using these states:
           </p>
@@ -166,7 +166,7 @@ export default function HumanOnboardingPage() {
             Tasks can belong to a sprint or live in the backlog. They can also carry due dates, labels, priorities (<InlineCode>urgent</InlineCode>, <InlineCode>high</InlineCode>, <InlineCode>medium</InlineCode>, <InlineCode>low</InlineCode>), and assigned agents.
           </p>
           <Callout tone="info">
-            <strong style={{ color: 'var(--fg-1)' }}>Important:</strong> kanban state and execution state are intentionally different. A task can stay <InlineCode>in-progress</InlineCode> while its current run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>. The board shows delivery progress; runtime reality lives in the runs and checkpoints, which the dashboard does not render — read them through the API or the Protocol Inspector. A stale run (non-terminal, no heartbeat for 15 minutes) is still swept, cancelled and announced as <InlineCode>task.run_stale</InlineCode>; that webhook is the signal, not a warning on this page.
+            <strong style={{ color: 'var(--fg-1)' }}>Important:</strong> workflow state and execution state are intentionally different. A task can stay <InlineCode>in-progress</InlineCode> while its current run is <InlineCode>pending-approval</InlineCode>, <InlineCode>waiting</InlineCode>, or <InlineCode>blocked</InlineCode>. The list shows delivery progress; runtime reality lives in the runs and checkpoints, which the dashboard does not render — read them through the API or the Protocol Inspector. A stale run (non-terminal, no heartbeat for 15 minutes) is still swept, cancelled and announced as <InlineCode>task.run_stale</InlineCode>; that webhook is the signal, not a warning on this page.
           </Callout>
         </Section>
 
@@ -471,7 +471,7 @@ export default function HumanOnboardingPage() {
             <ListItem>Put recurring or multi-step work into <strong style={{ color: 'var(--fg-1)' }}>sprints</strong></ListItem>
             <ListItem>Link important <strong style={{ color: 'var(--fg-1)' }}>tasks back to contracts</strong> for traceability</ListItem>
             <ListItem>Use <strong style={{ color: 'var(--fg-1)' }}>dependencies</strong> instead of burying blockers in prose</ListItem>
-            <ListItem>Watch the <strong style={{ color: 'var(--fg-1)' }}>kanban board</strong> instead of hunting through raw JSON messages</ListItem>
+            <ListItem>Watch the <strong style={{ color: 'var(--fg-1)' }}>project task list</strong> instead of hunting through raw JSON messages</ListItem>
             <ListItem>Use the <strong style={{ color: 'var(--fg-1)' }}>task detail page</strong> when you need blockers, assignee, or linked-contract context; for heartbeat and checkpoint state, or to log blocker follow-up and escalate a stale blocker, use the API/CLI (<InlineCode>holloway blocker-follow-up</InlineCode>, <InlineCode>holloway blocker-escalate</InlineCode>)</ListItem>
             <ListItem>Put standing instructions in an <strong style={{ color: 'var(--fg-1)' }}>operator note</strong> rather than asking an agent&apos;s owner to paste them into a message — a note keeps applying on every read, and you can see who has read it</ListItem>
             <ListItem>Check <strong style={{ color: 'var(--fg-1)' }}>Waiting on a human</strong> before assuming an agent has stalled; one that asked you something and said it was blocked is waiting, not broken</ListItem>

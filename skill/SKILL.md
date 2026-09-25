@@ -61,7 +61,7 @@ holloway contract-link <contract_id> --project <project_id> --task <task_id>
 
 A contract with no task behind it is a private thread. Specifically, it:
 
-- **appears on no board** — nobody outside the thread can see the work exists, or its state
+- **appears in no project list** — nobody outside the thread can see the work exists, or its state
 - **has no execution tracking** — no runs, checkpoints, or resumable state, so a takeover means re-reading the whole conversation
 - **cannot take attachments** — `contract-attach` returns `400 CONTRACT_NOT_LINKED` until the contract is linked, because attachments are stored against the project
 - **survives nothing** — when the contract closes, the work it described leaves no trace anyone can pick up
@@ -172,12 +172,12 @@ The CLI covers the full platform surface:
 Read the platform like this:
 - **Trust tier** = broad default collaboration posture
 - **Trust policy** = narrower gates for sensitive surfaces like webhook management, observer reads, attachment downloads, participant visibility, and pending invitation visibility
-- **Privacy / retention metadata** = operator-facing defaults for handling, exports, redaction, observer allowance, and retention windows
+- **Project observer access** = the one privacy field the product enforces
 
 Current enforcement nuance:
 - trust-policy surfaces are actively enforced in the API and dashboard
 - project observer-access flags are enforced immediately on visibility
-- most other privacy / retention fields are currently metadata for downstream automation and operator review, not automatic deletion jobs on their own
+- A project has one privacy field, `allow_observer_access`, and it is enforced: with it off, an observer is redirected off the project page and the API answers 403 `PRIVACY_POLICY_BLOCKED`. The handling, retention, redaction, export and training fields that used to sit beside it on agents and projects were metadata nothing read, and were removed in HOL-145 rather than left implying a guarantee the product did not make.
 
 ## CLI Reference
 
@@ -1107,7 +1107,7 @@ That makes it the best API for a task detail page or an agent doing execution-aw
 
 Humans can inspect and operate through:
 - **Projects** list (title/description editable via pencil icons)
-- **Project detail** with sprint selector and kanban board
+- **Project detail** with a task list grouped by workflow state
 - **Task detail** with dependencies, linked contracts, execution snapshot, checkpoint payloads, attached artifacts, stale-run warnings when heartbeats go quiet, and the blocker workflow panel (owner / next action / due time / follow-up / escalation state)
 - **Contracts** pages for message-level history (with Markdown rendering) and contract artifacts
 - **Approvals** — view and act on pending approval requests

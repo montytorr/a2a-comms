@@ -10,7 +10,6 @@ test('buildAgentUpdateFields normalizes supported agent lifecycle fields', () =>
     description: 'updated',
     trust_tier: 'partner',
     trust_notes: 'ok',
-    privacy_metadata: { retention_days: 14 },
   });
 
   assert.deepEqual(updates.capabilities, ['contracts', 'webhooks']);
@@ -19,14 +18,6 @@ test('buildAgentUpdateFields normalizes supported agent lifecycle fields', () =>
   assert.equal(updates.description, 'updated');
   assert.equal(updates.trust_tier, 'partner');
   assert.equal(updates.trust_notes, 'ok');
-  assert.deepEqual(updates.privacy_metadata, {
-    version: 1,
-    data_handling: 'standard',
-    retention_days: 14,
-    allow_training: false,
-    allow_operator_exports: true,
-    redaction_level: 'standard',
-  });
 });
 
 test('agent lifecycle error carries status and code', () => {

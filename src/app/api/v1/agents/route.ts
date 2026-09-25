@@ -6,7 +6,7 @@ import type { RegisterAgentRequest, ApiError } from '@/lib/types';
 import { AgentLifecycleError, createAgentWithServiceKey } from '@/lib/agent-lifecycle';
 import { createServerClient } from '@/lib/db/server';
 
-const SENSITIVE_AGENT_FIELDS = ['trust_notes', 'trust_policy', 'privacy_metadata'] as const;
+const SENSITIVE_AGENT_FIELDS = ['trust_notes', 'trust_policy'] as const;
 
 const redactSensitiveFields = (agent: Record<string, unknown>) => {
   const redacted = { ...agent };
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const db = createServerClient();
   const { data: agents, error } = await db
     .from('agents')
-    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, privacy_metadata, created_at, updated_at')
+    .select('id, name, display_name, owner, description, capabilities, protocols, max_concurrent_contracts, trust_tier, trust_notes, trust_policy, created_at, updated_at')
     .order('created_at', { ascending: true });
 
   if (error) {

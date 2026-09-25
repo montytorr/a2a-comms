@@ -57,7 +57,7 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 
    Was a full-bleed rose panel carrying a text-xl count, three lines of
    explanatory copy, and up to six mini-cards that restated — owner, expected
-   follow-up, unblock action, status pills — exactly what the kanban card for
+   follow-up, unblock action, status pills — exactly what the task row for
    the same task already shows a screen below. It outranked the board it sits
    above, and it said everything twice.
 
@@ -128,71 +128,6 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 }
 
 /* ──────────────────────────────────────────────
-   BOARD
-   ────────────────────────────────────────────── */
-.boardScroller {
-  /* Horizontal only. `overflow-y: visible` next to `overflow-x: auto`
-     computes to `auto` per spec, which quietly made this a second vertical
-     scroll container inside the shell's. */
-  overflow-x: auto;
-  padding-bottom: var(--space-2);
-  /* `mandatory` forbids resting between columns and fought every scroll that
-     started inside a column. */
-  scroll-snap-type: x proximity;
-  overscroll-behavior-x: contain;
-}
-
-.boardRow { display: flex; min-width: max-content; align-items: flex-start; gap: var(--space-4); }
-
-.column {
-  /* Was clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px):
-     100vw counts the scrollbar, --sidebar-w stays 232px even where the
-     sidebar is not rendered, and 128px matched none of the page's gutters. */
-  flex: 0 0 clamp(280px, 22vw, 340px);
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  /* A kanban column is a list widget, and a list widget that scrolls inside
-     itself is the idiom, not a bug — unlike the task page's context rail,
-     which is document content and had no business trapping a scroll.
-     Removing this cap made every column grow to its own content, so a
-     column of forty done tasks stood beside one of two and the board read
-     as a broken bar chart.
-     The cap is back, but derived rather than magic: 720px was taller than
-     the viewport on a 13" laptop, which is what made its scrollbar
-     unreachable in the first place. */
-  max-height: min(720px, calc(100dvh - var(--topbar-h) - var(--space-6) * 4));
-  border: 1px solid var(--line-1);
-  border-radius: var(--radius-4);
-  background: var(--bg-1);
-  padding: var(--space-3);
-}
-
-.columnHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line-1);
-  border-radius: var(--radius-3);
-  background: var(--bg-2);
-}
-
-.columnList {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  flex-direction: column;
-  gap: var(--space-2);
-  overflow-y: auto;
-  /* The old scroller reserved no gutter, so the cards jumped sideways the
-     moment a column crossed the cap, and the thumb only appeared on hover. */
-  scrollbar-gutter: stable;
-}
-
-/* ──────────────────────────────────────────────
    QUICK TASK FORM
    ────────────────────────────────────────────── */
 .addTask {
@@ -223,149 +158,7 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 
 .addTaskForm { margin-bottom: var(--space-2); padding: var(--space-3); border-color: var(--peri-line); }
 
-/* Was a pair of onMouseEnter/onMouseLeave handlers writing transform and
-   borderColor, so a card had a hover state and no focus state — and it is a
-   link, which is the one element a keyboard reaches. */
-.taskCard {
-  display: block;
-  border: 1px solid var(--line-1);
-  border-radius: var(--radius-3);
-  background: var(--bg-2);
-  padding: var(--space-4);
-  text-decoration: none;
-  transition: transform 0.15s, border-color 0.15s;
-}
-.taskCard:hover { transform: translateY(-2px); border-color: var(--line-strong); }
-.taskCard:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-color: var(--line-strong); }
-@media (prefers-reduced-motion: reduce) {
-  .taskCard { transition: border-color 0.15s; }
-  .taskCard:hover { transform: none; }
-}
 
-/* ──────────────────────────────────────────────
-   TASK CARD
-
-   The card used to open with a priority chip on its own row, then a row of
-   label pills that wrapped to two lines, and only then the title — at 14px
-   in --fg-1, the third thing down and the quietest of the three. Below that
-   sat a card-within-a-card carrying a blocker panel, a row of dependency
-   count pills and a two-column grid of preview boxes with clamped titles:
-   four nested surfaces on a 300px column, which is why cards ran from 120px
-   to 380px and the board read as rubble.
-
-   The title is the only thing anyone scans a board for, so it goes first and
-   carries the weight. Everything else is a single quiet line underneath.
-   ────────────────────────────────────────────── */
-.taskTitleRow {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-
-/* Priority is one bit of information and does not need a labelled chip above
-   the title to carry it. The dot is the same ramp as everywhere else and the
-   title attribute keeps it readable for a screen reader and on hover. */
-.taskPriority {
-  flex-shrink: 0;
-  width: 7px;
-  height: 7px;
-  margin-top: 6px;
-  border-radius: var(--radius-pill);
-}
-
-.taskTitle {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  color: var(--fg-0);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* One row, no wrap: label pills wrapping to a second and third line was what
-   pushed the title down the card in the first place. */
-.taskLabels {
-  display: flex;
-  gap: var(--space-1);
-  min-width: 0;
-  overflow: hidden;
-}
-.taskLabels > span {
-  flex-shrink: 0;
-  max-width: 13ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* .pill is inline-flex, and text-overflow never applies to a flex
-     container's anonymous text item — the label was cut mid-word with no
-     ellipsis. A label pill carries no dot, so inline-block costs nothing. */
-  display: inline-block;
-}
-
-/* The blocker panel, the count pills and the preview grid collapse to this:
-   one line that says what is true, linking to the task page for the detail
-   that used to be crammed into a 280px box. */
-.taskMetaLine {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  color: var(--fg-3);
-  font-size: var(--text-2xs);
-}
-.taskMetaLine b { color: var(--fg-2); font-weight: 500; }
-
-.taskBlocked {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  max-width: 100%;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-2xs);
-  font-weight: 600;
-}
-.taskBlockedNote {
-  color: var(--fg-3);
-  font-size: var(--text-2xs);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.taskFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-top: auto;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--line-1);
-}
-.taskAssignee { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
-.taskAssignee span { color: var(--fg-3); font-size: var(--text-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.taskUnassigned { color: var(--fg-3); font-size: var(--text-2xs); }
-.taskId { flex-shrink: 0; color: var(--fg-4); font-size: var(--text-2xs); letter-spacing: 0.08em; }
-
-.taskBody { display: flex; flex-direction: column; gap: var(--space-2); height: 100%; }
-
-/* An empty column spent 215px on a boxed EmptyState, so a project whose work
-   is finished showed four large empty panels and nothing else above the
-   fold. Absence should read as a quiet line. */
-.columnEmpty {
-  padding: var(--space-3) var(--space-4);
-  border: 1px dashed var(--line-1);
-  border-radius: var(--radius-3);
-  color: var(--fg-3);
-  font-size: var(--text-2xs);
-  text-align: center;
-}
 
 /* ──────────────────────────────────────────────
    PROJECT DESCRIPTION
@@ -378,6 +171,7 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
    rest one click away.
    ────────────────────────────────────────────── */
 .description { position: relative; max-width: 74ch; }
+.description :is(h1, h2, h3) { font-size: var(--text-sm); }
 
 .descriptionClamped {
   max-height: 168px;
@@ -392,7 +186,10 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
   bottom: 0;
   height: 64px;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--bg-0));
+  /* The description moved into a card in the context rail, so the fade has to
+     land on the card's ground. Against --bg-0 it read as a grey box sitting
+     on top of the text rather than the text running out. */
+  background: linear-gradient(to bottom, transparent, var(--bg-1));
 }
 
 .descriptionToggle {
@@ -425,23 +222,7 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
    ────────────────────────────────────────────── */
 .policy { padding: var(--space-5); }
 
-.policyHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-.policyTitle { margin: 0; color: var(--fg-0); font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
-.policySub { margin: var(--space-1) 0 0; color: var(--fg-2); font-size: var(--text-xs); }
 
-.policyEnforced {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--mint-line);
-  border-radius: var(--radius-3);
-  background: var(--mint-bg);
-}
 
 .check { display: flex; align-items: flex-start; gap: var(--space-3); }
 .check label { display: grid; gap: var(--space-1); min-width: 0; cursor: pointer; }
@@ -449,46 +230,50 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 .check label span { color: var(--fg-2); font-size: var(--text-2xs); line-height: 1.5; }
 .check code { font-family: var(--mono); font-size: var(--text-2xs); color: var(--fg-1); }
 
-.policyBanner {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  margin: var(--space-5) 0 var(--space-4);
-  padding: var(--space-3);
-  border: 1px solid var(--amber-line);
-  border-radius: var(--radius-2);
-  background: var(--amber-bg);
-  color: var(--fg-1);
-  font-size: var(--text-2xs);
-  line-height: 1.5;
-}
-.policyBanner strong { color: var(--amber); font-weight: 600; white-space: nowrap; }
 
-.policyGrid {
+
+.policyNote { margin: 0; color: var(--fg-3); font-size: var(--text-2xs); }
+.policyErr { color: var(--rose); }
+
+/* ──────────────────────────────────────────────
+   PROJECT LAYOUT
+
+   Work on the left with the page's width, context on the right. The board
+   used to take the whole page and still hide a third of itself, while the
+   project's own description sat in a 530px column with the rest empty beside
+   it.
+   ────────────────────────────────────────────── */
+.workLayout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  align-items: end;
-  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  align-items: start;
+  gap: var(--space-6);
 }
-.policyField { display: grid; gap: var(--space-2); min-width: 0; }
-.policyLabel {
+
+.work { min-width: 0; display: grid; align-content: start; gap: var(--space-4); }
+.context { min-width: 0; display: grid; align-content: start; gap: var(--space-4); }
+
+.aboutCard { padding: var(--space-5); }
+.aboutTitle {
+  margin: 0 0 var(--space-3);
   color: var(--fg-3);
-  font-size: var(--text-2xs);
-  font-weight: 500;
+  font: 500 var(--text-2xs) / 1.4 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.policyActions {
+@media (max-width: 1000px) {
+  .workLayout { grid-template-columns: minmax(0, 1fr); }
+}
+
+.workHead {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line-1);
 }
-.policyNote { margin: 0; color: var(--fg-3); font-size: var(--text-2xs); }
-.policyOk { color: var(--mint); }
-.policyErr { color: var(--rose); }
+.workHead h2 { color: var(--fg-0); font-size: var(--text-lg); font-weight: 600; }
+.workHead p { margin-top: var(--space-1); color: var(--fg-2); font-size: var(--text-xs); }
+
+.newTask { display: flex; justify-content: flex-start; }

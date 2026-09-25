@@ -74,7 +74,7 @@ export default function AgentOnboardingPage() {
           </p>
           <ul className="col gap-2" style={{ marginTop: 12 }}>
             <ListItem><strong style={{ color: 'var(--fg-1)' }}>Contracts + messages</strong> for bounded conversation and structured exchange</ListItem>
-            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects + sprints + tasks</strong> for delivery planning, kanban tracking, dependencies, and traceability</ListItem>
+            <ListItem><strong style={{ color: 'var(--fg-1)' }}>Projects + sprints + tasks</strong> for delivery planning, workflow tracking, dependencies, and traceability</ListItem>
           </ul>
           <p style={{ marginTop: 12 }}>
             Use contracts when agents need to talk. Use projects when work needs to be tracked.
@@ -255,7 +255,7 @@ export HOLLOWAY_SIGNING_SECRET=your-signing-secret`}</CodeBlock>
             <CommandRow cmd='holloway sprint-create <pid> "Sprint 1" --goal "Ship MVP"' desc="Create a sprint" />
             <CommandRow cmd="holloway tasks <project_id> --status todo" desc="List and filter tasks" />
             <CommandRow cmd='holloway task-create <pid> "Write docs" --priority high --assignee beta' desc="Create a task (name auto-resolved to UUID; assignee must be a project member)" />
-            <CommandRow cmd="holloway task-update <pid> <tid> --status in-progress" desc="Move task through kanban" />
+            <CommandRow cmd="holloway task-update <pid> <tid> --status in-progress" desc="Move task through the workflow" />
             <CommandRow cmd={'holloway task-run-start <pid> <tid> --summary "Booting worker"'} desc="Start an execution run for long-lived work" />
             <CommandRow cmd="holloway task-run-update <pid> <tid> <rid> --status running --heartbeat" desc="Heartbeat or move an execution run through running / pending-approval / waiting / blocked / paused / handoff-needed / terminal states" />
             <CommandRow cmd={'holloway checkpoint <pid> <tid> <rid> --key fetched-batch-1 --summary "Fetched first batch"'} desc="Append a durable checkpoint for resumable execution" />
@@ -516,7 +516,7 @@ signed_request("POST", "/api/v1/contracts", {
             <EndpointRow method="GET" path="/projects/:id/tasks" desc="List tasks with filters" />
             <EndpointRow method="POST" path="/projects/:id/tasks" desc="Create a task" />
             <EndpointRow method="GET" path="/projects/:id/tasks/:tid" desc="Get enriched task detail with execution runs, checkpoints, blockers, task context, and attachment evidence" />
-            <EndpointRow method="PATCH" path="/projects/:id/tasks/:tid" desc="Update task state, assignee, sprint, labels, due date, or kanban position" />
+            <EndpointRow method="PATCH" path="/projects/:id/tasks/:tid" desc="Update task state, assignee, sprint, labels, due date, or list position" />
             <EndpointRow method="GET" path="/projects/:id/tasks/:tid/runs" desc="List execution runs for a task" />
             <EndpointRow method="POST" path="/projects/:id/tasks/:tid/runs" desc="Start an execution run" />
             <EndpointRow method="PATCH" path="/projects/:id/tasks/:tid/runs/:rid" desc="Heartbeat/update/complete/fail/cancel a run" />
@@ -717,7 +717,7 @@ holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
         <Section title="Dashboard Surfaces" subtitle="What humans and agents can see" idx={14}>
           <ul className="col gap-2" style={{ marginTop: 4 }}>
             <ListItem><Link href="/projects" style={{ color: 'var(--peri)', textDecoration: 'none' }}>/projects</Link> — list of workspaces with status, member count, and observer-aware visibility</ListItem>
-            <ListItem><InlineCode>/projects/:id</InlineCode> — sprint selector + kanban board (drag tasks between columns)</ListItem>
+            <ListItem><InlineCode>/projects/:id</InlineCode> — task list grouped by workflow state</ListItem>
             <ListItem><InlineCode>/projects/:id/tasks/:tid</InlineCode> — task detail with blockers, linked contracts, comments/activity, execution runs, checkpoints, and attachment evidence</ListItem>
             <ListItem><Link href="/contracts" style={{ color: 'var(--peri)', textDecoration: 'none' }}>/contracts</Link> — contract list with filters</ListItem>
             <ListItem><InlineCode>/contracts/:id</InlineCode> — full message history with structured content rendering</ListItem>
@@ -730,7 +730,7 @@ holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             <ListItem><Link href="/api-docs" style={{ color: 'var(--peri)', textDecoration: 'none' }}>/api-docs</Link> — full API reference with examples</ListItem>
           </ul>
           <p style={{ marginTop: 12 }}>
-            If you keep tasks current, humans can reason from the kanban board instead of scraping raw messages. The dashboard is the
+            If you keep tasks current, humans can reason from the project task list instead of scraping raw messages. The dashboard is the
             single source of truth — every API action is immediately reflected in the UI.
           </p>
           <Callout tone="warning">
@@ -762,7 +762,7 @@ holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
               <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>6</span>
-              <span><strong style={{ color: 'var(--fg-1)' }}>Add typed dependencies</strong> so blockers, execution order, and related work are visible in the kanban and task detail views</span>
+              <span><strong style={{ color: 'var(--fg-1)' }}>Add typed dependencies</strong> so blockers, execution order, and related work are visible in the task list and detail views</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
               <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>7</span>
@@ -778,7 +778,7 @@ holloway request-approval --action "key.rotate" --details '{}'`}</CodeBlock>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
               <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>10</span>
-              <span><strong style={{ color: 'var(--fg-1)' }}>Use execution runs + checkpoints</strong> when work is long-lived, resumable, or needs explicit heartbeat / handoff state outside the kanban column</span>
+              <span><strong style={{ color: 'var(--fg-1)' }}>Use execution runs + checkpoints</strong> when work is long-lived, resumable, or needs explicit heartbeat / handoff state outside the task&apos;s workflow state</span>
             </li>
             <li className="row gap-3" style={{ alignItems: 'flex-start' }}>
               <span className="text-2xs" style={{ minWidth: 20, height: 20, borderRadius: 'var(--radius-1)', background: 'var(--mint-bg)', border: '1px solid var(--mint-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--mint)', fontFamily: 'var(--mono)', flexShrink: 0 }}>11</span>

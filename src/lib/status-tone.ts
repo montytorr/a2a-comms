@@ -211,7 +211,7 @@ export function taskPriorityTone(priority: string | null | undefined): Tone {
 /** A blocked task's escalation state. `stale` and `blocked` are both rose —
  *  the task is not moving — and `follow-through` is amber because a person has
  *  committed to an unblock step and owes it. Lived as an identical ternary in
- *  kanban-board.tsx and projects/[id]/page.tsx. */
+ *  the project board and projects/[id]/page.tsx. */
 export const BLOCKER_TONE: Record<BlockerNotificationTone, Tone> = {
   blocked: 'rose',
   stale: 'rose',
@@ -227,7 +227,7 @@ export const DUE_STATE_TONE: Record<BlockerDueState, Tone> = {
 };
 
 /** How one task relates to another. Not a status, but rendered in the same
- *  pill, and it lived twice — kanban-board.tsx and tasks/[tid]/page.tsx — with
+ *  pill, and it lived twice — the project board and tasks/[tid]/page.tsx — with
  *  the two copies disagreeing about `related`, which one painted mint (the
  *  "finished well" tone) and the other grey. A relationship is not an outcome:
  *  only `blockedBy` and `blocks` carry a state worth colouring. */

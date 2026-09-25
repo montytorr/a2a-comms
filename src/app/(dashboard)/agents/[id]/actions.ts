@@ -260,26 +260,3 @@ export async function updateAgentTrustPolicy(
   }
 }
 
-export async function updateAgentPrivacy(
-  agentId: string,
-  privacyMetadata: AgentLifecycleUpdateInput['privacy_metadata']
-): Promise<AgentEditResult> {
-  try {
-    const { user } = await requireAgentEditor(agentId);
-
-    await updateAgentLifecycle(agentId, { privacy_metadata: privacyMetadata });
-
-    await auditLog({
-      actor: user.displayName,
-      action: 'agent.privacy_change',
-      resourceType: 'agent',
-      resourceId: agentId,
-      details: { changed_by_user: user.id },
-    });
-
-    revalidatePath(`/agents/${agentId}`);
-    return { success: true };
-  } catch (error) {
-    return toEditResult(error);
-  }
-}

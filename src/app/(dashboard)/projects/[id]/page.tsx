@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { createServerClient } from '@/lib/db/server';
 import { redirect, notFound } from 'next/navigation';
 import { getAuthActorContext } from '@/lib/auth-actor-context';
-import KanbanBoard, { type TaskRow } from './kanban-board';
-import ProjectHeader from './project-header';
+import ProjectTaskList, { type TaskRow } from './project-task-list';
+import ProjectHeader, { EditableProjectDescription } from './project-header';
 import AutoRefresh from '@/components/auto-refresh';
 import type { ProjectInvitationStatus } from '@/lib/types';
 import { hydrateProjectInvitations } from '@/app/api/v1/projects/_helpers';
@@ -354,7 +354,7 @@ export default async function ProjectDetailPage({
                         Waiting on {task.blockers.map((blocker) => blocker.title).join(', ')}
                       </span>
                       {/* One line of plan, not two inset tiles repeating what
-                          the task page and the kanban card both already say. */}
+                          the task page already says in full. */}
                       <span className={styles.radarMeta}>
                         <b>{state.blockerResolutionOwner || 'No owner'}</b>
                         {' · '}
@@ -369,28 +369,45 @@ export default async function ProjectDetailPage({
             </div>
             {blockedTaskCards.length > 6 && (
               <p className={styles.radarMore}>
-                {blockedTaskCards.length - 6} more blocked task{blockedTaskCards.length - 6 === 1 ? '' : 's'} on the board below.
+                {blockedTaskCards.length - 6} more blocked task{blockedTaskCards.length - 6 === 1 ? '' : 's'} in the list below.
               </p>
             )}
           </section>
         )}
 
-        <div className={styles.sectionIntro}>
-          <h2>Project board</h2>
-          <p>{tasks.length} task{tasks.length === 1 ? '' : 's'} across the workflow</p>
-        </div>
-        <KanbanBoard
-          tasks={tasksWithDependencySummary}
-          projectId={id}
-          members={members}
-        />
+        {/* Work left, context right. The board used to take the full width
+            and still hide a third of itself off-screen, while the project's
+            own description sat in a 530px column with the rest of the page
+            empty beside it. */}
+        <div className={styles.workLayout}>
+          <main className={styles.work}>
+            <div className={styles.workHead}>
+              <div>
+                <h2>Tasks</h2>
+                <p>{tasks.length} task{tasks.length === 1 ? '' : 's'} across the workflow</p>
+              </div>
+            </div>
+            <ProjectTaskList
+              tasks={tasksWithDependencySummary}
+              projectId={id}
+              members={members}
+              canCreate={!isObserver}
+            />
+          </main>
 
-        <div className="mt-6">
-          <ProjectPrivacyControls
-            projectId={id}
-            initialPrivacy={projectPrivacy}
-            canEdit={isOwner}
-          />
+          <aside className={styles.context} aria-label="Project context">
+            {(project.description || isOwner) && (
+              <section className={`card ${styles.aboutCard}`} aria-labelledby="project-about-heading">
+                <h2 id="project-about-heading" className={styles.aboutTitle}>About</h2>
+                <EditableProjectDescription value={project.description} projectId={id} isOwner={isOwner} />
+              </section>
+            )}
+            <ProjectPrivacyControls
+              projectId={id}
+              initialPrivacy={projectPrivacy}
+              canEdit={isOwner}
+            />
+          </aside>
         </div>
       </PageFrame>
     </AutoRefresh>

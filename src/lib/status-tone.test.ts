@@ -320,7 +320,7 @@ test('the colours that disagreed across pages now agree', () => {
   assert.equal(statusTone('contract', 'active'), 'amber');
   // contracts/page.tsx said rose, analytics said amber.
   assert.equal(statusTone('contract', 'expired'), 'rose');
-  // tasks/page.tsx said peri, kanban and the dropdown said amber.
+  // tasks/page.tsx said peri, the project board and the dropdown said amber.
   assert.equal(statusTone('task', 'in-progress'), 'amber');
   // tasks/page.tsx resolved `todo` to no tone at all.
   assert.equal(statusTone('task', 'todo'), 'peri');
