@@ -18,8 +18,9 @@
 }
 
 .item + .item { border-top: 1px solid var(--line-1); }
-.item:hover { background: var(--nav-hover); }
-.item:hover .arrow { color: var(--peri); transform: translate(2px, -2px); }
+.item:hover, .item:focus-visible { background: var(--nav-hover); }
+.item:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.item:hover .arrow, .item:focus-visible .arrow { color: var(--peri); transform: translate(2px, -2px); }
 
 .identity, .secondary { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
 .nameLine { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }

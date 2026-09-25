@@ -26,7 +26,7 @@
 }
 
 .breadcrumb a { color: inherit; text-decoration: none; }
-.breadcrumb a:hover { color: var(--fg-0); }
+.breadcrumb a:hover, .breadcrumb a:focus-visible { color: var(--fg-0); }
 .breadcrumb span[aria-hidden] { color: var(--fg-4, var(--fg-3)); }
 .breadcrumb .current {
   max-width: 34ch;
@@ -187,7 +187,8 @@
   text-decoration: none;
   transition: border-color 0.12s, background 0.12s;
 }
-.depLink:hover { border-color: var(--line-strong); background: var(--bg-1); }
+.depLink:hover, .depLink:focus-visible { border-color: var(--line-strong); background: var(--bg-1); }
+.depLink:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 .depLink .depTitle { flex: 1; min-width: 0; color: var(--fg-1); font-size: var(--text-xs); overflow-wrap: anywhere; }
 .depDot { width: 6px; height: 6px; border-radius: var(--radius-pill); flex-shrink: 0; }
 .depStatus { font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
@@ -225,7 +226,8 @@
   text-decoration: none;
   transition: border-color 0.12s;
 }
-.railLink:hover { border-color: var(--line-strong); }
+.railLink:hover, .railLink:focus-visible { border-color: var(--line-strong); }
+.railLink:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 .railLink > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .railPills { display: flex; flex-wrap: wrap; gap: var(--space-1); }

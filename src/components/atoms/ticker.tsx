@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface TickerItem {
   tone: string;
@@ -14,27 +14,63 @@ interface TickerProps {
   paused?: boolean;
 }
 
+/* The marquee used to call setOffset on every animation frame, which
+   re-rendered the whole topbar subtree at 60fps for the life of the session,
+   and read contentRef.scrollWidth inside the state updater — a forced reflow
+   every frame. It also ran while the tab was hidden, and ignored
+   prefers-reduced-motion, which globals.css respects for every other
+   animation in the app.
+
+   It now writes the transform straight to the node, measures the track only
+   when the items or the size change, and stops when it should. */
 export const Ticker = ({ items, paused = false }: TickerProps) => {
-  const [offset, setOffset] = useState(0);
-  const rafRef = useRef<number>(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (paused || items.length === 0) return;
-    const tick = () => {
-      setOffset(o => {
-        const contentWidth = contentRef.current?.scrollWidth ?? 0;
-        const halfWidth = contentWidth / 2;
-        const next = o + 0.4;
-        return halfWidth > 0 && next >= halfWidth ? next - halfWidth : next;
-      });
-      rafRef.current = requestAnimationFrame(tick);
+    const node = contentRef.current;
+    if (!node || paused || items.length === 0) return;
+
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (reduced?.matches) return;
+
+    let raf = 0;
+    let offset = 0;
+    /* The track is the item list twice over, so half of it is one full loop.
+       Measured here and on resize rather than per frame. */
+    let halfWidth = node.scrollWidth / 2;
+    const measure = () => { halfWidth = node.scrollWidth / 2; };
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+
+    let last = performance.now();
+    const step = (now: number) => {
+      /* Time-based, so the speed does not depend on the refresh rate. The
+         old fixed 0.4px per frame ran twice as fast on a 120Hz display. */
+      const delta = Math.min(now - last, 100);
+      last = now;
+      if (halfWidth > 0) {
+        offset = (offset + (delta * 0.024)) % halfWidth;
+        node.style.transform = `translateX(${-offset}px)`;
+      }
+      raf = requestAnimationFrame(step);
     };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [paused, items.length]);
+
+    const start = () => { last = performance.now(); raf = requestAnimationFrame(step); };
+    const stop = () => { if (raf) cancelAnimationFrame(raf); raf = 0; };
+    const onVisibility = () => { if (document.hidden) stop(); else if (!raf) start(); };
+
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [paused, items]);
 
   const list = [...items, ...items];
+  const mask = 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)';
 
   return (
     <div style={{
@@ -42,12 +78,13 @@ export const Ticker = ({ items, paused = false }: TickerProps) => {
       overflow: 'hidden',
       position: 'relative',
       height: 22,
-      maskImage: 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)',
+      maskImage: mask,
+      /* Safari still wants the prefix, so the edge fade was simply absent there. */
+      WebkitMaskImage: mask,
     }}>
       <div ref={contentRef} style={{
         display: 'flex',
         gap: 28,
-        transform: `translateX(${-offset}px)`,
         whiteSpace: 'nowrap',
         position: 'absolute',
         alignItems: 'center',

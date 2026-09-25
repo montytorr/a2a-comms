@@ -103,11 +103,11 @@ export default async function NotificationsPage() {
                 <Link
                   key={item.id}
                   href={item.href}
+                  className="link-surface"
                   style={{
                     display: 'block',
                     padding: '14px 20px',
                     borderBottom: idx < items.length - 1 ? '1px solid var(--line-1)' : 'none',
-                    transition: 'background 0.12s',
                     textDecoration: 'none',
                   }}
                 >

@@ -6,7 +6,9 @@
 }
 .statLink { display: block; height: 100%; text-decoration: none; }
 .statCard { display: flex; height: 100%; flex-direction: column; transition: border-color .15s ease, transform .15s ease; }
-.statLink:hover .statCard { border-color: var(--line-strong); transform: translateY(-2px); }
+.statLink:hover .statCard,
+.statLink:focus-visible .statCard { border-color: var(--line-strong); transform: translateY(-2px); }
+.statLink:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-4); }
 .statBar {
   display: flex;
   align-items: center;

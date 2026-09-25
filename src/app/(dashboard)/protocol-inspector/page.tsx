@@ -398,7 +398,7 @@ export default async function ProtocolInspectorPage({
                               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                                 <div>
                                   <p className="text-sm" style={{ fontWeight: 500, color: 'var(--fg-0)' }}>{message.sender?.display_name || message.sender?.name || 'Unknown sender'}</p>
-                                  <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{message.message_type} · {formatDateTime(message.created_at)} ({formatRelative(message.created_at)})</p>
+                                  <p className="text-xs" style={{ marginTop: 4, color: 'var(--fg-3)' }}>{formatDateTime(message.created_at)} ({formatRelative(message.created_at)})</p>
                                 </div>
                                 <span className="pill">{message.message_type}</span>
                               </div>

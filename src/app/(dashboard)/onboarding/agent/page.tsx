@@ -1130,6 +1130,7 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
   return (
     <a
       href={href}
+      className="link-surface"
       style={{
         display: 'block',
         borderRadius: 'var(--radius-2)',
@@ -1137,7 +1138,6 @@ function LinkCard({ href, title, desc, external }: { href: string; title: string
         border: '1px solid var(--line-1)',
         padding: '10px 14px',
         textDecoration: 'none',
-        transition: 'background 0.12s, border-color 0.12s',
       }}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >

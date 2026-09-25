@@ -11,7 +11,7 @@
   text-overflow: ellipsis;
 }
 .breadcrumb a { color: var(--fg-2); text-decoration: none; }
-.breadcrumb a:hover { color: var(--peri); }
+.breadcrumb a:hover, .breadcrumb a:focus-visible { color: var(--peri); }
 .breadcrumb svg { flex-shrink: 0; color: var(--fg-4); }
 
 .header {

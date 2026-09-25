@@ -944,6 +944,17 @@ input[type="checkbox"], input[type="radio"] {
   color: var(--fg-2);
 }
 
+/* A row or card that is entirely a link. These carried an inline
+   `transition` for a hover state that had no rule anywhere, so they were
+   inert to both pointer and keyboard. */
+.link-surface { transition: background 0.12s, border-color 0.12s; }
+.link-surface:hover { background: var(--bg-3); border-color: var(--line-2); }
+.link-surface:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+  background: var(--bg-3);
+}
+
 /* hash chip */
 .hash-chip {
   display: inline-flex;
@@ -959,9 +970,16 @@ input[type="checkbox"], input[type="radio"] {
   cursor: pointer;
   transition: all 0.12s;
 }
-.hash-chip:hover { color: var(--fg-0); border-color: var(--line-2); }
-.hash-chip svg { opacity: 0; transition: opacity 0.12s; }
-.hash-chip:hover svg { opacity: 1; }
+.hash-chip:hover, .hash-chip:focus-visible { color: var(--fg-0); border-color: var(--line-2); }
+.hash-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* The copy glyph hid until hover, which on touch meant it never appeared at
+   all — the chip looked like plain text you could not act on. */
+.hash-chip svg { opacity: 0.45; transition: opacity 0.12s; }
+.hash-chip:hover svg, .hash-chip:focus-visible svg { opacity: 1; }
+@media (hover: none) { .hash-chip svg { opacity: 1; } }
+/* Non-copyable chips are text, and should not claim to be a control. */
+.hash-chip--static { cursor: default; }
+.hash-chip--static:hover { color: var(--fg-2); border-color: var(--line-1); }
 
 /* tabs */
 .cp-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line-1); }

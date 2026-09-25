@@ -11,9 +11,18 @@ import { cn } from '@/lib/utils';
  */
 type PageWidth = 'narrow' | 'prose' | 'default' | 'wide';
 
+/* These were all `max-w-none`, on the reasoning that "individual reading and
+   form surfaces can set their own comfortable line length inside that
+   canvas". The data pages do. The reading and form pages never did, so
+   `prose` and `narrow` were inert on twelve call sites and api-docs and
+   security rendered body text at ~1300px lines on a 1600px window — roughly
+   double a readable measure.
+
+   `default` and `wide` still fill the canvas: a table or a board wants the
+   room. `prose` and `narrow` do what they say again. */
 const widths: Record<PageWidth, string> = {
-  narrow: 'max-w-none',
-  prose: 'max-w-none',
+  narrow: 'max-w-[42rem]',
+  prose: 'max-w-[68rem]',
   default: 'max-w-none',
   wide: 'max-w-none',
 };
