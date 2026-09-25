@@ -180,7 +180,14 @@ function EditableProjectDescription({
         {value ? (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div ref={descriptionRef} className={`${styles.description} ${expanded ? '' : styles.descriptionClamped}`}>
+              <div
+                ref={descriptionRef}
+                className={[
+                  styles.description,
+                  expanded ? '' : styles.descriptionClamped,
+                  !expanded && overflows ? styles.descriptionFaded : '',
+                ].filter(Boolean).join(' ')}
+              >
                 <MarkdownPreview content={value} />
               </div>
               {/* Only offered when there is something to reveal: measured on

@@ -198,6 +198,39 @@ const selectColumns = (items: SelectItem[], alias: string) => {
   }).join(', ')
 }
 
+/** Compiles one filter into a SQL clause, pushing any bound values onto
+ *  `parameters`. Exported purely so the operator table can be tested — it is
+ *  the one place a wrong branch silently returns the wrong rows rather than
+ *  failing, which is exactly what `.not(col, 'is', null)` did. */
+export function compileScalarFilter(
+  filter: { column: string; operator: string; value: unknown; negate?: boolean },
+  column: string,
+  parameters: unknown[],
+) {
+  let clause: string
+  if (filter.operator === 'is') {
+    const literal = filter.value === null ? 'null' : filter.value === true ? 'true' : 'false'
+    clause = `${column} is ${filter.negate ? 'not ' : ''}${literal}`
+  } else if (filter.operator === 'in' || filter.operator === 'not.in') {
+    const values = Array.isArray(filter.value)
+      ? filter.value
+      : String(filter.value).replace(/^\(|\)$/g, '').split(',').filter(Boolean)
+    if (values.length === 0) clause = filter.operator === 'not.in' || filter.negate ? 'true' : 'false'
+    else {
+      const refs = values.map((value) => { parameters.push(value); return `$${parameters.length}` })
+      clause = `${column} ${filter.operator === 'not.in' || filter.negate ? 'not in' : 'in'} (${refs.join(', ')})`
+    }
+  } else if (filter.operator === 'not') {
+    clause = `${column} is not ${filter.value === null ? 'null' : String(filter.value)}`
+  } else {
+    parameters.push(filter.value)
+    clause = `${column} ${filter.operator} $${parameters.length}`
+  }
+  return filter.negate && filter.operator !== 'is' && filter.operator !== 'in' && filter.operator !== 'not.in'
+    ? `not (${clause})`
+    : clause
+}
+
 class DirectQuery<T = DynamicRow[]> implements PromiseLike<Result<T>> {
   private action: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select'
   private selection: SelectItem[] = parseSelect('*')
@@ -288,27 +321,7 @@ class DirectQuery<T = DynamicRow[]> implements PromiseLike<Result<T>> {
   }
 
   private scalarClause(filter: Filter, column: string, parameters: unknown[]) {
-    let clause: string
-    if (filter.operator === 'is') {
-      clause = `${column} is ${filter.value === null ? 'null' : filter.value === true ? 'true' : 'false'}`
-    } else if (filter.operator === 'in' || filter.operator === 'not.in') {
-      const values = Array.isArray(filter.value)
-        ? filter.value
-        : String(filter.value).replace(/^\(|\)$/g, '').split(',').filter(Boolean)
-      if (values.length === 0) clause = filter.operator === 'not.in' || filter.negate ? 'true' : 'false'
-      else {
-        const refs = values.map((value) => { parameters.push(value); return `$${parameters.length}` })
-        clause = `${column} ${filter.operator === 'not.in' || filter.negate ? 'not in' : 'in'} (${refs.join(', ')})`
-      }
-    } else if (filter.operator === 'not' || (filter.negate && filter.operator === 'is')) {
-      clause = `${column} is not ${filter.value === null ? 'null' : String(filter.value)}`
-    } else {
-      parameters.push(filter.value)
-      clause = `${column} ${filter.operator} $${parameters.length}`
-    }
-    return filter.negate && filter.operator !== 'is' && filter.operator !== 'in' && filter.operator !== 'not.in'
-      ? `not (${clause})`
-      : clause
+    return compileScalarFilter(filter, column, parameters)
   }
 
   private async filterClause(

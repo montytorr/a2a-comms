@@ -26,17 +26,12 @@
   min-width: 0;
 }
 
-.eyebrow,
 .sideHeading {
   color: var(--fg-3);
   font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.eyebrow {
-  margin-bottom: var(--space-2);
 }
 
 .sideHeading {

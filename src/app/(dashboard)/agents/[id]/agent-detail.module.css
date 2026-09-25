@@ -46,12 +46,42 @@
 
 .sectionSub { margin: 0; max-width: 68ch; color: var(--fg-2); font-size: var(--text-xs); line-height: 1.5; }
 
+/* ── Enforced gates ──────────────────────────── */
+.gateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-4);
+}
 
+.field { display: grid; grid-template-rows: auto auto 1fr; gap: var(--space-2); min-width: 0; align-content: start; }
+.fieldLabel {
+  /* Two of the six gate labels wrap to a second line, which pushed their
+     select out of line with the rest of the row. Reserving both lines keeps
+     the controls on one baseline without truncating any label. */
+  min-height: 2.4em;
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fieldHelp { margin: 0; color: var(--fg-3); font-size: var(--text-2xs); line-height: 1.45; }
+.field select:disabled, .field input:disabled { opacity: 0.6; }
 
-
-
-
-
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line-1);
+}
+.actionsNote { margin: 0; max-width: 72ch; color: var(--fg-3); font-size: var(--text-2xs); line-height: 1.45; }
+.ok { color: var(--mint); font-size: var(--text-2xs); }
+.err { color: var(--rose); font-size: var(--text-2xs); }
 
 @media (max-width: 640px) {
   .section { padding: var(--space-4); }
