@@ -7,6 +7,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.375] - 2026-09-25
+### Changed
+- Merge pull request #25 from montytorr/fix/app-wide-polish-and-inverted-null-filter
+- fix: restore the agent page CSS I deleted, one list for projects, and a filter that returned the inverse
+### Fixed
+- restore the agent page CSS I deleted, one list for projects, and a filter that returned the inverse
+- ## The agent page regression was mine
+- HOL-145 removed CSS classes orphaned by the privacy deletion with a regex carrying an optional leading-comment group:
+-   \n(?:/\*[\s\S]*?\*/\n)?\.NAME(?:[ ,:][^{\n]*)?\s*\{[^}]*\}\n
+- `[\s\S]*?` is lazy but still expands across `*/` and a later `/*`, so starting from the comment above an earlier class it swallowed every rule in between. agent-detail.module.css went 158 lines to 58, losing .gateGrid, .field, .fieldLabel, .fieldHelp, .actions, .actionsNote, .ok and .err — the whole enforced-gates layout. The page shipped as unstyled stacked full-width selects.
+- Nothing caught it. CSS modules have no typechecker, eslint does not read them, the build does not resolve class names and the tests do not render. Restored from b559be5 and re-trimmed by exact text.
+- Both directions are now verified across every module: every `styles.x` a file uses exists in the module it imports, and every class a module defines is used. That removed four genuinely dead rules as well — .policySummary, .policyBody and .sectionIntro left over from the board, and .eyebrow in contract-detail.
+- ## A filter that returned the opposite rows
+- `.not(column, 'is', null)` compiled to `column is null`. The `is` branch of scalarClause matched first, so the `is not` branch below it was unreachable, and the trailing `not (...)` wrapper deliberately skips `is`. Three callers were reading the inverse set, all silently:
+- the dashboard's latest webhook delivery, which said "No webhook delivery timestamp recorded yet" while two had fired four hours earlier
+- the operator channel's question-to-message link map, which selected the questions WITHOUT a message_id and then dropped them all on the `if (row.message_id)` guard, so the map was always empty — 2 of 7 real links never rendered
+- the stale-blocker sweep, which selected never-blocked tasks and skipped every blocked one. Latent today: no task has ever had blocked_at set, so it had nothing to find either way — but it would have missed the first one.
+- scalarClause is extracted as the exported compileScalarFilter so the operator table can be tested at all, with four regression tests: negated IS NULL, plain IS NULL, negated booleans, and that other operators keep their wrapper.
+- ## Project page column order
+- Context left, work right, matching contracts/[id] and projects/[id]/tasks/[tid]. This page was the only one of the four with its rail on the other side.
+- ## /projects is a list
+- Was a three-column grid whose card heights were set by whatever the description happened to be — one rendered a markdown H2 at heading size and ran to 300px beside a 250px neighbour, with a fourth stranded alone below. Same row shape as the task list. The description is flattened to one line of plain text first, which is what made those cards uneven.
+- The restricted-invitation summary kept its meaning: the row shows the count and the full phrase is the tooltip, and both stay gated on canSeeInvitationSummary. Its coverage test now pins the gate as well as the phrase.
+- ## Also
+- The About description's fade rendered on every clamped block, including ones short enough that nothing was clipped, so a three-line description faded out its own last line. It renders only when the content actually overflows.
+- Verified: eslint 0 problems, 459/459 tests, build compiles, and twelve dashboard routes rendered 200 with zero console errors against production data before this was merged.
+- Cairn: HOL-146
+
 ## [1.0.374] - 2026-09-25
 ### Changed
 - replace the board with grouped lists, and delete the privacy fields nothing read
