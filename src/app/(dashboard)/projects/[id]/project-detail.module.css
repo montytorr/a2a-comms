@@ -147,16 +147,21 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 .column {
   /* Was clamp(260px, calc((100vw - var(--sidebar-w) - 128px) / 4), 360px):
      100vw counts the scrollbar, --sidebar-w stays 232px even where the
-     sidebar is not rendered, and 128px matched none of the page's gutters.
-     Six columns never fit a laptop at any of those widths, so the board
-     scrolls regardless — a plain width says so honestly. */
-  flex: 0 0 300px;
-  width: 300px;
+     sidebar is not rendered, and 128px matched none of the page's gutters. */
+  flex: 0 0 clamp(280px, 22vw, 340px);
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
-  /* No max-height and no inner scroller: the column grew a 720px box with
-     its own hidden scrollbar, which buried "Add task" under it. */
+  /* A kanban column is a list widget, and a list widget that scrolls inside
+     itself is the idiom, not a bug — unlike the task page's context rail,
+     which is document content and had no business trapping a scroll.
+     Removing this cap made every column grow to its own content, so a
+     column of forty done tasks stood beside one of two and the board read
+     as a broken bar chart.
+     The cap is back, but derived rather than magic: 720px was taller than
+     the viewport on a 13" laptop, which is what made its scrollbar
+     unreachable in the first place. */
+  max-height: min(720px, calc(100dvh - var(--topbar-h) - var(--space-6) * 4));
   border: 1px solid var(--line-1);
   border-radius: var(--radius-4);
   background: var(--bg-1);
@@ -175,7 +180,17 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
   background: var(--bg-2);
 }
 
-.columnList { display: flex; flex-direction: column; gap: var(--space-2); }
+.columnList {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  /* The old scroller reserved no gutter, so the cards jumped sideways the
+     moment a column crossed the cap, and the thumb only appeared on hover. */
+  scrollbar-gutter: stable;
+}
 
 /* ──────────────────────────────────────────────
    QUICK TASK FORM
@@ -183,15 +198,13 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 .addTask {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-1);
   width: 100%;
-  margin-bottom: var(--space-3);
-  padding: var(--space-2) 0;
-  border: 1px dashed var(--line-1);
-  /* 16px is not on the radius scale; --radius-3 is what a panel-sized
-     control uses everywhere else. */
-  border-radius: var(--radius-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid transparent;
+  /* 16px is not on the radius scale; --radius-2 is what a control uses. */
+  border-radius: var(--radius-2);
   background: transparent;
   color: var(--fg-3);
   font-size: var(--text-2xs);
@@ -202,13 +215,13 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 /* Was two onMouseEnter/onMouseLeave handlers, so it had no focus state. */
 .addTask:hover,
 .addTask:focus-visible {
-  border-color: var(--peri);
+  border-color: var(--peri-line);
   background: var(--peri-bg);
   color: var(--peri);
   outline: none;
 }
 
-.addTaskForm { margin-bottom: var(--space-3); padding: var(--space-3); border-color: var(--peri-line); }
+.addTaskForm { margin-bottom: var(--space-2); padding: var(--space-3); border-color: var(--peri-line); }
 
 /* Was a pair of onMouseEnter/onMouseLeave handlers writing transform and
    borderColor, so a card had a hover state and no focus state — and it is a
