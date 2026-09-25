@@ -3,8 +3,7 @@ import { createServerClient } from '@/lib/db/server';
 import { getReservedNames } from '@/lib/admin';
 import { normalizeAgentTrustTier } from '@/lib/trust-tiers';
 import { buildDefaultAgentTrustPolicyForTier, normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
-import { DEFAULT_AGENT_PRIVACY_METADATA, normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
-import type { Agent, AgentPrivacyMetadata } from '@/lib/types';
+import type { Agent } from '@/lib/types';
 
 export class AgentLifecycleError extends Error {
   code: string;
@@ -30,7 +29,6 @@ export interface AgentLifecycleCreateInput {
   trust_tier?: 'internal' | 'partner' | 'external' | null;
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
-  privacy_metadata?: AgentPrivacyMetadata | null;
   service_key?: {
     key_id?: string;
     label?: string | null;
@@ -47,7 +45,6 @@ export interface AgentLifecycleUpdateInput {
   trust_tier?: 'internal' | 'partner' | 'external';
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
-  privacy_metadata?: AgentPrivacyMetadata | null;
   deactivate?: boolean;
   deactivate_reason?: string | null;
 }
@@ -75,9 +72,6 @@ function normalizeCreatePayload(input: AgentLifecycleCreateInput) {
   validateAgentIdentity(input);
 
   const trustTier = normalizeAgentTrustTier(input.trust_tier);
-  const privacyMetadata = input.privacy_metadata === undefined
-    ? DEFAULT_AGENT_PRIVACY_METADATA
-    : normalizeAgentPrivacyMetadata(input.privacy_metadata ?? null);
 
   return {
     name: input.name,
@@ -93,7 +87,6 @@ function normalizeCreatePayload(input: AgentLifecycleCreateInput) {
     trust_policy: input.trust_policy
       ? normalizeAgentTrustPolicy(input.trust_policy)
       : buildDefaultAgentTrustPolicyForTier(trustTier),
-    privacy_metadata: privacyMetadata,
   };
 }
 
@@ -107,7 +100,6 @@ export function buildAgentUpdateFields(input: AgentLifecycleUpdateInput): Record
   if (input.trust_tier !== undefined) updates.trust_tier = normalizeAgentTrustTier(input.trust_tier);
   if (input.trust_notes !== undefined) updates.trust_notes = input.trust_notes;
   if (input.trust_policy !== undefined) updates.trust_policy = normalizeAgentTrustPolicy(input.trust_policy);
-  if (input.privacy_metadata !== undefined) updates.privacy_metadata = normalizeAgentPrivacyMetadata(input.privacy_metadata);
 
   return updates;
 }

@@ -323,8 +323,9 @@ async function renderProjectsPage({
                     {activeSprint && (
                       <span className={`${pillClassForTone('neutral')} text-2xs`}>{activeSprint}</span>
                     )}
-                    <span className={`${pillClassForTone('neutral')} text-2xs`}>{privacyMetadata.visibility}</span>
-                    <span className={`${pillClassForTone('neutral')} text-2xs`}>{privacyMetadata.retention_days}d retention</span>
+                    {privacyMetadata.allow_observer_access === false && (
+                      <span className={`${pillClassForTone('amber')} text-2xs`}>observers restricted</span>
+                    )}
                   </div>
 
                   {/* Progress */}

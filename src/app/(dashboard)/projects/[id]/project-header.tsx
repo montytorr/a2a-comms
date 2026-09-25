@@ -17,13 +17,7 @@ interface ProjectHeaderProps {
     title: string;
     description: string | null;
     status: string;
-    privacy_metadata?: {
-      visibility?: string;
-      retention_days?: number;
-      redaction_level?: string;
-      allow_observer_access?: boolean;
-      allow_exports?: boolean;
-    } | null;
+    privacy_metadata?: { allow_observer_access?: boolean } | null;
   };
   members: Array<{
     id: string;
@@ -261,6 +255,8 @@ function EditableProjectDescription({
   );
 }
 
+export { EditableProjectDescription };
+
 export default function ProjectHeader({
   project,
   members,
@@ -331,28 +327,9 @@ export default function ProjectHeader({
                 <EditableProjectTitle value={project.title} projectId={project.id} isOwner={isOwner} />
                 <ProjectStatusDropdown projectId={project.id} currentStatus={project.status} />
               </div>
-              <div style={{ maxWidth: 640 }}>
-                <EditableProjectDescription value={project.description} projectId={project.id} isOwner={isOwner} />
-              </div>
-
-              {/* Privacy badges */}
-              {project.privacy_metadata && (
-                <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  <span className="pill pill--peri">
-                    {project.privacy_metadata.visibility || 'standard'} visibility
-                  </span>
-                  <span className="pill pill--ghost">
-                    {project.privacy_metadata.retention_days || 90}d retention
-                  </span>
-                  <span className="pill pill--ghost">
-                    {project.privacy_metadata.redaction_level || 'standard'} redaction
-                  </span>
-                  {!project.privacy_metadata.allow_observer_access && (
-                    <span className="pill pill--amber">observers restricted</span>
-                  )}
-                  {!project.privacy_metadata.allow_exports && (
-                    <span className="pill pill--rose">exports restricted</span>
-                  )}
+              {project.privacy_metadata?.allow_observer_access === false && (
+                <div style={{ marginTop: 12 }}>
+                  <span className="pill pill--amber">observers restricted</span>
                 </div>
               )}
             </div>

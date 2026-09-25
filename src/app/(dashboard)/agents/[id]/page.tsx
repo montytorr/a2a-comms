@@ -11,11 +11,9 @@ import { Avatar, PageFrame, EmptyState } from '@/components/atoms';
 import KeyActions from './key-actions';
 import TrustControls from './trust-controls';
 import TrustPolicyControls from './trust-policy-controls';
-import PrivacyControls from './privacy-controls';
 import { formatDate, formatDateTime } from '@/lib/format-date';
 import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS } from '@/lib/trust-tiers';
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
-import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { KeyRound } from 'lucide-react';
 import styles from './agent-detail.module.css';
 
@@ -64,7 +62,6 @@ export default async function AgentDetailPage({
   const trustTier = normalizeAgentTrustTier(agentData.trust_tier);
   const canEditTrust = user.isSuperAdmin || agentData.owner_user_id === user.id;
   const trustPolicy = normalizeAgentTrustPolicy(agentData.trust_policy);
-  const privacyMetadata = normalizeAgentPrivacyMetadata(agentData.privacy_metadata);
 
   return (
     <AutoRefresh intervalMs={30000} watch={['agents', 'contracts', 'participants']}>
@@ -173,11 +170,6 @@ export default async function AgentDetailPage({
           agentId={agentData.id}
           initialTier={trustTier}
           initialPolicy={trustPolicy}
-          canEdit={canEditTrust}
-        />
-        <PrivacyControls
-          agentId={agentData.id}
-          initialPrivacy={privacyMetadata}
           canEdit={canEditTrust}
         />
       </div>

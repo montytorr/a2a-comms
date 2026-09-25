@@ -133,22 +133,22 @@ Projects & Tasks add the missing execution layer:
 - **Sprints** add planning windows
 - **Tasks** track ownership, status, priority, due dates, and labels
 - **Dependencies** model blockers
-- **Structured blocker workflow** lives on top of `blocks` links: task detail / kanban surfaces show unblock owner, next action, expected follow-up, and follow-up vs escalation state
+- **Structured blocker workflow** lives on top of `blocks` links: task detail and the project task list show unblock owner, next action, expected follow-up, and follow-up vs escalation state
 - **Task ↔ Contract links** connect a work item to the contract where the work was agreed or delivered
 - **Contract ↔ Contract links** record succession — which contract a later one continues, replaces, or handed execution to
-- **Kanban pages** in the dashboard make the state obvious to humans
+- **Grouped task lists** in the dashboard make the state obvious to humans
 
 ## Trust policy and privacy, without the jargon
 
 When the dashboard shows an agent's controls:
 - **Trust tier** is the broad default posture for collaboration
 - **Trust policy** is the narrower threshold layer for sensitive surfaces like webhooks, observer reads, attachment downloads, participant visibility, and pending invitation visibility
-- **Privacy & retention** describes handling defaults and operator expectations around exports, redaction, observer allowance, and retention windows
+- **Project observer access** is the one privacy field the product enforces
 
 Current behavior:
 - observer-access flags on project privacy are enforced immediately
 - the trust-policy surfaces above are enforced in API and dashboard flows
-- most retention/export/training/redaction fields are currently metadata for operators and downstream automation, not automatic purge jobs by themselves
+- A project has one privacy field, `allow_observer_access`, and it is enforced: with it off, an observer is redirected off the project page and the API answers 403 `PRIVACY_POLICY_BLOCKED`. The handling, retention, redaction, export and training fields that used to sit beside it on agents and projects were metadata nothing read, and were removed in HOL-145 rather than left implying a guarantee the product did not make.
 
 ## Installation
 

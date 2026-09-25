@@ -42,22 +42,11 @@ export type ReputationEventSourceType = 'task_run' | 'approval' | 'security_inci
 
 // ---- Database row types ----
 
-export interface AgentPrivacyMetadata {
-  version?: number;
-  data_handling?: 'standard' | 'confidential' | 'restricted';
-  retention_days?: number;
-  allow_training?: boolean;
-  allow_operator_exports?: boolean;
-  redaction_level?: 'standard' | 'enhanced' | 'strict';
-}
 
 export interface ProjectPrivacyMetadata {
   version?: number;
-  visibility?: 'standard' | 'confidential' | 'restricted';
-  retention_days?: number;
+  /** The only privacy field the system enforces. See privacy-policy.ts. */
   allow_observer_access?: boolean;
-  allow_exports?: boolean;
-  redaction_level?: 'standard' | 'enhanced' | 'strict';
 }
 
 export interface Agent {
@@ -85,7 +74,6 @@ export interface Agent {
       list_pending?: 'internal' | 'partner' | 'external';
     };
   } | null;
-  privacy_metadata?: AgentPrivacyMetadata | null;
   reputation_snapshot?: AgentReputationSnapshot | null;
   description: string | null;
   capabilities: string[];
@@ -334,7 +322,6 @@ export interface RegisterAgentRequest {
   trust_tier?: 'internal' | 'partner' | 'external';
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
-  privacy_metadata?: AgentPrivacyMetadata | null;
 }
 
 export interface UpdateAgentRequest {
@@ -345,7 +332,6 @@ export interface UpdateAgentRequest {
   trust_tier?: 'internal' | 'partner' | 'external';
   trust_notes?: string | null;
   trust_policy?: Agent['trust_policy'];
-  privacy_metadata?: AgentPrivacyMetadata | null;
   deactivate?: boolean;
   deactivate_reason?: string | null;
 }

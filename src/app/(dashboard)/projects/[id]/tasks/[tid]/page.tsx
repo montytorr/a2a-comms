@@ -39,8 +39,8 @@ export const dynamic = 'force-dynamic';
    task it starts mid-conversation. TaskComments says so when the cap is hit. */
 const COMMENT_PAGE_SIZE = 100;
 
-/* Labels here, colours from DEPENDENCY_KIND_TONE — kanban-board.tsx renders the
-   same five kinds and the two copies used to disagree about `related`. */
+/* Labels here, colours from DEPENDENCY_KIND_TONE, so this and the project
+   task list cannot disagree about a kind the way they once did. */
 const dependencySectionLabels: Record<DependencyKind, string> = {
   blockedBy: 'Blocked by',
   blocks: 'Blocks',

@@ -124,5 +124,5 @@ human. Only the last is what an agent means by `--kind blocked`.
 **"Pending" appears in six status sets** with six meanings. Always read it
 against its own entity.
 
-**"Status" is four things** — a task's kanban status, its execution status, a
+**"Status" is four things** — a task's workflow status, its execution status, a
 run's status, and the `status` message type.

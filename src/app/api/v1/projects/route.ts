@@ -75,8 +75,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  /* The detail route normalizes privacy on read; this one used to return the
+     raw column, so the list and the detail of the same project disagreed the
+     moment a field stopped being honoured. Both normalize now. */
   return NextResponse.json({
-    data: projects || [],
+    data: (projects || []).map((project) => ({
+      ...project,
+      privacy_metadata: normalizeProjectPrivacyMetadata(project.privacy_metadata ?? null),
+    })),
     total: count || 0,
     page,
     per_page: perPage,

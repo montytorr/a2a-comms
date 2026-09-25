@@ -13,6 +13,10 @@ interface ProjectPrivacyControlsProps {
   canEdit: boolean;
 }
 
+/* Down from six controls to one. The other five — visibility, retention mode,
+   retention days, redaction level and export permission — were normalized,
+   stored and displayed while nothing in the system read any of them. This one
+   refuses a request. */
 export default function ProjectPrivacyControls({
   projectId,
   initialPrivacy,
@@ -23,130 +27,50 @@ export default function ProjectPrivacyControls({
     () => normalizeProjectPrivacyMetadata(initialPrivacy),
     [initialPrivacy]
   );
-  const [visibility, setVisibility] = useState(normalizedInitial.visibility);
-  const [retentionDays, setRetentionDays] = useState(String(normalizedInitial.retention_days));
   const [allowObserverAccess, setAllowObserverAccess] = useState(normalizedInitial.allow_observer_access);
-  const [allowExports, setAllowExports] = useState(normalizedInitial.allow_exports);
-  const [redactionLevel, setRedactionLevel] = useState(normalizedInitial.redaction_level);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const privacyMetadata = useMemo(
-    () =>
-      normalizeProjectPrivacyMetadata({
-        visibility,
-        retention_days: Number.parseInt(retentionDays, 10),
-        allow_observer_access: allowObserverAccess,
-        allow_exports: allowExports,
-        redaction_level: redactionLevel,
-      }),
-    [visibility, retentionDays, allowObserverAccess, allowExports, redactionLevel]
-  );
+  const dirty = allowObserverAccess !== normalizedInitial.allow_observer_access;
 
-  const dirty = JSON.stringify(privacyMetadata) !== JSON.stringify(normalizedInitial);
-
-  function save() {
-    if (!dirty || !canEdit) return;
+  function save(next: boolean) {
+    if (!canEdit) return;
+    setAllowObserverAccess(next);
     setError(null);
-    setSuccess(null);
     startTransition(async () => {
       try {
-        await updateProjectPrivacy(projectId, privacyMetadata);
-        setSuccess('Saved.');
+        await updateProjectPrivacy(projectId, normalizeProjectPrivacyMetadata({ allow_observer_access: next }));
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update project privacy');
+        setAllowObserverAccess(!next);
+        setError(err instanceof Error ? err.message : 'Failed to update');
       }
     });
   }
 
   return (
     <section className={`card ${styles.policy}`} aria-labelledby="project-privacy-heading">
-      <div className={styles.policyHead}>
-        <div>
-          <h2 id="project-privacy-heading" className={styles.policyTitle}>Privacy</h2>
-          <p className={styles.policySub}>
-            One of these refuses a request. The rest record intent.
-          </p>
-        </div>
-        {!canEdit && <span className="pill pill--ghost">View only</span>}
+      <h2 id="project-privacy-heading" className={styles.aboutTitle}>Access</h2>
+      <div className={styles.check}>
+        <input
+          id="project-observer-access"
+          type="checkbox"
+          className="cp-check"
+          checked={allowObserverAccess}
+          disabled={!canEdit || isPending}
+          onChange={(e) => save(e.target.checked)}
+        />
+        <label htmlFor="project-observer-access">
+          <strong>Observers may open this project</strong>
+          <span>
+            With this off, an observer is redirected away from the project page and the API answers
+            403 <code>PRIVACY_POLICY_BLOCKED</code>.
+          </span>
+        </label>
       </div>
-
-      {/* The one field with teeth, on its own, said plainly. It used to sit
-          sixth in a six-up grid of identical selects, distinguishable only by
-          a clause in a paragraph underneath. */}
-      <div className={styles.policyEnforced}>
-        <div className={styles.check}>
-          <input
-            id="project-observer-access"
-            type="checkbox"
-            className="cp-check"
-            checked={allowObserverAccess}
-            disabled={!canEdit || isPending}
-            onChange={(e) => setAllowObserverAccess(e.target.checked)}
-          />
-          <label htmlFor="project-observer-access">
-            <strong>Observers may open this project</strong>
-            <span>
-              Enforced: with this off, an observer is redirected away from the project page and the
-              API answers 403 <code>PRIVACY_POLICY_BLOCKED</code>.
-            </span>
-          </label>
-        </div>
-      </div>
-
-      <p className={styles.policyBanner}>
-        <strong>Recorded, not enforced.</strong>
-        <span>
-          Nothing reads the three below — no purge job, no export gate, no redaction pass. They state
-          the intent operators and downstream automation should follow.
-        </span>
-      </p>
-
-      <div className={styles.policyGrid}>
-        <div className={styles.policyField}>
-          <label className={styles.policyLabel} htmlFor="project-visibility">Visibility</label>
-          <select id="project-visibility" className="cp-select" style={{ width: '100%' }} value={visibility}
-            disabled={!canEdit || isPending} onChange={(e) => setVisibility(e.target.value as typeof visibility)}>
-            <option value="standard">Standard</option>
-            <option value="confidential">Confidential</option>
-            <option value="restricted">Restricted</option>
-          </select>
-        </div>
-        <div className={styles.policyField}>
-          <label className={styles.policyLabel} htmlFor="project-retention">Retention days</label>
-          <input id="project-retention" type="number" min={1} max={3650} className="cp-input" style={{ width: '100%' }}
-            value={retentionDays} disabled={!canEdit || isPending} onChange={(e) => setRetentionDays(e.target.value)} />
-        </div>
-        <div className={styles.policyField}>
-          <label className={styles.policyLabel} htmlFor="project-redaction">Redaction level</label>
-          <select id="project-redaction" className="cp-select" style={{ width: '100%' }} value={redactionLevel}
-            disabled={!canEdit || isPending} onChange={(e) => setRedactionLevel(e.target.value as typeof redactionLevel)}>
-            <option value="standard">Standard</option>
-            <option value="enhanced">Enhanced</option>
-            <option value="strict">Strict</option>
-          </select>
-        </div>
-        <div className={styles.check}>
-          <input id="project-exports" type="checkbox" className="cp-check" checked={allowExports}
-            disabled={!canEdit || isPending} onChange={(e) => setAllowExports(e.target.checked)} />
-          <label htmlFor="project-exports"><strong>Exports permitted</strong></label>
-        </div>
-      </div>
-
-      {canEdit && (
-        <div className={styles.policyActions}>
-          <p className={styles.policyNote}>
-            {error ? <span className={styles.policyErr}>{error}</span>
-              : success ? <span className={styles.policyOk}>{success}</span>
-              : 'Owner or admin only.'}
-          </p>
-          <button type="button" onClick={save} disabled={!dirty || isPending} className="btn btn--primary btn--sm">
-            {isPending ? 'Saving…' : 'Save privacy'}
-          </button>
-        </div>
-      )}
+      {error && <p className={styles.policyErr}>{error}</p>}
+      {!canEdit && <p className={styles.policyNote}>Owner or admin only.</p>}
+      {dirty && isPending && <p className={styles.policyNote}>Saving…</p>}
     </section>
   );
 }

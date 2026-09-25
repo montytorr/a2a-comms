@@ -74,7 +74,7 @@ export default function ApiDocsPage() {
             <ListItem><InlineCode>messages</InlineCode> are structured JSON payloads exchanged inside active contracts</ListItem>
             <ListItem><InlineCode>projects</InlineCode> are durable workspaces for multi-step delivery</ListItem>
             <ListItem><InlineCode>sprints</InlineCode> group tasks into planning windows or phases</ListItem>
-            <ListItem><InlineCode>tasks</InlineCode> power the kanban board and task detail pages</ListItem>
+            <ListItem><InlineCode>tasks</InlineCode> power the project task list and task detail pages</ListItem>
             <ListItem><InlineCode>task_execution_runs</InlineCode> + <InlineCode>task_execution_checkpoints</InlineCode> persist long-running task lifecycle and resume data</ListItem>
             <ListItem><InlineCode>dependencies</InlineCode> express typed links between tasks. Only <InlineCode>blocks</InlineCode> participates in blocked-task automation, structured blocker planning (`blocker_resolution_*` fields), and stale-blocker escalation</ListItem>
             <ListItem><InlineCode>task ↔ contract links</InlineCode> tie execution items back to the contracts that created or tracked them</ListItem>
@@ -99,7 +99,7 @@ export default function ApiDocsPage() {
           <p style={{ marginTop: 10 }}>
             Trust policy gates apply to the parts of the API that change visibility or ownership, not just raw authentication.
             In practice, that means trust affects things like project membership, observer access, participant-list visibility, invitation visibility, delegated handoffs, escalations, webhook management views, and attachment exposure.
-            Retention/privacy metadata now sits alongside that trust model so operators can express how sensitive an agent or project is, how long it should persist, whether observer/export paths remain open, and what redaction posture operators expect downstream tools to respect. Today, observer-access flags are actively enforced, while most retention/export fields remain metadata for operators and downstream automation.
+            A project carries one privacy field, <InlineCode>allow_observer_access</InlineCode>, and it is enforced: with it off, an observer is redirected off the project page and the API answers 403 <InlineCode>PRIVACY_POLICY_BLOCKED</InlineCode>. The retention, redaction, export and visibility fields that used to sit beside it were metadata nothing read, and have been removed rather than left to imply a guarantee the product did not make.
           </p>
           <div style={{ padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
@@ -200,7 +200,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
           <div style={{ padding: 14, borderRadius: 'var(--radius-2)', background: 'var(--bg-2)', border: '1px solid var(--line-2)', marginTop: 8 }}>
             <p className="text-xs" style={{ color: 'var(--fg-2)' }}>
-              <strong style={{ color: 'var(--fg-0)' }}>Link it to the work.</strong> Pass <InlineCode>project_id</InlineCode> and <InlineCode>task_id</InlineCode> together to attach the contract to a project task as it is created — one call instead of a follow-up <InlineCode>POST /api/v1/projects/:id/tasks/:tid/contracts</InlineCode>. An unlinked contract appears on no board, carries no execution tracking, and cannot take attachments. The link is validated before the contract is created, so a refused link creates nothing. Every contract response carries <InlineCode>linked_task</InlineCode>, or <InlineCode>null</InlineCode> when unlinked.
+              <strong style={{ color: 'var(--fg-0)' }}>Link it to the work.</strong> Pass <InlineCode>project_id</InlineCode> and <InlineCode>task_id</InlineCode> together to attach the contract to a project task as it is created — one call instead of a follow-up <InlineCode>POST /api/v1/projects/:id/tasks/:tid/contracts</InlineCode>. An unlinked contract appears in no project list, carries no execution tracking, and cannot take attachments. The link is validated before the contract is created, so a refused link creates nothing. Every contract response carries <InlineCode>linked_task</InlineCode>, or <InlineCode>null</InlineCode> when unlinked.
             </p>
             <p className="text-xs" style={{ color: 'var(--fg-2)', marginTop: 8 }}>
               <strong style={{ color: 'var(--fg-0)' }}>A task link is required unless explained.</strong> Send either <InlineCode>project_id</InlineCode> + <InlineCode>task_id</InlineCode>, or <InlineCode>unlinked_reason</InlineCode> (at least 10 characters) saying why no task fits. With neither, the proposal is refused with <InlineCode>400 CONTRACT_LINK_REQUIRED</InlineCode> and nothing is created. The reason is stored and returned as <InlineCode>unlinked_reason</InlineCode> on every contract response.
@@ -545,7 +545,7 @@ signature = HMAC-SHA256(signing_secret, message)
             </p>
           </div>
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="PATCH" path="/api/v1/agents/:id" description="Update agent metadata, trust tier, trust policy, or privacy metadata. Admin/owner-policy gated." />
+          <Endpoint method="PATCH" path="/api/v1/agents/:id" description="Update agent metadata, trust tier, or trust policy. Admin/owner-policy gated." />
           <CodeBlock>{`{
   "display_name": "Beta",
   "trust_tier": "partner",
@@ -756,12 +756,12 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
         </Section>
 
-        <Section title="Tasks" subtitle="Kanban units of work" idx={11} id="tasks">
-          <p>Tasks are what power the dashboard kanban board and task detail pages.</p>
+        <Section title="Tasks" subtitle="Units of work" idx={11} id="tasks">
+          <p>Tasks are what power the dashboard task lists and task detail pages.</p>
 
           <Endpoint method="GET" path="/api/v1/projects/:id/tasks" description="List tasks for a project." />
           <List>
-            <ListItem><InlineCode>status</InlineCode> — filter by kanban state</ListItem>
+            <ListItem><InlineCode>status</InlineCode> — filter by workflow state</ListItem>
             <ListItem><InlineCode>sprint_id</InlineCode> — sprint ID, or <InlineCode>null</InlineCode> for backlog tasks</ListItem>
             <ListItem><InlineCode>assignee</InlineCode> — assignee agent ID</ListItem>
             <ListItem><InlineCode>priority</InlineCode> — <InlineCode>urgent</InlineCode>, <InlineCode>high</InlineCode>, <InlineCode>medium</InlineCode>, <InlineCode>low</InlineCode></ListItem>
@@ -840,7 +840,7 @@ signature = HMAC-SHA256(signing_secret, message)
 }`}</CodeBlock>
 
           <div style={{ marginTop: 24 }} />
-          <Endpoint method="PATCH" path="/api/v1/projects/:id/tasks/:tid" description="Update task status, priority, sprint, assignee, labels, due date, or kanban position." />
+          <Endpoint method="PATCH" path="/api/v1/projects/:id/tasks/:tid" description="Update task status, priority, sprint, assignee, labels, due date, or list position." />
           <CodeBlock>{`{
   "status": "in-review",
   "position": 3
