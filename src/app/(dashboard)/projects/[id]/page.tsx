@@ -375,12 +375,12 @@ export default async function ProjectDetailPage({
           </section>
         )}
 
-        {/* Work left, context right. The board used to take the full width
+        {/* Context left, work right. The board used to take the full width
             and still hide a third of itself off-screen, while the project's
             own description sat in a 530px column with the rest of the page
             empty beside it. */}
         <div className={styles.workLayout}>
-          <main className={styles.work}>
+          <div className={styles.work}>
             <div className={styles.workHead}>
               <div>
                 <h2>Tasks</h2>
@@ -393,7 +393,7 @@ export default async function ProjectDetailPage({
               members={members}
               canCreate={!isObserver}
             />
-          </main>
+          </div>
 
           <aside className={styles.context} aria-label="Project context">
             {(project.description || isOwner) && (

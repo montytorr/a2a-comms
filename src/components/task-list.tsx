@@ -103,8 +103,9 @@ export default function TaskList({
 }: {
   tasks: TaskListRow[];
   hrefFor: (row: TaskListRow) => string;
-  /** Rendered inside a group when the caller can create tasks there. */
-  renderComposer?: (status: TaskStatus) => React.ReactNode;
+  /** Rendered inside a group when the caller can create tasks there. The
+   *  second argument closes the group's composer again. */
+  renderComposer?: (status: TaskStatus, close: () => void) => React.ReactNode;
   emptyHint?: string;
 }) {
   const [openComposer, setOpenComposer] = useState<TaskStatus | null>(null);
@@ -144,7 +145,7 @@ export default function TaskList({
             </div>
             {group.rows.map((row) => <TaskRow key={row.id} row={row} href={hrefFor(row)} />)}
             {renderComposer && openComposer === group.id && (
-              <div className={styles.composer}>{renderComposer(group.id)}</div>
+              <div className={styles.composer}>{renderComposer(group.id, () => setOpenComposer(null))}</div>
             )}
           </section>
         );

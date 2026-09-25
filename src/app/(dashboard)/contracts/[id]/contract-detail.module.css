@@ -67,13 +67,17 @@
 }
 
 .main { grid-area: conversation; }
+/* Was sticky + max-height + overflow-y: auto, nested inside the dashboard
+   shell's own scroller — the identical rule HOL-140 removed from the task
+   page and wrote a post-mortem about in task-detail.module.css. This rail
+   carries eight cards, so it routinely outran its max-height: a wheel over
+   it scrolled the rail rather than the page, taking its own heading out of
+   view, and its tail was reachable only through a scrollbar that
+   `scrollbar-width: thin` over a transparent track made invisible. The fix
+   was applied to one page and not the other. It flows with the document. */
 .sidebar {
   grid-area: context;
-  position: sticky;
-  top: var(--space-4);
-  max-height: calc(100dvh - var(--topbar-h) - var(--space-6));
-  overflow-y: auto;
-  scrollbar-width: thin;
+  min-width: 0;
 }
 .context { display: flex; min-width: 0; flex-direction: column; gap: var(--space-4); }
 

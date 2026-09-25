@@ -80,8 +80,9 @@
   display: grid;
   /* Context left, work right — the same order as the contract detail page.
      Reading order is unaffected: the title and its state badges are in a
-     full-width header above this grid, and <main> still precedes <aside> in
-     the markup. */
+     full-width header above this grid, and the work column still precedes
+     the rail in the markup, so tab and reading order reach it first. The
+     dashboard shell owns the page's single <main>. */
   grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
   grid-template-areas: 'context work';
   align-items: start;

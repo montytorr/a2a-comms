@@ -58,7 +58,14 @@ export default function ProjectTaskList({
       {canCreate && (
         <div className={styles.newTask}>
           {creating ? (
-            <QuickTaskForm projectId={projectId} status="backlog" sprintId={sprintId} members={members} />
+            <QuickTaskForm
+              projectId={projectId}
+              status="backlog"
+              sprintId={sprintId}
+              members={members}
+              defaultOpen
+              onClose={() => setCreating(false)}
+            />
           ) : (
             <button type="button" className="btn btn--sm" onClick={() => setCreating(true)}>+ New task</button>
           )}
@@ -69,8 +76,15 @@ export default function ProjectTaskList({
         hrefFor={(row) => `/projects/${projectId}/tasks/${row.id}`}
         emptyHint="No tasks in this project yet."
         renderComposer={canCreate
-          ? (status: TaskStatus) => (
-              <QuickTaskForm projectId={projectId} status={status} sprintId={sprintId} members={members} />
+          ? (status: TaskStatus, close: () => void) => (
+              <QuickTaskForm
+                projectId={projectId}
+                status={status}
+                sprintId={sprintId}
+                members={members}
+                defaultOpen
+                onClose={close}
+              />
             )
           : undefined}
       />
