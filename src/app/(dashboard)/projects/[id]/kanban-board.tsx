@@ -3,15 +3,13 @@
 import Link from 'next/link';
 import type { TaskStatus, TaskPriority } from '@/lib/types';
 import QuickTaskForm from './quick-task-form';
-import { Avatar, EmptyState } from '@/components/atoms';
+import { Avatar } from '@/components/atoms';
 import { formatDate } from '@/lib/format-date';
 import { getBlockedTaskNotificationState } from '@/lib/task-blocker-notifications';
-import StatusBadge from '@/components/status-badge';
 import styles from './project-detail.module.css';
 import {
   BLOCKER_TONE,
   DEPENDENCY_KIND_TONE,
-  DUE_STATE_TONE,
   colorVarForTone,
   dotClassForTone,
   lineVarForTone,
@@ -51,9 +49,6 @@ const dependencyTypeConfig: Record<DependencyKind, { label: string; tone: Tone; 
   related:       { label: 'Related',    tone: DEPENDENCY_KIND_TONE.related,        previewLabel: 'Related to' },
 };
 
-function renderDependencyPreview(items: Array<{ id: string; title: string; status: string }>, maxItems = 2) {
-  return items.slice(0, maxItems).map((item) => item.title).join(', ');
-}
 
 function compactDate(value: string) {
   const date = new Date(value);
@@ -162,15 +157,7 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                 {/* Task list */}
                 <div className={styles.columnList}>
                   {colTasks.length === 0 && (
-                    <div
-                      style={{
-                        borderRadius: 'var(--radius-3)',
-                        border: '1px dashed var(--line-1)',
-                        background: 'var(--bg-0)',
-                      }}
-                    >
-                      <EmptyState title="No tasks" />
-                    </div>
+                    <p className={styles.columnEmpty}>No tasks</p>
                   )}
 
                   {colTasks.map((task) => {
@@ -213,262 +200,87 @@ export default function KanbanBoard({ tasks, projectId, sprintId, members = [] }
                         href={`/projects/${projectId}/tasks/${task.id}`}
                         className={styles.taskCard}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-                          {/* Top row: priority + labels + due */}
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
-                              <StatusBadge
-                                status={task.priority}
-                                label={prioLabel}
-                                tone={prioTone}
-                                dot="none"
-                                size="lg"
-                              />
-                              {task.labels && task.labels.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
-                                  {task.labels.slice(0, 3).map((label) => (
-                                    <span
-                                      key={label}
-                                      className={`${pillClassForTone('neutral')} text-2xs`}
-                                      style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                                    >
-                                      {label}
-                                    </span>
-                                  ))}
-                                  {task.labels.length > 3 && (
-                                    <span className={`${pillClassForTone('neutral')} text-2xs`}>
-                                      +{task.labels.length - 3}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {task.due_date && (
-                                <span
-                                  className={`${pillClassForTone(isOverdue ? 'rose' : 'neutral')} text-2xs`}
-                                  style={{ fontFamily: 'var(--mono)' }}
-                                >
-                                  {compactDate(task.due_date)}
-                                </span>
-                              )}
-                              {isOverdue && (
-                                <span className={`${pillClassForTone('rose')} text-2xs`}>
-                                  Overdue
-                                </span>
-                              )}
-                            </div>
+                        <div className={styles.taskBody}>
+                          {/* Title first: it is the only thing anyone scans a
+                              board for. Priority rides along as a dot. */}
+                          <div className={styles.taskTitleRow}>
+                            <span
+                              className={styles.taskPriority}
+                              style={{ background: colorVarForTone(prioTone) }}
+                              title={`${prioLabel} priority`}
+                              aria-label={`${prioLabel} priority`}
+                            />
+                            <h4 className={styles.taskTitle}>{task.title}</h4>
                           </div>
 
-                          {/* Title */}
-                          <h4
-                            className="text-sm" style={{
-                              
-                              fontWeight: 600,
-                              lineHeight: 1.4,
-                              color: 'var(--fg-1)',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              margin: 0,
-                            }}
-                          >
-                            {task.title}
-                          </h4>
-
-                          {/* Dependency context */}
-                          {hasDependencyContext && (
-                            <div
-                              className="card--inset"
-                              style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}
-                            >
-                              {blockerState && (
-                                <div
-                                  style={{
-                                    borderRadius: 'var(--radius-2)',
-                                    border: `1px solid ${lineVarForTone(BLOCKER_TONE[blockerState.tone])}`,
-                                    background: surfaceVarForTone(BLOCKER_TONE[blockerState.tone]),
-                                    padding: 10,
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-                                    <span className={`${pillClassForTone(BLOCKER_TONE[blockerState.tone])} text-2xs`}>
-                                      {blockerState.tone === 'stale'
-                                        ? 'Stale blocker'
-                                        : blockerState.tone === 'follow-through'
-                                        ? 'Follow-up due'
-                                        : 'Blocked'}
-                                    </span>
-                                    <span className={`${pillClassForTone('neutral')} text-2xs`}>
-                                      {blockerState.statusLabel}
-                                    </span>
-                                    {blockerState.dueStateLabel && (
-                                      <span className={`${pillClassForTone(DUE_STATE_TONE[blockerState.dueState])} text-2xs`}>
-                                        {blockerState.dueStateLabel}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="upper text-2xs" style={{ marginTop: 8, color: 'var(--fg-4)' }}>
-                                    Next unblock step
-                                  </p>
-                                  <p
-                                    className="text-2xs" style={{
-                                      marginTop: 4,
-                                      
-                                      lineHeight: 1.4,
-                                      color: 'var(--fg-1)',
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: 2,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {blockerState.blockerResolutionAction || 'No unblock plan logged yet'}
-                                  </p>
-                                  <div
-                                    className="text-2xs" style={{
-                                      marginTop: 8,
-                                      display: 'flex',
-                                      flexWrap: 'wrap',
-                                      gap: 12,
-                                      
-                                      color: 'var(--fg-2)',
-                                    }}
-                                  >
-                                    <span>
-                                      <span style={{ color: 'var(--fg-4)' }}>Owner: </span>
-                                      {blockerState.blockerResolutionOwner || 'Unassigned'}
-                                    </span>
-                                    <span>
-                                      <span style={{ color: 'var(--fg-4)' }}>Follow-up: </span>
-                                      {blockerState.blockerResolutionDueAt
-                                        ? compactDate(blockerState.blockerResolutionDueAt)
-                                        : 'Not scheduled'}
-                                    </span>
-                                  </div>
-                                </div>
+                          {task.labels && task.labels.length > 0 && (
+                            <div className={styles.taskLabels}>
+                              {task.labels.slice(0, 2).map((label) => (
+                                <span key={label} className={`${pillClassForTone('neutral')} text-2xs`}>{label}</span>
+                              ))}
+                              {task.labels.length > 2 && (
+                                <span className={`${pillClassForTone('neutral')} text-2xs`}>+{task.labels.length - 2}</span>
                               )}
-
-                              {/* Dependency badges */}
-                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
-                                {activeDependencyGroups.map((group) => {
-                                  const config = dependencyTypeConfig[group.key];
-                                  return (
-                                    <span
-                                      key={group.key}
-                                      className={`${pillClassForTone(config.tone)} text-2xs`}
-                                    >
-                                      {config.label} {group.items.length}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-
-                              {/* Dependency previews */}
-                              <div
-                                style={{
-                                  display: 'grid',
-                                  gap: 6,
-                                  gridTemplateColumns: activeDependencyGroups.slice(0, 2).length > 1 ? '1fr 1fr' : '1fr',
-                                }}
-                              >
-                                {activeDependencyGroups.slice(0, 2).map((group) => {
-                                  const config = dependencyTypeConfig[group.key];
-                                  const overflow = group.items.length - 2;
-                                  return (
-                                    <div
-                                      key={group.key}
-                                      style={{
-                                        borderRadius: 'var(--radius-2)',
-                                        border: '1px solid var(--line-1)',
-                                        background: 'var(--bg-0)',
-                                        padding: '8px 10px',
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          gap: 8,
-                                          marginBottom: 2,
-                                        }}
-                                      >
-                                        <span className="upper text-2xs" style={{ color: 'var(--fg-4)' }}>
-                                          {config.previewLabel}
-                                        </span>
-                                        <span className="text-2xs" style={{ color: 'var(--fg-4)' }}>
-                                          {group.items.length}
-                                        </span>
-                                      </div>
-                                      <p
-                                        className="text-2xs" style={{
-                                          
-                                          lineHeight: 1.4,
-                                          color: 'var(--fg-2)',
-                                          display: '-webkit-box',
-                                          WebkitLineClamp: 2,
-                                          WebkitBoxOrient: 'vertical',
-                                          overflow: 'hidden',
-                                        }}
-                                      >
-                                        {renderDependencyPreview(group.items)}
-                                        {overflow > 0 ? ` +${overflow} more` : ''}
-                                      </p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
                             </div>
                           )}
 
-                          {/* Footer: assignee + id */}
-                          <div
-                            style={{
-                              marginTop: 'auto',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: 8,
-                              borderTop: '1px solid var(--line-1)',
-                              paddingTop: 10,
-                            }}
-                          >
-                            {assigneeName ? (
-                              <div
-                                style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
-                                title={assigneeName}
+                          {blockerState && (
+                            <div className={styles.taskMetaLine}>
+                              <span
+                                className={styles.taskBlocked}
+                                style={{
+                                  border: `1px solid ${lineVarForTone(BLOCKER_TONE[blockerState.tone])}`,
+                                  background: surfaceVarForTone(BLOCKER_TONE[blockerState.tone]),
+                                  color: colorVarForTone(BLOCKER_TONE[blockerState.tone]),
+                                }}
                               >
-                                <Avatar name={assigneeName} size={20} />
-                                <span
-                                  className="text-2xs" style={{
-                                    
-                                    color: 'var(--fg-3)',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {assigneeName}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-2xs" style={{ fontStyle: 'italic', color: 'var(--fg-4)' }}>
-                                Unassigned
+                                {blockerState.tone === 'stale'
+                                  ? 'Stale blocker'
+                                  : blockerState.tone === 'follow-through'
+                                  ? 'Follow-up due'
+                                  : 'Blocked'}
                               </span>
+                              <span className={styles.taskBlockedNote}>
+                                {blockerState.blockerResolutionOwner || 'no owner'}
+                                {blockerState.blockerResolutionDueAt ? ` · ${compactDate(blockerState.blockerResolutionDueAt)}` : ''}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Counts only. The titles they used to preview are
+                              on the task page, which is one click away. */}
+                          {hasDependencyContext && (
+                            <div className={styles.taskMetaLine}>
+                              {activeDependencyGroups.map((group, index) => (
+                                <span key={group.key}>
+                                  {index > 0 && <span aria-hidden="true">· </span>}
+                                  <b>{group.items.length}</b> {dependencyTypeConfig[group.key].label.toLowerCase()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {(task.due_date || isOverdue) && (
+                            <div className={styles.taskMetaLine}>
+                              {task.due_date && (
+                                <span className={`${pillClassForTone(isOverdue ? 'rose' : 'neutral')} text-2xs`} style={{ fontFamily: 'var(--mono)' }}>
+                                  {compactDate(task.due_date)}
+                                </span>
+                              )}
+                              {isOverdue && <span className={`${pillClassForTone('rose')} text-2xs`}>Overdue</span>}
+                            </div>
+                          )}
+
+                          <div className={styles.taskFooter}>
+                            {assigneeName ? (
+                              <span className={styles.taskAssignee} title={assigneeName}>
+                                <Avatar name={assigneeName} size={20} />
+                                <span>{assigneeName}</span>
+                              </span>
+                            ) : (
+                              <span className={styles.taskUnassigned}>Unassigned</span>
                             )}
-                            <span
-                              className="mono text-2xs"
-                              style={{
-                                
-                                color: 'var(--fg-4)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.12em',
-                              }}
-                            >
-                              #{task.id.slice(0, 6)}
-                            </span>
+                            <span className={`mono ${styles.taskId}`}>#{task.id.slice(0, 6)}</span>
                           </div>
                         </div>
                       </Link>

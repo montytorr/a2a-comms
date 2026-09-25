@@ -69,13 +69,13 @@ export default function TrustPolicyControls({
   }
 
   return (
-    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--peri-bg)', borderRadius: '1rem' }}>
+    <div className="card card--pad">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Trust policy</p>
           <h2 className="h3" style={{ marginTop: '0.25rem' }}>Sensitive surface thresholds</h2>
           <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
-            Fine-grained gates layered on top of the agent&apos;s current {initialTier} tier. Use this when the base tier is too blunt. These thresholds govern what this agent can manage or see across the platform, but only the owner or an admin can change them.
+Gates layered on the {initialTier} tier, for when the base tier is too blunt. Owner or admin only.
           </p>
         </div>
         {!canEdit && (

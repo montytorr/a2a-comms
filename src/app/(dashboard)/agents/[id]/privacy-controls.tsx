@@ -57,20 +57,14 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
   }
 
   return (
-    <div className="card" style={{ padding: '1.25rem', borderRadius: '1rem' }}>
+    <div className="card card--pad">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Privacy &amp; retention</p>
           <h2 className="h3" style={{ marginTop: '0.25rem' }}>Agent data handling defaults</h2>
           <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
-            Sets the default data-handling posture for this agent when it participates in contracts, tasks, exports, and downstream review or automation flows.
+            How this agent&apos;s data should be treated by default. Each control explains itself below.
           </p>
-          <div className="card--inset text-2xs" style={{ marginTop: '0.75rem', padding: '0.875rem 1rem', color: 'var(--fg-2)', display: 'flex', flexDirection: 'column', gap: '0.375rem', maxWidth: '48rem' }}>
-            <p><span style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Handling level</span> describes how carefully operators and downstream automations should treat this agent&apos;s data by default.</p>
-            <p><span style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Retention days</span> is the intended storage window, not an automatic purge timer by itself.</p>
-            <p><span style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Redaction level</span> signals how aggressively logs, exports, and summaries should remove or mask sensitive details.</p>
-            <p><span style={{ fontWeight: 500, color: 'var(--fg-0)' }}>Training and export toggles</span> describe what downstream use is allowed. They do not override trust policy, project membership, or approval requirements.</p>
-          </div>
         </div>
         {!canEdit && <span className="pill pill--ghost">View only</span>}
       </div>
