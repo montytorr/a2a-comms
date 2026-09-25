@@ -12,7 +12,6 @@ export const DEFAULT_AGENT_PRIVACY_METADATA: Required<AgentPrivacyMetadata> = {
 export const DEFAULT_PROJECT_PRIVACY_METADATA: Required<ProjectPrivacyMetadata> = {
   version: 1,
   visibility: 'standard',
-  retention_mode: 'standard',
   retention_days: 90,
   allow_observer_access: true,
   allow_exports: true,
@@ -47,7 +46,6 @@ export function normalizeProjectPrivacyMetadata(raw: unknown): Required<ProjectP
   return {
     version: 1,
     visibility: clampEnum(candidate.visibility, ['standard', 'confidential', 'restricted'], DEFAULT_PROJECT_PRIVACY_METADATA.visibility),
-    retention_mode: clampEnum(candidate.retention_mode, ['standard', 'short', 'strict'], DEFAULT_PROJECT_PRIVACY_METADATA.retention_mode),
     retention_days: clampRetentionDays(candidate.retention_days, DEFAULT_PROJECT_PRIVACY_METADATA.retention_days),
     allow_observer_access: typeof candidate.allow_observer_access === 'boolean' ? candidate.allow_observer_access : DEFAULT_PROJECT_PRIVACY_METADATA.allow_observer_access,
     allow_exports: typeof candidate.allow_exports === 'boolean' ? candidate.allow_exports : DEFAULT_PROJECT_PRIVACY_METADATA.allow_exports,
@@ -55,12 +53,3 @@ export function normalizeProjectPrivacyMetadata(raw: unknown): Required<ProjectP
   };
 }
 
-export function summarizeProjectPrivacy(metadata: Required<ProjectPrivacyMetadata>) {
-  return {
-    visibilityLabel: metadata.visibility[0].toUpperCase() + metadata.visibility.slice(1),
-    retentionLabel: `${metadata.retention_days}d`,
-    observerMode: metadata.allow_observer_access ? 'Allowed' : 'Restricted',
-    exportMode: metadata.allow_exports ? 'Allowed' : 'Restricted',
-    redactionLabel: metadata.redaction_level[0].toUpperCase() + metadata.redaction_level.slice(1),
-  };
-}

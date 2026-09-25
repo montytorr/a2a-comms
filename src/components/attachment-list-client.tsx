@@ -180,7 +180,7 @@ const AttachmentPreviewModal = ({
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { detailsOpen ? onToggleDetails() : onClose(); }
+      if (e.key === 'Escape') { if (detailsOpen) onToggleDetails(); else onClose(); }
     };
     window.addEventListener('keydown', onKey);
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };

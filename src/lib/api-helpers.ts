@@ -129,18 +129,6 @@ export async function auditLog(params: {
 }
 
 /**
- * Parse a pre-read body string into JSON.
- * Use this instead of re-reading req.text() which fails on consumed streams.
- */
-export const parseBody = <T>(body: string): T | null => {
-  try {
-    return body ? JSON.parse(body) as T : null;
-  } catch {
-    return null;
-  }
-};
-
-/**
  * Get client IP from request.
  */
 export function getClientIp(req: NextRequest): string {

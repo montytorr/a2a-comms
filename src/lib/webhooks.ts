@@ -5,9 +5,7 @@ import { logWebhookDelivery } from './security-events';
 import {
   MAX_RETRIES,
   RETRY_DELAY_MS,
-  incrementFailure,
   markDeliverySuccess,
-  markDeliveryFailed,
   resetWebhookFailureState,
   sendWebhookRequest,
   setWebhookLoggers,
@@ -15,10 +13,7 @@ import {
 
 // Wire in real security event loggers (Next.js context)
 import { logWebhookDisabled } from './security-events';
-setWebhookLoggers({
-  logDelivery: logWebhookDelivery,
-  logDisabled: logWebhookDisabled,
-});
+setWebhookLoggers({ logDisabled: logWebhookDisabled });
 
 interface WebhookEvent {
   event: string;

@@ -413,3 +413,82 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
    between them, since the description beside it is capped at a reading
    measure. */
 .headerMain { max-width: 1180px; }
+
+/* ──────────────────────────────────────────────
+   PRIVACY
+
+   Six controls sat in one auto-fill grid, visually identical, and exactly one
+   of them did anything: allow_observer_access redirects an observer off the
+   page and 403s the API. Which one that was lived in a clause of a paragraph
+   underneath. retention_mode was in the grid too, and nothing in the system
+   has ever read it — not the UI, not the API, not the reactor.
+   ────────────────────────────────────────────── */
+.policy { padding: var(--space-5); }
+
+.policyHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.policyTitle { margin: 0; color: var(--fg-0); font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
+.policySub { margin: var(--space-1) 0 0; color: var(--fg-2); font-size: var(--text-xs); }
+
+.policyEnforced {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--mint-line);
+  border-radius: var(--radius-3);
+  background: var(--mint-bg);
+}
+
+.check { display: flex; align-items: flex-start; gap: var(--space-3); }
+.check label { display: grid; gap: var(--space-1); min-width: 0; cursor: pointer; }
+.check label strong { color: var(--fg-0); font-size: var(--text-sm); font-weight: 600; }
+.check label span { color: var(--fg-2); font-size: var(--text-2xs); line-height: 1.5; }
+.check code { font-family: var(--mono); font-size: var(--text-2xs); color: var(--fg-1); }
+
+.policyBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-2);
+  background: var(--amber-bg);
+  color: var(--fg-1);
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+}
+.policyBanner strong { color: var(--amber); font-weight: 600; white-space: nowrap; }
+
+.policyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+  gap: var(--space-4);
+}
+.policyField { display: grid; gap: var(--space-2); min-width: 0; }
+.policyLabel {
+  color: var(--fg-3);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.policyActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line-1);
+}
+.policyNote { margin: 0; color: var(--fg-3); font-size: var(--text-2xs); }
+.policyOk { color: var(--mint); }
+.policyErr { color: var(--rose); }

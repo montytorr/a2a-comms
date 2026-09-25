@@ -36,6 +36,8 @@ export async function GET(
   const isSelfOrAdmin = auth.agent.id === id || isAdminAgent(auth.agent.id, auth.agent.name);
 
   const sanitized = isSelfOrAdmin ? agent : (() => {
+    // Named only so `rest` omits them — this is the redaction, not dead code.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { trust_notes, trust_policy, privacy_metadata, ...rest } = agent as Record<string, unknown>;
     return rest;
   })();

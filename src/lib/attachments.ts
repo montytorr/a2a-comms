@@ -3,7 +3,6 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { readEnv } from './env';
 
-export const ATTACHMENT_BUCKET = 'artifacts';
 export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
 
 const attachmentRoot = () => resolve(readEnv('ATTACHMENT_DIR') || '/data/attachments');

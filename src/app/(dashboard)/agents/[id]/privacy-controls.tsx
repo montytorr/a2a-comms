@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { AgentPrivacyMetadata } from '@/lib/types';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { updateAgentPrivacy } from './actions';
+import styles from './agent-detail.module.css';
 
 interface PrivacyControlsProps {
   agentId: string;
@@ -12,18 +13,15 @@ interface PrivacyControlsProps {
   canEdit: boolean;
 }
 
-function asComparable(value: ReturnType<typeof normalizeAgentPrivacyMetadata>) {
-  return JSON.stringify(value);
-}
-
 export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: PrivacyControlsProps) {
   const router = useRouter();
   const normalizedInitial = useMemo(() => normalizeAgentPrivacyMetadata(initialPrivacy), [initialPrivacy]);
-  const [dataHandling, setDataHandling] = useState<'standard' | 'confidential' | 'restricted'>(normalizedInitial.data_handling);
+  const [dataHandling, setDataHandling] = useState(normalizedInitial.data_handling);
   const [retentionDays, setRetentionDays] = useState(String(normalizedInitial.retention_days));
   const [allowTraining, setAllowTraining] = useState(normalizedInitial.allow_training);
   const [allowOperatorExports, setAllowOperatorExports] = useState(normalizedInitial.allow_operator_exports);
-  const [redactionLevel, setRedactionLevel] = useState<'standard' | 'enhanced' | 'strict'>(normalizedInitial.redaction_level);
+  const [redactionLevel, setRedactionLevel] = useState(normalizedInitial.redaction_level);
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -36,116 +34,120 @@ export default function PrivacyControls({ agentId, initialPrivacy, canEdit }: Pr
     redaction_level: redactionLevel,
   }), [dataHandling, retentionDays, allowTraining, allowOperatorExports, redactionLevel]);
 
-  const dirty = asComparable(privacyMetadata) !== asComparable(normalizedInitial);
+  const dirty = JSON.stringify(privacyMetadata) !== JSON.stringify(normalizedInitial);
 
   function handleSave() {
     if (!dirty || !canEdit) return;
     setError(null);
     setSuccess(null);
-
     startTransition(async () => {
       try {
         const result = await updateAgentPrivacy(agentId, privacyMetadata);
-        if (!result.success) throw new Error(result.error || 'Failed to update privacy controls');
-
-        setSuccess('Privacy controls updated.');
+        if (!result.success) throw new Error(result.error || 'Failed to update posture');
+        setSuccess('Declared posture updated.');
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update privacy controls');
+        setError(err instanceof Error ? err.message : 'Failed to update posture');
       }
     });
   }
 
+  /* The same five values the editor writes. They used to be rendered a second
+     time as a separate read-only card higher up the page. */
+  const tiles = [
+    { label: 'Handling', value: normalizedInitial.data_handling },
+    { label: 'Retention', value: `${normalizedInitial.retention_days} days` },
+    { label: 'Redaction', value: normalizedInitial.redaction_level },
+    { label: 'Training reuse', value: normalizedInitial.allow_training ? 'Allowed' : 'Blocked' },
+    { label: 'Operator exports', value: normalizedInitial.allow_operator_exports ? 'Allowed' : 'Restricted' },
+  ];
+
   return (
-    <div className="card card--pad">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <div>
-          <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Privacy &amp; retention</p>
-          <h2 className="h3" style={{ marginTop: '0.25rem' }}>Agent data handling defaults</h2>
-          <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
-            How this agent&apos;s data should be treated by default. Each control explains itself below.
-          </p>
+    <section className={`card ${styles.section} ${styles.posture}`} aria-labelledby="agent-posture-heading">
+      <div className={styles.sectionHead}>
+        <div className={styles.sectionHeadText}>
+          <p className={styles.eyebrow} style={{ color: 'var(--fg-3)' }}>Declared</p>
+          <h2 id="agent-posture-heading" className={styles.sectionTitle}>Data posture</h2>
         </div>
         {!canEdit && <span className="pill pill--ghost">View only</span>}
       </div>
 
-      <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
-        <div>
-          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>Handling level</label>
-          <select
-            value={dataHandling}
-            disabled={!canEdit || isPending}
-            onChange={(e) => setDataHandling(e.target.value as 'standard' | 'confidential' | 'restricted')}
-            className="cp-select"
-            style={{ width: '100%', opacity: !canEdit || isPending ? 0.6 : 1 }}
-          >
-            <option value="standard">Standard</option>
-            <option value="confidential">Confidential</option>
-            <option value="restricted">Restricted</option>
-          </select>
-          <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Standard suits ordinary collaboration, confidential asks for tighter handling, and restricted signals especially sensitive material.</p>
-        </div>
-        <div>
-          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>Retention days</label>
-          <input
-            value={retentionDays}
-            disabled={!canEdit || isPending}
-            onChange={(e) => setRetentionDays(e.target.value)}
-            inputMode="numeric"
-            className="cp-input"
-            style={{ width: '100%', opacity: !canEdit || isPending ? 0.6 : 1 }}
-          />
-          <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>This is the intended default storage window for related records and artifacts. It documents policy intent unless a janitor or export workflow explicitly enforces it.</p>
-        </div>
-        <div>
-          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>Redaction level</label>
-          <select
-            value={redactionLevel}
-            disabled={!canEdit || isPending}
-            onChange={(e) => setRedactionLevel(e.target.value as 'standard' | 'enhanced' | 'strict')}
-            className="cp-select"
-            style={{ width: '100%', opacity: !canEdit || isPending ? 0.6 : 1 }}
-          >
-            <option value="standard">Standard</option>
-            <option value="enhanced">Enhanced</option>
-            <option value="strict">Strict</option>
-          </select>
-          <p className="dim text-2xs" style={{ marginTop: '0.5rem' }}>Higher redaction levels mean logs, exports, and summaries should reveal less raw detail and mask more sensitive content.</p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label className="text-xs" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--fg-1)' }}>
-            <input className="cp-check" type="checkbox" checked={allowTraining} disabled={!canEdit || isPending} onChange={(e) => setAllowTraining(e.target.checked)} />
-            Allow training or model improvement use
-          </label>
-          <p className="dim text-2xs">Turn this off when this agent&apos;s work should not be reused for model training, fine-tuning, or similar improvement pipelines.</p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label className="text-xs" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--fg-1)' }}>
-            <input className="cp-check" type="checkbox" checked={allowOperatorExports} disabled={!canEdit || isPending} onChange={(e) => setAllowOperatorExports(e.target.checked)} />
-            Allow operator exports
-          </label>
-          <p className="dim text-2xs">Controls whether operators and downstream workflows should treat exports from this agent&apos;s data as permitted by default.</p>
-        </div>
+      {/* Said once, structurally, instead of four times in prose: the gates
+          above refuse requests, these do not. */}
+      <p className={styles.postureBanner}>
+        <strong>Recorded, not enforced.</strong>
+        <span>
+          Nothing in Holloway reads these today — no purge job, no export gate, no redaction pass.
+          They state the intent operators and downstream automation should follow, and are the
+          vocabulary the hosted product will enforce.
+        </span>
+      </p>
+
+      <div className={styles.tiles}>
+        {tiles.map((tile) => (
+          <div key={tile.label} className={styles.tile}>
+            <p className={styles.tileLabel}>{tile.label}</p>
+            <p className={styles.tileValue}>{tile.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <div className="dim text-2xs">These are defaults and metadata, not automatic deletion jobs. They inform operator expectations and downstream automation, but they do not themselves purge data or override trust and membership checks.</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {error && <span className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</span>}
-          {success && !error && <span className="text-2xs" style={{ color: 'var(--mint)' }}>{success}</span>}
-          {canEdit && (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!dirty || isPending}
-              className="btn btn--ghost btn--sm"
-              style={{ color: 'var(--peri)', borderColor: 'var(--peri-bg)' }}
-            >
-              {isPending ? 'Saving…' : 'Save privacy controls'}
+      {canEdit && (
+        <button type="button" className={styles.editToggle} onClick={() => setEditing((v) => !v)} aria-expanded={editing}>
+          {editing ? 'Close' : 'Change what is declared'}
+        </button>
+      )}
+
+      {editing && canEdit && (
+        <>
+          <div className={styles.editor}>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor="posture-handling">Handling level</label>
+              <select id="posture-handling" className="cp-select" style={{ width: '100%' }} value={dataHandling} disabled={isPending}
+                onChange={(e) => setDataHandling(e.target.value as typeof dataHandling)}>
+                <option value="standard">Standard</option>
+                <option value="confidential">Confidential</option>
+                <option value="restricted">Restricted</option>
+              </select>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor="posture-retention">Retention days</label>
+              <input id="posture-retention" type="number" min={1} max={3650} className="cp-input" style={{ width: '100%' }}
+                value={retentionDays} disabled={isPending} onChange={(e) => setRetentionDays(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor="posture-redaction">Redaction level</label>
+              <select id="posture-redaction" className="cp-select" style={{ width: '100%' }} value={redactionLevel} disabled={isPending}
+                onChange={(e) => setRedactionLevel(e.target.value as typeof redactionLevel)}>
+                <option value="standard">Standard</option>
+                <option value="enhanced">Enhanced</option>
+                <option value="strict">Strict</option>
+              </select>
+            </div>
+            <div className={styles.check}>
+              <input id="posture-training" type="checkbox" className="cp-check" checked={allowTraining} disabled={isPending}
+                onChange={(e) => setAllowTraining(e.target.checked)} />
+              <label htmlFor="posture-training">Allow training or model improvement use</label>
+            </div>
+            <div className={styles.check}>
+              <input id="posture-exports" type="checkbox" className="cp-check" checked={allowOperatorExports} disabled={isPending}
+                onChange={(e) => setAllowOperatorExports(e.target.checked)} />
+              <label htmlFor="posture-exports">Allow operator exports</label>
+            </div>
+          </div>
+
+          <div className={styles.actions}>
+            <p className={styles.actionsNote}>
+              {error ? <span className={styles.err}>{error}</span>
+                : success ? <span className={styles.ok}>{success}</span>
+                : 'Changing these changes what the system promises, not what it does.'}
+            </p>
+            <button type="button" onClick={handleSave} disabled={!dirty || isPending} className="btn btn--sm">
+              {isPending ? 'Saving…' : 'Save posture'}
             </button>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        </>
+      )}
+    </section>
   );
 }

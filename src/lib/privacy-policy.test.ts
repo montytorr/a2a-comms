@@ -39,7 +39,6 @@ test('normalizeProjectPrivacyMetadata falls back cleanly', () => {
 test('normalizeProjectPrivacyMetadata clamps and preserves valid values', () => {
   assert.deepEqual(normalizeProjectPrivacyMetadata({
     visibility: 'confidential',
-    retention_mode: 'short',
     retention_days: 14.2,
     allow_observer_access: false,
     allow_exports: false,
@@ -47,7 +46,6 @@ test('normalizeProjectPrivacyMetadata clamps and preserves valid values', () => 
   }), {
     version: 1,
     visibility: 'confidential',
-    retention_mode: 'short',
     retention_days: 14,
     allow_observer_access: false,
     allow_exports: false,

@@ -861,36 +861,6 @@ export async function listReputationLedgerEvents(agentId: string, limit = 100) {
   return (data || []) as ReputationLedgerEvent[];
 }
 
-export async function appendReputationLedgerEvent(input: CreateReputationLedgerEventInput) {
-  const db = createServerClient();
-  const occurredAt = input.occurredAt ?? new Date().toISOString();
-  const recordedAt = input.recordedAt ?? new Date().toISOString();
-
-  const { data, error } = await db
-    .from('reputation_ledger_events')
-    .insert({
-      agent_id: input.agentId,
-      occurred_at: occurredAt,
-      recorded_at: recordedAt,
-      source_type: input.sourceType,
-      signal_key: input.signalKey,
-      value: Number(clamp(input.value, -1, 1).toFixed(4)),
-      weight_hint: input.weightHint ?? null,
-      source_id: input.sourceId ?? null,
-      project_id: input.projectId ?? null,
-      task_id: input.taskId ?? null,
-      contract_id: input.contractId ?? null,
-      reviewer_agent_id: input.reviewerAgentId ?? null,
-      reviewer_user_id: input.reviewerUserId ?? null,
-      metadata: input.metadata ?? {},
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  return data as ReputationLedgerEvent;
-}
 
 export function aggregateReputationLedger(params: {
   agentId: string;
@@ -937,32 +907,7 @@ export async function persistAgentReputationSnapshot(snapshot: AgentReputationSn
   }
 }
 
-export async function recomputeAndPersistAgentReputation(agentId: string, options: ReputationAggregationOptions = {}) {
-  const result = await recomputeAgentReputation(agentId, options);
-  await persistAgentReputationSnapshot(result.snapshot);
-  return result;
-}
 
-export async function getAgentReputationSnapshot(agentId: string, options: ReputationAggregationOptions = {}) {
-  const db = createServerClient();
-  const { data, error } = await db
-    .from('agents')
-    .select('reputation_snapshot')
-    .eq('id', agentId)
-    .maybeSingle();
-
-  if (error) {
-    if (isMissingReputationTable(error)) {
-      return (await recomputeAgentReputation(agentId, options)).snapshot;
-    }
-    throw error;
-  }
-
-  const snapshot = data?.reputation_snapshot as AgentReputationSnapshot | null | undefined;
-  if (snapshot) return snapshot;
-
-  return (await recomputeAgentReputation(agentId, options)).snapshot;
-}
 
 export async function getAgentReputationDetail(agentId: string, options: ReputationAggregationOptions = {}) {
   const result = await recomputeAgentReputation(agentId, options);

@@ -54,7 +54,6 @@ export interface AgentPrivacyMetadata {
 export interface ProjectPrivacyMetadata {
   version?: number;
   visibility?: 'standard' | 'confidential' | 'restricted';
-  retention_mode?: 'standard' | 'short' | 'strict';
   retention_days?: number;
   allow_observer_access?: boolean;
   allow_exports?: boolean;
@@ -240,15 +239,6 @@ export interface Contract {
   updated_at: string;
 }
 
-export interface ContractParticipant {
-  id: string;
-  contract_id: string;
-  agent_id: string;
-  role: ParticipantRole;
-  status: ParticipantStatus;
-  responded_at: string | null;
-  created_at: string;
-}
 
 export interface Message {
   id: string;
@@ -612,11 +602,6 @@ export interface Webhook {
   failure_count: number;
 }
 
-export interface RegisterWebhookRequest {
-  url: string;
-  secret: string;
-  events?: WebhookEventType[];
-}
 
 // ---- Projects & Tasks types ----
 
@@ -632,22 +617,7 @@ export interface Project {
   updated_at: string;
 }
 
-export interface ProjectMember {
-  id: string;
-  project_id: string;
-  agent_id: string;
-  role: ProjectMemberRole;
-  joined_at: string;
-}
 
-export interface ProjectObserver {
-  id: string;
-  project_id: string;
-  agent_id: string;
-  invited_by_agent_id: string | null;
-  note: string | null;
-  created_at: string;
-}
 
 export interface ProjectMemberInvitation {
   id: string;
@@ -663,18 +633,6 @@ export interface ProjectMemberInvitation {
   updated_at: string;
 }
 
-export interface Sprint {
-  id: string;
-  project_id: string;
-  title: string;
-  goal: string | null;
-  status: SprintStatus;
-  start_date: string | null;
-  end_date: string | null;
-  position: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface Task {
   id: string;
@@ -711,20 +669,7 @@ export interface Task {
 
 export type TaskDependencyType = 'blocks' | 'relates_to' | 'sequence_after';
 
-export interface TaskDependency {
-  id: string;
-  blocking_task_id: string;
-  blocked_task_id: string;
-  dependency_type: TaskDependencyType;
-  created_at: string;
-}
 
-export interface TaskContract {
-  id: string;
-  task_id: string;
-  contract_id: string;
-  linked_at: string;
-}
 
 export interface TaskExecutionRun {
   id: string;
@@ -789,19 +734,6 @@ export interface TaskExecutionCheckpoint {
   created_at: string;
 }
 
-export interface TaskActivityEvent {
-  id: string;
-  project_id: string;
-  task_id: string;
-  actor_agent_id: string | null;
-  actor_user_id: string | null;
-  event_type: string;
-  summary: string;
-  metadata: Record<string, unknown>;
-  created_at: string;
-  actor_agent?: Pick<Agent, 'id' | 'name' | 'display_name'> | null;
-  actor_user?: Pick<UserProfile, 'id' | 'display_name'> | null;
-}
 
 // ---- Projects & Tasks API request types ----
 

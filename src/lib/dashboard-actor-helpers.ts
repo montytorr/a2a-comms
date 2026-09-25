@@ -10,13 +10,6 @@ export type DashboardActorContext = {
   agentScope: string[];
 };
 
-export function toDashboardActorContext(auth: AuthActorContext): DashboardActorContext {
-  return {
-    user: auth.user,
-    actingAgentId: auth.actingAgentId,
-    agentScope: auth.agentScope.length > 0 ? auth.agentScope : [EMPTY_UUID],
-  };
-}
 
 export async function resolveProjectActorAccess(
   auth: AuthActorContext,

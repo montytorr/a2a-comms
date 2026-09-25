@@ -75,7 +75,7 @@ export async function POST(
   }
 
   // Reject the entire contract (CAS guard: only if still proposed)
-  const { data: updatedContract } = await db
+  await db
     .from('contracts')
     .update({
       status: 'rejected',

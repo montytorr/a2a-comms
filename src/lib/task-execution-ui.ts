@@ -1,6 +1,5 @@
-import { formatDateTime, formatRelative } from '@/lib/format-date';
 import { statusTone, type Tone } from '@/lib/status-tone';
-import type { TaskExecutionCheckpoint, TaskExecutionRun, TaskExecutionStatus } from '@/lib/types';
+import type { TaskExecutionStatus } from '@/lib/types';
 
 export const STALE_EXECUTION_HEARTBEAT_MS = 15 * 60 * 1000;
 
@@ -45,38 +44,6 @@ export function getExecutionStatusLabel(status?: TaskExecutionStatus | string | 
   return status.replace(/-/g, ' ');
 }
 
-export function formatExecutionTime(value?: string | null) {
-  if (!value) return '—';
-  return `${formatDateTime(value)} (${formatRelative(value)})`;
-}
 
-export function getExecutionSnapshotSummary(task: {
-  execution_status?: TaskExecutionStatus | null;
-  execution_heartbeat_at?: string | null;
-  active_run_id?: string | null;
-  last_checkpoint_summary?: string | null;
-}) {
-  const stale = isExecutionStale(task.execution_status, task.execution_heartbeat_at);
-  if (!task.execution_status || task.execution_status === 'idle') return 'No execution run yet.';
-  if (stale) return 'Run looks abandoned — heartbeat is older than 15 minutes.';
-  if (task.execution_status === 'running' && task.last_checkpoint_summary) return task.last_checkpoint_summary;
-  if (task.execution_status === 'running' && task.active_run_id) return 'Run is active and heartbeating.';
-  if (task.execution_status === 'queued') return 'Run is queued.';
-  if (task.execution_status === 'pending-approval') return 'Run is waiting for approval.';
-  if (task.execution_status === 'waiting') return 'Run is waiting on an external dependency.';
-  if (task.execution_status === 'blocked') return 'Run is blocked and needs intervention.';
-  if (task.execution_status === 'paused') return 'Run is paused.';
-  if (task.execution_status === 'handoff-needed') return 'Run is waiting on a handoff.';
-  if (task.execution_status === 'succeeded') return 'Latest run finished successfully.';
-  if (task.execution_status === 'failed') return 'Latest run failed.';
-  if (task.execution_status === 'cancelled') return 'Latest run was cancelled.';
-  return 'Execution snapshot available.';
-}
 
-export function getRecentExecutionRuns(runs: TaskExecutionRun[], limit = 5) {
-  return runs.slice(0, limit);
-}
 
-export function getRecentExecutionCheckpoints(checkpoints: TaskExecutionCheckpoint[], limit = 5) {
-  return checkpoints.slice(0, limit);
-}

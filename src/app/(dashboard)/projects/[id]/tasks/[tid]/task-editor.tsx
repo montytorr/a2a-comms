@@ -7,7 +7,6 @@ import styles from './task-editor.module.css';
 import { Avatar } from '@/components/atoms';
 import { updateTask, deleteTask } from './actions';
 import { useRouter } from 'next/navigation';
-import { dotClassForTone, statusTone } from '@/lib/status-tone';
 
 const priorityOptions: { id: TaskPriority; label: string; varColor: string }[] = [
   { id: 'urgent', label: 'Urgent', varColor: 'var(--rose)' },
@@ -390,54 +389,6 @@ function LabelsEditor({
   );
 }
 
-// ----- Due Date Picker -----
-function DueDatePicker({
-  value,
-  projectId,
-  taskId,
-  isOverdue,
-}: {
-  value: string | null;
-  projectId: string;
-  taskId: string;
-  isOverdue: boolean;
-}) {
-  const [isPending, startTransition] = useTransition();
-
-  function handleChange(dateStr: string) {
-    startTransition(async () => {
-      await updateTask(projectId, taskId, { due_date: dateStr || null });
-    });
-  }
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <input
-        type="date"
-        value={value?.split('T')[0] || ''}
-        onChange={(e) => handleChange(e.target.value)}
-        disabled={isPending}
-        className="cp-input"
-        style={{
-          width: 'auto',
-          colorScheme: 'dark',
-          color: isOverdue ? 'var(--rose)' : 'var(--fg-1)',
-        }}
-      />
-      {value && (
-        <button
-          onClick={() => handleChange('')}
-          disabled={isPending}
-          className="btn btn--ghost btn--sm text-2xs"
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--rose)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = ''; }}
-        >
-          Clear
-        </button>
-      )}
-    </div>
-  );
-}
 
 // ----- Priority Picker -----
 function PriorityPicker({
@@ -516,160 +467,6 @@ function PriorityPicker({
   );
 }
 
-// ----- Sprint Picker -----
-function SprintPicker({
-  currentSprintId,
-  sprints,
-  projectId,
-  taskId,
-}: {
-  currentSprintId: string | null;
-  sprints: Array<{ id: string; title: string; status: string }>;
-  projectId: string;
-  taskId: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [open]);
-
-  const current = sprints.find(s => s.id === currentSprintId);
-
-  /* Sprint status, from the shared map. `planned` used to fall through to the
-     grey dot, which made it indistinguishable from a sprint with no status. */
-  function sprintDotClass(status: string) {
-    return dotClassForTone(statusTone('sprint', status));
-  }
-
-  return (
-    <div style={{ position: 'relative' }} ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        disabled={isPending}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'transparent',
-          border: 'none',
-          padding: '4px 8px',
-          marginLeft: -8,
-          borderRadius: 'var(--radius-2)',
-          cursor: 'pointer',
-          width: '100%',
-          textAlign: 'left',
-          transition: 'background 0.1s',
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-      >
-        <span className="text-xs" style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{current?.title || 'Backlog'}</span>
-      </button>
-
-      {open && (
-        <div
-          className="animate-fade-in"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            zIndex: 50,
-            minWidth: 180,
-            borderRadius: 'var(--radius-3)',
-            border: '1px solid var(--line-1)',
-            background: 'var(--bg-1)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 8px 32px var(--scrim)',
-          }}
-        >
-          <button
-            onClick={() => {
-              if (currentSprintId !== null) {
-                startTransition(async () => {
-                  await updateTask(projectId, taskId, { sprint_id: null });
-                  setOpen(false);
-                });
-              } else {
-                setOpen(false);
-              }
-            }}
-            className="text-2xs" style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 12px',
-              textAlign: 'left',
-              
-              color: !currentSprintId ? 'var(--brand)' : 'var(--fg-2)',
-              background: !currentSprintId ? 'var(--bg-3)' : 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.1s, color 0.1s',
-            }}
-            onMouseEnter={e => { if (currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
-            onMouseLeave={e => { if (currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
-          >
-            Backlog
-            {!currentSprintId && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            )}
-          </button>
-          {sprints.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                if (s.id !== currentSprintId) {
-                  startTransition(async () => {
-                    await updateTask(projectId, taskId, { sprint_id: s.id });
-                    setOpen(false);
-                  });
-                } else {
-                  setOpen(false);
-                }
-              }}
-              className="text-2xs" style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 12px',
-                textAlign: 'left',
-                
-                color: s.id === currentSprintId ? 'var(--brand)' : 'var(--fg-2)',
-                background: s.id === currentSprintId ? 'var(--bg-3)' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background 0.1s, color 0.1s',
-              }}
-              onMouseEnter={e => { if (s.id !== currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)'; } }}
-              onMouseLeave={e => { if (s.id !== currentSprintId) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-2)'; } }}
-            >
-              <span className={sprintDotClass(s.status)} />
-              {s.title}
-              {s.id === currentSprintId && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}>
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ----- Delete Task Button -----
 function DeleteTaskButton({ projectId, taskId }: { projectId: string; taskId: string }) {
@@ -702,8 +499,6 @@ export {
   EditableDescription,
   AssigneePicker,
   LabelsEditor,
-  DueDatePicker,
   PriorityPicker,
-  SprintPicker,
   DeleteTaskButton,
 };

@@ -14,20 +14,6 @@ export const TRUST_TIER_DESCRIPTIONS: Record<AgentTrustTier, string> = {
   external: 'Untrusted or newly introduced agents. Keep them out of project state until explicitly elevated.',
 };
 
-export const TRUST_TIER_STYLES: Record<AgentTrustTier, { badge: string; dot: string }> = {
-  internal: {
-    badge: 'border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300',
-    dot: 'bg-emerald-400',
-  },
-  partner: {
-    badge: 'border-amber-500/20 bg-amber-500/[0.08] text-amber-300',
-    dot: 'bg-amber-400',
-  },
-  external: {
-    badge: 'border-red-500/20 bg-red-500/[0.08] text-red-300',
-    dot: 'bg-red-400',
-  },
-};
 
 export function normalizeAgentTrustTier(value: unknown): AgentTrustTier {
   return typeof value === 'string' && AGENT_TRUST_TIERS.includes(value as AgentTrustTier)
@@ -39,10 +25,6 @@ export function isAgentTrustTier(value: unknown): value is AgentTrustTier {
   return typeof value === 'string' && AGENT_TRUST_TIERS.includes(value as AgentTrustTier);
 }
 
-export function getAgentTrustTierSummary(value: unknown): string {
-  const tier = normalizeAgentTrustTier(value);
-  return TRUST_TIER_DESCRIPTIONS[tier];
-}
 
 export interface TrustPolicyAgent {
   id: string;

@@ -245,6 +245,3 @@ export function getEscalationBrokerageProvenance(metadata: Record<string, unknow
   };
 }
 
-export function isBrokeredExecutionRun(run: Pick<TaskExecutionRun, 'metadata'> | null | undefined) {
-  return !!getEscalationBrokerageProvenance(run?.metadata as Record<string, unknown> | null | undefined);
-}
