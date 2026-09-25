@@ -57,7 +57,7 @@ export async function POST(
   const result = await authenticateApiRequest(req);
   if (result.error) return result.error;
 
-  const { auth, body } = result;
+  const { auth } = result;
   const { id } = await params;
 
   const callerMember = await getProjectMembership(id, auth.agent.id);

@@ -65,7 +65,8 @@ function ts() { return new Date().toISOString(); }
 
 function log(msg: string, meta?: Record<string, unknown>) {
   const line = `[${ts()}] ${msg}`;
-  meta ? console.log(line, JSON.stringify(meta)) : console.log(line);
+  if (meta) console.log(line, JSON.stringify(meta));
+  else console.log(line);
 }
 
 function sleep(ms: number) {

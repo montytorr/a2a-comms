@@ -20,7 +20,6 @@ import type { TaskStatus } from '@/lib/types';
  * Aliasing TaskStatus means the database, the filter and the default view
  * cannot drift apart again.
  */
-export type MyTaskStatus = TaskStatus;
 
 export interface MyTask {
   id: string;

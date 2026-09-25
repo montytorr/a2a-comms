@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/db/server';
 import { sessionUser } from '@/lib/auth/session';
 import { getTemplateNames } from '@/lib/email';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/v1/email/templates
  * List available email templates — super admin only.
  */
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const user = await sessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

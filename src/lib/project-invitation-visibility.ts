@@ -3,7 +3,6 @@ import {
   evaluateProjectObserverListPolicyAccess,
   type TrustPolicyAccessContext,
 } from '@/lib/agent-trust-policy';
-import type { ProjectInvitationStatus } from '@/lib/types';
 import type { InvitationLike } from '@/app/(dashboard)/projects/invitation-utils';
 
 export interface ProjectInvitationVisibilityOptions {

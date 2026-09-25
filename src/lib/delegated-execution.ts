@@ -1,4 +1,4 @@
-import type { TaskExecutionCheckpointRow, TaskExecutionRunRow } from '@/lib/task-execution';
+import type { TaskExecutionRunRow } from '@/lib/task-execution';
 
 export interface DelegationProvenance {
   delegatedByAgentId: string | null;
@@ -59,23 +59,4 @@ export function isDelegatedExecutionRun(run: Pick<TaskExecutionRunRow, 'metadata
   return !!getDelegationProvenance(run?.metadata);
 }
 
-export function getDelegatedExecutionPayload(checkpoint: Pick<TaskExecutionCheckpointRow, 'payload'> | null | undefined) {
-  const payload = checkpoint?.payload;
-  if (!payload || typeof payload !== 'object') return null;
-  if (pickString(payload.delegated_by_agent_id) || pickString(payload.resumed_from_run_id) || pickString(payload.delegation_contract_id)) {
-    return payload as Record<string, unknown>;
-  }
-  return null;
-}
 
-export function buildDelegationSummary(input: {
-  taskTitle: string;
-  contractId: string;
-  fromAgentId: string | null;
-  toAgentId: string;
-  checkpointSummary: string | null;
-}) {
-  const from = input.fromAgentId || 'previous owner';
-  const summary = input.checkpointSummary || 'resume from the latest checkpoint';
-  return `Delegated execution for ${input.taskTitle} from ${from} to ${input.toAgentId} via contract ${input.contractId}. ${summary}`;
-}

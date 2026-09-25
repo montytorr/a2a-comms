@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import { normalizeAgentTrustPolicy, type AgentTrustPolicyConfig } from '@/lib/agent-trust-policy';
 import { normalizeAgentTrustTier, type AgentTrustTier } from '@/lib/trust-tiers';
 import { getAuthUser, type AuthUser } from '@/lib/auth-context';
-import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { readActiveAgentCookie } from '@/lib/auth/cookie';
 const EMPTY_UUID = '00000000-0000-0000-0000-000000000000';
 const TRUST_TIER_ORDER: AgentTrustTier[] = ['external', 'partner', 'internal'];
@@ -13,7 +12,6 @@ export interface OwnedAgentIdentity {
   displayName: string;
   trustTier: AgentTrustTier;
   trustPolicy: AgentTrustPolicyConfig;
-  privacyMetadata: ReturnType<typeof normalizeAgentPrivacyMetadata>;
 }
 
 export interface AuthActorContext {
@@ -87,7 +85,6 @@ export async function getAuthActorContext(): Promise<AuthActorContext | null> {
     displayName: agent.displayName,
     trustTier: agent.trustTier,
     trustPolicy: agent.trustPolicy,
-    privacyMetadata: agent.privacyMetadata,
   }));
 
   const cookieStore = await cookies();

@@ -17,6 +17,7 @@ import { normalizeAgentTrustTier, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS } f
 import { normalizeAgentTrustPolicy } from '@/lib/agent-trust-policy';
 import { normalizeAgentPrivacyMetadata } from '@/lib/privacy-policy';
 import { KeyRound } from 'lucide-react';
+import styles from './agent-detail.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,31 +162,7 @@ export default async function AgentDetailPage({
         </div>
       </div>
 
-      <div style={{ marginBottom: '2rem', display: 'grid', gap: '1.5rem' }}>
-        <div className="card card--pad">
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <div>
-              <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Privacy posture</p>
-              <h2 className="h3" style={{ marginTop: '0.25rem' }}>What operators should assume today</h2>
-            </div>
-            {!canEditTrust && <span className="pill pill--ghost">View only</span>}
-          </div>
-          <div style={{ marginTop: '1rem', display: 'grid', gap: '0.75rem', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-            {[
-              { label: 'Handling', value: privacyMetadata.data_handling, desc: 'Default sensitivity posture for collaboration and downstream review.', tone: null },
-              { label: 'Retention', value: `${privacyMetadata.retention_days} days`, desc: 'Policy target unless a janitor or export workflow explicitly enforces it.', tone: null },
-              { label: 'Redaction', value: privacyMetadata.redaction_level, desc: 'How aggressively logs, exports, and summaries should mask detail.', tone: null },
-              { label: 'Training reuse', value: privacyMetadata.allow_training ? 'Allowed' : 'Blocked', desc: "Whether this agent's work may feed model improvement pipelines by default.", tone: privacyMetadata.allow_training ? 'amber' : 'mint' },
-              { label: 'Operator exports', value: privacyMetadata.allow_operator_exports ? 'Allowed' : 'Restricted', desc: 'Whether exports should be treated as permitted by default.', tone: privacyMetadata.allow_operator_exports ? 'mint' : 'rose' },
-            ].map(({ label, value, desc, tone }) => (
-              <div key={label} className="card--inset" style={{ padding: '0.875rem 1rem' }}>
-                <p className="upper dim text-2xs">{label}</p>
-                <p className="text-sm" style={{ marginTop: '0.5rem', fontWeight: 600, color: tone ? `var(--${tone})` : 'var(--fg-0)', textTransform: 'capitalize' }}>{value}</p>
-                <p className="dim text-2xs" style={{ marginTop: '0.25rem' }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className={styles.stack} style={{ marginBottom: '2rem' }}>
         <TrustControls
           agentId={agentData.id}
           initialTier={trustTier}

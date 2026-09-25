@@ -36,9 +36,6 @@ export const SECURITY_EVENT_TYPES: SecurityEventType[] = [
 ];
 
 /** Returns true if the given action string is a security event. */
-export function isSecurityEvent(action: string): boolean {
-  return SECURITY_EVENT_TYPES.includes(action as SecurityEventType);
-}
 
 // ── Severity classification ──
 
@@ -134,16 +131,6 @@ export async function logAuthFailure(keyId: string | undefined, reason: string, 
   });
 }
 
-export async function logAuthzDenied(agentName: string, resource: string, resourceId: string, ip?: string): Promise<void> {
-  await logSecurityEvent({
-    event: 'authz.denied',
-    actor: agentName,
-    resourceType: resource,
-    resourceId,
-    details: { reason: 'Ownership or admin check failed' },
-    ipAddress: ip,
-  });
-}
 
 export async function logWebhookDelivery(
   status: 'success' | 'failure',

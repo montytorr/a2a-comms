@@ -44,9 +44,6 @@ export function toneForName(name: string): AvatarTone {
  * never be mistaken for one. Prefer an `Avatar`; if you need a chip, give it a
  * tone from `@/lib/status-tone` and let the Avatar inside carry the identity.
  */
-export function pillClassForName(name: string) {
-  return `pill pill--${toneForName(name)}`;
-}
 
 export const Avatar = ({ name, tone, size = 28 }: AvatarProps) => {
   const resolvedTone = tone || toneForName(name);

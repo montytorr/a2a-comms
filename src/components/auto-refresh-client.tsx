@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import {
-  RELOAD_WINDOW_MS,
   decideAction,
   isStale,
   recentReloads,

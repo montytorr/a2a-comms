@@ -16,10 +16,6 @@ export function formatDateTime(date: string | Date): string {
   return formatDate(date, { includeTime: true });
 }
 
-export function formatTime(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleTimeString(LOCALE, { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit' });
-}
 
 export function formatRelative(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;

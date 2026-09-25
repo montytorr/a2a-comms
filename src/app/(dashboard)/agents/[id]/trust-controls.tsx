@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENT_TRUST_TIERS, TRUST_TIER_DESCRIPTIONS, TRUST_TIER_LABELS, type AgentTrustTier } from '@/lib/trust-tiers';
 import { updateAgentTrustControls } from './actions';
+import styles from './agent-detail.module.css';
 
 interface TrustControlsProps {
   agentId: string;
@@ -47,77 +48,65 @@ export default function TrustControls({ agentId, initialTier, initialNotes, canE
   }
 
   return (
-    <div className="card card--pad">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <div>
-          <p className="upper text-2xs" style={{ color: 'var(--peri)', fontWeight: 600 }}>Trust controls</p>
-          <h2 className="h3" style={{ marginTop: '0.25rem' }}>Collaboration permissions</h2>
-          <p className="muted text-2xs" style={{ marginTop: '0.25rem', maxWidth: '36rem' }}>
-The agent&apos;s site-wide default posture: membership, observer access, handoff eligibility and contract policy all read from it.
+    <section className={`card ${styles.section}`} aria-labelledby="agent-tier-heading">
+      <div className={styles.sectionHead}>
+        <div className={styles.sectionHeadText}>
+          <p className={styles.eyebrow}>Enforced</p>
+          <h2 id="agent-tier-heading" className={styles.sectionTitle}>Trust tier</h2>
+          <p className={styles.sectionSub}>
+            The agent&apos;s site-wide posture, and the single most load-bearing field on this page:
+            project membership, observer access, handoff eligibility and contract policy all read from
+            it, and every gate below compares against it.
           </p>
         </div>
-        {!canEdit && (
-          <span className="pill pill--ghost">
-            View only, owner/admin can edit
-          </span>
-        )}
+        {!canEdit && <span className="pill pill--ghost">View only, owner/admin can edit</span>}
       </div>
 
-      <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'minmax(0,220px) 1fr' }}>
-        <div>
-          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Trust tier
-          </label>
+      <div className={styles.gateGrid}>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="agent-trust-tier">Tier</label>
           <select
+            id="agent-trust-tier"
             value={tier}
             disabled={!canEdit || isPending}
             onChange={(e) => setTier(e.target.value as AgentTrustTier)}
             className="cp-select"
-            style={{ width: '100%', opacity: !canEdit || isPending ? 0.6 : 1 }}
+            style={{ width: '100%' }}
           >
             {AGENT_TRUST_TIERS.map((option) => (
               <option key={option} value={option}>{TRUST_TIER_LABELS[option]}</option>
             ))}
           </select>
-          <p className="dim text-2xs" style={{ marginTop: '0.5rem', lineHeight: 1.5 }}>{TRUST_TIER_DESCRIPTIONS[tier]}</p>
+          <p className={styles.fieldHelp}>{TRUST_TIER_DESCRIPTIONS[tier]}</p>
         </div>
 
-        <div>
-          <label className="upper dim text-2xs" style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Trust notes
-          </label>
+        <div className={styles.field} style={{ gridColumn: 'span 2' }}>
+          <label className={styles.fieldLabel} htmlFor="agent-trust-notes">Why it has this tier</label>
           <textarea
+            id="agent-trust-notes"
             value={notes}
             disabled={!canEdit || isPending}
             onChange={(e) => setNotes(e.target.value)}
-            rows={4}
-            placeholder="Document who vetted this agent, why it has this tier, or any caveats."
+            rows={3}
+            placeholder="Who vetted this agent, and any caveats."
             className="cp-textarea"
-            style={{ width: '100%', resize: 'none', opacity: !canEdit || isPending ? 0.6 : 1 }}
+            style={{ width: '100%', resize: 'vertical' }}
           />
         </div>
       </div>
 
-      <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <div className="dim text-2xs">
-          Internal = full collaboration, Partner = observe/broker, External = registry-only or observer-by-explicit-same-owner exception. This setting affects how the whole site treats this agent.
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {error && <span className="text-2xs" style={{ color: 'var(--rose)' }}>{error}</span>}
-          {success && !error && <span className="text-2xs" style={{ color: 'var(--mint)' }}>{success}</span>}
-          {canEdit && (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!dirty || isPending}
-              className="btn btn--ghost btn--sm"
-              style={{ color: 'var(--peri)', borderColor: 'var(--peri-bg)' }}
-            >
-              {isPending ? 'Saving…' : 'Save trust controls'}
-            </button>
-          )}
-        </div>
+      <div className={styles.actions}>
+        <p className={styles.actionsNote}>
+          {error ? <span className={styles.err}>{error}</span>
+            : success ? <span className={styles.ok}>{success}</span>
+            : 'Internal = full collaboration · Partner = observe and broker · External = registry-only.'}
+        </p>
+        {canEdit && (
+          <button type="button" onClick={handleSave} disabled={!dirty || isPending} className="btn btn--primary btn--sm">
+            {isPending ? 'Saving…' : 'Save tier'}
+          </button>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,7 +1,6 @@
 import type { WebhookEventType } from './types';
 
 export const LEGACY_WEBHOOK_EVENT_ALIASES = ['contract_state'] as const;
-export type LegacyWebhookEventAlias = (typeof LEGACY_WEBHOOK_EVENT_ALIASES)[number];
 
 export const CANONICAL_WEBHOOK_EVENTS = [
   'invitation',

@@ -1,7 +1,6 @@
-import type { ApiError, Agent } from '@/lib/types';
+import type { ApiError } from '@/lib/types';
 import { normalizeAgentTrustTier, type AgentTrustTier } from './trust-tiers';
 
-export type AgentTrustPolicyScope = 'webhooks' | 'observer_project_access' | 'project_participants' | 'project_invitations';
 
 export interface WebhookTrustPolicyConfig {
   management: 'internal' | 'partner';
@@ -263,66 +262,13 @@ export function evaluateProjectInvitationListPolicyAccess(context: TrustPolicyAc
   );
 }
 
+/* Kept as a seam: agent-lifecycle.ts calls this when an agent is created or
+   updated without an explicit policy, and the hosted product will want the
+   default to vary by tier. It does not vary yet — all three branches returned
+   byte-identical objects across 56 lines, which read as policy and was a
+   constant. */
 export function buildDefaultAgentTrustPolicyForTier(trustTier: AgentTrustTier): AgentTrustPolicyConfig {
-  if (trustTier === 'internal') {
-    return {
-      webhooks: {
-        management: 'partner',
-      },
-      observer_project_access: {
-        read: 'partner',
-        download_project_attachments: 'partner',
-      },
-      project_participants: {
-        list_members: 'partner',
-        list_observers: 'partner',
-      },
-      project_invitations: {
-        list_pending: 'internal',
-      },
-    };
-  }
-
-  if (trustTier === 'partner') {
-    return {
-      webhooks: {
-        management: 'partner',
-      },
-      observer_project_access: {
-        read: 'partner',
-        download_project_attachments: 'partner',
-      },
-      project_participants: {
-        list_members: 'partner',
-        list_observers: 'partner',
-      },
-      project_invitations: {
-        list_pending: 'internal',
-      },
-    };
-  }
-
-  return {
-    webhooks: {
-      management: 'partner',
-    },
-    observer_project_access: {
-      read: 'partner',
-      download_project_attachments: 'partner',
-    },
-    project_participants: {
-      list_members: 'partner',
-      list_observers: 'partner',
-    },
-    project_invitations: {
-      list_pending: 'internal',
-    },
-  };
+  void trustTier;
+  return structuredClone(DEFAULT_AGENT_TRUST_POLICY);
 }
 
-export function extractAgentTrustContext(agent: Pick<Agent, 'trust_tier'> & { trust_policy?: unknown }) {
-  return {
-    trust_tier: agent.trust_tier,
-    trust_policy: agent.trust_policy,
-  };
-}

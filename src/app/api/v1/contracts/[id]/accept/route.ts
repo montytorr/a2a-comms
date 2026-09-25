@@ -6,7 +6,7 @@ import type { ApiError, Contract } from '@/lib/types';
 import { autoCloseIfExpired, enrichContract, getParticipant, activateIfAllAccepted } from '../../_helpers';
 import { deliverWebhooks } from '@/lib/webhooks';
 import { claimAcceptedHandoff } from '@/lib/handoff-resume';
-import { getEscalationBrokerageProvenance, isLikelyBrokerContract } from '@/lib/escalation-brokerage';
+import { isLikelyBrokerContract } from '@/lib/escalation-brokerage';
 import { evaluateContractParticipantMutation } from '@/lib/contract-trust-policy';
 import { deriveContractTurnState } from '@/lib/contract-turn-state';
 import { acceptedNextAction } from '@/lib/contract-succession';

@@ -9,14 +9,9 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LogFn = (...args: any[]) => any;
 
-let _logWebhookDelivery: LogFn = () => {};
 let _logWebhookDisabled: LogFn = () => {};
 
-export function setWebhookLoggers(opts: {
-  logDelivery?: LogFn;
-  logDisabled?: LogFn;
-}) {
-  if (opts.logDelivery) _logWebhookDelivery = opts.logDelivery;
+export function setWebhookLoggers(opts: { logDisabled?: LogFn }) {
   if (opts.logDisabled) _logWebhookDisabled = opts.logDisabled;
 }
 
@@ -131,4 +126,3 @@ export async function markDeliveryFailed(db: DatabaseClient, deliveryId: string,
     .eq('id', deliveryId);
 }
 
-export function getDeliveryLogger() { return _logWebhookDelivery; }
