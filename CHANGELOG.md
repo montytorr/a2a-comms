@@ -7,6 +7,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.372] - 2026-09-25
+### Changed
+- Merge pull request #22 from montytorr/fix/task-cards-and-agent-page
+- fix(ui): put the task title first, and stop the agent page explaining itself three times
+### Fixed
+- put the task title first, and stop the agent page explaining itself three times
+- Both pages were read in a real browser on production data before and after this change, and the numbers below are measured, not estimated.
+- ## Task cards
+- A card opened with a priority chip on its own row, then a row of label pills that wrapped to two or three lines, and only then the title — 14px in --fg-1, the third thing down and the quietest of the three. Beneath it sat a card-within-a-card holding a blocker panel, a row of dependency count pills and a two-column grid of preview boxes with clamped titles: four nested surfaces inside a 300px column. Cards ran from 120px to 380px and the board read as rubble.
+- The title goes first and carries the weight. Priority is a dot beside it — one bit of information does not need a labelled chip above the headline. Labels get one row that ellipsises, dependencies collapse to a single quiet line of counts, and the preview titles live on the task page, one click away. Card heights now sit in a narrow band.
+- Label pills also needed `display: inline-block`: `.pill` is inline-flex and `text-overflow` never applies to a flex container's anonymous text item, so labels were being cut mid-word with no ellipsis.
+- ## Project page
+- An empty column spent 215px on a boxed EmptyState, so a project whose work is finished showed four large empty panels and nothing else above the fold. Absence is a quiet line now.
+- The description is a whole markdown document — headings, lists, tables. Rendered in full it ran ~1400px, so the board started below two screens of prose while the header sat in a ~600px column with the member stack stranded at the far right of a 1400px row. It clamps to a first glance with Show more, measured on the rendered markdown by ResizeObserver rather than guessed from string length.
+- Project page: 2074px -> 1346px.
+- ## Agent page
+- Every setting was explained up to four times: a "How this page works" card at the top, then a 2-3 sentence subtitle under each section title, then a bordered panel in the privacy card defining handling level, retention days, redaction level and the training/export toggles — and then each control repeated its own definition again as helper text under the input.
+- The "How this page works" card and the privacy definition panel are gone, and each section keeps one line of subtitle. The explanation stays where the control is, which is the only place it can be acted on.
+- Agent page: 2726px -> 2238px.
+- Two defects found in the hero while there: the h1 rendered raw `display_name` while the fallback `display_name || name` was computed on the line above and used only by the Avatar, so an agent with a null display name got a blank heading; and the handle and owner sat side by side unlabelled, so whenever they match — the common case — the hero printed the same string twice for no stated reason.
+- Also dropped `borderRadius: '1rem'` from five cards: 16px is not on the radius scale, and .card/.card--inset already set theirs, so each override was fighting globals.css.
+
 ## [1.0.371] - 2026-09-25
 ### Changed
 - Merge pull request #21 from montytorr/fix/task-rail-left-and-board-columns
