@@ -7,6 +7,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [1.0.370] - 2026-09-25
+### Changed
+- Merge pull request #20 from montytorr/fix/task-page-scroll-and-hierarchy
+- fix(ui): one scroll container on the task page, and a title that comes first
+### Fixed
+- one scroll container on the task page, and a title that comes first
+- The task detail rail was `position: sticky` with `max-height: calc(100dvh - topbar - space-6)` and `overflow-y: auto`, nested inside the dashboard shell's own `md:overflow-auto` scroller. Two scroll regions on one page:
+- a wheel over the rail scrolled the rail, taking its own "At a glance" heading out of view with nothing to say it had moved;
+- `align-items: start` on a one-row grid makes row height max(main, rail), so whenever the rail ran longer than the main column — the normal case on a task with attachments and links — sticky had zero travel and the rail's tail was reachable only through a scrollbar that `scrollbar-width: thin` over a transparent track renders invisible, and never by keyboard: a scrollable `aside` with no tabindex;
+- the dvh arithmetic is viewport-based inside a non-viewport scroller and only fit by coincidence.
+- The rail now flows with the document. One scroll container, the shell's.
+- Hierarchy, on the way past. The title sat in column two of the grid, so the first thing the eye reached was ASSIGNEE / REPORTER / CREATED and the line that identifies the task was second, wrapped to three lines at a 28ch cap with half the row empty. It is a full-width header above the grid now, the way the contract page is built, with status and priority under it on the same left edge rather than pushed to the far right of a hero bar. The rail's Activity card restated the main feed one fidelity lower and is gone; Labels folded into At a glance; "Task controls" was a titled card around one delete button; the dependency count pills repeated what each group card prints.
+- Project pages carried the same shapes. `.headerGrid` reserved a 300-360px second track ProjectHeader never filled, so from 900px to ~1400px the title was squeezed beside dead space. The kanban stacked three scrollers — the `overflow-y: visible` beside `overflow-x: auto` computes to `auto` — capped columns at a hardcoded 720px and buried "Add task" under that fold. The blocker radar repeated, verbatim, the owner/follow-up/action/status tiles the kanban card shows for the same task a screen below.
+- Bugs found while in there:
+- the hidden `<input type="file" required>` is unfocusable, so Chrome gave up trying to focus an invalid control and an empty upload silently no-opped;
+- title and description were `<h1 onClick>` and `<div onClick>`, so the two most important fields were the only ones a keyboard could not edit;
+- all four dropdowns wrote hover with onMouseEnter, and a mouse handler cannot fire for a keyboard: no menu item had any focus style at all;
+- observers were shown raw markdown source and an uncoloured lowercase priority chip where editors get both rendered;
+- the 100-comment cap opened the feed mid-conversation without saying so.
+- The geometry ratchet failed on the way: this removes 154 inline style props, which is what its "lower it, or the ratchet does nothing" assertion asks for. Ceiling 2496 -> 2400.
+- Build compiles, eslint reports 0 errors, 457/457 tests pass. Not yet checked in a browser.
+
 ## [1.0.369] - 2026-09-24
 ### Changed
 - Merge pull request #19 from montytorr/fix/reactor-activation-evidence
