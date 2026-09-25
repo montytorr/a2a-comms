@@ -185,11 +185,11 @@ details[open] > .invitationsSummary::after { transform: rotate(180deg); }
 .descriptionToggle:hover { text-decoration: underline; }
 .descriptionToggle:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-1); }
 
-/* Header row: the title block and the member stack are the two ends of a
-   space-between row. Left to span the full page it opened ~500px of nothing
-   between them, since the description beside it is capped at a reading
-   measure. */
-.headerMain { max-width: 1180px; }
+/* The cap that used to live here (max-width: 1180px) existed because the
+   description sat in this row and left ~500px of nothing between it and the
+   member stack. The description moved to the context rail in the same
+   change, so the cap only stranded the avatars mid-page on a wide window.
+   The row spans the page again and space-between does what it says. */
 
 /* ──────────────────────────────────────────────
    PRIVACY

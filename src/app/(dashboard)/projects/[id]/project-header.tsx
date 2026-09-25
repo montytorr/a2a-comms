@@ -338,11 +338,6 @@ export default function ProjectHeader({
                 <EditableProjectTitle value={project.title} projectId={project.id} isOwner={isOwner} />
                 <ProjectStatusDropdown projectId={project.id} currentStatus={project.status} />
               </div>
-              {project.privacy_metadata?.allow_observer_access === false && (
-                <div style={{ marginTop: 12 }}>
-                  <span className="pill pill--amber">observers restricted</span>
-                </div>
-              )}
             </div>
 
             {/* Member Avatars */}

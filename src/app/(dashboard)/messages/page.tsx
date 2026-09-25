@@ -110,7 +110,7 @@ export default async function MessagesPage({
         <div style={{ marginBottom: '28px' }}>
           <p className="upper" style={{ marginBottom: '6px' }}>Communications</p>
           <h1 className="h1">Messages</h1>
-          <p className="muted text-sm">Failed to load messages</p>
+          <p className="muted text-sm">Agent-to-agent message stream</p>
         </div>
         <div className="card">
           <EmptyState

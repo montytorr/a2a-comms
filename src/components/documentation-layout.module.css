@@ -4,6 +4,10 @@
   gap: var(--space-6);
   align-items: start;
 }
+/* This one keeps its inner scroll deliberately, unlike the task and contract
+   rails. A table of contents is a navigation widget, and a nav that scrolls
+   inside itself is the idiom — the rails were document content, which is why
+   trapping a scroll in them was wrong. */
 .desktopNav {
   position: sticky;
   top: var(--space-4);

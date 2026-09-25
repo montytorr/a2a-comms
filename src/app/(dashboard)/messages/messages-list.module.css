@@ -16,8 +16,9 @@
   transition: background 0.15s ease;
 }
 .item + .item { border-top: 1px solid var(--line-1); }
-.item:hover { background: var(--nav-hover); }
-.item:hover .end svg { color: var(--peri); transform: translateX(2px); }
+.item:hover, .item:focus-visible { background: var(--nav-hover); }
+.item:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.item:hover .end svg, .item:focus-visible .end svg { color: var(--peri); transform: translateX(2px); }
 
 .content { min-width: 0; }
 .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 9px; min-height: 22px; }

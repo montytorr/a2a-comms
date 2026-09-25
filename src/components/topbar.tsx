@@ -28,6 +28,10 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
   const actionable = notificationCounts?.total ?? 0;
   const [time, setTime] = useState('');
   const [liveItems, setLiveItems] = useState<TickerItem[]>(initialTickerItems);
+  /* The indicator was hardcoded mint and always pulsing, wired to nothing —
+     a status light that could not report a bad status. It now follows the
+     poll that feeds the ticker beside it. */
+  const [live, setLive] = useState(true);
 
   useEffect(() => {
     const update = () => {
@@ -45,7 +49,7 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
       const requestId = ++latestRequestId;
       try {
         const res = await fetch('/api/internal/live-feed', { cache: 'no-store' });
-        if (!res.ok) return;
+        if (!res.ok) { if (!cancelled) setLive(false); return; }
         const json = await res.json() as { items?: TickerItem[] };
         const items = Array.isArray(json.items) ? json.items : [];
         if (!cancelled && requestId === latestRequestId && items.length > 0) {
@@ -53,7 +57,9 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
           // returns an empty payload. The next successful refresh replaces it.
           setLiveItems(items);
         }
+        if (!cancelled) setLive(true);
       } catch {
+        if (!cancelled) setLive(false);
         // Header ticker should never break navigation.
       }
     };
@@ -134,9 +140,15 @@ export const Topbar = ({ initialTickerItems = [], onOpenPalette, leading, collap
       {/* Right side */}
       <div className="row gap-2 sm:gap-3 ml-auto md:ml-0" style={{ alignItems: 'center', flexShrink: 0 }}>
         {/* LIVE indicator */}
-        <div className="row gap-2 hidden sm:flex" style={{ alignItems: 'center' }}>
-          <span className="dot dot--mint pulse" />
-          <span className="mono text-2xs" style={{ color: 'var(--fg-2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live</span>
+        <div
+          className="row gap-2 hidden sm:flex"
+          style={{ alignItems: 'center' }}
+          title={live ? 'Live feed connected' : 'Live feed unreachable — last known events shown'}
+        >
+          <span className={live ? 'dot dot--mint pulse' : 'dot dot--rose'} />
+          <span className="mono text-2xs" style={{ color: 'var(--fg-2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {live ? 'Live' : 'Stale'}
+          </span>
         </div>
 
         {/* UTC clock */}

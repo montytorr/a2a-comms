@@ -239,7 +239,10 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
         right={headerRight}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 16, alignItems: 'start' }}>
+      {/* auto-fit with exactly two children resolves to two equal tracks, so
+          the five-bar legend was as wide as the event stream at any viewport
+          over 576px. Named tracks instead. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 16, alignItems: 'start' }}>
 
         {/* ── Left: event stream ─────────────────────────────────────────── */}
         <div className="card">
@@ -257,7 +260,10 @@ export default function FeedClient({ isSuperAdmin, contractIds }: FeedClientProp
           </div>
 
           {/* Event list */}
-          <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+          {/* No inner scroller: 600px inside the shell's own scroller pinned
+              the stream on a tall window and nested two scroll regions on a
+              short one, while the card header above sat outside it. */}
+          <div>
             {loading ? (
               <div style={{ padding: '48px 0', textAlign: 'center' }}>
                 <span className="dim text-sm">Loading events…</span>
